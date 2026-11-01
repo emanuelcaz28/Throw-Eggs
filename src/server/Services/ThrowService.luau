@@ -1,11 +1,13 @@
 -- Builds the throw lane and runs each player's throw: aiming -> flying -> aiming again.
--- The client only reports how accurate its tap was. The server checks that the tap
+-- The client only reports how high the meter marker was when it tapped. The server checks that the tap
 -- is allowed and works out the distance itself.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
+local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
+local DinoRoll = require(script.Parent.DinoRoll)
 local TrainingService = require(script.Parent.TrainingService)
 local World = require(script.Parent.World)
 
@@ -25,7 +27,7 @@ local remotes: { [string]: RemoteEvent } = {}
 local function makeRemotes()
 	local folder = Instance.new("Folder")
 	folder.Name = "ThrowRemotes"
-	for _, name in { "MeterStart", "MeterCancel", "Tap", "Launched" } do
+	for _, name in { "MeterStart", "MeterCancel", "Tap", "Launched", "Landed" } do
 		local remote = Instance.new("RemoteEvent")
 		remote.Name = name
 		remote.Parent = folder
@@ -95,13 +97,13 @@ local function isOnPad(player: Player): boolean
 	return World.isOnPad(player, lane.padPosition, lane.padRadius, lane.padHeight)
 end
 
-local function onTap(player: Player, accuracy: any)
+local function onTap(player: Player, height: any)
 	local state = states[player]
 	if not state or state.phase ~= "aiming" then
 		return
 	end
-	-- accuracy ~= accuracy is only true for NaN.
-	if typeof(accuracy) ~= "number" or accuracy ~= accuracy then
+	-- height ~= height is only true for NaN.
+	if typeof(height) ~= "number" or height ~= height then
 		return
 	end
 	if os.clock() - state.aimStartedAt < Throw.meter.minTime or not isOnPad(player) then
@@ -112,15 +114,21 @@ local function onTap(player: Player, accuracy: any)
 		return
 	end
 
-	accuracy = math.clamp(accuracy, 0, 1)
+	height = math.clamp(height, 0, 1)
 	local maxDistance = Biomes[#Biomes].endDist
-	local distance = math.min(power * Throw.multiplier(accuracy), maxDistance)
+	local distance = math.min(power * Throw.multiplier(height), maxDistance)
 
 	state.phase = "flying"
-	remotes.Launched:FireAllClients(player, distance, Throw.isPerfect(accuracy))
+	remotes.Launched:FireAllClients(player, distance, Throw.isPerfect(height))
 
-	task.delay(Throw.flightTime(distance) + Throw.flight.landingPause, function()
-		-- The roll for what hatches (MVP step 3) happens on landing.
+	task.delay(Throw.flightTime(distance), function()
+		if states[player] ~= state then
+			return
+		end
+		local dino = DinoRoll.roll(Luck.biomeAt(distance).id, Luck.at(distance))
+		remotes.Landed:FireClient(player, dino.name, dino.chance)
+
+		task.wait(Throw.flight.landingPause)
 		if states[player] == state then
 			state.phase = "idle"
 		end

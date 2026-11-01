@@ -1,4 +1,4 @@
--- Dinos per biome. chance = base "1 in X" before luck. income = $/s.
+-- Dinos per biome, most common first. chance = base "1 in X" before luck. income = $/s.
 -- Placeholder numbers; tune during playtesting.
 return {
 	FernValley = {

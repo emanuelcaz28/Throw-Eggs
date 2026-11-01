@@ -6,7 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
-local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
+local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 
 local player = Players.LocalPlayer
@@ -18,11 +18,38 @@ local CAMERA_OFFSET = Vector3.new(14, 10, 24)
 local EGG_SIZE = Vector3.new(2.4, 3, 2.4)
 local EGG_COLOR = Color3.fromRGB(240, 226, 196)
 
-local PANEL = Color3.fromRGB(28, 30, 36)
-local TRACK = Color3.fromRGB(190, 70, 60)
+local INK = Color3.fromRGB(20, 22, 28)
+local TUBE_LOW = Color3.fromRGB(222, 62, 48)
+local TUBE_MID = Color3.fromRGB(242, 150, 50)
+local TUBE_HIGH = Color3.fromRGB(255, 214, 70)
 local GOOD = Color3.fromRGB(226, 142, 58)
 local PERFECT = Color3.fromRGB(110, 220, 110)
+local GOLD = Color3.fromRGB(255, 226, 110)
+local EGG = Color3.fromRGB(246, 239, 217)
 local TEXT = Color3.new(1, 1, 1)
+
+-- Meter layout, in pixels of the Figma design ("Throw Eggs - Timing Meter").
+local METER_WIDTH, METER_HEIGHT = 220, 470
+local TUBE_LEFT, TUBE_WIDTH = 78, 64
+local TUBE_TOP, TUBE_HEIGHT = 70, 330
+local ZONE_LEFT, ZONE_TOP, ZONE_WIDTH, ZONE_OVERHANG = 56, 48, 108, 22
+local MARKER_LEFT, MARKER_WIDTH, MARKER_HEIGHT = 64, 92, 18
+local LABEL_LEFT, LABEL_WIDTH, LABEL_HEIGHT = 166, 54, 34
+local PROMPT_TOP, PROMPT_HEIGHT = 414, 42
+local METER_SCREEN_SHARE = 0.62 -- share of the screen height the meter fills
+local RESULT_HOLD = 0.7 -- seconds the meter stays up after a tap
+
+local function meterBox(left: number, top: number, width: number, height: number)
+	return UDim2.fromScale(left / METER_WIDTH, top / METER_HEIGHT), UDim2.fromScale(width / METER_WIDTH, height / METER_HEIGHT)
+end
+
+local function outline(parent: Instance, thickness: number)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = INK
+	stroke.Thickness = thickness
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = parent
+end
 
 local function corner(parent: Instance, radius: number)
 	local uiCorner = Instance.new("UICorner")
@@ -48,59 +75,94 @@ local function buildGui()
 	gui.ResetOnSpawn = false
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	-- The whole panel is a button so it makes a big target on phones.
+	-- The whole meter is a button so it makes a big target on phones.
 	local meter = Instance.new("TextButton")
-	meter.AnchorPoint = Vector2.new(0.5, 1)
-	meter.Position = UDim2.new(0.5, 0, 1, -112)
-	meter.Size = UDim2.new(0.6, 0, 0, 84)
-	meter.BackgroundColor3 = PANEL
-	meter.BackgroundTransparency = 0.15
+	meter.AnchorPoint = Vector2.new(1, 0.5)
+	meter.Position = UDim2.new(1, -24, 0.5, 0)
+	meter.Size = UDim2.fromScale(1, METER_SCREEN_SHARE)
+	meter.BackgroundTransparency = 1
 	meter.AutoButtonColor = false
 	meter.Text = ""
 	meter.Visible = false
 	meter.Parent = gui
-	corner(meter, 12)
 
-	local sizeLimit = Instance.new("UISizeConstraint")
-	sizeLimit.MaxSize = Vector2.new(380, 84)
-	sizeLimit.Parent = meter
+	local aspect = Instance.new("UIAspectRatioConstraint")
+	aspect.AspectRatio = METER_WIDTH / METER_HEIGHT
+	aspect.AspectType = Enum.AspectType.ScaleWithParentSize
+	aspect.DominantAxis = Enum.DominantAxis.Height
+	aspect.Parent = meter
+
+	local tube = Instance.new("Frame")
+	tube.Name = "Tube"
+	tube.Position, tube.Size = meterBox(TUBE_LEFT, TUBE_TOP, TUBE_WIDTH, TUBE_HEIGHT)
+	tube.BackgroundColor3 = TEXT
+	tube.Parent = meter
+	corner(tube, 10)
+	outline(tube, 3)
+
+	local gradient = Instance.new("UIGradient")
+	gradient.Rotation = 90 -- first colour at the top
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, TUBE_HIGH),
+		ColorSequenceKeypoint.new(0.5, TUBE_MID),
+		ColorSequenceKeypoint.new(1, TUBE_LOW),
+	})
+	gradient.Parent = tube
+
+	-- The sweet zone flares wider than the tube so it reads as a big target.
+	local levels = Throw.meter.levels
+	for level = 1, levels - 2 do
+		local tick = Instance.new("Frame")
+		tick.Name = "LevelLine"
+		tick.Position, tick.Size = meterBox(TUBE_LEFT + 6, TUBE_TOP + TUBE_HEIGHT * (1 - level / levels) - 1, TUBE_WIDTH - 12, 3)
+		tick.BackgroundColor3 = INK
+		tick.BackgroundTransparency = 0.65
+		tick.BorderSizePixel = 0
+		tick.Parent = meter
+	end
+
+	local zoneBottom = TUBE_TOP + TUBE_HEIGHT / levels
+	local zone = Instance.new("Frame")
+	zone.Name = "SweetZone"
+	zone.Position, zone.Size = meterBox(ZONE_LEFT, ZONE_TOP, ZONE_WIDTH, zoneBottom - TUBE_TOP + ZONE_OVERHANG)
+	zone.BackgroundColor3 = PERFECT
+	zone.Parent = meter
+	corner(zone, 14)
+	outline(zone, 3)
+
+	local egg = Instance.new("Frame")
+	egg.Name = "Egg"
+	egg.AnchorPoint = Vector2.new(0.5, 0.5)
+	egg.Position = UDim2.fromScale(0.5, 0.5)
+	egg.Size = UDim2.fromScale(0.28, 0.7)
+	egg.BackgroundColor3 = EGG
+	egg.Parent = zone
+	local eggCorner = Instance.new("UICorner")
+	eggCorner.CornerRadius = UDim.new(0.5, 0)
+	eggCorner.Parent = egg
+	outline(egg, 2)
+
+	local marker = Instance.new("Frame")
+	marker.Name = "Marker"
+	marker.AnchorPoint = Vector2.new(0, 0.5)
+	marker.BackgroundColor3 = TEXT
+	marker.ZIndex = 2
+	marker.Parent = meter
+	corner(marker, 6)
+	outline(marker, 3)
+	local _, markerSize = meterBox(MARKER_LEFT, 0, MARKER_WIDTH, MARKER_HEIGHT)
+	marker.Size = markerSize
+
+	local value = makeLabel(meter)
+	value.Name = "Level"
+	value.AnchorPoint = Vector2.new(0, 0.5)
+	value.TextXAlignment = Enum.TextXAlignment.Left
+	local _, valueSize = meterBox(LABEL_LEFT, 0, LABEL_WIDTH, LABEL_HEIGHT)
+	value.Size = valueSize
 
 	local prompt = makeLabel(meter)
-	prompt.Position = UDim2.fromOffset(14, 8)
-	prompt.Size = UDim2.new(1, -28, 0, 28)
-	prompt.Text = "TAP TO THROW!"
-
-	local track = Instance.new("Frame")
-	track.Position = UDim2.fromOffset(14, 44)
-	track.Size = UDim2.new(1, -28, 0, 26)
-	track.BackgroundColor3 = TRACK
-	track.BorderSizePixel = 0
-	track.ClipsDescendants = true
-	track.Parent = meter
-
-	-- The closer to the centre the better; green is the perfect zone.
-	local good = Instance.new("Frame")
-	good.AnchorPoint = Vector2.new(0.5, 0)
-	good.Position = UDim2.fromScale(0.5, 0)
-	good.Size = UDim2.fromScale(0.5, 1)
-	good.BackgroundColor3 = GOOD
-	good.BorderSizePixel = 0
-	good.Parent = track
-
-	local perfect = Instance.new("Frame")
-	perfect.AnchorPoint = Vector2.new(0.5, 0)
-	perfect.Position = UDim2.fromScale(0.5, 0)
-	perfect.Size = UDim2.fromScale(1 - Throw.meter.perfectAccuracy, 1)
-	perfect.BackgroundColor3 = PERFECT
-	perfect.BorderSizePixel = 0
-	perfect.Parent = track
-
-	local cursor = Instance.new("Frame")
-	cursor.AnchorPoint = Vector2.new(0.5, 0)
-	cursor.Size = UDim2.new(0, 5, 1, 0)
-	cursor.BackgroundColor3 = TEXT
-	cursor.BorderSizePixel = 0
-	cursor.Parent = track
+	prompt.Name = "Prompt"
+	prompt.Position, prompt.Size = meterBox(0, PROMPT_TOP, METER_WIDTH, PROMPT_HEIGHT)
 
 	local banner = makeLabel(gui)
 	banner.AnchorPoint = Vector2.new(0.5, 0)
@@ -108,16 +170,34 @@ local function buildGui()
 	banner.Size = UDim2.new(0.8, 0, 0, 44)
 	banner.Visible = false
 
-	return { meter = meter, cursor = cursor, banner = banner }
+	local luck = makeLabel(gui)
+	luck.AnchorPoint = Vector2.new(0.5, 0)
+	luck.Position = UDim2.new(0.5, 0, 0, 16)
+	luck.Size = UDim2.new(0.8, 0, 0, 64)
+	luck.TextColor3 = PERFECT
+	luck.Visible = false
+
+	local catch = makeLabel(gui)
+	catch.AnchorPoint = Vector2.new(0.5, 0)
+	catch.Position = UDim2.new(0.5, 0, 0, 142)
+	catch.Size = UDim2.new(0.8, 0, 0, 56)
+	catch.TextColor3 = GOOD
+	catch.Visible = false
+
+	return {
+		meter = meter,
+		zone = zone,
+		marker = marker,
+		value = value,
+		prompt = prompt,
+		banner = banner,
+		luck = luck,
+		catch = catch,
+	}
 end
 
-local function biomeNameAt(distance: number): string
-	for _, biome in Biomes do
-		if distance <= biome.endDist then
-			return biome.name
-		end
-	end
-	return Biomes[#Biomes].name
+local function luckText(distance: number): string
+	return string.format("Luck x%.1f", Luck.at(distance))
 end
 
 local function makeEgg(): Part
@@ -143,18 +223,34 @@ function ThrowController.start()
 
 	local aiming = false
 	local aimStartedAt = 0
-	local cursorPosition = 0.5
+	local markerHeight = 0
 
+	local function placeMarker(height: number)
+		local center = (TUBE_TOP + TUBE_HEIGHT * (1 - height)) / METER_HEIGHT
+		hud.marker.Position = UDim2.fromScale(MARKER_LEFT / METER_WIDTH, center)
+		hud.value.Position = UDim2.fromScale(LABEL_LEFT / METER_WIDTH, center)
+		hud.value.Text = `Lv {Throw.level(height)}`
+		local inZone = Throw.isPerfect(height)
+		hud.prompt.Text = if inZone then "TAP NOW!" else "TAP!"
+		hud.prompt.TextColor3 = TEXT
+		hud.zone.BackgroundColor3 = PERFECT
+	end
+
+	-- Stops taking taps. The meter stays on screen until hideMeter.
 	local function stopAiming()
 		aiming = false
-		hud.meter.Visible = false
 		ContextActionService:UnbindAction(TAP_ACTION)
+	end
+
+	local function hideMeter()
+		stopAiming()
+		hud.meter.Visible = false
 	end
 
 	local function tap()
 		if aiming and os.clock() - aimStartedAt >= Throw.meter.minTime then
 			stopAiming()
-			remotes.Tap:FireServer(1 - math.abs(cursorPosition - 0.5) * 2)
+			remotes.Tap:FireServer(markerHeight)
 		end
 	end
 
@@ -167,16 +263,15 @@ function ThrowController.start()
 
 	RunService.RenderStepped:Connect(function()
 		if aiming then
-			-- Sweeps 0 -> 1 -> 0, starting at the edge.
-			local cycle = ((os.clock() - aimStartedAt) * Throw.meter.cyclesPerSecond) % 1
-			cursorPosition = 1 - math.abs(cycle * 2 - 1)
-			hud.cursor.Position = UDim2.fromScale(cursorPosition, 0)
+			markerHeight = Throw.markerHeight(os.clock() - aimStartedAt)
+			placeMarker(markerHeight)
 		end
 	end)
 
 	remotes.MeterStart.OnClientEvent:Connect(function()
 		aiming = true
 		aimStartedAt = os.clock()
+		placeMarker(0)
 		hud.meter.Visible = true
 		-- Taken over while aiming so Space throws instead of jumping.
 		ContextActionService:BindAction(TAP_ACTION, function(_, inputState)
@@ -187,7 +282,12 @@ function ThrowController.start()
 		end, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
 	end)
 
-	remotes.MeterCancel.OnClientEvent:Connect(stopAiming)
+	remotes.MeterCancel.OnClientEvent:Connect(hideMeter)
+
+	remotes.Landed.OnClientEvent:Connect(function(dinoName: string, chance: number)
+		hud.catch.Text = `{dinoName} · 1 in {chance}`
+		hud.catch.Visible = true
+	end)
 
 	remotes.Launched.OnClientEvent:Connect(function(thrower: Player, distance: number, perfect: boolean)
 		local isMine = thrower == player
@@ -200,9 +300,20 @@ function ThrowController.start()
 
 		if isMine then
 			stopAiming()
+			if perfect then
+				hud.zone.BackgroundColor3 = GOLD
+				hud.prompt.TextColor3 = GOLD
+				hud.prompt.Text = "PERFECT!"
+			end
+			task.delay(RESULT_HOLD, function()
+				if not aiming then
+					hud.meter.Visible = false
+				end
+			end)
 			camera.CameraType = Enum.CameraType.Scriptable
 			hud.banner.Text = if perfect then "PERFECT!" else ""
 			hud.banner.Visible = true
+			hud.luck.Visible = true
 		end
 
 		local startedAt = os.clock()
@@ -216,6 +327,7 @@ function ThrowController.start()
 			if isMine then
 				camera.CFrame = CFrame.lookAt(position + CAMERA_OFFSET, position)
 				hud.banner.Text = if perfect then `PERFECT! {math.floor(travelled)} studs` else `{math.floor(travelled)} studs`
+				hud.luck.Text = luckText(travelled)
 			end
 			if t >= 1 then
 				break
@@ -224,12 +336,14 @@ function ThrowController.start()
 		end
 
 		if isMine then
-			hud.banner.Text = `{math.floor(distance)} studs · {biomeNameAt(distance)}`
+			hud.banner.Text = `{math.floor(distance)} studs · {Luck.biomeAt(distance).name}`
 		end
 		task.wait(flight.landingPause)
 		egg:Destroy()
 		if isMine then
 			hud.banner.Visible = false
+			hud.luck.Visible = false
+			hud.catch.Visible = false
 			camera.CameraType = Enum.CameraType.Custom
 		end
 	end)

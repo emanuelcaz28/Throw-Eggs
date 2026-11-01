@@ -12,12 +12,12 @@ local Throw = {
 	},
 
 	meter = {
-		cyclesPerSecond = 0.8, -- full left-right-left sweeps of the cursor
+		cyclesPerSecond = 0.8, -- full up-and-down trips of the marker
 		minTime = 0.25, -- seconds before a tap counts, so a throw can't be instant
-		minMultiplier = 0.4, -- tap at the very edge of the bar
-		maxMultiplier = 1, -- tap just outside the perfect zone
-		perfectAccuracy = 0.9, -- accuracy (0 = edge, 1 = centre) that counts as perfect
-		perfectBonus = 1.5, -- extra multiplier on a perfect tap
+		levels = 10, -- equal steps up the tube; the top one is PERFECT
+		minMultiplier = 0.4, -- distance multiplier at level 1
+		maxMultiplier = 1, -- at the level just below the top
+		perfectMultiplier = 1.5, -- at the top level
 	},
 
 	flight = {
@@ -27,18 +27,32 @@ local Throw = {
 		maxTime = 8,
 		arcPerStud = 0.2, -- peak height as a share of the distance
 		maxArc = 80,
-		landingPause = 1.5, -- seconds to look at the landing before the next throw
+		landingPause = 2.5, -- seconds to read the result before the next throw
 	},
 }
 
-function Throw.isPerfect(accuracy: number): boolean
-	return accuracy >= Throw.meter.perfectAccuracy
+-- Which level a marker height (0 = bottom, 1 = top) falls in, from 1 up to meter.levels.
+function Throw.level(height: number): number
+	return math.min(math.floor(height * Throw.meter.levels) + 1, Throw.meter.levels)
 end
 
-function Throw.multiplier(accuracy: number): number
+function Throw.isPerfect(height: number): boolean
+	return Throw.level(height) == Throw.meter.levels
+end
+
+function Throw.multiplier(height: number): number
 	local meter = Throw.meter
-	local multiplier = meter.minMultiplier + (meter.maxMultiplier - meter.minMultiplier) * accuracy
-	return if Throw.isPerfect(accuracy) then multiplier * meter.perfectBonus else multiplier
+	if Throw.isPerfect(height) then
+		return meter.perfectMultiplier
+	end
+	local progress = (Throw.level(height) - 1) / (meter.levels - 2)
+	return meter.minMultiplier + (meter.maxMultiplier - meter.minMultiplier) * progress
+end
+
+-- Marker height at a time since the meter started. It moves like a swing, slowing
+-- down near the top, so the sweet zone stays under the marker for a long moment.
+function Throw.markerHeight(elapsed: number): number
+	return (1 - math.cos(2 * math.pi * Throw.meter.cyclesPerSecond * elapsed)) / 2
 end
 
 function Throw.flightTime(distance: number): number
