@@ -27,7 +27,7 @@ local Throw = {
 		maxTime = 8,
 		arcPerStud = 0.2, -- peak height as a share of the distance
 		maxArc = 80,
-		landingPause = 2.5, -- seconds to read the result before the next throw
+		landingPause = 2.5, -- seconds other players' eggs stay on the ground
 	},
 }
 

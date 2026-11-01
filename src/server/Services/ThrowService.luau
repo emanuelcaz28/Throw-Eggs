@@ -6,8 +6,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
+local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local DinoRoll = require(script.Parent.DinoRoll)
+local PlayerData = require(script.Parent.PlayerData)
 local TrainingService = require(script.Parent.TrainingService)
 local World = require(script.Parent.World)
 
@@ -19,7 +21,7 @@ local GROUND_TOP = 0.1 -- just above the baseplate, so the two don't flicker
 local PAD_COLOR = Color3.fromRGB(70, 170, 220)
 local MARKER_COLOR = Color3.new(1, 1, 1)
 
-type ThrowState = { phase: "idle" | "aiming" | "flying", aimStartedAt: number }
+type ThrowState = { phase: "idle" | "aiming" | "flying" | "revealing", aimStartedAt: number, revealStartedAt: number }
 
 local states: { [Player]: ThrowState } = {}
 local remotes: { [string]: RemoteEvent } = {}
@@ -27,7 +29,7 @@ local remotes: { [string]: RemoteEvent } = {}
 local function makeRemotes()
 	local folder = Instance.new("Folder")
 	folder.Name = "ThrowRemotes"
-	for _, name in { "MeterStart", "MeterCancel", "Tap", "Launched", "Landed" } do
+	for _, name in { "MeterStart", "MeterCancel", "Tap", "Launched", "Landed", "RevealDone" } do
 		local remote = Instance.new("RemoteEvent")
 		remote.Name = name
 		remote.Parent = folder
@@ -125,11 +127,27 @@ local function onTap(player: Player, height: any)
 		if states[player] ~= state then
 			return
 		end
-		local dino = DinoRoll.roll(Luck.biomeAt(distance).id, Luck.at(distance))
-		remotes.Landed:FireClient(player, dino.name, dino.chance)
+		local catch = DinoRoll.rollCatch(Luck.biomeAt(distance).id, Luck.at(distance))
+		local data = PlayerData.get(player)
+		catch.newBest = data ~= nil and catch.income > data.bestIncome
+		if catch.newBest then
+			data.bestIncome = catch.income
+		end
 
-		task.wait(Throw.flight.landingPause)
-		if states[player] == state then
+		state.phase = "revealing"
+		state.revealStartedAt = os.clock()
+		remotes.Landed:FireClient(player, catch)
+	end)
+end
+
+local function onRevealDone(player: Player)
+	local state = states[player]
+	if not state or state.phase ~= "revealing" then
+		return
+	end
+	local remaining = Reveal.minTime - (os.clock() - state.revealStartedAt)
+	task.delay(math.max(remaining, 0), function()
+		if states[player] == state and state.phase == "revealing" then
 			state.phase = "idle"
 		end
 	end)
@@ -150,7 +168,7 @@ local function step()
 end
 
 local function addPlayer(player: Player)
-	states[player] = { phase = "idle", aimStartedAt = 0 }
+	states[player] = { phase = "idle", aimStartedAt = 0, revealStartedAt = 0 }
 end
 
 function ThrowService.start()
@@ -158,6 +176,7 @@ function ThrowService.start()
 	buildLane()
 
 	remotes.Tap.OnServerEvent:Connect(onTap)
+	remotes.RevealDone.OnServerEvent:Connect(onRevealDone)
 	Players.PlayerAdded:Connect(addPlayer)
 	Players.PlayerRemoving:Connect(function(player)
 		states[player] = nil

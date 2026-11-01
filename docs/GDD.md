@@ -15,6 +15,8 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
    (hangman style) while a "1 in X" counter climbs. Labels escalate: LUCKY! → SUPER LUCKY! → INSANE → LEGENDARY → GODLY.
    Final card: mutation (Gold / Diamond / Emerald…), size (Big / Large / Huge / Colossal), $/s, "NEW BEST!".
    The roll is decided on landing; the counter is just suspense animation.
+   Common catches skip the counter. Tapping skips to the final card. Reveal numbers live in `Config/Reveal`,
+   mutation and size odds in `Config/Catch`. Dinos are block stand-ins until the Blender models exist.
 4. **Plot** — caught dinos stand on your plot as big statues and earn $/s. Limited slots (start 8, upgradeable).
    Extras go to backpack. Equip Best / Pick Up / Sell.
 5. **Egg Shop** — buy better egg tiers with cash. Better egg = better roll table / more luck.

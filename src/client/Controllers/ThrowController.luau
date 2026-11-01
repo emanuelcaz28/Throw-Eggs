@@ -7,7 +7,9 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
+local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
+local RevealController = require(script.Parent.RevealController)
 
 local player = Players.LocalPlayer
 
@@ -17,12 +19,13 @@ local TAP_ACTION = "ThrowEggTap"
 local CAMERA_OFFSET = Vector3.new(14, 10, 24)
 local EGG_SIZE = Vector3.new(2.4, 3, 2.4)
 local EGG_COLOR = Color3.fromRGB(240, 226, 196)
+local GROUND_TOP = 0.1
+local CATCH_TIMEOUT = 5 -- seconds to wait for the server's catch after landing
 
 local INK = Color3.fromRGB(20, 22, 28)
 local TUBE_LOW = Color3.fromRGB(222, 62, 48)
 local TUBE_MID = Color3.fromRGB(242, 150, 50)
 local TUBE_HIGH = Color3.fromRGB(255, 214, 70)
-local GOOD = Color3.fromRGB(226, 142, 58)
 local PERFECT = Color3.fromRGB(110, 220, 110)
 local GOLD = Color3.fromRGB(255, 226, 110)
 local EGG = Color3.fromRGB(246, 239, 217)
@@ -177,13 +180,6 @@ local function buildGui()
 	luck.TextColor3 = PERFECT
 	luck.Visible = false
 
-	local catch = makeLabel(gui)
-	catch.AnchorPoint = Vector2.new(0.5, 0)
-	catch.Position = UDim2.new(0.5, 0, 0, 142)
-	catch.Size = UDim2.new(0.8, 0, 0, 56)
-	catch.TextColor3 = GOOD
-	catch.Visible = false
-
 	return {
 		meter = meter,
 		zone = zone,
@@ -192,7 +188,6 @@ local function buildGui()
 		prompt = prompt,
 		banner = banner,
 		luck = luck,
-		catch = catch,
 	}
 end
 
@@ -284,9 +279,9 @@ function ThrowController.start()
 
 	remotes.MeterCancel.OnClientEvent:Connect(hideMeter)
 
-	remotes.Landed.OnClientEvent:Connect(function(dinoName: string, chance: number)
-		hud.catch.Text = `{dinoName} · 1 in {chance}`
-		hud.catch.Visible = true
+	local pendingCatch = nil
+	remotes.Landed.OnClientEvent:Connect(function(catch)
+		pendingCatch = catch
 	end)
 
 	remotes.Launched.OnClientEvent:Connect(function(thrower: Player, distance: number, perfect: boolean)
@@ -296,6 +291,7 @@ function ThrowController.start()
 		local duration = Throw.flightTime(distance)
 		local arc = math.min(distance * flight.arcPerStud, flight.maxArc)
 		local egg = makeEgg()
+		local restHeight = EGG_SIZE.Y / 2 + GROUND_TOP
 		local camera = workspace.CurrentCamera
 
 		if isMine then
@@ -321,7 +317,7 @@ function ThrowController.start()
 			local t = math.min((os.clock() - startedAt) / duration, 1)
 			local travelled = distance * t
 			-- Drops from launch height to the ground, plus a hill that peaks at arc halfway.
-			local height = flight.launchHeight * (1 - t) + arc * 4 * t * (1 - t)
+			local height = restHeight + flight.launchHeight * (1 - t) + arc * 4 * t * (1 - t)
 			local position = lane.origin + lane.direction * travelled + Vector3.new(0, height, 0)
 			egg.CFrame = CFrame.new(position) * CFrame.Angles(t * 20, 0, 0)
 			if isMine then
@@ -338,14 +334,41 @@ function ThrowController.start()
 		if isMine then
 			hud.banner.Text = `{math.floor(distance)} studs · {Luck.biomeAt(distance).name}`
 		end
-		task.wait(flight.landingPause)
-		egg:Destroy()
-		if isMine then
-			hud.banner.Visible = false
-			hud.luck.Visible = false
-			hud.catch.Visible = false
+		if not isMine then
+			task.wait(flight.landingPause)
+			egg:Destroy()
+			return
+		end
+
+		task.wait(Reveal.landingHold)
+		local waitedFor = 0
+		while not pendingCatch and waitedFor < CATCH_TIMEOUT do
+			waitedFor += task.wait()
+		end
+		hud.banner.Visible = false
+		hud.luck.Visible = false
+
+		local catch = pendingCatch
+		pendingCatch = nil
+		if catch then
+			local trainingHud = player.PlayerGui:FindFirstChild("TrainingHud")
+			if trainingHud then
+				trainingHud.Enabled = false
+			end
+			-- Whatever goes wrong in the reveal, the player must get their camera and next throw back.
+			local ok, err = pcall(RevealController.play, catch, egg)
+			if not ok then
+				warn(`[ThrowController] Reveal failed: {err}`)
+				camera.CameraType = Enum.CameraType.Custom
+			end
+			if trainingHud then
+				trainingHud.Enabled = true
+			end
+		else
+			egg:Destroy()
 			camera.CameraType = Enum.CameraType.Custom
 		end
+		remotes.RevealDone:FireServer()
 	end)
 end
 

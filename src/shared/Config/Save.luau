@@ -16,5 +16,6 @@ return {
 	defaults = {
 		trainingLevel = 1,
 		trainingXp = 0,
+		bestIncome = 0, -- $/s of the best dino ever caught
 	},
 }
