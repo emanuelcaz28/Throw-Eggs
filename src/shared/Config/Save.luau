@@ -17,5 +17,10 @@ return {
 		trainingLevel = 1,
 		trainingXp = 0,
 		bestIncome = 0, -- $/s of the best dino ever caught
+		cash = 0,
+		dinos = {}, -- every dino owned: { key, id, mutation, size, onPlot }
+		nextDinoKey = 1,
+		ownedEggs = { DirtyEgg = true },
+		equippedEgg = "DirtyEgg",
 	},
 }

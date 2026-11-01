@@ -59,8 +59,8 @@ MVP ships biomes 1–3 only.
 2. Throw lane + timing meter; distance = power × meter.
 3. 3 biomes × 5 dinos, weighted roll × luck multiplier.
 4. Reveal sequence (hangman letters + climbing "1 in X"). Spend real time here.
-5. Plot with 8 slots + $/s income.
-6. Egg Shop with 5 tiers.
+5. Plot with 8 slots + $/s income. (Slot upgrades come later; numbers live in `Config/Plot`.)
+6. Egg Shop with 5 tiers. (Buy any egg you can afford; each multiplies distance luck. Numbers live in `Config/Eggs`.)
 Then: Index, Robux shop, events, rebirth.
 
 ## Reference game notes

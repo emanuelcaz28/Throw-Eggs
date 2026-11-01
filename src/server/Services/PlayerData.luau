@@ -39,8 +39,20 @@ local function getStore(): (DataStore?, string?)
 	return nil, tostring(result)
 end
 
+-- Each player needs their own copy of any tables in the defaults, not a shared one.
+local function deepCopy(value)
+	if typeof(value) ~= "table" then
+		return value
+	end
+	local copy = {}
+	for key, inner in value do
+		copy[key] = deepCopy(inner)
+	end
+	return copy
+end
+
 local function withDefaults(saved: { [string]: any }?): { [string]: any }
-	local data = table.clone(Save.defaults)
+	local data = deepCopy(Save.defaults)
 	for key, value in saved or {} do
 		data[key] = value
 	end

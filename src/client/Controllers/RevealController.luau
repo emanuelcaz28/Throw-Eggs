@@ -10,6 +10,8 @@ local UserInputService = game:GetService("UserInputService")
 
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
+local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
+local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 
 local player = Players.LocalPlayer
@@ -22,20 +24,14 @@ local INK = Color3.fromRGB(20, 22, 28)
 local CASH = Color3.fromRGB(120, 235, 120)
 local SIZE_COLOR = Color3.fromRGB(255, 214, 70)
 local STICKER = Color3.fromRGB(255, 214, 70)
-local DINO_BASE_SATURATION, DINO_BASE_VALUE = 0.55, 0.85
 local SPIN_SPEED = 0.6
 local WOBBLE_SPEED = 18
 local MAX_WOBBLE = math.rad(22)
 local POP_TIME = 0.45
-
-local function findOption(options, id: string?)
-	for _, option in options do
-		if option.id == id then
-			return option
-		end
-	end
-	return nil
-end
+local STORED_TEXT = {
+	backpack = "plot full: sent to your backpack · tap to continue",
+	sold = "plot and backpack full: sold · tap to continue",
+}
 
 local function makeLabel(parent: Instance, size: UDim2, position: UDim2, color: Color3): TextLabel
 	local label = Instance.new("TextLabel")
@@ -140,7 +136,6 @@ local function buildGui()
 	cardHint.Name = "Continue"
 	cardHint.Font = Enum.Font.GothamBold
 	cardHint.TextStrokeTransparency = 0.5
-	cardHint.Text = "tap to continue"
 
 	local sticker = Instance.new("TextLabel")
 	sticker.Name = "NewBest"
@@ -210,6 +205,7 @@ local function buildGui()
 		name = name,
 		size = size,
 		income = income,
+		cardHint = cardHint,
 		sticker = sticker,
 		banner = banner,
 		bannerName = bannerName,
@@ -225,45 +221,6 @@ local function tween(instance: Instance, time: number, goal, style: Enum.EasingS
 	local created = TweenService:Create(instance, info, goal)
 	created:Play()
 	return created
-end
-
--- Stand-in dino until the real models exist: blocks, with a colour picked from the name.
-local function buildDino(catch, origin: Vector3, heightScale: number): Model
-	local mutation = findOption(Catch.mutations, catch.mutation)
-	local hue = 0
-	for index = 1, #catch.name do
-		hue = (hue + catch.name:byte(index) * index) % 360
-	end
-	local color = if mutation then mutation.color else Color3.fromHSV(hue / 360, DINO_BASE_SATURATION, DINO_BASE_VALUE)
-
-	local model = Instance.new("Model")
-	model.Name = "RevealDino"
-	local blocks = {
-		{ Vector3.new(4, 4, 7), Vector3.new(0, 5, 0) }, -- body
-		{ Vector3.new(2, 4, 2), Vector3.new(0, 8, -3) }, -- neck
-		{ Vector3.new(3, 3, 5), Vector3.new(0, 10, -4.5) }, -- head
-		{ Vector3.new(2, 2, 6), Vector3.new(0, 5, 6) }, -- tail
-		{ Vector3.new(1.5, 3, 1.5), Vector3.new(-1.5, 1.5, 1.5) }, -- leg
-		{ Vector3.new(1.5, 3, 1.5), Vector3.new(1.5, 1.5, 1.5) }, -- leg
-		{ Vector3.new(1.5, 3, 1.5), Vector3.new(-1.5, 1.5, -1.5) }, -- leg
-		{ Vector3.new(1.5, 3, 1.5), Vector3.new(1.5, 1.5, -1.5) }, -- leg
-	}
-	for _, block in blocks do
-		local part = Instance.new("Part")
-		part.Anchored = true
-		part.CanCollide = false
-		part.CanQuery = false
-		part.CanTouch = false
-		part.Size = block[1]
-		part.Color = color
-		part.CFrame = CFrame.new(origin + block[2])
-		part.Parent = model
-	end
-	-- Scaling and spinning both happen around the dino's feet.
-	model.WorldPivot = CFrame.new(origin)
-	model:ScaleTo(heightScale)
-	model.Parent = workspace
-	return model
 end
 
 local function makeSparkles(position: Vector3): (Part, ParticleEmitter)
@@ -361,8 +318,8 @@ function RevealController.play(catch, egg: BasePart)
 	local ground = Vector3.new(landing.X, landing.Y - egg.Size.Y / 2, landing.Z)
 	local duration = climbTime(catch.oneIn)
 	local showCounter = catch.oneIn >= Reveal.counterMinOneIn
-	local mutation = findOption(Catch.mutations, catch.mutation)
-	local size = findOption(Catch.sizes, catch.size)
+	local mutation = DinoStats.findOption(Catch.mutations, catch.mutation)
+	local size = DinoStats.findOption(Catch.sizes, catch.size)
 	local dinoScale = if size then size.scale else 1
 	local upperName = catch.name:upper()
 	local letterOrder = shuffledLetterIndexes(upperName)
@@ -395,7 +352,9 @@ function RevealController.play(catch, egg: BasePart)
 
 	local function hatch()
 		egg:Destroy()
-		dino = buildDino(catch, ground, 0.01)
+		dino = DinoModel.build(catch.name, catch.mutation, ground, 0.01)
+		dino.Name = "RevealDino"
+		dino.Parent = workspace
 		sparkles:Emit(60)
 	end
 
@@ -427,6 +386,7 @@ function RevealController.play(catch, egg: BasePart)
 		hud.size.Text = if size then size.name else ""
 		hud.income.Text = `{Format.cash(catch.income)}/s`
 		hud.sticker.Visible = catch.newBest
+		hud.cardHint.Text = STORED_TEXT[catch.storedIn] or "tap to continue"
 		hud.card.Visible = true
 	end
 

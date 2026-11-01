@@ -9,7 +9,9 @@ local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local DinoRoll = require(script.Parent.DinoRoll)
+local EggService = require(script.Parent.EggService)
 local PlayerData = require(script.Parent.PlayerData)
+local PlotService = require(script.Parent.PlotService)
 local TrainingService = require(script.Parent.TrainingService)
 local World = require(script.Parent.World)
 
@@ -120,19 +122,25 @@ local function onTap(player: Player, height: any)
 	local maxDistance = Biomes[#Biomes].endDist
 	local distance = math.min(power * Throw.multiplier(height), maxDistance)
 
+	-- The egg in hand when it leaves counts, even if the player swaps mid-flight.
+	local egg = EggService.equipped(player)
+
 	state.phase = "flying"
-	remotes.Launched:FireAllClients(player, distance, Throw.isPerfect(height))
+	remotes.Launched:FireAllClients(player, distance, Throw.isPerfect(height), egg.id)
 
 	task.delay(Throw.flightTime(distance), function()
 		if states[player] ~= state then
 			return
 		end
-		local catch = DinoRoll.rollCatch(Luck.biomeAt(distance).id, Luck.at(distance))
+		local luck = Luck.at(distance) * egg.luckBonus
+		local catch = DinoRoll.rollCatch(Luck.biomeAt(distance).id, luck)
+		catch.luck = luck
 		local data = PlayerData.get(player)
 		catch.newBest = data ~= nil and catch.income > data.bestIncome
 		if catch.newBest then
 			data.bestIncome = catch.income
 		end
+		catch.storedIn = PlotService.addCatch(player, catch)
 
 		state.phase = "revealing"
 		state.revealStartedAt = os.clock()

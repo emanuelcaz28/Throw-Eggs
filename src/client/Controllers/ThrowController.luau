@@ -6,6 +6,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
+local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
@@ -18,7 +20,6 @@ local ThrowController = {}
 local TAP_ACTION = "ThrowEggTap"
 local CAMERA_OFFSET = Vector3.new(14, 10, 24)
 local EGG_SIZE = Vector3.new(2.4, 3, 2.4)
-local EGG_COLOR = Color3.fromRGB(240, 226, 196)
 local GROUND_TOP = 0.1
 local CATCH_TIMEOUT = 5 -- seconds to wait for the server's catch after landing
 
@@ -191,11 +192,11 @@ local function buildGui()
 	}
 end
 
-local function luckText(distance: number): string
-	return string.format("Luck x%.1f", Luck.at(distance))
+local function luckText(luck: number): string
+	return string.format("Luck x%.1f", luck)
 end
 
-local function makeEgg(): Part
+local function makeEgg(color: Color3): Part
 	local egg = Instance.new("Part")
 	egg.Name = "ThrownEgg"
 	egg.Anchored = true
@@ -203,13 +204,23 @@ local function makeEgg(): Part
 	egg.CanQuery = false
 	egg.CanTouch = false
 	egg.Size = EGG_SIZE
-	egg.Color = EGG_COLOR
+	egg.Color = color
 	egg.CastShadow = true
 	local mesh = Instance.new("SpecialMesh")
 	mesh.MeshType = Enum.MeshType.Sphere
 	mesh.Parent = egg
 	egg.Parent = workspace
 	return egg
+end
+
+-- The reveal has the screen to itself.
+local function setHudsEnabled(enabled: boolean)
+	for _, name in { "TrainingHud", "PlotHud", "EggShopHud" } do
+		local hud = player.PlayerGui:FindFirstChild(name)
+		if hud then
+			hud.Enabled = enabled
+		end
+	end
 end
 
 function ThrowController.start()
@@ -282,15 +293,17 @@ function ThrowController.start()
 	local pendingCatch = nil
 	remotes.Landed.OnClientEvent:Connect(function(catch)
 		pendingCatch = catch
+		hud.luck.Text = luckText(catch.luck)
 	end)
 
-	remotes.Launched.OnClientEvent:Connect(function(thrower: Player, distance: number, perfect: boolean)
+	remotes.Launched.OnClientEvent:Connect(function(thrower: Player, distance: number, perfect: boolean, eggId: string)
 		local isMine = thrower == player
 		local lane = Throw.lane
 		local flight = Throw.flight
 		local duration = Throw.flightTime(distance)
 		local arc = math.min(distance * flight.arcPerStud, flight.maxArc)
-		local egg = makeEgg()
+		local eggConfig = DinoStats.findOption(Eggs, eggId) or Eggs[1]
+		local egg = makeEgg(eggConfig.color)
 		local restHeight = EGG_SIZE.Y / 2 + GROUND_TOP
 		local camera = workspace.CurrentCamera
 
@@ -323,7 +336,7 @@ function ThrowController.start()
 			if isMine then
 				camera.CFrame = CFrame.lookAt(position + CAMERA_OFFSET, position)
 				hud.banner.Text = if perfect then `PERFECT! {math.floor(travelled)} studs` else `{math.floor(travelled)} studs`
-				hud.luck.Text = luckText(travelled)
+				hud.luck.Text = luckText(Luck.at(travelled) * eggConfig.luckBonus)
 			end
 			if t >= 1 then
 				break
@@ -351,19 +364,14 @@ function ThrowController.start()
 		local catch = pendingCatch
 		pendingCatch = nil
 		if catch then
-			local trainingHud = player.PlayerGui:FindFirstChild("TrainingHud")
-			if trainingHud then
-				trainingHud.Enabled = false
-			end
+			setHudsEnabled(false)
 			-- Whatever goes wrong in the reveal, the player must get their camera and next throw back.
 			local ok, err = pcall(RevealController.play, catch, egg)
 			if not ok then
 				warn(`[ThrowController] Reveal failed: {err}`)
 				camera.CameraType = Enum.CameraType.Custom
 			end
-			if trainingHud then
-				trainingHud.Enabled = true
-			end
+			setHudsEnabled(true)
 		else
 			egg:Destroy()
 			camera.CameraType = Enum.CameraType.Custom

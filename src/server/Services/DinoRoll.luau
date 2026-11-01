@@ -4,6 +4,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
+local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 
 local DinoRoll = {}
@@ -49,19 +50,16 @@ function DinoRoll.rollCatch(biomeId: string, luck: number)
 	local mutation = rollExtra(Catch.mutations)
 	local size = rollExtra(Catch.sizes)
 
-	local oneIn = dino.chance
-	local income = dino.income
-	for _, extra in { mutation, size } do
-		oneIn *= extra.chance
-		income *= extra.incomeMultiplier
-	end
+	local entry = { id = dino.id, mutation = mutation and mutation.id, size = size and size.id }
+	local stats = DinoStats.describe(entry)
 
 	return {
-		name = dino.name,
-		mutation = mutation and mutation.id,
-		size = size and size.id,
-		oneIn = oneIn,
-		income = income,
+		id = entry.id,
+		name = stats.name,
+		mutation = entry.mutation,
+		size = entry.size,
+		oneIn = stats.oneIn,
+		income = stats.income,
 	}
 end
 
