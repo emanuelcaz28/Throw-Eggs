@@ -8,8 +8,8 @@ local Training = {
 	baseXp = 5,
 	xpGrowth = 1.25,
 
-	startPower = 20, -- Throw Power at level 1
-	powerPerLevel = 5,
+	startPower = 100, -- Throw Power at level 1
+	powerPerLevel = 20,
 
 	-- Station placement, in world studs. position is the centre of the pad, on the ground.
 	station = {

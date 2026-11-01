@@ -6,11 +6,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Training = require(ReplicatedStorage.Shared.Config.Training)
 local PlayerData = require(script.Parent.PlayerData)
+local World = require(script.Parent.World)
 
 local TrainingService = {}
 
 local TICK = 0.25
-local PAD_THICKNESS = 0.5
 local BAR_HEIGHT = 9
 local BAR_WIDTH = 8
 
@@ -19,19 +19,6 @@ local FRAME_COLOR = Color3.fromRGB(70, 74, 82)
 
 local repProgress: { [Player]: number } = {}
 
-local function makePart(model: Model, name: string, size: Vector3, cframe: CFrame, color: Color3): Part
-	local part = Instance.new("Part")
-	part.Name = name
-	part.Anchored = true
-	part.Size = size
-	part.CFrame = cframe
-	part.Color = color
-	part.TopSurface = Enum.SurfaceType.Smooth
-	part.BottomSurface = Enum.SurfaceType.Smooth
-	part.Parent = model
-	return part
-end
-
 local function buildStation()
 	local station = Training.station
 	local origin = station.position
@@ -39,19 +26,10 @@ local function buildStation()
 	local model = Instance.new("Model")
 	model.Name = "TrainingStation"
 
-	local diameter = station.padRadius * 2
-	local pad = makePart(
-		model,
-		"Pad",
-		Vector3.new(PAD_THICKNESS, diameter, diameter),
-		CFrame.new(origin + Vector3.new(0, PAD_THICKNESS / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-		PAD_COLOR
-	)
-	pad.Shape = Enum.PartType.Cylinder
-	pad.Material = Enum.Material.SmoothPlastic
+	local pad = World.makePad(model, origin, station.padRadius, PAD_COLOR)
 
 	for _, side in { -1, 1 } do
-		makePart(
+		World.makePart(
 			model,
 			"Post",
 			Vector3.new(1, BAR_HEIGHT, 1),
@@ -59,7 +37,7 @@ local function buildStation()
 			FRAME_COLOR
 		)
 	end
-	local bar = makePart(
+	local bar = World.makePart(
 		model,
 		"Bar",
 		Vector3.new(BAR_WIDTH, 0.5, 0.5),
@@ -67,41 +45,15 @@ local function buildStation()
 		FRAME_COLOR
 	)
 	bar.Material = Enum.Material.Metal
-
-	local sign = Instance.new("BillboardGui")
-	sign.Name = "Sign"
-	sign.Size = UDim2.fromOffset(220, 50)
-	sign.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
-	sign.MaxDistance = 150
-	sign.Adornee = bar
-	sign.Parent = bar
-
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.fromScale(1, 1)
-	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.GothamBlack
-	label.Text = "TRAIN HERE"
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.TextStrokeTransparency = 0.3
-	label.TextScaled = true
-	label.Parent = sign
+	World.makeSign(bar, "TRAIN HERE", 3, 150, 220)
 
 	model.PrimaryPart = pad
 	model.Parent = workspace
 end
 
 local function isOnPad(player: Player): boolean
-	local character = player.Character
-	local root = character and character:FindFirstChild("HumanoidRootPart")
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	if not root or not humanoid or humanoid.Health <= 0 then
-		return false
-	end
 	local station = Training.station
-	local offset = root.Position - station.position
-	return Vector2.new(offset.X, offset.Z).Magnitude <= station.padRadius
-		and offset.Y >= 0
-		and offset.Y <= station.padHeight
+	return World.isOnPad(player, station.position, station.padRadius, station.padHeight)
 end
 
 local function publish(player: Player, data: { [string]: any })
