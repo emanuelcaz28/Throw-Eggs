@@ -184,6 +184,12 @@ function PlayerData.get(player: Player): { [string]: any }?
 	return session and session.data
 end
 
+-- Saves right away and waits for the result. Returns whether the save succeeded.
+function PlayerData.saveNow(player: Player): boolean
+	local session = sessions[player]
+	return session ~= nil and write(player, session, false) == "saved"
+end
+
 -- Runs for every player once their data is ready, including players already loaded.
 function PlayerData.onLoaded(callback: (Player, { [string]: any }) -> ())
 	table.insert(loadedCallbacks, callback)

@@ -9,6 +9,7 @@ local UserInputService = game:GetService("UserInputService")
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
+local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local RevealController = require(script.Parent.RevealController)
@@ -213,9 +214,14 @@ local function makeEgg(color: Color3): Part
 	return egg
 end
 
+local function serverLuck(): number
+	local active = (ReplicatedStorage:GetAttribute("ServerLuckEndsAt") or 0) > workspace:GetServerTimeNow()
+	return if active then Shop.serverLuck.multiplier else 1
+end
+
 -- The reveal has the screen to itself.
 local function setHudsEnabled(enabled: boolean)
-	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud" } do
+	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud", "ShopHud" } do
 		local hud = player.PlayerGui:FindFirstChild(name)
 		if hud then
 			hud.Enabled = enabled
@@ -336,7 +342,7 @@ function ThrowController.start()
 			if isMine then
 				camera.CFrame = CFrame.lookAt(position + CAMERA_OFFSET, position)
 				hud.banner.Text = if perfect then `PERFECT! {math.floor(travelled)} studs` else `{math.floor(travelled)} studs`
-				hud.luck.Text = luckText(Luck.at(travelled) * eggConfig.luckBonus * (player:GetAttribute("IndexLuck") or 1))
+				hud.luck.Text = luckText(Luck.at(travelled) * eggConfig.luckBonus * (player:GetAttribute("IndexLuck") or 1) * serverLuck())
 			end
 			if t >= 1 then
 				break

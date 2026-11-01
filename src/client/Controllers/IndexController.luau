@@ -73,7 +73,7 @@ local function buildGui()
 	gui.DisplayOrder = 3 -- above the other panels
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	local open = makeButton(gui, "INDEX", ACCENT, UDim2.new(0, 16, 0.5, 120), UDim2.fromOffset(190, 46))
+	local open = makeButton(gui, "INDEX", ACCENT, UDim2.new(0, 16, 0.5, 60), UDim2.fromOffset(190, 46))
 	open.Name = "OpenIndex"
 
 	local panel = Instance.new("Frame")

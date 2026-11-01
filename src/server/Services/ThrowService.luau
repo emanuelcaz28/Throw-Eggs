@@ -13,6 +13,7 @@ local EggService = require(script.Parent.EggService)
 local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
 local PlotService = require(script.Parent.PlotService)
+local ShopService = require(script.Parent.ShopService)
 local TrainingService = require(script.Parent.TrainingService)
 local World = require(script.Parent.World)
 
@@ -135,7 +136,7 @@ local function onTap(player: Player, height: any)
 		end
 		local data = PlayerData.get(player)
 		local indexLuck = if data then IndexService.luckMultiplier(data) else 1
-		local luck = Luck.at(distance) * egg.luckBonus * indexLuck
+		local luck = Luck.at(distance) * egg.luckBonus * indexLuck * ShopService.serverLuckMultiplier()
 		local biome = Luck.biomeAt(distance)
 		local catch = DinoRoll.rollCatch(biome.id, luck)
 		catch.luck = luck

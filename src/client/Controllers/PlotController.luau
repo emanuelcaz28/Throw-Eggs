@@ -76,7 +76,7 @@ local function buildGui()
 	local cashPill = Instance.new("Frame")
 	cashPill.Name = "CashPill"
 	cashPill.AnchorPoint = Vector2.new(0, 0.5)
-	cashPill.Position = UDim2.new(0, 16, 0.5, -30)
+	cashPill.Position = UDim2.new(0, 16, 0.5, -90)
 	cashPill.Size = UDim2.fromOffset(190, 70)
 	cashPill.BackgroundColor3 = PANEL
 	cashPill.BackgroundTransparency = 0.12
@@ -88,7 +88,7 @@ local function buildGui()
 	local income = makeLabel(cashPill, Enum.Font.GothamBold, TEXT, UDim2.fromOffset(12, 40), UDim2.new(1, -24, 0, 20))
 	income.Name = "Income"
 
-	local open = makeButton(gui, "MY DINOS", ACCENT, UDim2.new(0, 16, 0.5, 12), UDim2.fromOffset(190, 46))
+	local open = makeButton(gui, "MY DINOS", ACCENT, UDim2.new(0, 16, 0.5, -48), UDim2.fromOffset(190, 46))
 	open.Name = "OpenDinos"
 	open.AnchorPoint = Vector2.new(0, 0)
 

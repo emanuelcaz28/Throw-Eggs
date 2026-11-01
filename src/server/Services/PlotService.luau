@@ -9,6 +9,7 @@ local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Format = require(ReplicatedStorage.Shared.Format)
+local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
 local World = require(script.Parent.World)
@@ -116,12 +117,13 @@ local function incomeOf(entry): number
 	return if stats then stats.income else 0
 end
 
-local function totalIncome(data): number
+local function totalIncome(player: Player, data): number
 	local total = 0
 	for _, entry in plotted(data) do
 		total += incomeOf(entry)
 	end
-	return total * IndexService.cashMultiplier(data)
+	local passMultiplier = if player:GetAttribute("HasDoubleCash") then Shop.doubleCash.multiplier else 1
+	return total * IndexService.cashMultiplier(data) * passMultiplier
 end
 
 local function sellPrice(entry): number
@@ -178,7 +180,7 @@ local function publish(player: Player, data)
 	table.sort(list, function(a, b)
 		return a.income > b.income
 	end)
-	player:SetAttribute("Income", totalIncome(data))
+	player:SetAttribute("Income", totalIncome(player, data))
 	remotes.DinosChanged:FireClient(player, list, Plot.slots)
 end
 
@@ -299,7 +301,7 @@ local function payIncome()
 	for _, player in Players:GetPlayers() do
 		local data = PlayerData.get(player)
 		if data then
-			local income = totalIncome(data)
+			local income = totalIncome(player, data)
 			data.cash += income * INCOME_TICK
 			player:SetAttribute("Cash", data.cash)
 			player:SetAttribute("Income", income)

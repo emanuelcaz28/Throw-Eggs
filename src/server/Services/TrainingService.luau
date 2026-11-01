@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Training = require(ReplicatedStorage.Shared.Config.Training)
 local PlayerData = require(script.Parent.PlayerData)
+local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local World = require(script.Parent.World)
 
 local TrainingService = {}
@@ -63,8 +64,9 @@ local function publish(player: Player, data: { [string]: any })
 	player:SetAttribute("TrainingXpNeeded", Training.xpToNextLevel(data.trainingLevel))
 end
 
-local function addRep(data: { [string]: any })
-	data.trainingXp += Training.xpPerRep
+local function addRep(player: Player, data: { [string]: any })
+	local passMultiplier = if player:GetAttribute("HasDoubleTraining") then Shop.doubleTraining.multiplier else 1
+	data.trainingXp += Training.xpPerRep * passMultiplier
 	while data.trainingXp >= Training.xpToNextLevel(data.trainingLevel) do
 		data.trainingXp -= Training.xpToNextLevel(data.trainingLevel)
 		data.trainingLevel += 1
@@ -83,7 +85,7 @@ local function step(dt: number)
 				repProgress[player] = progress - reps * Training.repInterval
 				if reps > 0 then
 					for _ = 1, reps do
-						addRep(data)
+						addRep(player, data)
 					end
 					publish(player, data)
 				end

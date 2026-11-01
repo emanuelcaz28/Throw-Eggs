@@ -23,5 +23,7 @@ return {
 		ownedEggs = { DirtyEgg = true },
 		equippedEgg = "DirtyEgg",
 		discovered = {}, -- every dino id ever caught, for the Index
+		starterClaimed = false,
+		receipts = {}, -- Robux purchases already granted, by purchase id
 	},
 }

@@ -62,7 +62,8 @@ MVP ships biomes 1–3 only.
 5. Plot with 8 slots + $/s income. (Slot upgrades come later; numbers live in `Config/Plot`.)
 6. Egg Shop with 5 tiers. (Buy any egg you can afford; each multiplies distance luck. Numbers live in `Config/Eggs`.)
 7. Index: every dino by biome; completing a biome gives a permanent bonus (`Config/Index`).
-Then: Robux shop, events, rebirth.
+8. Robux shop: x2 Cash, x2 Training, Server Luck x2 and a free starter dino (`Config/Shop`).
+Then: events, rebirth. Dinos priced by % of best, Throw Power packs and the Gift button are not built yet.
 
 ## Reference game notes
 

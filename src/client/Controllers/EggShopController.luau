@@ -69,7 +69,7 @@ local function buildGui()
 	gui.DisplayOrder = 2 -- above the My Dinos panel
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	local open = makeButton(gui, "EGG SHOP", ACCENT, UDim2.new(0, 16, 0.5, 66), UDim2.fromOffset(190, 46))
+	local open = makeButton(gui, "EGG SHOP", ACCENT, UDim2.new(0, 16, 0.5, 6), UDim2.fromOffset(190, 46))
 	open.Name = "OpenShop"
 
 	local panel = Instance.new("Frame")
