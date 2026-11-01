@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
+local Events = require(ReplicatedStorage.Shared.Config.Events)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
@@ -123,7 +124,7 @@ local function totalIncome(player: Player, data): number
 		total += incomeOf(entry)
 	end
 	local passMultiplier = if player:GetAttribute("HasDoubleCash") then Shop.doubleCash.multiplier else 1
-	return total * IndexService.cashMultiplier(data) * passMultiplier
+	return total * IndexService.cashMultiplier(data) * passMultiplier * Events.multiplier("income")
 end
 
 local function sellPrice(entry): number

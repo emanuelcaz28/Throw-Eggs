@@ -63,7 +63,9 @@ MVP ships biomes 1–3 only.
 6. Egg Shop with 5 tiers. (Buy any egg you can afford; each multiplies distance luck. Numbers live in `Config/Eggs`.)
 7. Index: every dino by biome; completing a biome gives a permanent bonus (`Config/Index`).
 8. Robux shop: x2 Cash, x2 Training, Server Luck x2 and a free starter dino (`Config/Shop`).
-Then: events, rebirth. Dinos priced by % of best, Throw Power packs and the Gift button are not built yet.
+9. Timed events: every server runs one at a time (Meteor Shower 2x mutations, Growth Spurt 2x sizes,
+   Gold Rush 2x cash), 10 min each with a 20 min break, shown with a top-right timer (`Config/Events`).
+Then: rebirth. Dinos priced by % of best, Throw Power packs and the Gift button are not built yet.
 
 ## Reference game notes
 

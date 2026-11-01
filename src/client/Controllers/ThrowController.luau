@@ -8,6 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
+local Events = require(ReplicatedStorage.Shared.Config.Events)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
@@ -221,7 +222,7 @@ end
 
 -- The reveal has the screen to itself.
 local function setHudsEnabled(enabled: boolean)
-	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud", "ShopHud" } do
+	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud", "ShopHud", "EventHud" } do
 		local hud = player.PlayerGui:FindFirstChild(name)
 		if hud then
 			hud.Enabled = enabled
@@ -342,7 +343,7 @@ function ThrowController.start()
 			if isMine then
 				camera.CFrame = CFrame.lookAt(position + CAMERA_OFFSET, position)
 				hud.banner.Text = if perfect then `PERFECT! {math.floor(travelled)} studs` else `{math.floor(travelled)} studs`
-				hud.luck.Text = luckText(Luck.at(travelled) * eggConfig.luckBonus * (player:GetAttribute("IndexLuck") or 1) * serverLuck())
+				hud.luck.Text = luckText(Luck.at(travelled) * eggConfig.luckBonus * (player:GetAttribute("IndexLuck") or 1) * serverLuck() * Events.multiplier("luck"))
 			end
 			if t >= 1 then
 				break
