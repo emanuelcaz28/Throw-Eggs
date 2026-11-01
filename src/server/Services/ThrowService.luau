@@ -10,6 +10,7 @@ local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local DinoRoll = require(script.Parent.DinoRoll)
 local EggService = require(script.Parent.EggService)
+local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
 local PlotService = require(script.Parent.PlotService)
 local TrainingService = require(script.Parent.TrainingService)
@@ -132,14 +133,17 @@ local function onTap(player: Player, height: any)
 		if states[player] ~= state then
 			return
 		end
-		local luck = Luck.at(distance) * egg.luckBonus
-		local catch = DinoRoll.rollCatch(Luck.biomeAt(distance).id, luck)
-		catch.luck = luck
 		local data = PlayerData.get(player)
+		local indexLuck = if data then IndexService.luckMultiplier(data) else 1
+		local luck = Luck.at(distance) * egg.luckBonus * indexLuck
+		local biome = Luck.biomeAt(distance)
+		local catch = DinoRoll.rollCatch(biome.id, luck)
+		catch.luck = luck
 		catch.newBest = data ~= nil and catch.income > data.bestIncome
 		if catch.newBest then
 			data.bestIncome = catch.income
 		end
+		catch.isNew, catch.completedBiome = IndexService.discover(player, catch.id, biome)
 		catch.storedIn = PlotService.addCatch(player, catch)
 
 		state.phase = "revealing"

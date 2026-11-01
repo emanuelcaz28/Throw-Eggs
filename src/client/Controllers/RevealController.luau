@@ -385,8 +385,11 @@ function RevealController.play(catch, egg: BasePart)
 		hud.name.TextColor3 = if finalTier then finalTier.color else TEXT
 		hud.size.Text = if size then size.name else ""
 		hud.income.Text = `{Format.cash(catch.income)}/s`
-		hud.sticker.Visible = catch.newBest
-		hud.cardHint.Text = STORED_TEXT[catch.storedIn] or "tap to continue"
+		hud.sticker.Text = if catch.newBest then "NEW BEST!" else "NEW DINO!"
+		hud.sticker.Visible = catch.newBest or catch.isNew
+		hud.cardHint.Text = if catch.completedBiome
+			then `{catch.completedBiome} complete! Permanent bonus earned · tap to continue`
+			else STORED_TEXT[catch.storedIn] or "tap to continue"
 		hud.card.Visible = true
 	end
 

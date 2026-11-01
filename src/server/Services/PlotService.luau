@@ -9,6 +9,7 @@ local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Format = require(ReplicatedStorage.Shared.Format)
+local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
 local World = require(script.Parent.World)
 
@@ -120,7 +121,7 @@ local function totalIncome(data): number
 	for _, entry in plotted(data) do
 		total += incomeOf(entry)
 	end
-	return total
+	return total * IndexService.cashMultiplier(data)
 end
 
 local function sellPrice(entry): number
@@ -298,8 +299,10 @@ local function payIncome()
 	for _, player in Players:GetPlayers() do
 		local data = PlayerData.get(player)
 		if data then
-			data.cash += totalIncome(data) * INCOME_TICK
+			local income = totalIncome(data)
+			data.cash += income * INCOME_TICK
 			player:SetAttribute("Cash", data.cash)
+			player:SetAttribute("Income", income)
 		end
 	end
 end

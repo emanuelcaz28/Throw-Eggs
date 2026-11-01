@@ -215,7 +215,7 @@ end
 
 -- The reveal has the screen to itself.
 local function setHudsEnabled(enabled: boolean)
-	for _, name in { "TrainingHud", "PlotHud", "EggShopHud" } do
+	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud" } do
 		local hud = player.PlayerGui:FindFirstChild(name)
 		if hud then
 			hud.Enabled = enabled
@@ -336,7 +336,7 @@ function ThrowController.start()
 			if isMine then
 				camera.CFrame = CFrame.lookAt(position + CAMERA_OFFSET, position)
 				hud.banner.Text = if perfect then `PERFECT! {math.floor(travelled)} studs` else `{math.floor(travelled)} studs`
-				hud.luck.Text = luckText(Luck.at(travelled) * eggConfig.luckBonus)
+				hud.luck.Text = luckText(Luck.at(travelled) * eggConfig.luckBonus * (player:GetAttribute("IndexLuck") or 1))
 			end
 			if t >= 1 then
 				break

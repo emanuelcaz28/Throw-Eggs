@@ -22,5 +22,6 @@ return {
 		nextDinoKey = 1,
 		ownedEggs = { DirtyEgg = true },
 		equippedEgg = "DirtyEgg",
+		discovered = {}, -- every dino id ever caught, for the Index
 	},
 }
