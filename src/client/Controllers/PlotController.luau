@@ -225,6 +225,7 @@ local function buildGui()
 	notice.Visible = false
 
 	return {
+		hotbar = hotbar,
 		slots = slots,
 		hint = hint,
 		notice = notice,
@@ -429,6 +430,12 @@ function PlotController.start()
 			end
 		end)
 	end)
+	-- Training fills the bottom of the screen, so the hotbar steps aside.
+	local function renderHotbarVisible()
+		hud.hotbar.Visible = player:GetAttribute("IsTraining") ~= true
+	end
+	player:GetAttributeChangedSignal("IsTraining"):Connect(renderHotbarVisible)
+	renderHotbarVisible()
 	player:GetAttributeChangedSignal("HeldDino"):Connect(function()
 		renderList()
 		renderHotbar()

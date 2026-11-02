@@ -490,6 +490,11 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 	end
 end
 
+-- A short message above the player's hotbar, like "Plot upgraded!". seconds is optional.
+function PlotService.notify(player: Player, text: string, seconds: number?)
+	remotes.Notice:FireClient(player, text, seconds)
+end
+
 -- Stores a new catch: on the plot if there's room, otherwise in the backpack.
 -- With no room in either, it's sold. Returns where it went: "plot", "backpack" or "sold".
 function PlotService.addCatch(player: Player, catch): string?
