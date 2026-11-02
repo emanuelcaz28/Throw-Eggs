@@ -17,8 +17,10 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
    The roll is decided on landing; the counter is just suspense animation.
    Common catches skip the counter. Tapping skips to the final card. Reveal numbers live in `Config/Reveal`,
    mutation and size odds in `Config/Catch`. Dinos are block stand-ins until the Blender models exist.
-4. **Plot** — caught dinos stand on your plot as big statues and earn $/s. Limited slots (start 8, upgradeable).
-   Extras go to backpack. Equip Best / Pick Up / Sell.
+   After the reveal the player is teleported back to their own plot, next to its exit (not built yet).
+4. **Plot** — caught dinos stand on your plot and earn $/s. They can be placed anywhere on the plot, not on a
+   fixed grid of slots (not built yet; today it's a grid). The plot holds a limited number (start 8,
+   upgradeable); extras go to backpack. Equip Best / Pick Up / Sell.
 5. **Egg Shop** — buy better egg tiers with cash. Better egg = better roll table / more luck.
 
 Loop: train → farther throws → more luck → rarer dinos → more cash → better eggs → rarer dinos.
@@ -121,7 +123,19 @@ Mutations seen: Gold, Diamond, Emerald. Sizes seen: Big, Large, Monstrous, Huge.
 - Recorded at 14 slots. A sign on the plot sells the next upgrade: 14 → 16 for $50Qi, so +2 slots.
 - "My Animals" lists On Your Plot and Backpack (87–88 held), with Pick Up, Equip, Sell and Equip Best.
 - Messages: "Your plot is full! (14 animals)" and "Your best 14 animals are on your plot!".
-- A 10-slot bar at the bottom shows animals with their $/s. Its purpose isn't clear from the recordings.
+- A 10-slot bar at the bottom shows animals with their $/s and keys 1–0. Selecting one makes the
+  character hold that animal (seen with slot 1: a bird walks next to the player). It looks like a
+  Roblox-style hotbar of carried animals, which fits placing them freely on the plot.
+- Animals stand freely on the plot, overlapping, not on slots. Each has a small label overhead with its
+  size/mutation, name and $/s (e.g. "BIG $156Qi/s").
+- The plot is fenced in with wooden fences. The upgrade sign stands at the plot's entrance:
+  paw icon, "18 > 20" and a dark price bar "▲ $5Sp".
+- After a catch, the player reappears inside their own plot, next to the exit.
+- "My Animals" (the Animals button) slides in on the right side of the screen, not the centre: purple
+  header with "18/18" in a paw badge, "ON YOUR PLOT 18/18", one row per animal (icon on a rarity-coloured
+  tile, mutation above the name, size under it, $/s in green, blue PICK UP and red SELL), and a big
+  orange EQUIP BEST at the bottom.
+- "Your animals earn $X offline!" shows on join, so income keeps counting while offline.
 
 ### Shops and Index
 - Throwable items are food. Tiers run to at least 17, with rarity names and prices shown on each card.
@@ -134,3 +148,32 @@ Mutations seen: Gold, Diamond, Emerald. Sizes seen: Big, Large, Monstrous, Huge.
   unclear), x2 Cash (R$99), x2 Training Power (R$149), Giant Squid 300% (R$299), Woolly Mammoth 150% (R$199),
   and a free Hyena ($200/s). A Gift button stays on screen.
 - Worth noting for our monetization: Throw Power packs and the 100x Luck offer aren't in our list yet.
+
+### Look and feel
+From the owner's screenshots and a live look at the game (2026-11-02). Style to aim for in our own way,
+not to copy: chunky, bright and readable from far away.
+- Everything is built from big stud-textured blocks: checkered green grass,
+  brown dirt walls with grass hanging over the top, wooden fences, pumpkins as seasonal decoration.
+- HUD: big square icon buttons with a dark rounded frame and a bold outlined label under the icon:
+  Index (book) and Shop (basket) on the left, Animals (paw) on the right. Bottom left: muscle icon with
+  Throw Power in big blue outlined numbers (and a gear icon next to it), cash-stack icon with cash in big
+  green outlined numbers. Spending shows a red "-$X" floating up from the cash.
+- Fonts are heavy, rounded and outlined in black, with gradient fills on titles (yellow names, green $/s).
+- Hub: a SELL stall (red/white striped awning, NPC behind the counter, red dashed circle on the ground)
+  and the food shop stall (blue/white awning, glowing cyan circle pad).
+- Hub leaderboards, three boards side by side: MOST ANIMALS (animals caught), TOP MONEY (total money
+  earned), LUCKIEST CATCH (rarest "1 in X"). Top 10 each, top 3 highlighted in orange, "Updates every minute".
+- Food Shop panel: purple header, cards scroll sideways, each with the name, rarity word (e.g. "Supreme"),
+  a 3D preview on a green gradient, a "Tier 17" bar and a red price button.
+- Robux Shop panel: orange header, big featured cards ("BEST VALUE!" tag, "900% OF YOUR BEST ANIMAL",
+  green Robux button), an egg row ("Up to 900% of your best animal!", Buy 1) and a GIFT! button.
+- Throw screen: every other HUD element hides except Throw Power. The meter sits in the middle of the
+  screen with "TAP TO THROW!" under it; the marker's label shows the bonus (+14). The 100x LUCK offer is
+  top right. The camera is behind the player, looking down the corridor between tall dirt walls.
+- Far biomes get their own colour and props (e.g. a neon purple biome with glowing crystals and towers).
+  "tap to skip" sits at the bottom while the camera looks at the landing.
+- Reveal text sits at the bottom centre: white outlined letters with blanks ("W__ERN"), then the full name
+  with a yellow gradient, $/s in green under it, and "tap to continue". The dino stands on the ground
+  with the thrown item lying next to it.
+- Training: two white pillars with coloured rings and a bar, a big "LEVEL UP! Throw Power +5" over the
+  player, a purple tap bubble "x2", a red STOP button and a long "Level 641 507M/1.81B" bar at the bottom.
