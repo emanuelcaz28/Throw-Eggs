@@ -1,6 +1,6 @@
 -- The Robux shop panel and the Server Luck timer. Display and prompts only: Roblox handles
 -- the payment, and the server decides what it grants. Sections: Boosts (Server Luck), Packs
--- (Throw Power), Passes (x2 Cash, x2 Training) and Free (the starter dino).
+-- (cash, Throw Power), Passes (x2 Cash, x2 Training) and Free (the starter dino).
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,7 +18,6 @@ local ShopController = {}
 local PANEL_SIZE = Vector2.new(980, 672)
 local LIST_WIDTH = 932
 local PACK_GAP = 14
-local PACK_COLOURS = { "#ffe066", "#ff8a1f" }
 
 local function card(parent: Instance, width: number, height: number, colours, order: number): Frame
 	local frame = Instance.new("Frame")
@@ -37,6 +36,46 @@ local function at(object: GuiObject, x: number, y: number, w: number?, h: number
 		object.Size = UDim2.fromOffset(w, h)
 	end
 	return object
+end
+
+-- A row of pack cards: block art spinning, an amount (the caller fills it in), a buy button
+-- and an optional sticker over the top edge. Returns the buttons and amount labels by pack.
+local function packRow(list: Instance, packs, colours, amountColour: Color3?, order: number)
+	local row = Instance.new("Frame")
+	row.BackgroundTransparency = 1
+	row.LayoutOrder = order
+	row.Size = UDim2.fromOffset(LIST_WIDTH, 262)
+	row.Parent = list
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.Padding = UDim.new(0, PACK_GAP)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = row
+	local width = math.floor((LIST_WIDTH - PACK_GAP * (#packs - 1)) / #packs)
+	local result = { buttons = {}, amounts = {} }
+	for index, pack in packs do
+		-- The sticker sits over the card's top edge, so the card starts a little lower.
+		local holder = Instance.new("Frame")
+		holder.BackgroundTransparency = 1
+		holder.LayoutOrder = index
+		holder.Size = UDim2.fromOffset(width, 262)
+		holder.Parent = row
+		local frame = card(holder, width, 250, colours, 0)
+		frame.Position = UDim2.fromOffset(0, 12)
+		UiKit.viewport(frame, pack.art, { spin = true, position = UDim2.fromOffset(16, 14), size = UDim2.new(1, -32, 0, 118) })
+		result.amounts[index] = at(UiKit.text(frame, "", 30, amountColour), 0, 136, width, 40)
+		local button = UiKit.button(frame, "SOON", "grey", width - 36, 48, 24)
+		button.AnchorPoint = Vector2.new(0.5, 1)
+		button.Position = UDim2.new(0.5, 0, 1, -14)
+		result.buttons[index] = button
+		if pack.tag then
+			local tag = UiKit.tag(holder, pack.tag, pack.tagStyle, 16)
+			tag.AnchorPoint = Vector2.new(0.5, 0)
+			tag.Position = UDim2.fromScale(0.5, 0)
+			tag.ZIndex = 2
+		end
+	end
+	return result
 end
 
 local function buildGui()
@@ -81,48 +120,19 @@ local function buildGui()
 	luckButton.AnchorPoint = Vector2.new(1, 0.5)
 	luckButton.Position = UDim2.new(1, -24, 0.5, 0)
 
-	-- Packs: Throw Power packs in a row, each with its block art spinning and an optional sticker.
+	-- Packs: a row of cash packs, then a row of Throw Power packs.
 	UiKit.divider(list, "Packs", LIST_WIDTH).LayoutOrder = 3
-	local packs = Instance.new("Frame")
-	packs.BackgroundTransparency = 1
-	packs.LayoutOrder = 4
-	packs.Size = UDim2.fromOffset(LIST_WIDTH, 262)
-	packs.Parent = list
-	local packRow = Instance.new("UIListLayout")
-	packRow.FillDirection = Enum.FillDirection.Horizontal
-	packRow.Padding = UDim.new(0, PACK_GAP)
-	packRow.SortOrder = Enum.SortOrder.LayoutOrder
-	packRow.Parent = packs
-	local packWidth = math.floor((LIST_WIDTH - PACK_GAP * (#Shop.powerPacks - 1)) / #Shop.powerPacks)
-	local packButtons = {}
+	local cashPacks = packRow(list, Shop.cashPacks, { "#a6f08f", "#3fbf5a" }, UiKit.CASH, 4)
+	local powerPacks = packRow(list, Shop.powerPacks, { "#ffe066", "#ff8a1f" }, nil, 5)
 	for index, pack in Shop.powerPacks do
-		-- The sticker sits over the card's top edge, so the card starts a little lower.
-		local holder = Instance.new("Frame")
-		holder.BackgroundTransparency = 1
-		holder.LayoutOrder = index
-		holder.Size = UDim2.fromOffset(packWidth, 262)
-		holder.Parent = packs
-		local frame = card(holder, packWidth, 250, PACK_COLOURS, 0)
-		frame.Position = UDim2.fromOffset(0, 12)
-		UiKit.viewport(frame, pack.art, { spin = true, position = UDim2.fromOffset(16, 14), size = UDim2.new(1, -32, 0, 118) })
-		at(UiKit.text(frame, `⚡ +{Format.commas(pack.amount)}`, 30), 0, 136, packWidth, 40)
-		local button = UiKit.button(frame, "SOON", "grey", packWidth - 36, 48, 24)
-		button.AnchorPoint = Vector2.new(0.5, 1)
-		button.Position = UDim2.new(0.5, 0, 1, -14)
-		packButtons[index] = button
-		if pack.tag then
-			local tag = UiKit.tag(holder, pack.tag, pack.tagStyle, 16)
-			tag.AnchorPoint = Vector2.new(0.5, 0)
-			tag.Position = UDim2.fromScale(0.5, 0)
-			tag.ZIndex = 2
-		end
+		powerPacks.amounts[index].Text = `⚡ +{Format.commas(pack.amount)}`
 	end
 
 	-- Passes: x2 Cash and x2 Training, side by side.
-	UiKit.divider(list, "Passes", LIST_WIDTH).LayoutOrder = 5
+	UiKit.divider(list, "Passes", LIST_WIDTH).LayoutOrder = 6
 	local passes = Instance.new("Frame")
 	passes.BackgroundTransparency = 1
-	passes.LayoutOrder = 6
+	passes.LayoutOrder = 7
 	passes.Size = UDim2.fromOffset(LIST_WIDTH, 210)
 	passes.Parent = list
 	local row = Instance.new("UIListLayout")
@@ -147,8 +157,8 @@ local function buildGui()
 	local trainingButton = passCard(Shop.doubleTraining, { "#d3a3ff", "#7b4dff" }, "bolts_M", 2)
 
 	-- Free: the starter dino.
-	UiKit.divider(list, "Free", LIST_WIDTH).LayoutOrder = 7
-	local free = card(list, 680, 170, { "#7fe7ff", "#3f8cff" }, 8)
+	UiKit.divider(list, "Free", LIST_WIDTH).LayoutOrder = 8
+	local free = card(list, 680, 170, { "#7fe7ff", "#3f8cff" }, 9)
 	local tile = UiKit.dinoTile(free, Shop.starterDino.id, "", 150, 134, { found = true })
 	tile.Position = UDim2.fromOffset(16, 14)
 	at(UiKit.text(free, "Free Dino!", 34, nil, Enum.TextXAlignment.Left), 190, 18, 300, 42)
@@ -163,7 +173,8 @@ local function buildGui()
 		panel = panel,
 		luckButton = luckButton,
 		luckState = luckState,
-		packButtons = packButtons,
+		cashPacks = cashPacks,
+		powerPacks = powerPacks,
 		cashButton = cashButton,
 		trainingButton = trainingButton,
 		starterButton = starterButton,
@@ -212,14 +223,25 @@ function ShopController.start()
 			MarketplaceService:PromptProductPurchase(player, Shop.serverLuck.productId)
 		end
 	end)
-	for index, pack in Shop.powerPacks do
-		hud.packButtons[index].Activated:Connect(function()
-			if pack.productId ~= 0 then
-				MarketplaceService:PromptProductPurchase(player, pack.productId)
-			end
-		end)
-		showPrice(hud.packButtons[index], pack.productId, Enum.InfoType.Product)
+	for _, row in { { hud.cashPacks, Shop.cashPacks }, { hud.powerPacks, Shop.powerPacks } } do
+		for index, pack in row[2] do
+			row[1].buttons[index].Activated:Connect(function()
+				if pack.productId ~= 0 then
+					MarketplaceService:PromptProductPurchase(player, pack.productId)
+				end
+			end)
+			showPrice(row[1].buttons[index], pack.productId, Enum.InfoType.Product)
+		end
 	end
+	-- Cash packs pay minutes of the plot's $/s, so their amounts follow it.
+	local function renderCashPacks()
+		local baseIncome = player:GetAttribute("BaseIncome") or 0
+		for index, pack in Shop.cashPacks do
+			hud.cashPacks.amounts[index].Text = `💵 +{Format.cash(Shop.cashPackAmount(pack, baseIncome))}`
+		end
+	end
+	player:GetAttributeChangedSignal("BaseIncome"):Connect(renderCashPacks)
+	renderCashPacks()
 	hud.starterButton.Activated:Connect(function()
 		if not claimed then
 			remotes.ClaimStarter:FireServer()

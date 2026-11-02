@@ -1,4 +1,4 @@
--- The Robux shop: Game Passes, Server Luck, Throw Power packs and the free starter dino. Roblox retries a
+-- The Robux shop: Game Passes, Server Luck, cash and Throw Power packs and the free starter dino. Roblox retries a
 -- purchase until told it was granted, so each receipt is saved with the player's data
 -- before saying so. That way a purchase is never lost or given twice.
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -52,6 +52,13 @@ local function grantFor(productId: number): ((Player, any) -> ())?
 	end
 	if productId == Shop.serverLuck.productId then
 		return grantServerLuck
+	end
+	for _, pack in Shop.cashPacks do
+		if productId == pack.productId then
+			return function(player, data)
+				PlotService.payCashPack(player, data, pack)
+			end
+		end
 	end
 	for _, pack in Shop.powerPacks do
 		if productId == pack.productId then

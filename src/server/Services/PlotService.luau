@@ -398,6 +398,7 @@ local function publish(player: Player, data)
 		return a.income > b.income
 	end)
 	player:SetAttribute("Income", totalIncome(player, data))
+	player:SetAttribute("BaseIncome", baseIncome(player, data))
 	remotes.DinosChanged:FireClient(player, list, capacityOf(data))
 end
 
@@ -491,6 +492,11 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 end
 
 -- A short message above the player's hotbar, like "Plot upgraded!". seconds is optional.
+-- Pays a Shop cash pack: minutes of the plot's $/s without events (Config/Shop). The caller saves the data.
+function PlotService.payCashPack(player: Player, data, pack)
+	earn(player, data, Shop.cashPackAmount(pack, baseIncome(player, data)))
+end
+
 function PlotService.notify(player: Player, text: string, seconds: number?)
 	remotes.Notice:FireClient(player, text, seconds)
 end
@@ -610,6 +616,7 @@ local function payIncome()
 			earn(player, data, income * INCOME_TICK)
 			data.lastSeen = os.time()
 			player:SetAttribute("Income", income)
+			player:SetAttribute("BaseIncome", baseIncome(player, data))
 		end
 	end
 end
