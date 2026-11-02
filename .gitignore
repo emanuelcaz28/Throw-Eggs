@@ -5,3 +5,6 @@
 *.rbxlx.lock
 .DS_Store
 sourcemap.json
+
+# Blender backups
+*.blend1
