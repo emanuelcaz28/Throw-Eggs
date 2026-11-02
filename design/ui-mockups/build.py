@@ -191,6 +191,10 @@ body{{background:#0e0b18;font-family:'Fredoka One','Fredoka','Arial Rounded MT B
 .fill{{position:absolute;left:0;top:0;bottom:0;border-radius:9px}}
 .glow{{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.75),rgba(255,255,255,0) 68%)}}
 .label{{font-size:22px;margin-bottom:12px;color:#ffe066}}
+.ltile{{width:52px;height:64px;border-radius:14px;border:4px solid {INK};display:flex;align-items:center;justify-content:center;font-size:40px}}
+.ltile.on{{background:linear-gradient(#ffe066,#f5a815);box-shadow:inset 0 -6px 0 rgba(0,0,0,0.2),inset 0 3px 0 rgba(255,255,255,0.4)}}
+.ltile.blank{{background:#120d22;box-shadow:inset 0 6px 0 rgba(0,0,0,0.4)}}
+.chip{{display:flex;align-items:center;gap:8px;height:58px;padding:0 18px;border-radius:18px;border:4px solid {INK};background:#120d22}}
 .note{{background:#241d3d;border:4px solid {INK};border-radius:20px;padding:14px 18px;display:flex;flex-direction:column;gap:6px}}
 """
 
@@ -447,6 +451,63 @@ def note_list(title, items, accent):
 notes = f'''<div style="position:absolute;left:0;top:0;width:1280px;height:720px;background:#150f24"></div>
 <div style="position:absolute;left:40px;top:24px;display:flex;gap:40px">{note_list("Motion", motion, "#ffcf3f")}{note_list("Colour", colour, "#8dff5a")}</div>'''
 screens.append(f'<section class="screen" data-name="08 Motion and colour notes" style="height:720px">{notes}</section>')
+
+# --- 09-11 Hatch reveal -------------------------------------------------------------------------
+# The egg and dino are 3D in the game; renders stand in for them here.
+def edge_glow(color):
+    return f'''<div style="position:absolute;left:0;top:0;width:1280px;height:260px;background:linear-gradient({color}aa,{color}00)"></div>
+<div style="position:absolute;left:0;bottom:0;width:1280px;height:260px;background:linear-gradient({color}00,{color}aa)"></div>'''
+
+def luck_label(text, color):
+    return f'''<div style="position:absolute;left:0;right:0;top:22px;display:flex;justify-content:center"><span class="ol" style="font-size:84px;color:{color};-webkit-text-stroke:9px {INK};transform:rotate(-3deg);display:inline-block">{text}</span></div>'''
+
+def counter(odds, edge):
+    return f'''<div style="position:absolute;left:0;right:0;top:128px;display:flex;justify-content:center"><div style="display:flex;align-items:center;gap:8px;min-width:380px;height:86px;padding:0 28px 0 12px;border-radius:28px;border:5px solid {INK};background:#1f1a33;box-shadow:inset 0 0 0 4px {edge},0 6px 0 rgba(0,0,0,0.35)">
+{img("clover", 66, 66)}<span class="ol" style="font-size:34px;color:#cbbff0">1 in</span><span class="ol" style="font-size:58px">{odds}</span></div></div>'''
+
+def letter_row(name, shown):
+    tiles = []
+    for i, ch in enumerate(name):
+        if not ch.isalnum():
+            tiles.append(f'<span class="ol" style="font-size:40px;width:22px;text-align:center">{ch}</span>')
+        elif i in shown:
+            tiles.append(f'<div class="ltile on"><span class="ol">{ch}</span></div>')
+        else:
+            tiles.append('<div class="ltile blank"></div>')
+    return f'<div style="position:absolute;left:0;right:0;bottom:62px;display:flex;justify-content:center;gap:6px">{"".join(tiles)}</div>'
+
+def chip(inner):
+    return f'<div class="chip">{inner}</div>'
+
+ring = '''<div style="position:absolute;left:390px;top:110px;width:500px;height:500px;border-radius:50%;border:10px solid rgba(255,110,150,0.55)"></div>
+<div style="position:absolute;left:510px;top:230px;width:260px;height:260px;border-radius:50%;border:8px solid rgba(255,110,150,0.85)"></div>'''
+climb = f'''{edge_glow("#ff6e96")}{ring}
+<div style="position:absolute;left:560px;top:250px;transform:rotate(14deg)">{img("egg_GoldenEgg", 170, 210)}</div>
+{luck_label("SUPER LUCKY!", "#ff6e96")}{counter("2,580", "#ff6e96")}
+{letter_row("SPINOSAURUS", {0, 1, 3, 5, 6, 9, 10})}
+<div class="ol thin" style="position:absolute;left:0;right:0;bottom:22px;text-align:center;font-size:24px">tap to skip</div>'''
+screens.append(screen("09 Reveal climbing", climb))
+
+card_chips = f'''{chip('<span class="ol" style="font-size:28px;color:#82d7ff">DIAMOND</span>')}{chip('<span class="ol" style="font-size:28px;color:#ffe066">HUGE</span>')}
+{chip(img("cash_S", 52, 44) + '<span class="ol" style="font-size:34px;color:#8dff5a">$1.8M/s</span>')}'''
+final = f'''{edge_glow("#5aebeb")}
+<div style="position:absolute;left:560px;top:0;width:160px;height:520px;background:linear-gradient(rgba(90,235,235,0),rgba(90,235,235,0.55) 70%,rgba(90,235,235,0.75));filter:blur(6px)"></div>
+<div style="position:absolute;left:410px;top:150px">{img("dino_Spino", 460, 330)}</div>
+{luck_label("INSANE!", "#5aebeb")}{counter("12,530", "#5aebeb")}
+<div class="panel" style="left:320px;top:466px;width:640px;height:236px;overflow:visible">
+<div class="head gold" style="justify-content:center;padding-left:0;border-radius:25px 25px 0 0;overflow:hidden"><div class="sheen"></div><span class="ol" style="position:relative;font-size:56px">SPINOSAURUS</span></div>
+<div style="display:flex;justify-content:center;gap:12px;margin-top:16px">{card_chips}</div>
+<div class="ol thin" style="text-align:center;font-size:22px;margin-top:12px;color:#cbbff0">tap to continue</div>
+<div style="position:absolute;right:-26px;top:-24px">{tag("NEW BEST!", "gold", "font-size:28px;transform:rotate(8deg)")}</div></div>'''
+screens.append(screen("10 Reveal final card", final))
+
+banner = f'''<div class="panel" style="left:310px;top:16px;width:660px;height:132px;display:flex;align-items:center;gap:16px;padding:0 16px">
+<div class="dtile" style="width:100px;height:100px;padding-top:4px;{tile_bg("legendary")}">{img("dino_Spino", 90, 86)}</div>
+<div style="display:flex;flex-direction:column;gap:2px"><span class="ol thin" style="font-size:22px;color:#ffe066">YOU CAUGHT!</span><span class="ol" style="font-size:30px;white-space:nowrap">HUGE DIAMOND SPINOSAURUS</span>
+<div style="display:flex"><div style="display:flex;align-items:center;gap:6px;height:38px;padding:0 14px 0 6px;border-radius:14px;border:4px solid {INK};background:#120d22">{img("clover", 34, 34)}<span class="ol thin" style="font-size:22px">1 in 12,530</span></div></div></div></div>
+{side_button(book(64), "Index", "left:24px;top:236px")}{side_button(bag(64), "Shop", "left:24px;top:372px")}{side_button(track(64), "Dinos", "right:24px;top:304px")}
+{stats()}{hotbar(1)}'''
+screens.append(screen("11 Reveal caught banner", banner))
 
 html = f'''<!doctype html><html><head><meta charset="utf-8"><title>Throw Eggs UI v2</title><style>{CSS}</style></head><body>{"".join(screens)}</body></html>'''
 out = HERE / "ui.html"

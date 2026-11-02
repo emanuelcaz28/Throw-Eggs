@@ -404,6 +404,7 @@ function UiKit.panel(gui: ScreenGui, options)
 	UiKit.corner(header, 28)
 	-- Square off the header's bottom corners and draw its ink edge.
 	local filler = Instance.new("Frame")
+	filler.Name = "Filler"
 	filler.BorderSizePixel = 0
 	filler.Position = UDim2.new(0, 0, 1, -30)
 	filler.Size = UDim2.new(1, 0, 0, 30)
@@ -449,6 +450,15 @@ function UiKit.panel(gui: ScreenGui, options)
 		UiKit.closePanel(panel)
 	end)
 	return panel
+end
+
+-- Recolours a panel's header, e.g. to the rarity of the dino it shows.
+function UiKit.setHeader(panel, style: string)
+	local pair = UiKit.GRADIENTS[style] or UiKit.RARITY[style]
+	local colours = ColorSequence.new(Color3.fromHex(pair[1]), Color3.fromHex(pair[2]))
+	for _, part in { panel.header, panel.header.Filler } do
+		part:FindFirstChildOfClass("UIGradient").Color = colours
+	end
 end
 
 -- Opens with a small pop (85% to full size, overshooting a little).

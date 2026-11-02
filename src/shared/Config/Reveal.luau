@@ -29,12 +29,14 @@ return {
 		pullBackTime = 0.6,
 	},
 
-	-- Each label appears when the counter passes minOneIn. Lowest first.
+	-- Each label appears when the counter passes minOneIn. Lowest first. glow is how strongly the
+	-- tier's colour lights the top and bottom of the screen (0 = none, 1 = solid at the edge).
+	-- Catches with a label also get a light beam of that colour on the final card.
 	tiers = {
-		{ minOneIn = 100, label = "LUCKY!", color = Color3.fromRGB(255, 226, 110), wash = 0.92, sparkles = 15 },
-		{ minOneIn = 1000, label = "SUPER LUCKY!", color = Color3.fromRGB(255, 110, 150), wash = 0.9, sparkles = 40 },
-		{ minOneIn = 10000, label = "INSANE!", color = Color3.fromRGB(90, 235, 235), wash = 0.88, sparkles = 80 },
-		{ minOneIn = 100000, label = "LEGENDARY!", color = Color3.fromRGB(255, 120, 220), wash = 0.86, sparkles = 140 },
-		{ minOneIn = 1000000, label = "GODLY!", color = Color3.fromRGB(190, 255, 120), wash = 0.84, sparkles = 240 },
+		{ minOneIn = 100, label = "LUCKY!", color = Color3.fromRGB(255, 226, 110), glow = 0.35, sparkles = 15 },
+		{ minOneIn = 1000, label = "SUPER LUCKY!", color = Color3.fromRGB(255, 110, 150), glow = 0.42, sparkles = 40 },
+		{ minOneIn = 10000, label = "INSANE!", color = Color3.fromRGB(90, 235, 235), glow = 0.5, sparkles = 80 },
+		{ minOneIn = 100000, label = "LEGENDARY!", color = Color3.fromRGB(255, 120, 220), glow = 0.58, sparkles = 140 },
+		{ minOneIn = 1000000, label = "GODLY!", color = Color3.fromRGB(190, 255, 120), glow = 0.66, sparkles = 240 },
 	},
 }
