@@ -1,7 +1,11 @@
 -- Player plots: caught dinos stand here as statues and earn $/s, wherever the player puts them.
 -- Placeholder numbers; tune during playtesting.
 local Plot = {
-	slots = 8, -- dinos that can earn at once
+	slots = 8, -- dinos that can earn at once, before any upgrades
+	upgradeSlots = 2, -- each upgrade at the plot's sign adds this many
+	maxSlots = 30,
+	upgradeBasePrice = 1000, -- the first upgrade; each one after costs upgradePriceGrowth times more
+	upgradePriceGrowth = 6,
 	backpackSize = 100, -- dinos held off the plot; a catch with no room is sold automatically
 	sellSeconds = 60, -- a dino sells for this many seconds of its own income
 	maxStatueScale = 1.6, -- so the biggest sizes don't swallow the plot
@@ -22,7 +26,19 @@ local Plot = {
 	color = Color3.fromRGB(110, 190, 90),
 	ownColor = Color3.fromRGB(226, 142, 58), -- edge of the plot that belongs to you
 	homeInset = 6, -- after a catch you land this far inside the plot's front edge (its exit)
+	gateWidth = 16, -- the gap in the fence at the middle of the front edge
+	fenceHeight = 4,
+	fenceColor = Color3.fromRGB(176, 120, 64),
 }
+
+-- How many dinos a plot holds after this many upgrades.
+function Plot.capacity(upgrades: number): number
+	return math.min(Plot.slots + Plot.upgradeSlots * upgrades, Plot.maxSlots)
+end
+
+function Plot.upgradePrice(upgrades: number): number
+	return Plot.upgradeBasePrice * Plot.upgradePriceGrowth ^ upgrades
+end
 
 -- Where a player lands on their plot after a catch: just inside the front edge (the side
 -- facing the hub, where the sign is), facing into the plot so the camera shows their dinos.

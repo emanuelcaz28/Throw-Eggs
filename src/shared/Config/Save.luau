@@ -24,6 +24,7 @@ return {
 		equippedEgg = "DirtyEgg",
 		discovered = {}, -- every dino id ever caught, for the Index
 		starterClaimed = false,
+		plotUpgrades = 0, -- bought at the sign by the plot's gate
 		receipts = {}, -- Robux purchases already granted, by purchase id
 	},
 }

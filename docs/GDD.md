@@ -22,8 +22,9 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
    hotbar (keys 1–0, best first); equipping one makes the character carry a small copy of it. While it's
    carried, a see-through dino follows the pointer over your plot (green = can go, red = can't) and a
    click places it there; the server checks the spot. New catches and Equip Best pick a free spot by
-   themselves. The plot holds a limited number (start 8, upgradeable); extras go to backpack.
-   Equip Best / Pick Up / Sell.
+   themselves. The plot holds a limited number (start 8); extras go to backpack. Equip Best / Pick Up / Sell.
+   Plots are fenced, with a gate in the middle of the front edge. An upgrade sign on legs just inside the
+   gate shows "8 > 10" and the price; clicking it buys +2 room (up to 30), each upgrade 6x pricier.
 5. **Egg Shop** — buy better egg tiers with cash. Better egg = better roll table / more luck.
 
 Loop: train → farther throws → more luck → rarer dinos → more cash → better eggs → rarer dinos.
@@ -63,7 +64,7 @@ MVP ships biomes 1–3 only.
 2. Throw lane + timing meter; distance = power × meter.
 3. 3 biomes × 5 dinos, weighted roll × luck multiplier.
 4. Reveal sequence (hangman letters + climbing "1 in X"). Spend real time here.
-5. Plot holding 8 dinos placed freely + $/s income. (Capacity upgrades come later; numbers live in `Config/Plot`.)
+5. Plot holding 8 dinos placed freely + $/s income, fenced, with capacity upgrades at its sign (`Config/Plot`).
 6. Egg Shop with 5 tiers. (Buy any egg you can afford; each multiplies distance luck. Numbers live in `Config/Eggs`.)
 7. Index: every dino by biome; completing a biome gives a permanent bonus (`Config/Index`).
 8. Robux shop: x2 Cash, x2 Training, Server Luck x2 and a free starter dino (`Config/Shop`).

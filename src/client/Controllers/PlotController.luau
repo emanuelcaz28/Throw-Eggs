@@ -33,6 +33,7 @@ local SELL_CONFIRM_TIME = 3 -- seconds the "SURE?" button waits for a second tap
 local GOOD_SPOT = Color3.fromRGB(90, 220, 110)
 local BAD_SPOT = Color3.fromRGB(230, 70, 60)
 local GHOST_TRANSPARENCY = 0.45
+local NOTICE_TIME = 3 -- seconds a message from the server stays up
 local HOTBAR_KEYS = {
 	Enum.KeyCode.One,
 	Enum.KeyCode.Two,
@@ -215,9 +216,18 @@ local function buildGui()
 	hint.TextStrokeTransparency = 0.3
 	hint.Visible = false
 
+	-- Messages from the server, like "Plot upgraded!".
+	local notice = makeLabel(gui, Enum.Font.GothamBlack, TAG, UDim2.new(0.5, 0, 1, -224), UDim2.new(0.8, 0, 0, 30))
+	notice.Name = "Notice"
+	notice.AnchorPoint = Vector2.new(0.5, 1)
+	notice.TextXAlignment = Enum.TextXAlignment.Center
+	notice.TextStrokeTransparency = 0.3
+	notice.Visible = false
+
 	return {
 		slots = slots,
 		hint = hint,
+		notice = notice,
 		cash = cash,
 		income = income,
 		open = open,
@@ -407,6 +417,18 @@ function PlotController.start()
 		renderList()
 		renderHotbar()
 	end)
+	local noticeToken = 0
+	remotes.Notice.OnClientEvent:Connect(function(text: string)
+		noticeToken += 1
+		local token = noticeToken
+		hud.notice.Text = text
+		hud.notice.Visible = true
+		task.delay(NOTICE_TIME, function()
+			if noticeToken == token then
+				hud.notice.Visible = false
+			end
+		end)
+	end)
 	player:GetAttributeChangedSignal("HeldDino"):Connect(function()
 		renderList()
 		renderHotbar()
@@ -476,9 +498,10 @@ function PlotController.start()
 		local ray = workspace.CurrentCamera:ViewportPointToRay(viewportPoint.X, viewportPoint.Y)
 		local params = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Include
-		params.FilterDescendantsInstances = { ground }
+		params.FilterDescendantsInstances = { plotModel }
+		-- The fence or the upgrade sign in the way means no spot, so clicking the sign never drops a dino.
 		local result = workspace:Raycast(ray.Origin, ray.Direction * 1000, params)
-		if not result then
+		if not result or result.Instance ~= ground then
 			return nil
 		end
 		local offset = result.Position - Plot.positions[plotIndex]
