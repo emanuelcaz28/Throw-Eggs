@@ -418,12 +418,12 @@ function PlotController.start()
 		renderHotbar()
 	end)
 	local noticeToken = 0
-	remotes.Notice.OnClientEvent:Connect(function(text: string)
+	remotes.Notice.OnClientEvent:Connect(function(text: string, seconds: number?)
 		noticeToken += 1
 		local token = noticeToken
 		hud.notice.Text = text
 		hud.notice.Visible = true
-		task.delay(NOTICE_TIME, function()
+		task.delay(seconds or NOTICE_TIME, function()
 			if noticeToken == token then
 				hud.notice.Visible = false
 			end

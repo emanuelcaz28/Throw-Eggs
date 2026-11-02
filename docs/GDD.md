@@ -72,6 +72,8 @@ MVP ships biomes 1–3 only.
    Gold Rush 2x cash), 10 min each with a 20 min break, shown with a top-right timer (`Config/Events`).
 10. Hub leaderboards: MOST DINOS (dinos caught), TOP MONEY (money earned) and LUCKIEST CATCH (rarest
     "1 in X"), top 10 across all servers, refreshed every minute (`Config/Leaderboards`).
+11. Offline earnings: on rejoin, the plot pays 50% of its $/s for the time away (up to 8 hours, events not
+    counted), with a "Your dinos earned $X while you were away!" message (`Config/Plot`).
 Not built yet: dinos priced by % of best, Throw Power packs and the Gift button. No rebirth: the reference game has none.
 
 ## Reference game notes

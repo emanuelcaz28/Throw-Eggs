@@ -18,6 +18,7 @@ return {
 		trainingXp = 0,
 		bestIncome = 0, -- $/s of the best dino ever caught
 		cash = 0,
+		lastSeen = 0, -- os.time() of the last income tick, for offline earnings
 		dinos = {}, -- every dino owned: { key, id, mutation, size, onPlot }
 		nextDinoKey = 1,
 		ownedEggs = { DirtyEgg = true },

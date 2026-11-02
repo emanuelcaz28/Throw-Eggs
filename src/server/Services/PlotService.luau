@@ -28,6 +28,7 @@ local UPGRADE_SIGN_INSET = 4 -- studs inside the front edge, beside the gate
 local UPGRADE_CLICK_DISTANCE = 40
 local SIGN_INK = Color3.fromRGB(20, 22, 28)
 local SPOT_TRIES = 40
+local OFFLINE_NOTICE_TIME = 6 -- seconds the "while you were away" message stays up
 local HELD_SCALE = 0.35
 local HELD_SIDE = 3.5 -- studs to the character's right
 
@@ -233,13 +234,18 @@ local function incomeOf(entry): number
 	return if stats then stats.income else 0
 end
 
-local function totalIncome(player: Player, data): number
+-- The plot's $/s with every lasting bonus, but not the timed event's.
+local function baseIncome(player: Player, data): number
 	local total = 0
 	for _, entry in plotted(data) do
 		total += incomeOf(entry)
 	end
 	local passMultiplier = if player:GetAttribute("HasDoubleCash") then Shop.doubleCash.multiplier else 1
-	return total * IndexService.cashMultiplier(data) * passMultiplier * Events.multiplier("income")
+	return total * IndexService.cashMultiplier(data) * passMultiplier
+end
+
+local function totalIncome(player: Player, data): number
+	return baseIncome(player, data) * Events.multiplier("income")
 end
 
 local function sellPrice(entry): number
@@ -520,6 +526,22 @@ local function onLoaded(player: Player, data)
 	end
 	player:SetAttribute("Cash", data.cash)
 	changed(player, data)
+
+	-- Offline earnings: read the last-seen time now, before the income ticks overwrite it.
+	local away = math.min(os.time() - data.lastSeen, Plot.maxOfflineHours * 3600)
+	if data.lastSeen > 0 and away >= Plot.minOfflineSeconds then
+		task.delay(Plot.offlinePayoutDelay, function()
+			if PlayerData.get(player) ~= data then
+				return
+			end
+			local earned = math.floor(baseIncome(player, data) * away * Plot.offlineRate)
+			if earned > 0 then
+				earn(player, data, earned)
+				remotes.Notice:FireClient(player, `Your dinos earned {Format.cash(earned)} while you were away!`, OFFLINE_NOTICE_TIME)
+			end
+		end)
+	end
+
 	-- A new character drops the carried copy, so give it back.
 	player.CharacterAdded:Connect(function(character)
 		character:WaitForChild("HumanoidRootPart", 5)
@@ -577,6 +599,7 @@ local function payIncome()
 		if data then
 			local income = totalIncome(player, data)
 			earn(player, data, income * INCOME_TICK)
+			data.lastSeen = os.time()
 			player:SetAttribute("Income", income)
 		end
 	end
