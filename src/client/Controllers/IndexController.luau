@@ -7,6 +7,7 @@ local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Format = require(ReplicatedStorage.Shared.Format)
+local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Index = require(ReplicatedStorage.Shared.Config.Index)
 
 local player = Players.LocalPlayer
@@ -73,7 +74,10 @@ local function buildGui()
 	gui.DisplayOrder = 3 -- above the other panels
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	local open = makeButton(gui, "INDEX", ACCENT, UDim2.new(0, 16, 0.5, 60), UDim2.fromOffset(190, 46))
+	-- Left column, top of three: Index, Shop, Eggs.
+	local open = HudStyle.iconButton(gui, "📖", "Index")
+	open.AnchorPoint = Vector2.new(0, 0.5)
+	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, -(HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) * HudStyle.scale())
 	open.Name = "OpenIndex"
 
 	local panel = Instance.new("Frame")

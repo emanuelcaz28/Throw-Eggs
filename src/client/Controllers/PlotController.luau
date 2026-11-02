@@ -12,6 +12,7 @@ local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
+local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Hub = require(ReplicatedStorage.Shared.Config.Hub)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 
@@ -30,6 +31,8 @@ local TEXT = Color3.new(1, 1, 1)
 local CASH = Color3.fromRGB(120, 235, 120)
 local TAG = Color3.fromRGB(255, 214, 70)
 local ROW_HEIGHT = 84
+local CASH_HEIGHT = 56 -- height of the cash number, before scaling for small screens
+local INCOME_HEIGHT = 22
 local SELL_CONFIRM_TIME = 3 -- seconds the "SURE?" button waits for a second tap
 local GOOD_SPOT = Color3.fromRGB(90, 220, 110)
 local BAD_SPOT = Color3.fromRGB(230, 70, 60)
@@ -96,24 +99,21 @@ local function buildGui()
 	gui.DisplayOrder = 1 -- so the open panel covers the training display
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	local cashPill = Instance.new("Frame")
-	cashPill.Name = "CashPill"
-	cashPill.AnchorPoint = Vector2.new(0, 0.5)
-	cashPill.Position = UDim2.new(0, 16, 0.5, -90)
-	cashPill.Size = UDim2.fromOffset(190, 70)
-	cashPill.BackgroundColor3 = PANEL
-	cashPill.BackgroundTransparency = 0.12
-	cashPill.Parent = gui
-	corner(cashPill, 12)
-
-	local cash = makeLabel(cashPill, Enum.Font.GothamBlack, CASH, UDim2.fromOffset(12, 6), UDim2.new(1, -24, 0, 32))
-	cash.Name = "Cash"
-	local income = makeLabel(cashPill, Enum.Font.GothamBold, TEXT, UDim2.fromOffset(12, 40), UDim2.new(1, -24, 0, 20))
+	-- Bottom left, under Throw Power: big outlined cash with the $/s small beneath it.
+	local scale = HudStyle.scale()
+	local cashStat, cash = HudStyle.stat(gui, "💵", CASH, CASH_HEIGHT)
+	cashStat.Name = "CashStat"
+	cashStat.AnchorPoint = Vector2.new(0, 1)
+	cashStat.Position = UDim2.new(0, 16, 1, -INCOME_HEIGHT * scale - 12)
+	local income = makeLabel(gui, HudStyle.FONT, TEXT, UDim2.new(0, 16 + CASH_HEIGHT * scale * 1.1, 1, -8), UDim2.fromOffset(200 * scale, INCOME_HEIGHT * scale))
 	income.Name = "Income"
+	income.AnchorPoint = Vector2.new(0, 1)
+	HudStyle.outline(income, 2 * scale)
 
-	local open = makeButton(gui, "MY DINOS", ACCENT, UDim2.new(0, 16, 0.5, -48), UDim2.fromOffset(190, 46))
+	local open = HudStyle.iconButton(gui, "🐾", "Dinos")
 	open.Name = "OpenDinos"
-	open.AnchorPoint = Vector2.new(0, 0)
+	open.AnchorPoint = Vector2.new(1, 0.5)
+	open.Position = UDim2.new(1, -16, HudStyle.COLUMN_CENTER, 0)
 
 	local panel = Instance.new("Frame")
 	panel.Name = "DinoPanel"
@@ -159,17 +159,21 @@ local function buildGui()
 	empty.Name = "Empty"
 	empty.Text = "No dinos yet. Throw an egg to catch one!"
 
-	-- Backpack dinos, best first, on keys 1-0. Sits just above the training display.
+	-- Backpack dinos, best first, on keys 1-0. Along the bottom edge; training hides it, so the
+	-- training bar can have that spot.
 	local hotbar = Instance.new("Frame")
 	hotbar.Name = "Hotbar"
 	hotbar.AnchorPoint = Vector2.new(0.5, 1)
-	hotbar.Position = UDim2.new(0.5, 0, 1, -110)
+	hotbar.Position = UDim2.new(0.5, 0, 1, -12)
 	hotbar.Size = UDim2.new(0.9, 0, 0, 74)
 	hotbar.BackgroundTransparency = 1
 	hotbar.Parent = gui
 	local hotbarLimit = Instance.new("UISizeConstraint")
 	hotbarLimit.MaxSize = Vector2.new(680, 74)
 	hotbarLimit.Parent = hotbar
+	local hotbarScale = Instance.new("UIScale")
+	hotbarScale.Scale = HudStyle.scale()
+	hotbarScale.Parent = hotbar
 	local hotbarLayout = Instance.new("UIListLayout")
 	hotbarLayout.FillDirection = Enum.FillDirection.Horizontal
 	hotbarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -210,7 +214,7 @@ local function buildGui()
 		slots[index] = { button = slot, stroke = stroke, income = income, swatch = swatch }
 	end
 
-	local hint = makeLabel(gui, Enum.Font.GothamBlack, TEXT, UDim2.new(0.5, 0, 1, -190), UDim2.new(0.8, 0, 0, 28))
+	local hint = makeLabel(gui, Enum.Font.GothamBlack, TEXT, UDim2.new(0.5, 0, 1, -100 * HudStyle.scale()), UDim2.new(0.8, 0, 0, 28))
 	hint.Name = "PlaceHint"
 	hint.AnchorPoint = Vector2.new(0.5, 1)
 	hint.TextXAlignment = Enum.TextXAlignment.Center
@@ -218,7 +222,7 @@ local function buildGui()
 	hint.Visible = false
 
 	-- Messages from the server, like "Plot upgraded!".
-	local notice = makeLabel(gui, Enum.Font.GothamBlack, TAG, UDim2.new(0.5, 0, 1, -224), UDim2.new(0.8, 0, 0, 30))
+	local notice = makeLabel(gui, Enum.Font.GothamBlack, TAG, UDim2.new(0.5, 0, 1, -134 * HudStyle.scale()), UDim2.new(0.8, 0, 0, 30))
 	notice.Name = "Notice"
 	notice.AnchorPoint = Vector2.new(0.5, 1)
 	notice.TextXAlignment = Enum.TextXAlignment.Center

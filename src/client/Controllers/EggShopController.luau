@@ -5,6 +5,7 @@ local RunService = game:GetService("RunService")
 
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local Format = require(ReplicatedStorage.Shared.Format)
+local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Hub = require(ReplicatedStorage.Shared.Config.Hub)
 
 local player = Players.LocalPlayer
@@ -71,7 +72,10 @@ local function buildGui()
 	gui.DisplayOrder = 2 -- above the My Dinos panel
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	local open = makeButton(gui, "EGG SHOP", ACCENT, UDim2.new(0, 16, 0.5, 6), UDim2.fromOffset(190, 46))
+	-- A shortcut; the Egg Shop stall in the hub opens it too.
+	local open = HudStyle.iconButton(gui, "🥚", "Eggs")
+	open.AnchorPoint = Vector2.new(0, 0.5)
+	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, (HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) * HudStyle.scale())
 	open.Name = "OpenShop"
 
 	local panel = Instance.new("Frame")

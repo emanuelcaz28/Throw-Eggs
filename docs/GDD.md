@@ -79,6 +79,9 @@ MVP ships biomes 1–3 only.
     counted), with a "Your dinos earned $X while you were away!" message (`Config/Plot`).
 12. Hub stalls just ahead of spawn: an EGG SHOP stall (blue/white awning) and a SELL stall (red/white),
     each with a shopkeeper and a glowing pad that opens the Egg Shop / My Dinos while you stand on it (`Config/Hub`).
+13. HUD restyle: square icon buttons with outlined labels (Index, Shop, Eggs on the left; Dinos on the right),
+    big outlined Throw Power and cash at the bottom left, hotbar along the bottom edge. Everything shrinks to
+    fit short screens. While aiming and flying only Throw Power stays on screen (`HudStyle`).
 Not built yet: dinos priced by % of best, Throw Power packs and the Gift button. No rebirth: the reference game has none.
 
 ## Reference game notes

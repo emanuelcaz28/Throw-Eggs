@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Format = require(ReplicatedStorage.Shared.Format)
+local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Training = require(ReplicatedStorage.Shared.Config.Training)
 
 local player = Players.LocalPlayer
@@ -22,6 +23,8 @@ local AFFORD = Color3.fromRGB(120, 235, 120)
 local TOO_PRICEY = Color3.fromRGB(240, 70, 60)
 local TEXT = Color3.new(1, 1, 1)
 local LEVEL_UP_TIME = 1.4
+local POWER_HEIGHT = 52 -- before scaling for small screens
+local POWER_ABOVE_BOTTOM = 98 -- clears the cash and $/s beneath it
 
 local function corner(parent: Instance, radius: UDim)
 	local uiCorner = Instance.new("UICorner")
@@ -47,21 +50,11 @@ local function buildHud()
 	gui.ResetOnSpawn = false
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	-- Always on screen, just above the cash.
-	local powerPill = Instance.new("Frame")
-	powerPill.Name = "PowerPill"
-	powerPill.AnchorPoint = Vector2.new(0, 0.5)
-	powerPill.Position = UDim2.new(0, 16, 0.5, -150)
-	powerPill.Size = UDim2.fromOffset(190, 40)
-	powerPill.BackgroundColor3 = PANEL
-	powerPill.BackgroundTransparency = 0.12
-	powerPill.Parent = gui
-	corner(powerPill, UDim.new(0, 12))
-	local power = makeLabel(powerPill, Enum.Font.GothamBlack, POWER, Enum.TextXAlignment.Left)
-	power.Name = "Power"
-	power.Position = UDim2.fromOffset(12, 6)
-	power.Size = UDim2.new(1, -24, 1, -12)
-	power.TextStrokeTransparency = 0.4
+	-- Always on screen, bottom left, just above the cash (PlotController draws that).
+	local powerStat, power = HudStyle.stat(gui, "💪", POWER, POWER_HEIGHT)
+	powerStat.Name = "PowerStat"
+	powerStat.AnchorPoint = Vector2.new(0, 1)
+	powerStat.Position = UDim2.new(0, 16, 1, -POWER_ABOVE_BOTTOM * HudStyle.scale())
 
 	-- Only while training.
 	local bar = Instance.new("Frame")
@@ -241,7 +234,7 @@ function TrainingController.start()
 		end
 		local isTraining = player:GetAttribute("IsTraining") == true
 
-		hud.power.Text = `💪 {Format.commas(power)}`
+		hud.power.Text = Format.commas(power)
 		hud.bar.Visible = isTraining
 		hud.stop.Visible = isTraining
 		hud.level.Text = `Level {level}`

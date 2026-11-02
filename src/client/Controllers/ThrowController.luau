@@ -220,9 +220,13 @@ local function serverLuck(): number
 	return if active then Shop.serverLuck.multiplier else 1
 end
 
--- The reveal has the screen to itself.
-local function setHudsEnabled(enabled: boolean)
+-- The reveal has the screen to itself. While aiming and flying, only Throw Power stays
+-- (keepPower), so the meter and the luck number aren't crowded.
+local function setHudsEnabled(enabled: boolean, keepPower: boolean?)
 	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud", "ShopHud", "EventHud" } do
+		if keepPower and name == "TrainingHud" then
+			continue
+		end
 		local hud = player.PlayerGui:FindFirstChild(name)
 		if hud then
 			hud.Enabled = enabled
@@ -286,6 +290,7 @@ function ThrowController.start()
 		aimStartedAt = os.clock()
 		placeMarker(0)
 		hud.meter.Visible = true
+		setHudsEnabled(false, true)
 		-- Taken over while aiming so Space throws instead of jumping.
 		ContextActionService:BindAction(TAP_ACTION, function(_, inputState)
 			if inputState == Enum.UserInputState.Begin then
@@ -295,7 +300,10 @@ function ThrowController.start()
 		end, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
 	end)
 
-	remotes.MeterCancel.OnClientEvent:Connect(hideMeter)
+	remotes.MeterCancel.OnClientEvent:Connect(function()
+		hideMeter()
+		setHudsEnabled(true)
+	end)
 
 	local pendingCatch = nil
 	remotes.Landed.OnClientEvent:Connect(function(catch)
@@ -382,6 +390,7 @@ function ThrowController.start()
 		else
 			egg:Destroy()
 			camera.CameraType = Enum.CameraType.Custom
+			setHudsEnabled(true)
 		end
 		remotes.RevealDone:FireServer()
 	end)

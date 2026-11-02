@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
+local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 
 local player = Players.LocalPlayer
 
@@ -13,7 +14,6 @@ local ShopController = {}
 
 local PANEL = Color3.fromRGB(28, 30, 36)
 local ROW = Color3.fromRGB(58, 62, 72)
-local GOLD = Color3.fromRGB(245, 180, 40)
 local BUY = Color3.fromRGB(90, 170, 80)
 local OFF = Color3.fromRGB(110, 114, 124)
 local CLOSE = Color3.fromRGB(190, 70, 60)
@@ -70,7 +70,9 @@ local function buildGui()
 	gui.DisplayOrder = 4 -- above the other panels
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	local open = makeButton(gui, "SHOP", GOLD, UDim2.new(0, 16, 0.5, 114), UDim2.fromOffset(190, 46))
+	local open = HudStyle.iconButton(gui, "🧺", "Shop")
+	open.AnchorPoint = Vector2.new(0, 0.5)
+	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, 0)
 	open.Name = "OpenShop"
 
 	local timer = makeLabel(gui, Enum.Font.GothamBlack, LUCK, UDim2.new(1, -16, 0, 16), UDim2.fromOffset(240, 34))
