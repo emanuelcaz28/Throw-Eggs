@@ -74,10 +74,10 @@ local function buildGui()
 	gui.DisplayOrder = 3 -- above the other panels
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	-- Left column, top of three: Index, Shop, Eggs.
+	-- Left column, above Shop.
 	local open = HudStyle.iconButton(gui, "📖", "Index")
 	open.AnchorPoint = Vector2.new(0, 0.5)
-	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, -(HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) * HudStyle.scale())
+	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, -(HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) / 2 * HudStyle.scale())
 	open.Name = "OpenIndex"
 
 	local panel = Instance.new("Frame")

@@ -72,7 +72,7 @@ local function buildGui()
 
 	local open = HudStyle.iconButton(gui, "🧺", "Shop")
 	open.AnchorPoint = Vector2.new(0, 0.5)
-	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, 0)
+	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, (HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) / 2 * HudStyle.scale())
 	open.Name = "OpenShop"
 
 	local timer = makeLabel(gui, Enum.Font.GothamBlack, LUCK, UDim2.new(1, -16, 0, 16), UDim2.fromOffset(240, 34))

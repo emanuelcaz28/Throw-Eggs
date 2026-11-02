@@ -1,5 +1,5 @@
 -- The look shared by the always-on HUD: big square icon buttons with an outlined label, and
--- large outlined numbers with an icon (Throw Power, cash). Client only. Icons are emoji until
+-- large outlined numbers with an icon (⚡ Throw Power, cash). Client only. Icons are emoji until
 -- real icon images exist. Sizes shrink on short screens (phones) so everything still fits.
 local GuiService = game:GetService("GuiService")
 

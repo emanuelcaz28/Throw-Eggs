@@ -51,7 +51,7 @@ local function buildHud()
 	gui.Parent = player:WaitForChild("PlayerGui")
 
 	-- Always on screen, bottom left, just above the cash (PlotController draws that).
-	local powerStat, power = HudStyle.stat(gui, "💪", POWER, POWER_HEIGHT)
+	local powerStat, power = HudStyle.stat(gui, "⚡", POWER, POWER_HEIGHT)
 	powerStat.Name = "PowerStat"
 	powerStat.AnchorPoint = Vector2.new(0, 1)
 	powerStat.Position = UDim2.new(0, 16, 1, -POWER_ABOVE_BOTTOM * HudStyle.scale())

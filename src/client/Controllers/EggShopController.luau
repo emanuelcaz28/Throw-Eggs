@@ -1,11 +1,11 @@
--- The Egg Shop panel. Display and requests only: the server checks every purchase.
+-- The Egg Shop panel, opened by the Egg Shop stall in the hub. Display and requests only:
+-- the server checks every purchase.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local Format = require(ReplicatedStorage.Shared.Format)
-local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Hub = require(ReplicatedStorage.Shared.Config.Hub)
 
 local player = Players.LocalPlayer
@@ -72,11 +72,6 @@ local function buildGui()
 	gui.DisplayOrder = 2 -- above the My Dinos panel
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	-- A shortcut; the Egg Shop stall in the hub opens it too.
-	local open = HudStyle.iconButton(gui, "🥚", "Eggs")
-	open.AnchorPoint = Vector2.new(0, 0.5)
-	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, (HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) * HudStyle.scale())
-	open.Name = "OpenShop"
 
 	local panel = Instance.new("Frame")
 	panel.Name = "ShopPanel"
@@ -116,7 +111,7 @@ local function buildGui()
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = list
 
-	return { open = open, panel = panel, close = close, list = list }
+	return { panel = panel, close = close, list = list }
 end
 
 -- Cards are kept and updated, not rebuilt, so cash ticking up can't eat a click.
@@ -194,9 +189,6 @@ function EggShopController.start()
 		end)
 	end
 
-	hud.open.Activated:Connect(function()
-		hud.panel.Visible = not hud.panel.Visible
-	end)
 	hud.close.Activated:Connect(function()
 		hud.panel.Visible = false
 	end)

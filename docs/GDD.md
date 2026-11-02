@@ -79,9 +79,14 @@ MVP ships biomes 1–3 only.
     counted), with a "Your dinos earned $X while you were away!" message (`Config/Plot`).
 12. Hub stalls just ahead of spawn: an EGG SHOP stall (blue/white awning) and a SELL stall (red/white),
     each with a shopkeeper and a glowing pad that opens the Egg Shop / My Dinos while you stand on it (`Config/Hub`).
-13. HUD restyle: square icon buttons with outlined labels (Index, Shop, Eggs on the left; Dinos on the right),
-    big outlined Throw Power and cash at the bottom left, hotbar along the bottom edge. Everything shrinks to
-    fit short screens. While aiming and flying only Throw Power stays on screen (`HudStyle`).
+13. HUD restyle: square icon buttons with outlined labels (Index and Shop on the left, Dinos on the right; the
+    Egg Shop opens only from its stall), big outlined ⚡ Throw Power and cash at the bottom left, hotbar along
+    the bottom edge. Everything shrinks to fit short screens. While aiming and flying only Throw Power stays
+    on screen (`HudStyle`).
+14. UI redesign (designed, not built yet): our own chunky cartoon-sticker kit in Figma, "Throw Eggs for
+    Dinosaurs - Game UI" (https://www.figma.com/design/PZ3emJUorfZBWQoLe1zCfv), page "UI design v1":
+    style guide, main HUD, Welcome Back offline-earnings popup with CLAIM, My Dinos, Egg Shop, Shop,
+    Dino Index and training HUD. Source mock-ups: `design/ui-mockups/build.py` (regenerates `ui.html`).
 Not built yet: dinos priced by % of best, Throw Power packs and the Gift button. No rebirth: the reference game has none.
 
 ## Reference game notes
