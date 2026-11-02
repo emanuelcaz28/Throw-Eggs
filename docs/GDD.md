@@ -77,6 +77,8 @@ MVP ships biomes 1–3 only.
     "1 in X"), top 10 across all servers, refreshed every minute (`Config/Leaderboards`).
 11. Offline earnings: on rejoin, the plot pays 50% of its $/s for the time away (up to 8 hours, events not
     counted), with a "Your dinos earned $X while you were away!" message (`Config/Plot`).
+12. Hub stalls just ahead of spawn: an EGG SHOP stall (blue/white awning) and a SELL stall (red/white),
+    each with a shopkeeper and a glowing pad that opens the Egg Shop / My Dinos while you stand on it (`Config/Hub`).
 Not built yet: dinos priced by % of best, Throw Power packs and the Gift button. No rebirth: the reference game has none.
 
 ## Reference game notes

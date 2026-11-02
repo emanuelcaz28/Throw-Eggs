@@ -1,9 +1,11 @@
 -- The Egg Shop panel. Display and requests only: the server checks every purchase.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local Format = require(ReplicatedStorage.Shared.Format)
+local Hub = require(ReplicatedStorage.Shared.Config.Hub)
 
 local player = Players.LocalPlayer
 
@@ -193,6 +195,18 @@ function EggShopController.start()
 	end)
 	hud.close.Activated:Connect(function()
 		hud.panel.Visible = false
+	end)
+
+	-- Stepping onto the Egg Shop stall's pad opens this panel; walking off closes it again.
+	local onStallPad = false
+	RunService.Heartbeat:Connect(function()
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		local nowOnPad = root ~= nil and Hub.isOnPad(Hub.eggStall, root.Position)
+		if nowOnPad ~= onStallPad then
+			onStallPad = nowOnPad
+			hud.panel.Visible = nowOnPad
+		end
 	end)
 	remotes.EggsChanged.OnClientEvent:Connect(function(newOwned, newEquipped)
 		owned = newOwned

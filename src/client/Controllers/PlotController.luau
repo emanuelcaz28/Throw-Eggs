@@ -12,6 +12,7 @@ local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
+local Hub = require(ReplicatedStorage.Shared.Config.Hub)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 
 local player = Players.LocalPlayer
@@ -408,6 +409,18 @@ function PlotController.start()
 	end)
 	hud.close.Activated:Connect(function()
 		hud.panel.Visible = false
+	end)
+
+	-- Stepping onto the SELL stall's pad opens this panel; walking off closes it again.
+	local onStallPad = false
+	RunService.Heartbeat:Connect(function()
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		local nowOnPad = root ~= nil and Hub.isOnPad(Hub.sellStall, root.Position)
+		if nowOnPad ~= onStallPad then
+			onStallPad = nowOnPad
+			hud.panel.Visible = nowOnPad
+		end
 	end)
 	hud.equip.Activated:Connect(function()
 		send("equipBest")
