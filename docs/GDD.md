@@ -44,7 +44,6 @@ MVP ships biomes 1–3 only.
 - Biome completion rewards (permanent luck/cash boost per completed biome in the Index).
 - Server-wide announcement for catches rarer than 1 in 1M.
 - Timed events (e.g. "Meteor Shower": 2x mutation chance for 10 min).
-- Rebirth: reset Throw Power for a permanent multiplier.
 
 ## Monetization (later, not MVP)
 
@@ -65,7 +64,7 @@ MVP ships biomes 1–3 only.
 8. Robux shop: x2 Cash, x2 Training, Server Luck x2 and a free starter dino (`Config/Shop`).
 9. Timed events: every server runs one at a time (Meteor Shower 2x mutations, Growth Spurt 2x sizes,
    Gold Rush 2x cash), 10 min each with a 20 min break, shown with a top-right timer (`Config/Events`).
-Then: rebirth. Dinos priced by % of best, Throw Power packs and the Gift button are not built yet.
+Not built yet: dinos priced by % of best, Throw Power packs and the Gift button. No rebirth: the reference game has none.
 
 ## Reference game notes
 
