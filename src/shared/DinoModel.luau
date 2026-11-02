@@ -1,5 +1,6 @@
--- Stand-in dino until the real models exist: blocks, with a colour picked from the
--- name, or the mutation's colour if it has one.
+-- Builds a dino: its block model from ModelBlueprints, tinted towards its mutation's colour.
+-- A dino without a blueprint gets a plain eight-block stand-in coloured from its name.
+local BlockModel = require(script.Parent.BlockModel)
 local Catch = require(script.Parent.Config.Catch)
 local DinoStats = require(script.Parent.DinoStats)
 local Plot = require(script.Parent.Config.Plot)
@@ -7,6 +8,7 @@ local Plot = require(script.Parent.Config.Plot)
 local DinoModel = {}
 
 local BASE_SATURATION, BASE_VALUE = 0.55, 0.85
+local MUTATION_TINT = 0.55 -- how far a mutation pulls the dino's colours towards its own
 
 local BLOCKS = {
 	{ Vector3.new(4, 4, 7), Vector3.new(0, 5, 0), "Body" },
@@ -38,9 +40,16 @@ function DinoModel.statueScale(sizeId: string?): number
 end
 
 -- Builds the dino with its feet at origin. Scaling and spinning happen around the feet.
--- Not parented: the caller decides where it goes.
-function DinoModel.build(name: string, mutationId: string?, origin: Vector3, scale: number): Model
-	local color = DinoModel.color(name, mutationId)
+-- Not parented: the caller decides where it goes. The "Head" part is the top of the model.
+function DinoModel.build(dinoId: string, mutationId: string?, origin: Vector3, scale: number): Model
+	local mutation = DinoStats.findOption(Catch.mutations, mutationId)
+	local blocks = BlockModel.build(`dino_{dinoId}`, origin, mutation and mutation.color, MUTATION_TINT)
+	if blocks then
+		blocks.Name = "Dino"
+		blocks:ScaleTo(scale)
+		return blocks
+	end
+	local color = DinoModel.color(dinoId, mutationId)
 	local model = Instance.new("Model")
 	model.Name = "Dino"
 	for _, block in BLOCKS do

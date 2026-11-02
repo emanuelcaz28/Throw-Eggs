@@ -370,7 +370,7 @@ function RevealController.play(catch, egg: BasePart)
 
 	local function hatch()
 		egg:Destroy()
-		dino = DinoModel.build(catch.name, catch.mutation, ground, 0.01)
+		dino = DinoModel.build(catch.id, catch.mutation, ground, 0.01)
 		dino.Name = "RevealDino"
 		dino.Parent = workspace
 		sparkles:Emit(60)

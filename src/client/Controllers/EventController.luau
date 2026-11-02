@@ -8,40 +8,21 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Events = require(ReplicatedStorage.Shared.Config.Events)
+local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local player = Players.LocalPlayer
 
 local EventController = {}
 
-local PANEL = Color3.fromRGB(28, 30, 36)
 local TEXT = Color3.new(1, 1, 1)
 local MUTED = Color3.fromRGB(190, 195, 205)
 local TIMER_TOP = 16
-local TIMER_BELOW_LUCK = 56 -- moves down when the Server Luck timer is showing
+local TIMER_BELOW_LUCK = 70 -- moves down when the Server Luck timer is showing
 local ANNOUNCE_HOLD = 4 -- seconds the "event started" text stays up
 local TINT_STRENGTH = 0.15
 local METEOR_EVERY = 0.4 -- seconds between meteors
 local METEOR_FALL_TIME = 1.6
 local METEOR_SIZE = 3
-
-local function corner(parent: Instance, radius: number)
-	local uiCorner = Instance.new("UICorner")
-	uiCorner.CornerRadius = UDim.new(0, radius)
-	uiCorner.Parent = parent
-end
-
-local function makeLabel(parent: Instance, font: Enum.Font, color: Color3, position: UDim2, size: UDim2): TextLabel
-	local label = Instance.new("TextLabel")
-	label.BackgroundTransparency = 1
-	label.Font = font
-	label.Position = position
-	label.Size = size
-	label.Text = ""
-	label.TextColor3 = color
-	label.TextScaled = true
-	label.Parent = parent
-	return label
-end
 
 local function buildGui()
 	local gui = Instance.new("ScreenGui")
@@ -49,28 +30,26 @@ local function buildGui()
 	gui.ResetOnSpawn = false
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	local timer = makeLabel(gui, Enum.Font.GothamBlack, TEXT, UDim2.new(1, -16, 0, TIMER_TOP), UDim2.fromOffset(260, 34))
+	local timer = UiKit.text(gui, "", 24)
 	timer.Name = "EventTimer"
 	timer.AnchorPoint = Vector2.new(1, 0)
-	timer.BackgroundColor3 = PANEL
-	timer.BackgroundTransparency = 0.12
+	timer.Position = UDim2.new(1, -16, 0, TIMER_TOP)
+	timer.Size = UDim2.fromOffset(300, 46)
+	timer.BackgroundColor3 = UiKit.PANEL
+	timer.BackgroundTransparency = 0.05
 	timer.Visible = false
-	corner(timer, 10)
-	local padding = Instance.new("UIPadding")
-	padding.PaddingTop = UDim.new(0, 6)
-	padding.PaddingBottom = UDim.new(0, 6)
-	padding.PaddingLeft = UDim.new(0, 10)
-	padding.PaddingRight = UDim.new(0, 10)
-	padding.Parent = timer
+	UiKit.corner(timer, 16)
+	UiKit.stroke(timer, 4)
 
-	local announce = makeLabel(gui, Enum.Font.GothamBlack, TEXT, UDim2.fromScale(0.5, 0.2), UDim2.new(0.8, 0, 0, 72))
+	local announce = UiKit.text(gui, "", 64)
 	announce.Name = "EventAnnounce"
 	announce.AnchorPoint = Vector2.new(0.5, 0.5)
-	announce.TextStrokeTransparency = 0.3
+	announce.Position = UDim2.fromScale(0.5, 0.2)
+	announce.Size = UDim2.new(0.8, 0, 0, 80)
 	announce.Visible = false
-	local detail = makeLabel(announce, Enum.Font.GothamBold, TEXT, UDim2.new(0, 0, 1, 4), UDim2.new(1, 0, 0, 30))
+	local detail = UiKit.text(announce, "", 30)
 	detail.Name = "Detail"
-	detail.TextStrokeTransparency = 0.3
+	detail.Position = UDim2.new(0, 0, 1, 4)
 
 	return { timer = timer, announce = announce, detail = detail }
 end

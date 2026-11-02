@@ -15,22 +15,18 @@ local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Hub = require(ReplicatedStorage.Shared.Config.Hub)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
+local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local player = Players.LocalPlayer
 
 local PlotController = {}
 
-local INK = Color3.fromRGB(20, 22, 28)
-local PANEL = Color3.fromRGB(28, 30, 36)
-local ROW = Color3.fromRGB(58, 62, 72)
-local ACCENT = Color3.fromRGB(226, 142, 58)
-local PLACE = Color3.fromRGB(90, 170, 80)
-local PICK_UP = Color3.fromRGB(70, 130, 210)
-local SELL = Color3.fromRGB(190, 70, 60)
 local TEXT = Color3.new(1, 1, 1)
 local CASH = Color3.fromRGB(120, 235, 120)
-local TAG = Color3.fromRGB(255, 214, 70)
-local ROW_HEIGHT = 84
+local PANEL_SIZE = Vector2.new(470, 692)
+local ROW_WIDTH, ROW_HEIGHT = 428, 98
+local SLOT_SIZE = Vector2.new(64, 76)
+local MUTATION_TINT = 0.55 -- matches the plot statues
 local CASH_HEIGHT = 56 -- height of the cash number, before scaling for small screens
 local INCOME_HEIGHT = 22
 local SELL_CONFIRM_TIME = 3 -- seconds the "SURE?" button waits for a second tap
@@ -51,12 +47,6 @@ local HOTBAR_KEYS = {
 	Enum.KeyCode.Zero,
 }
 
-local function corner(parent: Instance, radius: number)
-	local uiCorner = Instance.new("UICorner")
-	uiCorner.CornerRadius = UDim.new(0, radius)
-	uiCorner.Parent = parent
-end
-
 local function makeLabel(parent: Instance, font: Enum.Font, color: Color3, position: UDim2, size: UDim2): TextLabel
 	local label = Instance.new("TextLabel")
 	label.BackgroundTransparency = 1
@@ -69,26 +59,6 @@ local function makeLabel(parent: Instance, font: Enum.Font, color: Color3, posit
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.Parent = parent
 	return label
-end
-
-local function makeButton(parent: Instance, text: string, color: Color3, position: UDim2, size: UDim2): TextButton
-	local button = Instance.new("TextButton")
-	button.BackgroundColor3 = color
-	button.Font = Enum.Font.GothamBlack
-	button.Position = position
-	button.Size = size
-	button.Text = text
-	button.TextColor3 = TEXT
-	button.TextScaled = true
-	button.Parent = parent
-	corner(button, 10)
-	local padding = Instance.new("UIPadding")
-	padding.PaddingTop = UDim.new(0, 8)
-	padding.PaddingBottom = UDim.new(0, 8)
-	padding.PaddingLeft = UDim.new(0, 6)
-	padding.PaddingRight = UDim.new(0, 6)
-	padding.Parent = button
-	return button
 end
 
 local function buildGui()
@@ -115,68 +85,51 @@ local function buildGui()
 	open.AnchorPoint = Vector2.new(1, 0.5)
 	open.Position = UDim2.new(1, -16, HudStyle.COLUMN_CENTER, 0)
 
-	local panel = Instance.new("Frame")
-	panel.Name = "DinoPanel"
-	panel.AnchorPoint = Vector2.new(0.5, 0.5)
-	panel.Position = UDim2.fromScale(0.5, 0.5)
-	panel.Size = UDim2.fromScale(0.9, 0.86)
-	panel.BackgroundColor3 = PANEL
-	panel.BackgroundTransparency = 0.06
-	panel.Visible = false
-	panel.ZIndex = 2
-	panel.Parent = gui
-	corner(panel, 16)
-	local panelLimit = Instance.new("UISizeConstraint")
-	panelLimit.MaxSize = Vector2.new(640, 560)
-	panelLimit.Parent = panel
-
-	local title = makeLabel(panel, Enum.Font.GothamBlack, TEXT, UDim2.fromOffset(16, 12), UDim2.new(0.4, 0, 0, 32))
-	title.Text = "My Dinos"
-	local count = makeLabel(panel, Enum.Font.GothamBold, TAG, UDim2.fromOffset(16, 46), UDim2.new(0.4, 0, 0, 20))
-	count.Name = "Count"
-
-	local equip = makeButton(panel, "EQUIP BEST", ACCENT, UDim2.new(1, -212, 0, 14), UDim2.fromOffset(140, 46))
-	equip.Name = "EquipBest"
-	local close = makeButton(panel, "X", SELL, UDim2.new(1, -60, 0, 14), UDim2.fromOffset(46, 46))
-	close.Name = "Close"
-
-	local list = Instance.new("ScrollingFrame")
+	-- My Dinos docks on the right, like a side drawer.
+	local panel = UiKit.panel(gui, {
+		name = "DinoPanel",
+		width = PANEL_SIZE.X,
+		height = PANEL_SIZE.Y,
+		header = "jungle",
+		title = "My Dinos",
+		icon = "🐾",
+		anchor = Vector2.new(1, 0.5),
+		position = UDim2.new(1, -16, 0.5, 0),
+	})
+	local tabs = {}
+	for index, name in { "plot", "backpack" } do
+		local tab = UiKit.button(panel.body, "", "green", (PANEL_SIZE.X - 42) / 2, 46, 23)
+		tab.Name = `Tab_{name}`
+		tab.Position = UDim2.fromOffset(16 + (index - 1) * ((PANEL_SIZE.X - 42) / 2 + 10), 6)
+		tabs[name] = tab
+	end
+	local list = UiKit.scrollList(panel.body, UDim2.fromOffset(12, 62), UDim2.new(1, -20, 1, -150), 8)
 	list.Name = "List"
-	list.BackgroundTransparency = 1
-	list.BorderSizePixel = 0
-	list.Position = UDim2.fromOffset(12, 76)
-	list.Size = UDim2.new(1, -24, 1, -88)
-	list.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	list.CanvasSize = UDim2.new()
-	list.ScrollBarThickness = 8
-	list.Parent = panel
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 8)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = list
-
-	local empty = makeLabel(panel, Enum.Font.GothamBold, TEXT, UDim2.new(0, 16, 0, 90), UDim2.new(1, -32, 0, 26))
+	local empty = UiKit.muted(panel.body, "", 20)
 	empty.Name = "Empty"
-	empty.Text = "No dinos yet. Throw an egg to catch one!"
+	empty.Position = UDim2.fromOffset(20, 90)
+	empty.Size = UDim2.new(1, -40, 0, 60)
+	local equip = UiKit.button(panel.body, "EQUIP BEST", "yellow", PANEL_SIZE.X - 32, 66, 32)
+	equip.Name = "EquipBest"
+	equip.AnchorPoint = Vector2.new(0, 1)
+	equip.Position = UDim2.new(0, 16, 1, -16)
 
 	-- Backpack dinos, best first, on keys 1-0. Along the bottom edge; training hides it, so the
 	-- training bar can have that spot.
 	local hotbar = Instance.new("Frame")
 	hotbar.Name = "Hotbar"
 	hotbar.AnchorPoint = Vector2.new(0.5, 1)
-	hotbar.Position = UDim2.new(0.5, 0, 1, -12)
-	hotbar.Size = UDim2.new(0.9, 0, 0, 74)
+	hotbar.Position = UDim2.new(0.5, 0, 1, -10)
+	hotbar.Size = UDim2.fromOffset(#HOTBAR_KEYS * (SLOT_SIZE.X + 6), SLOT_SIZE.Y + 20)
 	hotbar.BackgroundTransparency = 1
 	hotbar.Parent = gui
-	local hotbarLimit = Instance.new("UISizeConstraint")
-	hotbarLimit.MaxSize = Vector2.new(680, 74)
-	hotbarLimit.Parent = hotbar
 	local hotbarScale = Instance.new("UIScale")
 	hotbarScale.Scale = HudStyle.scale()
 	hotbarScale.Parent = hotbar
 	local hotbarLayout = Instance.new("UIListLayout")
 	hotbarLayout.FillDirection = Enum.FillDirection.Horizontal
 	hotbarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	hotbarLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
 	hotbarLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	hotbarLayout.Padding = UDim.new(0, 6)
 	hotbarLayout.Parent = hotbar
@@ -186,47 +139,40 @@ local function buildGui()
 		local slot = Instance.new("TextButton")
 		slot.Name = `Slot{index}`
 		slot.LayoutOrder = index
-		slot.Size = UDim2.new(0.1, -6, 1, 0)
-		slot.BackgroundColor3 = PANEL
-		slot.BackgroundTransparency = 0.15
+		slot.Size = UDim2.fromOffset(SLOT_SIZE.X, SLOT_SIZE.Y)
 		slot.AutoButtonColor = false
 		slot.Text = ""
 		slot.Parent = hotbar
-		corner(slot, 10)
-		local stroke = Instance.new("UIStroke")
-		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-		stroke.Color = TEXT
-		stroke.Thickness = 3
-		stroke.Enabled = false
-		stroke.Parent = slot
-
-		local income = makeLabel(slot, Enum.Font.GothamBlack, CASH, UDim2.fromOffset(4, 3), UDim2.new(1, -8, 0, 16))
-		income.TextXAlignment = Enum.TextXAlignment.Center
-		local swatch = Instance.new("Frame")
-		swatch.AnchorPoint = Vector2.new(0.5, 0)
-		swatch.Position = UDim2.new(0.5, 0, 0, 22)
-		swatch.Size = UDim2.fromOffset(36, 36)
-		swatch.Parent = slot
-		corner(swatch, 8)
-		local number = makeLabel(slot, Enum.Font.GothamBlack, TEXT, UDim2.new(0, 5, 1, -20), UDim2.fromOffset(16, 16))
-		number.Text = tostring(index % 10)
-
-		slots[index] = { button = slot, stroke = stroke, income = income, swatch = swatch }
+		local gradient = UiKit.gradient(slot, "common")
+		UiKit.corner(slot, 15)
+		local edge = UiKit.stroke(slot, 4)
+		local raise = Instance.new("UIScale")
+		raise.Parent = slot
+		local income = UiKit.text(slot, "", 15, UiKit.CASH)
+		income.Position = UDim2.fromOffset(-8, -16)
+		income.Size = UDim2.new(1, 16, 0, 18)
+		income.ZIndex = 3
+		local number = UiKit.text(slot, tostring(index % 10), 17, nil, Enum.TextXAlignment.Left)
+		number.AnchorPoint = Vector2.new(0, 1)
+		number.Position = UDim2.new(0, 5, 1, 0)
+		number.Size = UDim2.fromOffset(20, 20)
+		number.ZIndex = 3
+		slots[index] = { button = slot, gradient = gradient, edge = edge, raise = raise, income = income, key = nil, view = nil }
 	end
 
-	local hint = makeLabel(gui, Enum.Font.GothamBlack, TEXT, UDim2.new(0.5, 0, 1, -100 * HudStyle.scale()), UDim2.new(0.8, 0, 0, 28))
+	local hint = UiKit.text(gui, "", 26)
 	hint.Name = "PlaceHint"
 	hint.AnchorPoint = Vector2.new(0.5, 1)
-	hint.TextXAlignment = Enum.TextXAlignment.Center
-	hint.TextStrokeTransparency = 0.3
+	hint.Position = UDim2.new(0.5, 0, 1, -110 * HudStyle.scale())
+	hint.Size = UDim2.new(0.8, 0, 0, 34)
 	hint.Visible = false
 
 	-- Messages from the server, like "Plot upgraded!".
-	local notice = makeLabel(gui, Enum.Font.GothamBlack, TAG, UDim2.new(0.5, 0, 1, -134 * HudStyle.scale()), UDim2.new(0.8, 0, 0, 30))
+	local notice = UiKit.text(gui, "", 28, UiKit.GOLD)
 	notice.Name = "Notice"
 	notice.AnchorPoint = Vector2.new(0.5, 1)
-	notice.TextXAlignment = Enum.TextXAlignment.Center
-	notice.TextStrokeTransparency = 0.3
+	notice.Position = UDim2.new(0.5, 0, 1, -148 * HudStyle.scale())
+	notice.Size = UDim2.new(0.8, 0, 0, 36)
 	notice.Visible = false
 
 	return {
@@ -238,31 +184,18 @@ local function buildGui()
 		income = income,
 		open = open,
 		panel = panel,
-		count = count,
+		tabs = tabs,
 		equip = equip,
-		close = close,
 		list = list,
 		empty = empty,
 	}
-end
-
-local function tagText(dino): string
-	local parts = {}
-	local mutation = DinoStats.findOption(Catch.mutations, dino.mutation)
-	if mutation then
-		table.insert(parts, mutation.name)
-	end
-	local size = DinoStats.findOption(Catch.sizes, dino.size)
-	if size then
-		table.insert(parts, size.name)
-	end
-	return table.concat(parts, " ")
 end
 
 function PlotController.start()
 	local remotes = ReplicatedStorage:WaitForChild("PlotRemotes")
 	local hud = buildGui()
 	local confirmKey = nil -- the dino whose SELL button is showing "SURE?"
+	local tab = "plot" -- which list the panel shows: "plot" or "backpack"
 	local dinos = {}
 	local slots = 0
 	local renderList
@@ -297,13 +230,26 @@ function PlotController.start()
 		local heldKey = player:GetAttribute("HeldDino")
 		for index, slot in hud.slots do
 			local dino = list[index]
-			slot.income.Text = if dino then `{Format.cash(dino.income)}/s` else ""
-			slot.swatch.Visible = dino ~= nil
-			if dino then
-				slot.swatch.BackgroundColor3 = DinoModel.color(dino.name, dino.mutation)
+			if (dino and dino.key) ~= slot.key then
+				slot.key = dino and dino.key
+				if slot.view then
+					slot.view:Destroy()
+					slot.view = nil
+				end
+				local pair = UiKit.RARITY[if dino then UiKit.rarityOf(dino.id) else "common"]
+				slot.gradient.Color = ColorSequence.new(UiKit.color(pair[1]), UiKit.color(pair[2]))
+				if dino then
+					local mutation = DinoStats.findOption(Catch.mutations, dino.mutation)
+					slot.view = UiKit.viewport(slot.button, `dino_{dino.id}`, { position = UDim2.fromOffset(2, 6), size = UDim2.new(1, -4, 1, -10), tint = mutation and mutation.color, tintAmount = MUTATION_TINT })
+				end
 			end
-			slot.stroke.Enabled = dino ~= nil and dino.key == heldKey
-			slot.button.BackgroundTransparency = if dino then 0.15 else 0.5
+			slot.income.Text = if dino then `{Format.cash(dino.income)}/s` else ""
+			slot.button.BackgroundTransparency = if dino then 0 else 0.55
+			slot.gradient.Enabled = dino ~= nil
+			slot.button.BackgroundColor3 = if dino then Color3.new(1, 1, 1) else UiKit.DEEP
+			local held = dino ~= nil and dino.key == heldKey
+			slot.edge.Color = if held then Color3.new(1, 1, 1) else UiKit.INK
+			slot.raise.Scale = if held then 1.12 else 1
 		end
 	end
 
@@ -314,61 +260,76 @@ function PlotController.start()
 		end
 	end
 
+	-- Rows build their 3D tile only once scrolled into view, since a backpack can hold a lot.
+	local function showVisibleTiles()
+		local top = hud.list.AbsolutePosition.Y
+		local bottom = top + hud.list.AbsoluteWindowSize.Y
+		for _, row in hud.list:GetChildren() do
+			local tile = row:FindFirstChild("Tile")
+			if tile and not tile:FindFirstChildOfClass("ViewportFrame") then
+				local y = row.AbsolutePosition.Y
+				if y < bottom + ROW_HEIGHT and y + ROW_HEIGHT > top - ROW_HEIGHT then
+					local mutation = DinoStats.findOption(Catch.mutations, row:GetAttribute("Mutation"))
+					UiKit.viewport(tile, `dino_{row:GetAttribute("DinoId")}`, { position = UDim2.fromOffset(2, 4), size = UDim2.new(1, -4, 1, -8), tint = mutation and mutation.color, tintAmount = MUTATION_TINT })
+				end
+			end
+		end
+	end
+
 	local function makeRow(dino, order: number)
 		local row = Instance.new("Frame")
 		row.Name = "Row"
 		row.LayoutOrder = order
-		row.BackgroundColor3 = ROW
-		row.Size = UDim2.new(1, -10, 0, ROW_HEIGHT)
+		row.BackgroundColor3 = UiKit.ROW
+		row.Size = UDim2.fromOffset(ROW_WIDTH, ROW_HEIGHT)
+		row:SetAttribute("DinoId", dino.id)
+		row:SetAttribute("Mutation", dino.mutation)
 		row.Parent = hud.list
-		corner(row, 12)
+		UiKit.corner(row, 20)
+		UiKit.stroke(row, 4)
 
-		local swatch = Instance.new("Frame")
-		swatch.Position = UDim2.fromOffset(10, 12)
-		swatch.Size = UDim2.fromOffset(60, 60)
-		swatch.BackgroundColor3 = DinoModel.color(dino.name, dino.mutation)
-		swatch.Parent = row
-		corner(swatch, 10)
-		local stroke = Instance.new("UIStroke")
-		stroke.Color = INK
-		stroke.Thickness = 2
-		stroke.Parent = swatch
+		local tile = Instance.new("Frame")
+		tile.Name = "Tile"
+		tile.Position = UDim2.fromOffset(10, 9)
+		tile.Size = UDim2.fromOffset(80, 80)
+		tile.Parent = row
+		UiKit.gradient(tile, UiKit.rarityOf(dino.id))
+		UiKit.corner(tile, 16)
+		UiKit.stroke(tile, 4)
 
-		local tag = makeLabel(row, Enum.Font.GothamBlack, TAG, UDim2.fromOffset(80, 6), UDim2.new(1, -310, 0, 16))
-		tag.Text = tagText(dino)
-		local name = makeLabel(row, Enum.Font.GothamBlack, TEXT, UDim2.fromOffset(80, 24), UDim2.new(1, -310, 0, 26))
+		local mutation = DinoStats.findOption(Catch.mutations, dino.mutation)
+		local size = DinoStats.findOption(Catch.sizes, dino.size)
+		local tag = UiKit.text(row, if mutation then mutation.name else "", 16, if mutation then mutation.color else UiKit.MUTED, Enum.TextXAlignment.Left)
+		tag.Position = UDim2.fromOffset(102, 8)
+		tag.Size = UDim2.fromOffset(180, 20)
+		local name = UiKit.text(row, dino.name, 24, nil, Enum.TextXAlignment.Left)
 		name.Name = "DinoName"
-		name.Text = dino.name
-		local income = makeLabel(row, Enum.Font.GothamBold, CASH, UDim2.fromOffset(80, 54), UDim2.new(1, -310, 0, 20))
-		income.Text = `{Format.cash(dino.income)}/s`
+		name.Position = UDim2.fromOffset(102, 28)
+		name.Size = UDim2.fromOffset(176, 30)
+		name.TextScaled = true
+		local income = UiKit.text(row, `{if size then size.name .. "  " else ""}{Format.cash(dino.income)}/s`, 20, UiKit.CASH, Enum.TextXAlignment.Left)
+		income.Position = UDim2.fromOffset(102, 62)
+		income.Size = UDim2.fromOffset(186, 24)
 
 		local holding = dino.key == player:GetAttribute("HeldDino")
-		local move = makeButton(
-			row,
-			if dino.onPlot then "PICK UP" elseif holding then "HOLDING" else "EQUIP",
-			if dino.onPlot then PICK_UP else PLACE,
-			UDim2.new(1, -222, 0, 18),
-			UDim2.fromOffset(104, 48)
-		)
+		local move = UiKit.button(row, if dino.onPlot then "PICK UP" elseif holding then "HOLDING" else "EQUIP", "blue", 136, 40, 20)
 		move.Name = "Move"
+		move.AnchorPoint = Vector2.new(1, 0)
+		move.Position = UDim2.new(1, -10, 0, 9)
 		move.Activated:Connect(function()
 			if dino.onPlot then
 				send("pickUp", dino.key)
 			else
 				-- Equipped: close the panel so the player can pick a spot on the plot.
 				send("equip", dino.key)
-				hud.panel.Visible = false
+				UiKit.closePanel(hud.panel)
 			end
 		end)
 
-		local sell = makeButton(
-			row,
-			if confirmKey == dino.key then "SURE?" else `SELL {Format.cash(dino.sellPrice)}`,
-			SELL,
-			UDim2.new(1, -110, 0, 18),
-			UDim2.fromOffset(100, 48)
-		)
+		local sell = UiKit.button(row, if confirmKey == dino.key then "SURE?" else `SELL {Format.cash(dino.sellPrice)}`, "red", 136, 40, 18)
 		sell.Name = "Sell"
+		sell.AnchorPoint = Vector2.new(1, 0)
+		sell.Position = UDim2.new(1, -10, 0, 52)
 		sell.Activated:Connect(function()
 			if confirmKey == dino.key then
 				confirmKey = nil
@@ -393,15 +354,36 @@ function PlotController.start()
 			end
 		end
 		local onPlot = 0
-		for order, dino in dinos do
+		local order = 0
+		for _, dino in dinos do
 			if dino.onPlot then
 				onPlot += 1
 			end
-			makeRow(dino, order)
+			if dino.onPlot == (tab == "plot") then
+				order += 1
+				makeRow(dino, order)
+			end
 		end
-		hud.count.Text = `On plot {onPlot} / {slots}  ·  Backpack {#dinos - onPlot}`
-		hud.empty.Visible = #dinos == 0
+		local inBackpack = #dinos - onPlot
+		hud.tabs.plot.Text = `ON PLOT {onPlot}/{slots}`
+		hud.tabs.backpack.Text = `BACKPACK {inBackpack}`
+		for name, button in hud.tabs do
+			UiKit.restyle(button, button.Text, if name == tab then "green" else "dark")
+		end
+		hud.empty.Text = if #dinos == 0 then "No dinos yet. Throw an egg to catch one!"
+			elseif order == 0 then (if tab == "plot" then "Nothing on your plot. Equip a dino and click your plot." else "Your backpack is empty.")
+			else ""
+		hud.empty.Visible = order == 0
+		task.defer(showVisibleTiles)
 	end
+
+	for name, button in hud.tabs do
+		button.Activated:Connect(function()
+			tab = name
+			renderList()
+		end)
+	end
+	hud.list:GetPropertyChangedSignal("CanvasPosition"):Connect(showVisibleTiles)
 
 	local function renderCash()
 		hud.cash.Text = Format.cash(player:GetAttribute("Cash") or 0)
@@ -409,10 +391,8 @@ function PlotController.start()
 	end
 
 	hud.open.Activated:Connect(function()
-		hud.panel.Visible = not hud.panel.Visible
-	end)
-	hud.close.Activated:Connect(function()
-		hud.panel.Visible = false
+		UiKit.togglePanel(hud.panel)
+		task.defer(showVisibleTiles)
 	end)
 
 	-- Stepping onto the SELL stall's pad opens this panel; walking off closes it again.
@@ -423,7 +403,12 @@ function PlotController.start()
 		local nowOnPad = root ~= nil and Hub.isOnPad(Hub.sellStall, root.Position)
 		if nowOnPad ~= onStallPad then
 			onStallPad = nowOnPad
-			hud.panel.Visible = nowOnPad
+			if nowOnPad then
+				UiKit.openPanel(hud.panel)
+				task.defer(showVisibleTiles)
+			else
+				UiKit.closePanel(hud.panel)
+			end
 		end
 	end)
 	hud.equip.Activated:Connect(function()
@@ -486,7 +471,7 @@ function PlotController.start()
 			return ghost
 		end
 		clearGhost()
-		local model = DinoModel.build(dino.name, dino.mutation, Vector3.zero, DinoModel.statueScale(dino.size))
+		local model = DinoModel.build(dino.id, dino.mutation, Vector3.zero, DinoModel.statueScale(dino.size))
 		model.Name = "PlacementGhost"
 		for _, part in model:GetDescendants() do
 			if part:IsA("BasePart") then

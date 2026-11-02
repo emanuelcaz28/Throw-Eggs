@@ -449,6 +449,17 @@ def export_json(path):
         models[f"bolts_{name}"] = bolt_pile(count)
     models["clover"] = clover()
     models["gift"] = gift()
+    # In the game dinos are seen from both sides, so eyes and teeth on the viewer's side get a
+    # twin on the far side.
+    for name, m in models.items():
+        if not name.startswith("dino_"):
+            continue
+        min_y = min(k[1] for k in m)
+        max_y = max(k[1] for k in m)
+        for (x, y, z), c in list(m.items()):
+            if c in (EYE, WHITE) and y == max(k[1] for k in m if k[0] == x and k[2] == z):
+                low = min(k[1] for k in m if k[0] == x and k[2] == z)
+                m[(x, low, z)] = c
     data = {name: [[x, y, z, c] for (x, y, z), c in m.items()] for name, m in models.items()}
     Path(path).write_text(json.dumps(data, separators=(",", ":")))
     return {name: len(v) for name, v in data.items()}

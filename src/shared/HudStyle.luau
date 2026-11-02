@@ -11,7 +11,9 @@ HudStyle.BUTTON_SIZE = 84
 HudStyle.BUTTON_GAP = 20
 HudStyle.COLUMN_CENTER = 0.45 -- height of the side button columns, as a share of the screen
 
-local FRAME = Color3.fromRGB(44, 47, 57)
+local FRAME = Color3.fromRGB(42, 32, 69)
+local FRAME_TOP = Color3.fromRGB(74, 58, 117)
+local EDGE = Color3.fromRGB(91, 74, 140)
 local TEXT = Color3.new(1, 1, 1)
 local DESIGN_HEIGHT = 620 -- usable heights at least this tall get full size
 local MIN_SCALE = 0.5
@@ -60,18 +62,46 @@ function HudStyle.iconButton(parent: Instance, icon: string, label: string): Tex
 	local size = HudStyle.BUTTON_SIZE * HudStyle.scale()
 	local button = Instance.new("TextButton")
 	button.Size = UDim2.fromOffset(size, size)
-	button.BackgroundColor3 = FRAME
-	button.AutoButtonColor = true
+	button.BackgroundColor3 = Color3.new(1, 1, 1)
+	button.AutoButtonColor = false
 	button.Text = ""
 	button.Parent = parent
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new(FRAME_TOP, FRAME)
+	gradient.Rotation = 90
+	gradient.Parent = button
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0.22, 0)
+	corner.CornerRadius = UDim.new(0.26, 0)
 	corner.Parent = button
 	local stroke = Instance.new("UIStroke")
 	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	stroke.Color = HudStyle.INK
-	stroke.Thickness = 3
+	stroke.Thickness = 4
 	stroke.Parent = button
+	-- A lighter inner edge, like a bevel.
+	local edge = Instance.new("Frame")
+	edge.BackgroundTransparency = 1
+	edge.Position = UDim2.fromOffset(4, 4)
+	edge.Size = UDim2.new(1, -8, 1, -8)
+	edge.Parent = button
+	local edgeCorner = Instance.new("UICorner")
+	edgeCorner.CornerRadius = UDim.new(0.24, 0)
+	edgeCorner.Parent = edge
+	local edgeStroke = Instance.new("UIStroke")
+	edgeStroke.Color = EDGE
+	edgeStroke.Thickness = 3
+	edgeStroke.Parent = edge
+	local press = Instance.new("UIScale")
+	press.Parent = button
+	button.MouseButton1Down:Connect(function()
+		press.Scale = 0.92
+	end)
+	button.MouseButton1Up:Connect(function()
+		press.Scale = 1
+	end)
+	button.MouseLeave:Connect(function()
+		press.Scale = 1
+	end)
 
 	local iconLabel = text(button, icon, TEXT)
 	iconLabel.Name = "Icon"

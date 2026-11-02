@@ -28,7 +28,6 @@ local UPGRADE_SIGN_INSET = 4 -- studs inside the front edge, beside the gate
 local UPGRADE_CLICK_DISTANCE = 40
 local SIGN_INK = Color3.fromRGB(20, 22, 28)
 local SPOT_TRIES = 40
-local OFFLINE_NOTICE_TIME = 6 -- seconds the "while you were away" message stays up
 local HELD_SCALE = 0.35
 local HELD_SIDE = 3.5 -- studs to the character's right
 
@@ -43,7 +42,7 @@ local rng = Random.new()
 local function makeRemotes()
 	local folder = Instance.new("Folder")
 	folder.Name = "PlotRemotes"
-	for _, name in { "DinoAction", "DinosChanged", "Notice" } do
+	for _, name in { "DinoAction", "DinosChanged", "Notice", "OfflineEarnings", "ClaimOffline" } do
 		local remote = Instance.new("RemoteEvent")
 		remote.Name = name
 		remote.Parent = folder
@@ -318,7 +317,7 @@ local function attachHeldModel(player: Player, entry)
 		return
 	end
 	local feet = root.CFrame * CFrame.new(HELD_SIDE, -(humanoid.HipHeight + root.Size.Y / 2), 0)
-	local model = DinoModel.build(stats.name, entry.mutation, Vector3.zero, HELD_SCALE)
+	local model = DinoModel.build(entry.id, entry.mutation, Vector3.zero, HELD_SCALE)
 	model.Name = "HeldDino"
 	model:PivotTo(feet)
 	for _, part in model:GetDescendants() do
@@ -366,7 +365,7 @@ local function rebuildStatues(player: Player, data)
 		local stats = DinoStats.describe(entry)
 		if stats then
 			local position = spotPosition(plotIndex, entry.x, entry.z)
-			local statue = DinoModel.build(stats.name, entry.mutation, position, DinoModel.statueScale(entry.size))
+			local statue = DinoModel.build(entry.id, entry.mutation, position, DinoModel.statueScale(entry.size))
 			local head = statue.Head
 			World.makeSign(head, `{stats.name}\n{Format.cash(stats.income)}/s`, 5, STATUE_LABEL_DISTANCE, 170)
 			statue.Parent = folder
@@ -384,6 +383,7 @@ local function publish(player: Player, data)
 		if stats then
 			table.insert(list, {
 				key = entry.key,
+				id = entry.id,
 				name = stats.name,
 				mutation = entry.mutation,
 				size = entry.size,
@@ -532,17 +532,21 @@ local function onLoaded(player: Player, data)
 	player:SetAttribute("Cash", data.cash)
 	changed(player, data)
 
-	-- Offline earnings: read the last-seen time now, before the income ticks overwrite it.
+	-- Offline earnings wait for the player to press CLAIM on the Welcome back pop-up. They're
+	-- saved, so leaving before claiming keeps them for next time. Read the last-seen time now,
+	-- before the income ticks overwrite it.
 	local away = math.min(os.time() - data.lastSeen, Plot.maxOfflineHours * 3600)
-	if data.lastSeen > 0 and away >= Plot.minOfflineSeconds then
+	local wasAway = data.lastSeen > 0 and away >= Plot.minOfflineSeconds
+	if wasAway or data.offlinePending > 0 then
 		task.delay(Plot.offlinePayoutDelay, function()
 			if PlayerData.get(player) ~= data then
 				return
 			end
-			local earned = math.floor(baseIncome(player, data) * away * Plot.offlineRate)
-			if earned > 0 then
-				earn(player, data, earned)
-				remotes.Notice:FireClient(player, `Your dinos earned {Format.cash(earned)} while you were away!`, OFFLINE_NOTICE_TIME)
+			if wasAway then
+				data.offlinePending += math.floor(baseIncome(player, data) * away * Plot.offlineRate)
+			end
+			if data.offlinePending > 0 then
+				remotes.OfflineEarnings:FireClient(player, data.offlinePending, if wasAway then away else 0)
 			end
 		end)
 	end
@@ -614,6 +618,15 @@ function PlotService.start()
 	makeRemotes()
 	buildPlots()
 	remotes.DinoAction.OnServerEvent:Connect(onAction)
+	remotes.ClaimOffline.OnServerEvent:Connect(function(player)
+		local data = PlayerData.get(player)
+		if data and data.offlinePending > 0 then
+			local amount = data.offlinePending
+			data.offlinePending = 0
+			earn(player, data, amount)
+			remotes.Notice:FireClient(player, `+{Format.cash(amount)} claimed!`)
+		end
+	end)
 	PlayerData.onLoaded(onLoaded)
 	Players.PlayerRemoving:Connect(onLeaving)
 	task.spawn(function()

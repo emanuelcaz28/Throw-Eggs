@@ -1,70 +1,32 @@
--- The Dino Index panel: every dino by biome, with unseen ones hidden as "???".
--- Display only: the server decides what's been discovered.
+-- The Dino Index panel: one block per biome, with the biome's card (name and spinning island) on
+-- the left and the dinos that live there on rarity tiles on the right. Unseen dinos show as black
+-- silhouettes. Display only: the server decides what's been discovered.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
-local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Index = require(ReplicatedStorage.Shared.Config.Index)
+local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local player = Players.LocalPlayer
 
 local IndexController = {}
 
-local PANEL = Color3.fromRGB(28, 30, 36)
-local SECTION = Color3.fromRGB(58, 62, 72)
-local TRACK = Color3.fromRGB(36, 38, 46)
-local UNSEEN = Color3.fromRGB(36, 38, 46)
-local INK = Color3.fromRGB(20, 22, 28)
-local ACCENT = Color3.fromRGB(226, 142, 58)
-local CLOSE = Color3.fromRGB(190, 70, 60)
-local TEXT = Color3.new(1, 1, 1)
-local MUTED = Color3.fromRGB(190, 195, 205)
-local DONE = Color3.fromRGB(120, 235, 120)
-local TAG = Color3.fromRGB(255, 214, 70)
-local SECTION_HEIGHT = 186
-
-local function corner(parent: Instance, radius: number)
-	local uiCorner = Instance.new("UICorner")
-	uiCorner.CornerRadius = UDim.new(0, radius)
-	uiCorner.Parent = parent
-end
-
-local function makeLabel(parent: Instance, font: Enum.Font, color: Color3, position: UDim2, size: UDim2): TextLabel
-	local label = Instance.new("TextLabel")
-	label.BackgroundTransparency = 1
-	label.Font = font
-	label.Position = position
-	label.Size = size
-	label.Text = ""
-	label.TextColor3 = color
-	label.TextScaled = true
-	label.Parent = parent
-	return label
-end
-
-local function makeButton(parent: Instance, text: string, color: Color3, position: UDim2, size: UDim2): TextButton
-	local button = Instance.new("TextButton")
-	button.BackgroundColor3 = color
-	button.Font = Enum.Font.GothamBlack
-	button.Position = position
-	button.Size = size
-	button.Text = text
-	button.TextColor3 = TEXT
-	button.TextScaled = true
-	button.Parent = parent
-	corner(button, 10)
-	local padding = Instance.new("UIPadding")
-	padding.PaddingTop = UDim.new(0, 8)
-	padding.PaddingBottom = UDim.new(0, 8)
-	padding.PaddingLeft = UDim.new(0, 6)
-	padding.PaddingRight = UDim.new(0, 6)
-	padding.Parent = button
-	return button
-end
+local PANEL_SIZE = Vector2.new(1060, 672)
+local LIST_WIDTH = 1012
+local CARD_SIZE = Vector2.new(250, 368)
+local TILE_SIZE = Vector2.new(234, 150)
+local TILE_GAP = 12
+local TILES_PER_ROW = 3
+-- Biome card colours; a biome missing here uses the sky gradient.
+local CARD_COLOURS = {
+	FernValley = { "#4fe0ff", "#1aa6e0" },
+	DryPlains = { "#ffc14d", "#ff7a2f" },
+	Swamp = { "#8fe05a", "#2f9e6a" },
+}
 
 local function buildGui()
 	local gui = Instance.new("ScreenGui")
@@ -80,149 +42,125 @@ local function buildGui()
 	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, -(HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) / 2 * HudStyle.scale())
 	open.Name = "OpenIndex"
 
-	local panel = Instance.new("Frame")
-	panel.Name = "IndexPanel"
-	panel.AnchorPoint = Vector2.new(0.5, 0.5)
-	panel.Position = UDim2.fromScale(0.5, 0.5)
-	panel.Size = UDim2.fromScale(0.9, 0.86)
-	panel.BackgroundColor3 = PANEL
-	panel.BackgroundTransparency = 0.06
-	panel.Visible = false
-	panel.Parent = gui
-	corner(panel, 16)
-	local panelLimit = Instance.new("UISizeConstraint")
-	panelLimit.MaxSize = Vector2.new(640, 560)
-	panelLimit.Parent = panel
+	local panel = UiKit.panel(gui, { name = "IndexPanel", width = PANEL_SIZE.X, height = PANEL_SIZE.Y, header = "berry", title = "Dino Index" })
+	local list = UiKit.scrollList(panel.body, UDim2.fromOffset(24, 10), UDim2.new(1, -36, 1, -122), 18)
 
-	local title = makeLabel(panel, Enum.Font.GothamBlack, TEXT, UDim2.fromOffset(16, 12), UDim2.new(0.6, 0, 0, 32))
-	title.Text = "Dino Index"
-	title.TextXAlignment = Enum.TextXAlignment.Left
-	local total = makeLabel(panel, Enum.Font.GothamBold, TAG, UDim2.fromOffset(16, 46), UDim2.new(0.6, 0, 0, 20))
-	total.Name = "Total"
-	total.TextXAlignment = Enum.TextXAlignment.Left
-
-	local close = makeButton(panel, "X", CLOSE, UDim2.new(1, -60, 0, 14), UDim2.fromOffset(46, 46))
-	close.Name = "Close"
-
-	local list = Instance.new("ScrollingFrame")
-	list.Name = "List"
-	list.BackgroundTransparency = 1
-	list.BorderSizePixel = 0
-	list.Position = UDim2.fromOffset(12, 76)
-	list.Size = UDim2.new(1, -24, 1, -88)
-	list.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	list.CanvasSize = UDim2.new()
-	list.ScrollBarThickness = 8
-	list.ScrollingDirection = Enum.ScrollingDirection.Y
-	list.Parent = panel
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 10)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = list
-
-	return { open = open, panel = panel, total = total, close = close, list = list }
-end
-
-local function rewardText(): string
-	return `Complete: +{Index.cashBonusPerBiome * 100}% $/s, +{Index.luckBonusPerBiome * 100}% luck`
-end
-
-local function makeCell(parent: Instance, dino, seen: boolean, order: number)
-	local cell = Instance.new("Frame")
-	cell.Name = dino.id
-	cell.LayoutOrder = order
-	cell.BackgroundTransparency = 1
-	cell.Size = UDim2.new(0.19, 0, 1, 0)
-	cell.Parent = parent
-
-	local swatch = Instance.new("Frame")
-	swatch.Name = "Swatch"
-	swatch.AnchorPoint = Vector2.new(0.5, 0)
-	swatch.Position = UDim2.fromScale(0.5, 0)
-	swatch.Size = UDim2.fromOffset(56, 56)
-	swatch.BackgroundColor3 = if seen then DinoModel.color(dino.name, nil) else UNSEEN
-	swatch.Parent = cell
-	corner(swatch, 10)
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = INK
-	stroke.Thickness = 2
-	stroke.Parent = swatch
-
-	if not seen then
-		local mark = makeLabel(swatch, Enum.Font.GothamBlack, MUTED, UDim2.fromScale(0.2, 0.2), UDim2.fromScale(0.6, 0.6))
-		mark.Text = "?"
-	end
-
-	local name = makeLabel(cell, Enum.Font.GothamBold, TEXT, UDim2.fromOffset(0, 60), UDim2.new(1, 0, 0, 18))
-	name.Name = "DinoName"
-	name.Text = if seen then dino.name else "???"
-	local odds = makeLabel(cell, Enum.Font.Gotham, MUTED, UDim2.fromOffset(0, 80), UDim2.new(1, 0, 0, 14))
-	odds.Text = `1 in {Format.commas(dino.chance)}`
-end
-
-local function makeSection(list: Instance, biome, discovered, order: number): number
-	local biomeDinos = Dinos[biome.id]
-	local seenCount = 0
-	for _, dino in biomeDinos do
-		if discovered[dino.id] then
-			seenCount += 1
-		end
-	end
-	local complete = seenCount == #biomeDinos
-
-	local section = Instance.new("Frame")
-	section.Name = biome.id
-	section.LayoutOrder = order
-	section.BackgroundColor3 = SECTION
-	section.Size = UDim2.new(1, -12, 0, SECTION_HEIGHT)
-	section.Parent = list
-	corner(section, 12)
-
-	local name = makeLabel(section, Enum.Font.GothamBlack, biome.color:Lerp(TEXT, 0.45), UDim2.fromOffset(12, 8), UDim2.new(0.6, 0, 0, 24))
-	name.Name = "BiomeName"
-	name.Text = biome.name
-	name.TextXAlignment = Enum.TextXAlignment.Left
-	local count = makeLabel(section, Enum.Font.GothamBold, if complete then DONE else TEXT, UDim2.new(1, -92, 0, 10), UDim2.fromOffset(80, 20))
-	count.Name = "Count"
-	count.Text = `{seenCount} / {#biomeDinos}`
-	count.TextXAlignment = Enum.TextXAlignment.Right
-
-	local track = Instance.new("Frame")
-	track.Position = UDim2.fromOffset(12, 36)
-	track.Size = UDim2.new(1, -24, 0, 8)
-	track.BackgroundColor3 = TRACK
-	track.BorderSizePixel = 0
-	track.Parent = section
-	corner(track, 4)
+	-- Overall progress along the bottom, with the book poking out on the left.
+	local bar = Instance.new("Frame")
+	bar.AnchorPoint = Vector2.new(0, 1)
+	bar.Position = UDim2.new(0, 92, 1, -20)
+	bar.Size = UDim2.new(1, -122, 0, 72)
+	bar.BackgroundColor3 = UiKit.DEEP
+	bar.Parent = panel.body
+	UiKit.corner(bar, 24)
+	UiKit.stroke(bar, 4)
 	local fill = Instance.new("Frame")
-	fill.Size = UDim2.fromScale(seenCount / #biomeDinos, 1)
-	fill.BackgroundColor3 = if complete then DONE else biome.color:Lerp(TEXT, 0.2)
-	fill.BorderSizePixel = 0
-	fill.Parent = track
-	corner(fill, 4)
+	fill.Size = UDim2.fromScale(0, 1)
+	fill.Parent = bar
+	UiKit.gradient(fill, "green")
+	UiKit.corner(fill, 20)
+	local total = UiKit.text(bar, "", 40)
+	total.Size = UDim2.fromScale(1, 1)
+	total.ZIndex = 2
+	local book = UiKit.text(panel.body, "📖", 84)
+	book.AnchorPoint = Vector2.new(0, 1)
+	book.Position = UDim2.new(0, 12, 1, -6)
+	book.Size = UDim2.fromOffset(110, 100)
+	book.Rotation = -12
+	book.ZIndex = 3
 
-	local reward = makeLabel(section, Enum.Font.GothamBold, if complete then DONE else MUTED, UDim2.fromOffset(12, 48), UDim2.new(1, -24, 0, 16))
-	reward.Name = "Reward"
-	reward.Text = rewardText()
-	reward.TextXAlignment = Enum.TextXAlignment.Left
+	return { open = open, panel = panel, list = list, fill = fill, total = total }
+end
 
-	local row = Instance.new("Frame")
-	row.Name = "Dinos"
-	row.BackgroundTransparency = 1
-	row.Position = UDim2.fromOffset(8, 72)
-	row.Size = UDim2.new(1, -16, 0, 104)
-	row.Parent = section
-	local layout = Instance.new("UIListLayout")
-	layout.FillDirection = Enum.FillDirection.Horizontal
-	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.Padding = UDim.new(0.01, 0)
+local function progressBar(parent: Instance, done: number, count: number, width: number)
+	local bar = Instance.new("Frame")
+	bar.Size = UDim2.fromOffset(width, 44)
+	bar.BackgroundColor3 = UiKit.DEEP
+	bar.Parent = parent
+	UiKit.corner(bar, 16)
+	UiKit.stroke(bar, 4)
+	local fill = Instance.new("Frame")
+	fill.Size = UDim2.fromScale(done / count, 1)
+	fill.Visible = done > 0
+	fill.Parent = bar
+	UiKit.gradient(fill, "green")
+	UiKit.corner(fill, 12)
+	local label = UiKit.text(bar, `{done}/{count}`, 28)
+	label.Size = UDim2.fromScale(1, 1)
+	label.ZIndex = 2
+end
+
+local function rewardTile(parent: Instance, complete: boolean)
+	local tile = Instance.new("Frame")
+	tile.LayoutOrder = math.huge -- after the dinos
+	tile.Size = UDim2.fromOffset(TILE_SIZE.X, TILE_SIZE.Y)
+	tile.Parent = parent
+	UiKit.gradient(tile, { "#3a3060", "#2a2348" })
+	UiKit.corner(tile, 20)
+	UiKit.stroke(tile, 4)
+	local title = UiKit.text(tile, if complete then "✓ COMPLETE!" else "COMPLETE REWARD", 19, UiKit.GOLD)
+	title.Position = UDim2.fromOffset(0, 22)
+	local cash = UiKit.text(tile, `+{math.round(Index.cashBonusPerBiome * 100)}% cash`, 24, UiKit.CASH)
+	cash.Position = UDim2.fromOffset(0, 56)
+	local luck = UiKit.text(tile, `+{math.round(Index.luckBonusPerBiome * 100)}% luck`, 24, UiKit.POWER)
+	luck.Position = UDim2.fromOffset(0, 90)
+end
+
+local function biomeBlock(list: Instance, biome, discovered, order: number): (number, number)
+	local dinos = Dinos[biome.id] or {}
+	local block = Instance.new("Frame")
+	block.BackgroundTransparency = 1
+	block.LayoutOrder = order
+	block.Size = UDim2.fromOffset(LIST_WIDTH - 20, CARD_SIZE.Y)
+	block.Parent = list
+
+	local card = Instance.new("Frame")
+	card.Size = UDim2.fromOffset(CARD_SIZE.X, CARD_SIZE.Y)
+	card.Parent = block
+	UiKit.gradient(card, CARD_COLOURS[biome.id] or "sky")
+	UiKit.corner(card, 26)
+	UiKit.stroke(card, 5)
+	local name = UiKit.text(card, biome.name, 42)
+	name.Position = UDim2.fromOffset(0, 14)
+	name.TextWrapped = true
+	UiKit.viewport(card, `biome_{biome.id}`, { spin = true, position = UDim2.fromOffset(10, 90), size = UDim2.fromOffset(CARD_SIZE.X - 20, 250), zoom = 1.0 })
+
+	local grid = Instance.new("Frame")
+	grid.BackgroundTransparency = 1
+	grid.Position = UDim2.fromOffset(CARD_SIZE.X + 16, 0)
+	grid.Size = UDim2.new(1, -CARD_SIZE.X - 16, 1, 0)
+	grid.Parent = block
+	local layout = Instance.new("UIGridLayout")
+	layout.CellSize = UDim2.fromOffset(TILE_SIZE.X, TILE_SIZE.Y)
+	layout.CellPadding = UDim2.fromOffset(TILE_GAP, TILE_GAP)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = row
+	layout.Parent = grid
 
-	for dinoOrder, dino in biomeDinos do
-		makeCell(row, dino, discovered[dino.id] == true, dinoOrder)
+	local found = 0
+	for index, dino in dinos do
+		local seen = discovered[dino.id] == true
+		if seen then
+			found += 1
+		end
+		local tile = UiKit.dinoTile(grid, dino.id, dino.name, TILE_SIZE.X, TILE_SIZE.Y, {
+			found = seen,
+			nameSize = 21,
+			bottom = if seen then `1 in {Format.commas(dino.chance)}` else nil,
+		})
+		tile.LayoutOrder = index
 	end
-	return seenCount
+	rewardTile(grid, found == #dinos and #dinos > 0)
+
+	local barHolder = Instance.new("Frame")
+	barHolder.BackgroundTransparency = 1
+	local rows = math.ceil((#dinos + 1) / TILES_PER_ROW)
+	barHolder.Position = UDim2.fromOffset(CARD_SIZE.X + 16, rows * (TILE_SIZE.Y + TILE_GAP))
+	barHolder.Size = UDim2.fromOffset(TILES_PER_ROW * TILE_SIZE.X + (TILES_PER_ROW - 1) * TILE_GAP, 44)
+	barHolder.Parent = block
+	progressBar(barHolder, found, math.max(#dinos, 1), barHolder.Size.X.Offset)
+	block.Size = UDim2.fromOffset(LIST_WIDTH - 20, math.max(CARD_SIZE.Y, rows * (TILE_SIZE.Y + TILE_GAP) + 48))
+	card.Size = UDim2.fromOffset(CARD_SIZE.X, block.Size.Y.Offset)
+	return found, #dinos
 end
 
 function IndexController.start()
@@ -237,17 +175,17 @@ function IndexController.start()
 		end
 		local seen, total = 0, 0
 		for order, biome in Biomes do
-			seen += makeSection(hud.list, biome, discovered, order)
-			total += #Dinos[biome.id]
+			local found, count = biomeBlock(hud.list, biome, discovered, order)
+			seen += found
+			total += count
 		end
-		hud.total.Text = `{seen} / {total} discovered`
+		hud.total.Text = `Unlocked: {seen}/{total}`
+		hud.fill.Size = UDim2.fromScale(if total > 0 then seen / total else 0, 1)
+		hud.fill.Visible = seen > 0
 	end
 
 	hud.open.Activated:Connect(function()
-		hud.panel.Visible = not hud.panel.Visible
-	end)
-	hud.close.Activated:Connect(function()
-		hud.panel.Visible = false
+		UiKit.togglePanel(hud.panel)
 	end)
 	remote.OnClientEvent:Connect(render)
 	render({})

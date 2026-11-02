@@ -20,6 +20,7 @@ return {
 		bestIncome = 0, -- $/s of the best dino ever caught
 		cash = 0,
 		lastSeen = 0, -- os.time() of the last income tick, for offline earnings
+		offlinePending = 0, -- offline earnings waiting for the player to press CLAIM
 		dinos = {}, -- every dino owned: { key, id, mutation, size, onPlot }
 		nextDinoKey = 1,
 		ownedEggs = { DirtyEgg = true },

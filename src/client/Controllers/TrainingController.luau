@@ -8,29 +8,20 @@ local TweenService = game:GetService("TweenService")
 local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Training = require(ReplicatedStorage.Shared.Config.Training)
+local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local player = Players.LocalPlayer
 
 local TrainingController = {}
 
-local ACCENT = Color3.fromRGB(226, 142, 58)
-local PANEL = Color3.fromRGB(28, 30, 36)
-local TRACK = Color3.fromRGB(58, 62, 72)
 local POWER = Color3.fromRGB(90, 190, 255)
-local STOP = Color3.fromRGB(205, 55, 50)
-local BUBBLE = Color3.fromRGB(160, 90, 230)
 local AFFORD = Color3.fromRGB(120, 235, 120)
 local TOO_PRICEY = Color3.fromRGB(240, 70, 60)
 local TEXT = Color3.new(1, 1, 1)
 local LEVEL_UP_TIME = 1.4
+local BUBBLE_SIZE = 112
 local POWER_HEIGHT = 52 -- before scaling for small screens
 local POWER_ABOVE_BOTTOM = 98 -- clears the cash and $/s beneath it
-
-local function corner(parent: Instance, radius: UDim)
-	local uiCorner = Instance.new("UICorner")
-	uiCorner.CornerRadius = radius
-	uiCorner.Parent = parent
-end
 
 local function makeLabel(parent: Instance, font: Enum.Font, color: Color3, align: Enum.TextXAlignment): TextLabel
 	local label = Instance.new("TextLabel")
@@ -56,97 +47,84 @@ local function buildHud()
 	powerStat.AnchorPoint = Vector2.new(0, 1)
 	powerStat.Position = UDim2.new(0, 16, 1, -POWER_ABOVE_BOTTOM * HudStyle.scale())
 
-	-- Only while training.
+	-- Only while training: the level bar with STOP above it, bottom centre.
+	local training = Instance.new("Frame")
+	training.Name = "TrainingGroup"
+	training.BackgroundTransparency = 1
+	training.AnchorPoint = Vector2.new(0.5, 1)
+	training.Position = UDim2.new(0.5, 0, 1, -16)
+	training.Size = UDim2.fromOffset(640, 150)
+	training.Parent = gui
+	local trainingScale = Instance.new("UIScale")
+	trainingScale.Scale = UiKit.scale()
+	trainingScale.Parent = training
+
 	local bar = Instance.new("Frame")
 	bar.Name = "LevelBar"
 	bar.AnchorPoint = Vector2.new(0.5, 1)
-	bar.Position = UDim2.new(0.5, 0, 1, -16)
-	bar.Size = UDim2.new(0.7, 0, 0, 46)
-	bar.BackgroundColor3 = TRACK
+	bar.Position = UDim2.new(0.5, 0, 1, 0)
+	bar.Size = UDim2.fromOffset(640, 60)
+	bar.BackgroundColor3 = UiKit.DEEP
 	bar.Visible = false
-	bar.Parent = gui
-	corner(bar, UDim.new(0, 14))
-	local barLimit = Instance.new("UISizeConstraint")
-	barLimit.MaxSize = Vector2.new(560, 46)
-	barLimit.Parent = bar
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = PANEL
-	stroke.Thickness = 3
-	stroke.Parent = bar
-
+	bar.Parent = training
+	UiKit.corner(bar, 22)
+	UiKit.stroke(bar, 5)
 	local fill = Instance.new("Frame")
 	fill.Name = "Fill"
 	fill.Size = UDim2.fromScale(0, 1)
-	fill.BackgroundColor3 = POWER
-	fill.BorderSizePixel = 0
 	fill.Parent = bar
-	corner(fill, UDim.new(0, 14))
-
-	local level = makeLabel(bar, Enum.Font.GothamBlack, TEXT, Enum.TextXAlignment.Left)
-	level.Position = UDim2.fromOffset(14, 8)
-	level.Size = UDim2.new(0.5, -14, 1, -16)
-	level.TextStrokeTransparency = 0.3
+	UiKit.gradient(fill, { "#8ff0ff", "#2fb6e6" })
+	UiKit.corner(fill, 18)
+	local level = UiKit.text(bar, "", 32, nil, Enum.TextXAlignment.Left)
+	level.Position = UDim2.fromOffset(20, 0)
+	level.Size = UDim2.new(0.5, -20, 1, 0)
 	level.ZIndex = 2
-	local xp = makeLabel(bar, Enum.Font.GothamBlack, TEXT, Enum.TextXAlignment.Right)
+	local xp = UiKit.text(bar, "", 32, nil, Enum.TextXAlignment.Right)
 	xp.AnchorPoint = Vector2.new(1, 0)
-	xp.Position = UDim2.new(1, -14, 0, 8)
-	xp.Size = UDim2.new(0.5, -14, 1, -16)
-	xp.TextStrokeTransparency = 0.3
+	xp.Position = UDim2.new(1, -20, 0, 0)
+	xp.Size = UDim2.new(0.5, -20, 1, 0)
 	xp.ZIndex = 2
 
-	local stop = Instance.new("TextButton")
+	local stop = UiKit.button(training, "STOP", "red", 200, 70, 36)
 	stop.Name = "Stop"
-	stop.AnchorPoint = Vector2.new(0.5, 1)
-	stop.Position = UDim2.new(0.5, 0, 1, -74)
-	stop.Size = UDim2.fromOffset(150, 50)
-	stop.BackgroundColor3 = STOP
-	stop.Font = Enum.Font.GothamBlack
-	stop.Text = "STOP"
-	stop.TextColor3 = TEXT
-	stop.TextScaled = true
+	stop.AnchorPoint = Vector2.new(0.5, 0)
+	stop.Position = UDim2.new(0.5, 0, 0, 0)
 	stop.Visible = false
-	stop.Parent = gui
-	corner(stop, UDim.new(0, 12))
-	local stopPadding = Instance.new("UIPadding")
-	stopPadding.PaddingTop = UDim.new(0, 8)
-	stopPadding.PaddingBottom = UDim.new(0, 8)
-	stopPadding.Parent = stop
 
-	local levelUp = makeLabel(gui, Enum.Font.GothamBlack, ACCENT, Enum.TextXAlignment.Center)
+	local levelUp = UiKit.text(gui, "LEVEL UP!", 84, Color3.fromRGB(255, 177, 59))
 	levelUp.Name = "LevelUp"
 	levelUp.AnchorPoint = Vector2.new(0.5, 0.5)
 	levelUp.Position = UDim2.fromScale(0.5, 0.22)
-	levelUp.Size = UDim2.new(0.6, 0, 0, 64)
-	levelUp.TextStrokeTransparency = 0
+	levelUp.Size = UDim2.new(0.6, 0, 0, 100)
 	levelUp.Visible = false
-	local levelUpPower = makeLabel(levelUp, Enum.Font.GothamBlack, POWER, Enum.TextXAlignment.Center)
+	local levelUpScale = Instance.new("UIScale")
+	levelUpScale.Scale = UiKit.scale()
+	levelUpScale.Parent = levelUp
+	local levelUpPower = UiKit.text(levelUp, "", 36, POWER)
 	levelUpPower.Name = "Power"
-	levelUpPower.Position = UDim2.new(0, 0, 1, 0)
-	levelUpPower.Size = UDim2.new(1, 0, 0, 30)
-	levelUpPower.TextStrokeTransparency = 0.2
+	levelUpPower.Position = UDim2.new(0, 0, 1, -8)
+	levelUpPower.Size = UDim2.new(1, 0, 0, 44)
 
 	local bubble = Instance.new("TextButton")
 	bubble.Name = "Bubble"
 	bubble.AnchorPoint = Vector2.new(0.5, 0.5)
-	bubble.Size = UDim2.fromOffset(96, 96)
-	bubble.BackgroundColor3 = BUBBLE
-	bubble.Font = Enum.Font.GothamBlack
+	bubble.Size = UDim2.fromOffset(BUBBLE_SIZE, BUBBLE_SIZE)
+	bubble.AutoButtonColor = false
+	bubble.FontFace = UiKit.FONT
 	bubble.Text = `x{Training.bubble.multiplier}`
+	bubble.TextSize = 50
 	bubble.TextColor3 = TEXT
-	bubble.TextScaled = true
 	bubble.Visible = false
 	bubble.ZIndex = 3
 	bubble.Parent = gui
-	corner(bubble, UDim.new(0.5, 0))
-	local bubbleStroke = Instance.new("UIStroke")
-	bubbleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	bubbleStroke.Color = TEXT
-	bubbleStroke.Thickness = 4
-	bubbleStroke.Parent = bubble
-	local bubblePadding = Instance.new("UIPadding")
-	bubblePadding.PaddingTop = UDim.new(0, 22)
-	bubblePadding.PaddingBottom = UDim.new(0, 22)
-	bubblePadding.Parent = bubble
+	UiKit.gradient(bubble, { "#e3b8ff", "#9a4ff0" })
+	UiKit.corner(bubble, BUBBLE_SIZE)
+	UiKit.stroke(bubble, 6, TEXT)
+	local bubbleText = Instance.new("UIStroke")
+	bubbleText.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+	bubbleText.Color = UiKit.INK
+	bubbleText.Thickness = 5
+	bubbleText.Parent = bubble
 
 	return {
 		power = power,
@@ -215,8 +193,10 @@ function TrainingController.start()
 		hud.levelUp.Text = "LEVEL UP!"
 		hud.levelUpPower.Text = `Throw Power +{gained}`
 		hud.levelUp.Visible = true
-		hud.levelUp.Size = UDim2.new(0.4, 0, 0, 40)
-		TweenService:Create(hud.levelUp, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Size = UDim2.new(0.6, 0, 0, 64) }):Play()
+		local pop = hud.levelUp:FindFirstChildOfClass("UIScale")
+		local full = UiKit.scale()
+		pop.Scale = full * 0.5
+		TweenService:Create(pop, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Scale = full }):Play()
 		task.delay(LEVEL_UP_TIME, function()
 			if levelUpToken == token then
 				hud.levelUp.Visible = false
@@ -260,9 +240,9 @@ function TrainingController.start()
 	remotes.BubbleShown.OnClientEvent:Connect(function(id: number)
 		bubbleId = id
 		hud.bubble.Position = UDim2.fromScale(0.3 + math.random() * 0.4, 0.3 + math.random() * 0.25)
-		hud.bubble.Size = UDim2.fromOffset(40, 40)
+		hud.bubble.Size = UDim2.fromOffset(BUBBLE_SIZE * 0.4, BUBBLE_SIZE * 0.4)
 		hud.bubble.Visible = true
-		TweenService:Create(hud.bubble, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Size = UDim2.fromOffset(96, 96) }):Play()
+		TweenService:Create(hud.bubble, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Size = UDim2.fromOffset(BUBBLE_SIZE, BUBBLE_SIZE) }):Play()
 		task.delay(Training.bubble.lifetime, function()
 			if bubbleId == id then
 				bubbleId = nil
