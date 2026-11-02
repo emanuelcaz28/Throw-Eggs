@@ -10,18 +10,23 @@ function Format.commas(value: number): string
 	return (grouped:gsub("^,", ""))
 end
 
--- 1080000 -> "$1.08M"
-function Format.cash(value: number): string
+-- 1080000 -> "1.08M"
+function Format.short(value: number): string
 	local tier = 0
 	while value >= 1000 and tier < #SUFFIXES do
 		value /= 1000
 		tier += 1
 	end
 	if tier == 0 then
-		return `${math.floor(value)}`
+		return tostring(math.floor(value))
 	end
 	local text = string.format("%.2f", value):gsub("%.?0+$", "")
-	return `${text}{SUFFIXES[tier]}`
+	return `{text}{SUFFIXES[tier]}`
+end
+
+-- 1080000 -> "$1.08M"
+function Format.cash(value: number): string
+	return `${Format.short(value)}`
 end
 
 return Format

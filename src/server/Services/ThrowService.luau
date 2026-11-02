@@ -145,6 +145,10 @@ local function onTap(player: Player, height: any)
 		if catch.newBest then
 			data.bestIncome = catch.income
 		end
+		if data then
+			data.totalCaught += 1
+			data.rarestOneIn = math.max(data.rarestOneIn, catch.oneIn)
+		end
 		catch.isNew, catch.completedBiome = IndexService.discover(player, catch.id, biome)
 		catch.storedIn = PlotService.addCatch(player, catch)
 

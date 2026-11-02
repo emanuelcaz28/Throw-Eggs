@@ -25,6 +25,11 @@ return {
 		discovered = {}, -- every dino id ever caught, for the Index
 		starterClaimed = false,
 		plotUpgrades = 0, -- bought at the sign by the plot's gate
+		-- Leaderboard stats. Saves from before these existed get them estimated on load.
+		totalCaught = 0, -- dinos caught by throwing, ever
+		totalEarned = 0, -- cash earned from income and sales, ever
+		rarestOneIn = 0, -- the "1 in X" of the rarest catch ever
+		statsStarted = false, -- set once the stats above have been filled in for this save
 		receipts = {}, -- Robux purchases already granted, by purchase id
 	},
 }

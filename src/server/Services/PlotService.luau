@@ -246,6 +246,13 @@ local function sellPrice(entry): number
 	return math.floor(incomeOf(entry) * Plot.sellSeconds)
 end
 
+-- All cash a player earns goes through here, so the Top Money leaderboard counts it.
+local function earn(player: Player, data, amount: number)
+	data.cash += amount
+	data.totalEarned += amount
+	player:SetAttribute("Cash", data.cash)
+end
+
 -- A random spot that keeps clear of the dinos already placed and of where players land
 -- after a catch. When the plot is crowded, the emptiest spot found is used.
 local function freeSpot(data): (number, number)
@@ -471,9 +478,8 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 			changed(player, data)
 		end
 	elseif action == "sell" then
-		data.cash += sellPrice(entry)
+		earn(player, data, sellPrice(entry))
 		table.remove(data.dinos, index)
-		player:SetAttribute("Cash", data.cash)
 		changed(player, data)
 	end
 end
@@ -493,8 +499,7 @@ function PlotService.addCatch(player: Player, catch): string?
 	elseif backpackCount(data) < Plot.backpackSize then
 		result = "backpack"
 	else
-		data.cash += sellPrice(entry)
-		player:SetAttribute("Cash", data.cash)
+		earn(player, data, sellPrice(entry))
 		return "sold"
 	end
 	data.nextDinoKey += 1
@@ -571,8 +576,7 @@ local function payIncome()
 		local data = PlayerData.get(player)
 		if data then
 			local income = totalIncome(player, data)
-			data.cash += income * INCOME_TICK
-			player:SetAttribute("Cash", data.cash)
+			earn(player, data, income * INCOME_TICK)
 			player:SetAttribute("Income", income)
 		end
 	end
