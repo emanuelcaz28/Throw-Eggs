@@ -1,10 +1,11 @@
 -- Owns the dinos players have caught: keeps them on the plot or in the backpack, pays
--- their $/s, and shows them as statues. The client can only ask for changes through
--- DinoAction; every request is checked here against the player's saved data.
+-- their $/s, and shows them as statues wherever they were placed. A backpack dino can be
+-- equipped (carried beside the character) and then placed anywhere on the plot. The client
+-- can only ask for changes through DinoAction; every request is checked here against the
+-- player's saved data.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Events = require(ReplicatedStorage.Shared.Config.Events)
@@ -18,15 +19,20 @@ local World = require(script.Parent.World)
 local PlotService = {}
 
 local INCOME_TICK = 1 -- seconds
-local SLOT_THICKNESS = 0.2
 local SIGN_HEIGHT = 20
 local SIGN_DISTANCE = 400
 local STATUE_LABEL_DISTANCE = 90
+local SPOT_TRIES = 40
+local HELD_SCALE = 0.35
+local HELD_SIDE = 3.5 -- studs to the character's right
 
 local remotes: { [string]: RemoteEvent } = {}
 local plotModels: { Model } = {}
 local plotOwners: { [number]: Player } = {}
 local statueFolders: { [Player]: Folder } = {}
+local held: { [Player]: number } = {} -- key of the dino each player is carrying
+local heldModels: { [Player]: Model } = {}
+local rng = Random.new()
 
 local function makeRemotes()
 	local folder = Instance.new("Folder")
@@ -40,14 +46,9 @@ local function makeRemotes()
 	folder.Parent = ReplicatedStorage
 end
 
-local function slotPosition(plotIndex: number, slot: number): Vector3
-	local columns = Plot.columns
-	local rows = math.ceil(Plot.slots / columns)
-	local column = (slot - 1) % columns
-	local row = math.floor((slot - 1) / columns)
-	local x = (column - (columns - 1) / 2) * Plot.slotSpacing.X
-	local z = (row - (rows - 1) / 2) * Plot.slotSpacing.Y
-	return Plot.positions[plotIndex] + Vector3.new(x, Plot.size.Y + SLOT_THICKNESS, z)
+-- A spot on the plot's surface, from its saved offset (studs from the plot's centre).
+local function spotPosition(plotIndex: number, x: number, z: number): Vector3
+	return Plot.positions[plotIndex] + Vector3.new(x, Plot.size.Y, z)
 end
 
 local function buildPlots()
@@ -64,16 +65,6 @@ local function buildPlots()
 			Plot.color
 		)
 		ground.TopSurface = Enum.SurfaceType.Studs
-		for slot = 1, Plot.slots do
-			local base = World.makePart(
-				model,
-				"Slot",
-				Vector3.new(Plot.slotSpacing.X - 4, SLOT_THICKNESS, Plot.slotSpacing.Y - 4),
-				CFrame.new(slotPosition(plotIndex, slot) - Vector3.new(0, SLOT_THICKNESS / 2, 0)),
-				Plot.slotColor
-			)
-			base.TopSurface = Enum.SurfaceType.Studs
-		end
 		local signAnchor = World.makePart(
 			model,
 			"SignAnchor",
@@ -131,9 +122,96 @@ local function sellPrice(entry): number
 	return math.floor(incomeOf(entry) * Plot.sellSeconds)
 end
 
-local function statueScale(entry): number
-	local size = DinoStats.findOption(Catch.sizes, entry.size)
-	return math.min(if size then size.scale else 1, Plot.maxStatueScale)
+-- A random spot that keeps clear of the dinos already placed and of where players land
+-- after a catch. When the plot is crowded, the emptiest spot found is used.
+local function freeSpot(data): (number, number)
+	local taken = { Vector2.new(0, -Plot.size.Z / 2 + Plot.homeInset) }
+	for _, entry in data.dinos do
+		if entry.onPlot and entry.x and entry.z then
+			table.insert(taken, Vector2.new(entry.x, entry.z))
+		end
+	end
+	local halfX = Plot.size.X / 2 - Plot.placeMargin
+	local halfZ = Plot.size.Z / 2 - Plot.placeMargin
+	local bestSpot, bestGap = Vector2.zero, -1
+	for _ = 1, SPOT_TRIES do
+		local spot = Vector2.new(rng:NextNumber(-halfX, halfX), rng:NextNumber(-halfZ, halfZ))
+		local gap = math.huge
+		for _, other in taken do
+			gap = math.min(gap, (spot - other).Magnitude)
+		end
+		if gap >= Plot.autoSpacing then
+			return spot.X, spot.Y
+		end
+		if gap > bestGap then
+			bestSpot, bestGap = spot, gap
+		end
+	end
+	return bestSpot.X, bestSpot.Y
+end
+
+-- Dinos on the plot always have a spot; dinos in the backpack never do. Gives a spot to new
+-- catches, Equip Best picks and saves from before free placement.
+local function updateSpots(data)
+	for _, entry in data.dinos do
+		if not entry.onPlot then
+			entry.x, entry.z = nil, nil
+		elseif not entry.x or not entry.z then
+			entry.x, entry.z = freeSpot(data)
+		end
+	end
+end
+
+local function dropHeldModel(player: Player)
+	local model = heldModels[player]
+	if model then
+		model:Destroy()
+		heldModels[player] = nil
+	end
+end
+
+-- A small copy of the carried dino walks beside the character, welded to it so everyone sees it.
+local function attachHeldModel(player: Player, entry)
+	dropHeldModel(player)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local stats = DinoStats.describe(entry)
+	if not root or not humanoid or not stats then
+		return
+	end
+	local feet = root.CFrame * CFrame.new(HELD_SIDE, -(humanoid.HipHeight + root.Size.Y / 2), 0)
+	local model = DinoModel.build(stats.name, entry.mutation, Vector3.zero, HELD_SCALE)
+	model.Name = "HeldDino"
+	model:PivotTo(feet)
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored = false
+			part.Massless = true
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = root
+			weld.Part1 = part
+			weld.Parent = part
+		end
+	end
+	model.Parent = character
+	heldModels[player] = model
+end
+
+local function setHeld(player: Player, data, key: number?)
+	held[player] = key
+	player:SetAttribute("HeldDino", key)
+	local entry = nil
+	for _, candidate in data.dinos do
+		if candidate.key == key then
+			entry = candidate
+		end
+	end
+	if entry then
+		attachHeldModel(player, entry)
+	else
+		dropHeldModel(player)
+	end
 end
 
 local function rebuildStatues(player: Player, data)
@@ -147,10 +225,11 @@ local function rebuildStatues(player: Player, data)
 	end
 	local folder = Instance.new("Folder")
 	folder.Name = "Statues"
-	for slot, entry in plotted(data) do
+	for _, entry in plotted(data) do
 		local stats = DinoStats.describe(entry)
 		if stats then
-			local statue = DinoModel.build(stats.name, entry.mutation, slotPosition(plotIndex, slot), statueScale(entry))
+			local position = spotPosition(plotIndex, entry.x, entry.z)
+			local statue = DinoModel.build(stats.name, entry.mutation, position, DinoModel.statueScale(entry.size))
 			local head = statue.Head
 			World.makeSign(head, `{stats.name}\n{Format.cash(stats.income)}/s`, 5, STATUE_LABEL_DISTANCE, 170)
 			statue.Parent = folder
@@ -186,6 +265,20 @@ local function publish(player: Player, data)
 end
 
 local function changed(player: Player, data)
+	updateSpots(data)
+	-- A carried dino that was placed, sold or moved by Equip Best is no longer carried.
+	local heldKey = held[player]
+	if heldKey then
+		local stillInBackpack = false
+		for _, entry in data.dinos do
+			if entry.key == heldKey and not entry.onPlot then
+				stillInBackpack = true
+			end
+		end
+		if not stillInBackpack then
+			setHeld(player, data, nil)
+		end
+	end
 	rebuildStatues(player, data)
 	publish(player, data)
 end
@@ -213,7 +306,7 @@ local function equipBest(data)
 	end
 end
 
-local function onAction(player: Player, action: any, key: any)
+local function onAction(player: Player, action: any, key: any, x: any, z: any)
 	local data = PlayerData.get(player)
 	if not data then
 		return
@@ -223,15 +316,29 @@ local function onAction(player: Player, action: any, key: any)
 		equipBest(data)
 		changed(player, data)
 		return
+	elseif action == "unequip" then
+		setHeld(player, data, nil)
+		return
 	end
 
 	local entry, index = findEntry(data, key)
 	if not entry then
 		return
 	end
-	if action == "place" then
-		if not entry.onPlot and #plotted(data) < Plot.slots then
+	if action == "equip" then
+		-- Equipping the dino already carried puts it away again.
+		if not entry.onPlot then
+			setHeld(player, data, if held[player] == entry.key then nil else entry.key)
+		end
+	elseif action == "placeAt" then
+		-- x ~= x is only true for NaN.
+		if typeof(x) ~= "number" or typeof(z) ~= "number" or x ~= x or z ~= z or not Plot.inBounds(x, z) then
+			return
+		end
+		if not entry.onPlot and #plotted(data) < Plot.slots and plotIndexOf(player) then
 			entry.onPlot = true
+			entry.x = math.round(x * 10) / 10
+			entry.z = math.round(z * 10) / 10
 			changed(player, data)
 		end
 	elseif action == "pickUp" then
@@ -283,9 +390,18 @@ local function onLoaded(player: Player, data)
 	end
 	player:SetAttribute("Cash", data.cash)
 	changed(player, data)
+	-- A new character drops the carried copy, so give it back.
+	player.CharacterAdded:Connect(function(character)
+		character:WaitForChild("HumanoidRootPart", 5)
+		if held[player] then
+			setHeld(player, data, held[player])
+		end
+	end)
 end
 
 local function onLeaving(player: Player)
+	held[player] = nil
+	heldModels[player] = nil
 	local plotIndex = plotIndexOf(player)
 	if plotIndex then
 		plotOwners[plotIndex] = nil

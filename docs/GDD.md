@@ -18,9 +18,12 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
    Common catches skip the counter. Tapping skips to the final card. Reveal numbers live in `Config/Reveal`,
    mutation and size odds in `Config/Catch`. Dinos are block stand-ins until the Blender models exist.
    After the reveal the player is teleported back to their own plot, next to its exit (`Config/Plot` homeInset).
-4. **Plot** — caught dinos stand on your plot and earn $/s. They can be placed anywhere on the plot, not on a
-   fixed grid of slots (not built yet; today it's a grid). The plot holds a limited number (start 8,
-   upgradeable); extras go to backpack. Equip Best / Pick Up / Sell.
+4. **Plot** — caught dinos stand on your plot and earn $/s, anywhere on it (no grid). Backpack dinos sit in a
+   hotbar (keys 1–0, best first); equipping one makes the character carry a small copy of it. While it's
+   carried, a see-through dino follows the pointer over your plot (green = can go, red = can't) and a
+   click places it there; the server checks the spot. New catches and Equip Best pick a free spot by
+   themselves. The plot holds a limited number (start 8, upgradeable); extras go to backpack.
+   Equip Best / Pick Up / Sell.
 5. **Egg Shop** — buy better egg tiers with cash. Better egg = better roll table / more luck.
 
 Loop: train → farther throws → more luck → rarer dinos → more cash → better eggs → rarer dinos.
@@ -60,7 +63,7 @@ MVP ships biomes 1–3 only.
 2. Throw lane + timing meter; distance = power × meter.
 3. 3 biomes × 5 dinos, weighted roll × luck multiplier.
 4. Reveal sequence (hangman letters + climbing "1 in X"). Spend real time here.
-5. Plot with 8 slots + $/s income. (Slot upgrades come later; numbers live in `Config/Plot`.)
+5. Plot holding 8 dinos placed freely + $/s income. (Capacity upgrades come later; numbers live in `Config/Plot`.)
 6. Egg Shop with 5 tiers. (Buy any egg you can afford; each multiplies distance luck. Numbers live in `Config/Eggs`.)
 7. Index: every dino by biome; completing a biome gives a permanent bonus (`Config/Index`).
 8. Robux shop: x2 Cash, x2 Training, Server Luck x2 and a free starter dino (`Config/Shop`).

@@ -2,6 +2,7 @@
 -- name, or the mutation's colour if it has one.
 local Catch = require(script.Parent.Config.Catch)
 local DinoStats = require(script.Parent.DinoStats)
+local Plot = require(script.Parent.Config.Plot)
 
 local DinoModel = {}
 
@@ -28,6 +29,12 @@ function DinoModel.color(name: string, mutationId: string?): Color3
 		hue = (hue + name:byte(index) * index) % 360
 	end
 	return Color3.fromHSV(hue / 360, BASE_SATURATION, BASE_VALUE)
+end
+
+-- How big a dino of this size stands on a plot.
+function DinoModel.statueScale(sizeId: string?): number
+	local size = DinoStats.findOption(Catch.sizes, sizeId)
+	return math.min(if size then size.scale else 1, Plot.maxStatueScale)
 end
 
 -- Builds the dino with its feet at origin. Scaling and spinning happen around the feet.

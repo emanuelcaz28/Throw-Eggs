@@ -1,12 +1,18 @@
--- The cash display and the My Dinos panel. Display and requests only: the server
--- decides what actually happens to a dino and what it's worth.
+-- The cash display, the My Dinos panel, the hotbar of backpack dinos and placing an equipped
+-- dino on the plot. Display and requests only: the server decides what actually happens to a
+-- dino, checks every spot and works out what it's worth.
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
 
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
+local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 
 local player = Players.LocalPlayer
 
@@ -24,6 +30,21 @@ local CASH = Color3.fromRGB(120, 235, 120)
 local TAG = Color3.fromRGB(255, 214, 70)
 local ROW_HEIGHT = 84
 local SELL_CONFIRM_TIME = 3 -- seconds the "SURE?" button waits for a second tap
+local GOOD_SPOT = Color3.fromRGB(90, 220, 110)
+local BAD_SPOT = Color3.fromRGB(230, 70, 60)
+local GHOST_TRANSPARENCY = 0.45
+local HOTBAR_KEYS = {
+	Enum.KeyCode.One,
+	Enum.KeyCode.Two,
+	Enum.KeyCode.Three,
+	Enum.KeyCode.Four,
+	Enum.KeyCode.Five,
+	Enum.KeyCode.Six,
+	Enum.KeyCode.Seven,
+	Enum.KeyCode.Eight,
+	Enum.KeyCode.Nine,
+	Enum.KeyCode.Zero,
+}
 
 local function corner(parent: Instance, radius: number)
 	local uiCorner = Instance.new("UICorner")
@@ -136,7 +157,67 @@ local function buildGui()
 	empty.Name = "Empty"
 	empty.Text = "No dinos yet. Throw an egg to catch one!"
 
+	-- Backpack dinos, best first, on keys 1-0. Sits just above the training display.
+	local hotbar = Instance.new("Frame")
+	hotbar.Name = "Hotbar"
+	hotbar.AnchorPoint = Vector2.new(0.5, 1)
+	hotbar.Position = UDim2.new(0.5, 0, 1, -110)
+	hotbar.Size = UDim2.new(0.9, 0, 0, 74)
+	hotbar.BackgroundTransparency = 1
+	hotbar.Parent = gui
+	local hotbarLimit = Instance.new("UISizeConstraint")
+	hotbarLimit.MaxSize = Vector2.new(680, 74)
+	hotbarLimit.Parent = hotbar
+	local hotbarLayout = Instance.new("UIListLayout")
+	hotbarLayout.FillDirection = Enum.FillDirection.Horizontal
+	hotbarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	hotbarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	hotbarLayout.Padding = UDim.new(0, 6)
+	hotbarLayout.Parent = hotbar
+
+	local slots = {}
+	for index = 1, #HOTBAR_KEYS do
+		local slot = Instance.new("TextButton")
+		slot.Name = `Slot{index}`
+		slot.LayoutOrder = index
+		slot.Size = UDim2.new(0.1, -6, 1, 0)
+		slot.BackgroundColor3 = PANEL
+		slot.BackgroundTransparency = 0.15
+		slot.AutoButtonColor = false
+		slot.Text = ""
+		slot.Parent = hotbar
+		corner(slot, 10)
+		local stroke = Instance.new("UIStroke")
+		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		stroke.Color = TEXT
+		stroke.Thickness = 3
+		stroke.Enabled = false
+		stroke.Parent = slot
+
+		local income = makeLabel(slot, Enum.Font.GothamBlack, CASH, UDim2.fromOffset(4, 3), UDim2.new(1, -8, 0, 16))
+		income.TextXAlignment = Enum.TextXAlignment.Center
+		local swatch = Instance.new("Frame")
+		swatch.AnchorPoint = Vector2.new(0.5, 0)
+		swatch.Position = UDim2.new(0.5, 0, 0, 22)
+		swatch.Size = UDim2.fromOffset(36, 36)
+		swatch.Parent = slot
+		corner(swatch, 8)
+		local number = makeLabel(slot, Enum.Font.GothamBlack, TEXT, UDim2.new(0, 5, 1, -20), UDim2.fromOffset(16, 16))
+		number.Text = tostring(index % 10)
+
+		slots[index] = { button = slot, stroke = stroke, income = income, swatch = swatch }
+	end
+
+	local hint = makeLabel(gui, Enum.Font.GothamBlack, TEXT, UDim2.new(0.5, 0, 1, -190), UDim2.new(0.8, 0, 0, 28))
+	hint.Name = "PlaceHint"
+	hint.AnchorPoint = Vector2.new(0.5, 1)
+	hint.TextXAlignment = Enum.TextXAlignment.Center
+	hint.TextStrokeTransparency = 0.3
+	hint.Visible = false
+
 	return {
+		slots = slots,
+		hint = hint,
 		cash = cash,
 		income = income,
 		open = open,
@@ -170,8 +251,51 @@ function PlotController.start()
 	local slots = 0
 	local renderList
 
-	local function send(action: string, key: number?)
-		remotes.DinoAction:FireServer(action, key)
+	local function send(action: string, key: number?, x: number?, z: number?)
+		remotes.DinoAction:FireServer(action, key, x, z)
+	end
+
+	-- Backpack dinos in hotbar order (the list arrives best first).
+	local function backpack()
+		local list = {}
+		for _, dino in dinos do
+			if not dino.onPlot then
+				table.insert(list, dino)
+			end
+		end
+		return list
+	end
+
+	local function heldDino()
+		local key = player:GetAttribute("HeldDino")
+		for _, dino in dinos do
+			if dino.key == key and not dino.onPlot then
+				return dino
+			end
+		end
+		return nil
+	end
+
+	local function renderHotbar()
+		local list = backpack()
+		local heldKey = player:GetAttribute("HeldDino")
+		for index, slot in hud.slots do
+			local dino = list[index]
+			slot.income.Text = if dino then `{Format.cash(dino.income)}/s` else ""
+			slot.swatch.Visible = dino ~= nil
+			if dino then
+				slot.swatch.BackgroundColor3 = DinoModel.color(dino.name, dino.mutation)
+			end
+			slot.stroke.Enabled = dino ~= nil and dino.key == heldKey
+			slot.button.BackgroundTransparency = if dino then 0.15 else 0.5
+		end
+	end
+
+	local function equipSlot(index: number)
+		local dino = backpack()[index]
+		if dino then
+			send("equip", dino.key)
+		end
 	end
 
 	local function makeRow(dino, order: number)
@@ -202,16 +326,23 @@ function PlotController.start()
 		local income = makeLabel(row, Enum.Font.GothamBold, CASH, UDim2.fromOffset(80, 54), UDim2.new(1, -310, 0, 20))
 		income.Text = `{Format.cash(dino.income)}/s`
 
+		local holding = dino.key == player:GetAttribute("HeldDino")
 		local move = makeButton(
 			row,
-			if dino.onPlot then "PICK UP" else "PLACE",
+			if dino.onPlot then "PICK UP" elseif holding then "HOLDING" else "EQUIP",
 			if dino.onPlot then PICK_UP else PLACE,
 			UDim2.new(1, -222, 0, 18),
 			UDim2.fromOffset(104, 48)
 		)
 		move.Name = "Move"
 		move.Activated:Connect(function()
-			send(if dino.onPlot then "pickUp" else "place", dino.key)
+			if dino.onPlot then
+				send("pickUp", dino.key)
+			else
+				-- Equipped: close the panel so the player can pick a spot on the plot.
+				send("equip", dino.key)
+				hud.panel.Visible = false
+			end
 		end)
 
 		local sell = makeButton(
@@ -274,11 +405,156 @@ function PlotController.start()
 		dinos = newDinos
 		slots = newSlots
 		renderList()
+		renderHotbar()
+	end)
+	player:GetAttributeChangedSignal("HeldDino"):Connect(function()
+		renderList()
+		renderHotbar()
+	end)
+
+	-- Our own hotbar takes the number keys, so Roblox's tool bar stays out of the way.
+	pcall(function()
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+	end)
+	for index, slot in hud.slots do
+		slot.button.Activated:Connect(function()
+			equipSlot(index)
+		end)
+	end
+
+	-- Placing: a see-through copy of the equipped dino follows the pointer over the plot,
+	-- green where it can stand and red where it can't. A click (or tap) asks the server.
+	local ghost: Model? = nil
+	local ghostKey: number? = nil
+	local aim = nil -- { x, z, valid } for the spot under the mouse this frame
+
+	local function clearGhost()
+		if ghost then
+			ghost:Destroy()
+		end
+		ghost, ghostKey = nil, nil
+	end
+
+	local function ghostFor(dino): Model
+		if ghost and ghostKey == dino.key then
+			return ghost
+		end
+		clearGhost()
+		local model = DinoModel.build(dino.name, dino.mutation, Vector3.zero, DinoModel.statueScale(dino.size))
+		model.Name = "PlacementGhost"
+		for _, part in model:GetDescendants() do
+			if part:IsA("BasePart") then
+				part.Transparency = GHOST_TRANSPARENCY
+			end
+		end
+		local highlight = Instance.new("Highlight")
+		highlight.FillTransparency = 0.6
+		highlight.Parent = model
+		ghost, ghostKey = model, dino.key
+		return model
+	end
+
+	local function plotHasRoom(): boolean
+		local onPlot = 0
+		for _, dino in dinos do
+			if dino.onPlot then
+				onPlot += 1
+			end
+		end
+		return onPlot < slots
+	end
+
+	-- The spot on the player's own plot under a point on the screen, or nil.
+	local function spotAt(viewportPoint: Vector2)
+		local plotIndex = player:GetAttribute("PlotIndex")
+		local plots = workspace:FindFirstChild("Plots")
+		local plotModel = plotIndex and plots and plots:FindFirstChild(`Plot{plotIndex}`)
+		local ground = plotModel and plotModel:FindFirstChild("Ground")
+		if not ground then
+			return nil
+		end
+		local ray = workspace.CurrentCamera:ViewportPointToRay(viewportPoint.X, viewportPoint.Y)
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Include
+		params.FilterDescendantsInstances = { ground }
+		local result = workspace:Raycast(ray.Origin, ray.Direction * 1000, params)
+		if not result then
+			return nil
+		end
+		local offset = result.Position - Plot.positions[plotIndex]
+		return { x = offset.X, z = offset.Z, inBounds = Plot.inBounds(offset.X, offset.Z), plotIndex = plotIndex }
+	end
+
+	RunService.RenderStepped:Connect(function()
+		local dino = heldDino()
+		if not dino then
+			clearGhost()
+			aim = nil
+			hud.hint.Visible = false
+			return
+		end
+		local touch = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+		local spot = spotAt(UserInputService:GetMouseLocation())
+		local model = ghostFor(dino)
+		local room = plotHasRoom()
+		hud.hint.Visible = true
+		if not player:GetAttribute("PlotIndex") then
+			hud.hint.Text = "You don't have a plot in this server"
+		elseif not room then
+			hud.hint.Text = `Plot full ({slots}/{slots}): pick a dino up first`
+		elseif not spot then
+			hud.hint.Text = `Go to your plot to place {dino.name}`
+		elseif not spot.inBounds then
+			hud.hint.Text = "Too close to the edge"
+		else
+			hud.hint.Text = `{if touch then "Tap" else "Click"} to place {dino.name}`
+		end
+		if spot then
+			local valid = spot.inBounds and room
+			aim = { x = spot.x, z = spot.z, valid = valid }
+			model:PivotTo(CFrame.new(Plot.positions[spot.plotIndex] + Vector3.new(spot.x, Plot.size.Y, spot.z)))
+			model.Highlight.FillColor = if valid then GOOD_SPOT else BAD_SPOT
+			model.Highlight.OutlineColor = if valid then GOOD_SPOT else BAD_SPOT
+			model.Parent = workspace
+		else
+			aim = nil
+			model.Parent = nil
+		end
+	end)
+
+	UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if gameProcessed then
+			return
+		end
+		for index, keyCode in HOTBAR_KEYS do
+			if input.KeyCode == keyCode then
+				equipSlot(index)
+				return
+			end
+		end
+		local dino = heldDino()
+		if not dino then
+			return
+		end
+		local target = aim
+		if input.UserInputType == Enum.UserInputType.Touch then
+			-- Phones have no hover, so a tap both picks and places. Touch positions leave out
+			-- the top bar, while the camera's ray needs the whole screen.
+			local point = Vector2.new(input.Position.X, input.Position.Y) + GuiService:GetGuiInset()
+			local spot = spotAt(point)
+			target = spot and { x = spot.x, z = spot.z, valid = spot.inBounds and plotHasRoom() }
+		elseif input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+			return
+		end
+		if target and target.valid then
+			send("placeAt", dino.key, target.x, target.z)
+		end
 	end)
 	player:GetAttributeChangedSignal("Cash"):Connect(renderCash)
 	player:GetAttributeChangedSignal("Income"):Connect(renderCash)
 
 	renderList()
+	renderHotbar()
 	renderCash()
 end
 
