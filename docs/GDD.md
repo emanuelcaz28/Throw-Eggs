@@ -17,7 +17,7 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
    The roll is decided on landing; the counter is just suspense animation.
    Common catches skip the counter. Tapping skips to the final card. Reveal numbers live in `Config/Reveal`,
    mutation and size odds in `Config/Catch`. Dinos are block stand-ins until the Blender models exist.
-   After the reveal the player is teleported back to their own plot, next to its exit (not built yet).
+   After the reveal the player is teleported back to their own plot, next to its exit (`Config/Plot` homeInset).
 4. **Plot** — caught dinos stand on your plot and earn $/s. They can be placed anywhere on the plot, not on a
    fixed grid of slots (not built yet; today it's a grid). The plot holds a limited number (start 8,
    upgradeable); extras go to backpack. Equip Best / Pick Up / Sell.

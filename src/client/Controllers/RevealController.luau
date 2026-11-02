@@ -13,6 +13,7 @@ local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
+local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 
 local player = Players.LocalPlayer
 
@@ -32,6 +33,23 @@ local STORED_TEXT = {
 	backpack = "plot full: sent to your backpack · tap to continue",
 	sold = "plot and backpack full: sold · tap to continue",
 }
+
+-- Puts the character back on its own plot, by the exit. Players without a plot stay put.
+-- The client moves its own character, the same way walking does.
+local function returnHome()
+	local plotIndex = player:GetAttribute("PlotIndex")
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not plotIndex or not humanoid or not root or humanoid.Health <= 0 then
+		return
+	end
+	local home = Plot.homeCFrame(plotIndex) + Vector3.new(0, humanoid.HipHeight + root.Size.Y / 2, 0)
+	character:PivotTo(home)
+	root.AssemblyLinearVelocity = Vector3.zero
+	-- Behind and above the character, so the view opens on the plot.
+	workspace.CurrentCamera.CFrame = CFrame.lookAt((home * CFrame.new(0, 8, 16)).Position, home.Position)
+end
 
 local function makeLabel(parent: Instance, size: UDim2, position: UDim2, color: Color3): TextLabel
 	local label = Instance.new("TextLabel")
@@ -496,8 +514,9 @@ function RevealController.play(catch, egg: BasePart)
 	inputConnection:Disconnect()
 	ContextActionService:UnbindAction(SKIP_ACTION)
 
-	-- White flash back to the player.
+	-- White flash back to the player, who is moved home while the screen is white.
 	tween(hud.flash, 0.15, { BackgroundTransparency = 0 }).Completed:Wait()
+	returnHome()
 	hud.card.Visible = false
 	hud.pill.Visible = false
 	hud.tier.Text = ""
