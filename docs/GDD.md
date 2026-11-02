@@ -83,10 +83,14 @@ MVP ships biomes 1–3 only.
     Egg Shop opens only from its stall), big outlined ⚡ Throw Power and cash at the bottom left, hotbar along
     the bottom edge. Everything shrinks to fit short screens. While aiming and flying only Throw Power stays
     on screen (`HudStyle`).
-14. UI redesign (designed, not built yet): our own chunky cartoon-sticker kit in Figma, "Throw Eggs for
-    Dinosaurs - Game UI" (https://www.figma.com/design/PZ3emJUorfZBWQoLe1zCfv), page "UI design v1":
-    style guide, main HUD, Welcome Back offline-earnings popup with CLAIM, My Dinos, Egg Shop, Shop,
-    Dino Index and training HUD. Source mock-ups: `design/ui-mockups/build.py` (regenerates `ui.html`).
+14. UI redesign (designed, not built yet) in Figma, "Throw Eggs for Dinosaurs - Game UI"
+    (https://www.figma.com/design/PZ3emJUorfZBWQoLe1zCfv). Page "UI design v2" is current: Index with a
+    map card per biome and that biome's dinos on rarity tiles, a sectioned Shop (Limited, egg, boosts,
+    cash/power packs, passes, dino deals, free dino, GIFT) with a full-scroll frame, My Dinos, Egg Shop,
+    Welcome Back, HUD, training and motion/colour notes. Source: `design/ui-mockups/build.py`.
+    Dino, egg, map and pack art are Blender renders of blocky blueprint models in `assets/models`
+    (`dino_blueprints.blend`; rebuild with `build_blueprints.py`, re-render with `render_thumbnails.py`).
+    Shop items not in the game yet: dinos priced by % of best, Throw Power packs, Prism Egg, GIFT.
 Not built yet: dinos priced by % of best, Throw Power packs and the Gift button. No rebirth: the reference game has none.
 
 ## Reference game notes

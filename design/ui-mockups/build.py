@@ -1,7 +1,8 @@
 """Builds ui.html: the Throw Eggs for Dinosaurs UI mock-ups (v2), one .screen per Figma frame.
 
-Dino, egg, biome and pack pictures come from renders/ (run models.py first). They are stand-in
-images until the real 3D models exist; the layout keeps their slots so renders can be swapped.
+Dino, egg, biome and pack pictures come from renders/: Blender renders of the blueprint models
+in assets/models (build_blueprints.py, then render_thumbnails.py). When final models replace the
+blueprints, re-render and rebuild; the layout keeps the same image slots.
 """
 import base64
 import pathlib
@@ -127,9 +128,9 @@ def hotbar(selected=1):
 
 def dino_tile(dino_id, name, rarity, w, h, found=True, odds=None, name_size=22):
     if not found:
-        return f'''<div class="dtile" style="width:{w}px;height:{h}px;background:linear-gradient(#d9dce3,#9aa1ae)"><span class="ol dname" style="font-size:{name_size}px">???</span>{img("dino_" + dino_id + "_shadow", w - 30, h - 58, "margin-top:6px")}</div>'''
+        return f'''<div class="dtile" style="width:{w}px;height:{h}px;background:linear-gradient(#d9dce3,#9aa1ae)"><span class="ol dname" style="font-size:{name_size}px;position:relative;z-index:2">???</span>{img("dino_" + dino_id + "_shadow", w - 16, h - 36, "margin-top:-8px")}</div>'''
     odds_html = f'<span class="ol thin dodds">{odds}</span>' if odds else ""
-    return f'''<div class="dtile" style="width:{w}px;height:{h}px;{tile_bg(rarity)}"><span class="ol dname" style="font-size:{name_size}px">{name}</span>{img("dino_" + dino_id, w - 26, h - 62, "margin-top:4px")}{odds_html}</div>'''
+    return f'''<div class="dtile" style="width:{w}px;height:{h}px;{tile_bg(rarity)}"><span class="ol dname" style="font-size:{name_size}px;position:relative;z-index:2">{name}</span>{img("dino_" + dino_id, w - 16, h - 36, "margin-top:-8px")}{odds_html}</div>'''
 
 
 CSS = f"""
@@ -174,7 +175,7 @@ body{{background:#0e0b18;font-family:'Fredoka One','Fredoka','Arial Rounded MT B
 .pill{{position:absolute;display:flex;align-items:center;gap:8px;height:48px;padding:0 16px 0 10px;border-radius:18px;border:4px solid {INK};background:rgba(36,27,58,0.92);font-size:24px}}
 .dtile{{position:relative;border-radius:20px;border:4px solid {INK};display:flex;flex-direction:column;align-items:center;padding-top:8px;box-shadow:inset 0 -6px 0 rgba(0,0,0,0.16),inset 0 3px 0 rgba(255,255,255,0.4)}}
 .dname{{white-space:nowrap}}
-.dodds{{position:absolute;bottom:6px;font-size:16px;color:#ffffff}}
+.dodds{{position:absolute;bottom:6px;font-size:16px;color:#ffffff;z-index:2}}
 .row{{display:flex;align-items:center;gap:12px;height:98px;padding:0 12px;border-radius:20px;border:4px solid {INK};background:#2b2448;box-shadow:inset 0 -5px 0 rgba(0,0,0,0.25)}}
 .tab{{height:46px;border-radius:15px;border:4px solid {INK};display:flex;align-items:center;justify-content:center;font-size:22px}}
 .card{{position:relative;border-radius:26px;border:5px solid {INK};box-shadow:inset 0 -8px 0 rgba(0,0,0,0.18),inset 0 4px 0 rgba(255,255,255,0.35),0 6px 0 {INK};overflow:hidden}}
@@ -202,13 +203,13 @@ sw = "".join(f'<div style="display:flex;flex-direction:column;align-items:center
 rar = "".join(f'<div style="display:flex;flex-direction:column;align-items:center;gap:4px">{dino_tile(d, r.upper(), r, 118, 128, name_size=17)}</div>' for d, r in zip(["Compy", "Ankylo", "Triceratops", "Brachio", "Spino"], ORDER))
 style_guide = f'''<div style="position:absolute;left:0;top:0;width:1280px;height:720px;background:#150f24"></div>
 <div style="position:absolute;left:48px;top:30px"><div class="ol" style="font-size:52px">Throw Eggs for Dinosaurs · UI kit v2</div>
-<div class="muted" style="font-size:20px;margin-top:6px">Bright, saturated colour on dark panels. Every colour has one job. Dinos, eggs and maps are stand-in block renders until the Blender models exist.</div></div>
+<div class="muted" style="font-size:20px;margin-top:6px">Bright, saturated colour on dark panels. Every colour has one job. Dinos, eggs and maps are Blender renders of the blueprint models.</div></div>
 <div style="position:absolute;left:48px;top:140px"><div class="label">Colour jobs</div><div style="display:flex;gap:14px">{sw}</div></div>
 <div style="position:absolute;left:48px;top:290px"><div class="label">Rarity ladder (tile backgrounds)</div><div style="display:flex;gap:14px">{rar}</div></div>
 <div style="position:absolute;left:740px;top:290px"><div class="label">Buttons &amp; tags</div>
 <div style="display:flex;flex-wrap:wrap;gap:14px;width:500px;align-items:center">{robux("99")}{button("CLAIM", "green", 170, 58, 28)}{button("EQUIP", "blue", 140, 58, 26)}{button("SELL", "red", 120, 58, 26)}{button("OWNED", "grey", 140, 58, 24)}
 {tag("BEST DEAL!", "gold")}{tag("LIMITED", "redt")}{tag("+50% MORE", "purplet")}{tag("NEW!", "greent")}</div></div>
-<div style="position:absolute;left:48px;top:500px"><div class="label">Stand-in renders</div><div style="display:flex;gap:6px;align-items:flex-end">
+<div style="position:absolute;left:48px;top:500px"><div class="label">Blender renders</div><div style="display:flex;gap:6px;align-items:flex-end">
 {img("dino_TRex", 130, 110)}{img("dino_Stego", 130, 110)}{img("dino_Triceratops", 130, 110)}{img("dino_Spino", 130, 110)}{img("dino_Brachio", 130, 110)}{img("egg_GoldenEgg", 80, 100)}{img("egg_PrismEgg", 80, 100)}{img("biome_FernValley", 120, 120)}{img("cash_L", 120, 100)}{img("clover", 90, 90)}{img("gift", 80, 80)}</div></div>'''
 screens.append(f'<section class="screen" data-name="00 Style guide" style="height:720px">{style_guide}</section>')
 
@@ -426,7 +427,7 @@ training = f'''<div style="position:absolute;left:0;right:0;top:88px;display:fle
 screens.append(screen("07 Training HUD", training))
 
 # --- 08 Motion & colour notes ------------------------------------------------------------------
-motion = [("Spin", "Dino and egg models turn slowly on every tile (one turn every 6 s). Until the Blender models exist, the images bob 6 px and tilt ±4° every 2 s."),
+motion = [("Spin", "Dino and egg models turn slowly on every tile (one turn every 6 s, in a ViewportFrame). Where a picture is used instead, it bobs 6 px and tilts ±4° every 2 s."),
           ("Sunburst", "Light rays behind Limited and Featured items rotate once every 12 s and pulse brighter."),
           ("Pulse", "Robux and CLAIM buttons breathe: scale 1 → 1.06 → 1 every 1.2 s. Pressing squashes to 0.94."),
           ("Wiggle", "Tags (BEST DEAL!, LIMITED, +50% MORE) rock ±5° every 2 s so the eye lands on them."),

@@ -346,17 +346,18 @@ def cash_pile(count):
 
 
 def bolt(m, ox, oy, oz, colour="#ffd43b"):
-    rows = ["..XXX", ".XXX.", "XXXX.", "..XXX", ".XXX.", ".XX..", "XX...", "X...."]
+    """A chunky lightning bolt standing up, three blocks thick, with an orange edge."""
+    rows = ["....XXXX", "...XXXX.", "..XXXX..", ".XXXXXXX", "XXXXXXX.", "...XXX..", "..XXX...", "..XX....", ".XX.....", ".X......"]
     for i, row in enumerate(rows):
         for j, ch in enumerate(row):
             if ch == "X":
-                m[(ox + j, oy, oz + len(rows) - i)] = colour
-                m[(ox + j, oy + 1, oz + len(rows) - i)] = colour
+                for d in range(3):
+                    m[(ox + j, oy + d, oz + len(rows) - i)] = colour if d < 2 else "#ff9a1f"
 
 
 def bolt_pile(count):
     m = Model()
-    spots = [(0, 0, 0), (5, 3, 0), (2, 6, 0), (7, -2, 0), (-3, 4, 0), (4, 9, 0)]
+    spots = [(0, 0, 0), (7, 5, 0), (-6, 6, 0), (2, 11, 0), (9, -5, 0), (-4, -4, 0)]
     for x, y, z in spots[:count]:
         bolt(m, x, y, z)
     return m
@@ -432,6 +433,31 @@ def build_all(only=None):
     return [j[0] for j in jobs]
 
 
+def export_json(path):
+    """Every model as {name: [[x, y, z, "#rrggbb"], ...]} for building in Blender."""
+    import json
+    models = {}
+    for name, (fn, _) in DINOS.items():
+        models[f"dino_{name}"] = fn()
+    for name, (shell, spot, pattern) in EGGS.items():
+        models[f"egg_{name}"] = egg_model(shell, spot, pattern)
+    for name, fn in BIOMES.items():
+        models[f"biome_{name}"] = fn()
+    for count, name in [(1, "S"), (3, "M"), (7, "L"), (16, "XL")]:
+        models[f"cash_{name}"] = cash_pile(count)
+    for count, name in [(1, "S"), (2, "M"), (4, "L"), (6, "XL")]:
+        models[f"bolts_{name}"] = bolt_pile(count)
+    models["clover"] = clover()
+    models["gift"] = gift()
+    data = {name: [[x, y, z, c] for (x, y, z), c in m.items()] for name, m in models.items()}
+    Path(path).write_text(json.dumps(data, separators=(",", ":")))
+    return {name: len(v) for name, v in data.items()}
+
+
 if __name__ == "__main__":
+    if sys.argv[1:2] == ["export"]:
+        counts = export_json(sys.argv[2])
+        print(len(counts), "models,", sum(counts.values()), "blocks")
+        sys.exit()
     names = build_all(sys.argv[1:] or None)
     print(len(names), "images")
