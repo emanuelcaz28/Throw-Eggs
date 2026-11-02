@@ -138,8 +138,13 @@ local function xpPerRep(player: Player, data): number
 	return Training.xpPerRepFor(data.xpUpgrades) * passMultiplier(player)
 end
 
+-- What the training level gives, plus power bought in Shop packs.
+local function throwPower(data): number
+	return Training.powerForLevel(data.trainingLevel) + data.bonusPower
+end
+
 local function publish(player: Player, data: { [string]: any })
-	player:SetAttribute("ThrowPower", Training.powerForLevel(data.trainingLevel))
+	player:SetAttribute("ThrowPower", throwPower(data))
 	player:SetAttribute("TrainingLevel", data.trainingLevel)
 	player:SetAttribute("TrainingXp", data.trainingXp)
 	player:SetAttribute("TrainingXpNeeded", Training.xpToNextLevel(data.trainingLevel))
@@ -276,7 +281,13 @@ end
 -- The server's copy of a player's Throw Power, for the throw system to use.
 function TrainingService.getThrowPower(player: Player): number?
 	local data = PlayerData.get(player)
-	return data and Training.powerForLevel(data.trainingLevel)
+	return data and throwPower(data)
+end
+
+-- Adds Throw Power from a Shop pack. The caller saves the data.
+function TrainingService.addBonusPower(player: Player, data, amount: number)
+	data.bonusPower += amount
+	publish(player, data)
 end
 
 function TrainingService.start()

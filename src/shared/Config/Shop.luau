@@ -20,6 +20,15 @@ return {
 		multiplier = 2,
 		seconds = 15 * 60, -- buying again while active adds more time
 	},
+	-- Throw Power packs: Developer Products that add Throw Power for good, on top of training.
+	-- 20 power is one training level (Config/Training powerPerLevel). tag is the sticker on the
+	-- card; keep it true to the prices set on the Creator Dashboard. art is a block model name.
+	powerPacks = {
+		{ productId = 0, amount = 100, art = "bolts_S" }, -- paste each Developer Product id here
+		{ productId = 0, amount = 600, art = "bolts_M", tag = "+30% MORE", tagStyle = "green" },
+		{ productId = 0, amount = 3000, art = "bolts_L", tag = "+50% MORE", tagStyle = "purple" },
+		{ productId = 0, amount = 10000, art = "bolts_XL", tag = "+100% MORE", tagStyle = "tagGold" },
+	},
 	starterDino = {
 		name = "Free Starter Dino",
 		description = "A free Gallimimus to start your plot",

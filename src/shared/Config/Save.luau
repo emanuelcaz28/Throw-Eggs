@@ -17,6 +17,7 @@ return {
 		trainingLevel = 1,
 		trainingXp = 0,
 		xpUpgrades = 0, -- bought at the orange pad beside the squat rack
+		bonusPower = 0, -- Throw Power bought in Shop packs, on top of what the training level gives
 		bestIncome = 0, -- $/s of the best dino ever caught
 		cash = 0,
 		lastSeen = 0, -- os.time() of the last income tick, for offline earnings

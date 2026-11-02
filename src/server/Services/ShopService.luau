@@ -1,4 +1,4 @@
--- The Robux shop: Game Passes, Server Luck and the free starter dino. Roblox retries a
+-- The Robux shop: Game Passes, Server Luck, Throw Power packs and the free starter dino. Roblox retries a
 -- purchase until told it was granted, so each receipt is saved with the player's data
 -- before saying so. That way a purchase is never lost or given twice.
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -11,6 +11,7 @@ local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
 local PlotService = require(script.Parent.PlotService)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
+local TrainingService = require(script.Parent.TrainingService)
 
 local ShopService = {}
 
@@ -44,8 +45,27 @@ local function grantServerLuck()
 	ReplicatedStorage:SetAttribute(LUCK_ATTRIBUTE, start + Shop.serverLuck.seconds)
 end
 
+-- What each Developer Product gives, by product id.
+local function grantFor(productId: number): ((Player, any) -> ())?
+	if productId == 0 then
+		return nil
+	end
+	if productId == Shop.serverLuck.productId then
+		return grantServerLuck
+	end
+	for _, pack in Shop.powerPacks do
+		if productId == pack.productId then
+			return function(player, data)
+				TrainingService.addBonusPower(player, data, pack.amount)
+			end
+		end
+	end
+	return nil
+end
+
 function ShopService.processReceipt(info)
-	if info.ProductId ~= Shop.serverLuck.productId then
+	local grant = grantFor(info.ProductId)
+	if not grant then
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	local player = Players:GetPlayerByUserId(info.PlayerId)
@@ -56,7 +76,7 @@ function ShopService.processReceipt(info)
 	end
 
 	if not data.receipts[info.PurchaseId] then
-		grantServerLuck()
+		grant(player, data)
 		data.receipts[info.PurchaseId] = true
 	end
 	if PlayerData.saveNow(player) then
