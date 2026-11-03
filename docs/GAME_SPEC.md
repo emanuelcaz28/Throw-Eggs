@@ -306,7 +306,20 @@ The "1 in X" shown on a catch stays the normal odds.
 Old saves keep their sizes under the new names (Big → Thicc, Large → Absolute Unit, Huge → Chonker, Colossal → Mega Chonk).
 
 - **[Owner]** Models are simple, not complex at all, but must have **good faces**. All animals get the stud texture in Studio.
-- **[Built]** Mutations: Gold (1 in 20, ×2 income), Diamond (1 in 100, ×5), Emerald (1 in 500, ×15).
+- **[Owner]** More colour mutations, some much rarer than others. Gold is the most common, but not too common.
+- **[Built]** Colour mutations (`Config/Catch`), most common first. Each recolours the skin and leaves the face alone:
+
+| Mutation | Chance | Income | At 45x luck |
+|---|---|---|---|
+| Gold | 1 in 30 | ×2 | 1 in 7 |
+| Ruby | 1 in 80 | ×3.5 | 1 in 18 |
+| Diamond | 1 in 200 | ×6 | 1 in 43 |
+| Emerald | 1 in 500 | ×12 | 1 in 110 |
+| Bubblegum | 1 in 1,200 | ×18 | 1 in 260 |
+| Amethyst | 1 in 3,000 | ×30 | 1 in 650 |
+| Shadow | 1 in 8,000 | ×50 | 1 in 1,700 |
+| Ghost | 1 in 20,000 | ×100 | 1 in 3,500 |
+
 - **[Built]** Each map's standard size is `standardScale` in `Config/Biomes`: 1x, 1.4x, 1.9x for maps 1 to 3.
 - **[Seen]** The reference's mutated animals are recoloured all over (gold, rainbow and so on), with the face still readable.
   It also has a Ruby mutation.

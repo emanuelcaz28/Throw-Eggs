@@ -3,10 +3,17 @@
 -- Placeholder numbers; tune during playtesting.
 return {
 	-- Rarest first: the first one that hits wins, so a dino gets at most one of each.
+	-- Colour mutations recolour the skin and leave the face alone. Each needs a colour that's easy to
+	-- tell from the others, on the model and in the UI text.
 	mutations = {
-		{ id = "Emerald", name = "EMERALD", chance = 500, incomeMultiplier = 15, color = Color3.fromRGB(120, 226, 140) },
-		{ id = "Diamond", name = "DIAMOND", chance = 100, incomeMultiplier = 5, color = Color3.fromRGB(130, 215, 255) },
-		{ id = "Gold", name = "GOLD", chance = 20, incomeMultiplier = 2, color = Color3.fromRGB(255, 205, 70) },
+		{ id = "Ghost", name = "GHOST", chance = 20000, incomeMultiplier = 100, color = Color3.fromRGB(235, 242, 255) },
+		{ id = "Shadow", name = "SHADOW", chance = 8000, incomeMultiplier = 50, color = Color3.fromRGB(20, 14, 48) },
+		{ id = "Amethyst", name = "AMETHYST", chance = 3000, incomeMultiplier = 30, color = Color3.fromRGB(170, 90, 255) },
+		{ id = "Bubblegum", name = "BUBBLEGUM", chance = 1200, incomeMultiplier = 18, color = Color3.fromRGB(255, 120, 200) },
+		{ id = "Emerald", name = "EMERALD", chance = 500, incomeMultiplier = 12, color = Color3.fromRGB(60, 210, 110) },
+		{ id = "Diamond", name = "DIAMOND", chance = 200, incomeMultiplier = 6, color = Color3.fromRGB(130, 215, 255) },
+		{ id = "Ruby", name = "RUBY", chance = 80, incomeMultiplier = 3.5, color = Color3.fromRGB(230, 40, 70) },
+		{ id = "Gold", name = "GOLD", chance = 30, incomeMultiplier = 2, color = Color3.fromRGB(255, 205, 70) },
 	},
 	-- Size mutations are the only way a monster grows past its biome's standard size (Config/Biomes
 	-- standardScale); scale multiplies that standard size, with no cap.
