@@ -440,7 +440,11 @@ Done one at a time, each in its own step:
    standard, with no cap, until late-game monsters look absurd on those bases (section 8). *(Done 2026-11-03: the six
    size mutations and per-map standard size are in, on the base, in the hand-placement preview and in the reveal. The
    carried copy stays small.)*
-7. **Polish**: lighting, sky, small effects, and a check on phone speed.
+7. **Polish**: lighting, sky, small effects, and a check on phone speed. *(Done 2026-11-03: `Config/Lighting`, applied by
+   `LightingService` when the server starts: bright, saturated light with soft shadows, matte studs, a thin sky-blue
+   atmosphere instead of grey haze, and no depth-of-field blur on the corridor. `SkyController` drifts 18 chunky block
+   clouds round the island on each player's screen only. Phone check: about 1,100 parts in play, which is light, and the
+   clouds are solid because see-through parts cost phones the most. Per-world sky and light come with step 8.)*
 8. **Then the other worlds**: each one copies the first world's pieces with its own look, and they get joined up.
 
 The walking reveal, the throw wind-up and the flight camera are a separate job, after the world.

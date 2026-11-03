@@ -1,5 +1,6 @@
 local Services = script.Parent.Services
 
+require(Services.LightingService).start()
 require(Services.MapService).start()
 require(Services.PlayerData).start()
 require(Services.TrainingService).start()

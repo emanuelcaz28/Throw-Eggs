@@ -1,5 +1,6 @@
 local Controllers = script.Parent.Controllers
 
+require(Controllers.SkyController).start()
 require(Controllers.TrainingController).start()
 require(Controllers.SquatController).start()
 require(Controllers.PlotController).start()
