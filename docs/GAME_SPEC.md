@@ -378,7 +378,11 @@ Done one at a time, each in its own step:
    `assets/models/build_base_kit.py`, kept in `Assets.Maps.FernValley.Base` and placed through `BaseKit`. The owner plate
    and the sign's face follow the mock-ups 13b and 14 in `design/ui-mockups/build.py`. All fences are wood and every base
    has a rack until questions 1 to 3 in section 15 are answered.)*
-5. **Fern Valley props and decoration**: our own trees, ferns, rocks and rim decoration, in Blender.
+5. **Fern Valley props and decoration**: our own trees, ferns, rocks and rim decoration, in Blender. *(Placed
+   2026-11-03: the 9 props from `build_fern_valley.py` stand along the corridor floor (kept off the middle), as big
+   trees on its rims, as eggs along the arena's rim and as small things behind the bases. `MapDecor` places them
+   from `Config/Decor`, the corridor's with a fixed seed so every server matches. Props are scaled up to suit the
+   walls, which makes their studs a little bigger than the walls' studs.)*
 6. **Huge animals**: remove the size cap and scale dinos up until they look absurd on those bases.
 7. **Polish**: lighting, sky, small effects, and a check on phone speed.
 8. **Then the other worlds**: each one copies the first world's pieces with its own look, and they get joined up.

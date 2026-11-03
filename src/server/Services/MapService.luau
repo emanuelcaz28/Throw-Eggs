@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Map = require(ReplicatedStorage.Shared.Config.Map)
 local World = require(ReplicatedStorage.Shared.World)
+local MapDecor = require(script.Parent.MapDecor)
 
 local MapService = {}
 
@@ -134,6 +135,7 @@ function MapService.start()
 	place(folder, kit, "kit_Platform", 0)
 	buildCorridor(folder, kit)
 	buildBarrier(folder)
+	MapDecor.build(folder)
 	folder.Parent = workspace
 end
 
