@@ -17,7 +17,7 @@ local Training = {
 	-- owner trains there; everyone can see it. Offsets are from the middle of the base's gate
 	-- (Plot.gatePosition): -Z is out of the base. The lifter faces out of the base.
 	rack = {
-		offset = Vector3.new(-15, 0, -6), -- centre of the rack's pad, on the ground
+		offset = Vector3.new(-18, 0, -6), -- centre of the rack's pad, on the ground (clear of the upgrade sign)
 		padRadius = 5, -- stepping inside this starts training
 		padHeight = 8, -- how far above the pad still counts
 		stopOffset = Vector3.new(7, 0, -6), -- after STOP the player is put down here, from the pad's centre
@@ -25,7 +25,7 @@ local Training = {
 
 	-- The orange pad in front of the rack: each step onto it buys more XP per rep. Only the owner buys.
 	xpUpgrade = {
-		offset = Vector3.new(-15, 0, -16), -- from the middle of the gate, like the rack
+		offset = Vector3.new(-18, 0, -16), -- from the middle of the gate, like the rack
 		padRadius = 3,
 		padHeight = 8,
 		xpPerUpgrade = 1, -- added to every rep, per upgrade

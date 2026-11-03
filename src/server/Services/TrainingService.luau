@@ -1,12 +1,14 @@
 -- Builds a squat rack and an XP upgrade pad at every base, and runs training. Stepping on your own
 -- rack's pad locks you in under the bar; reps come automatically until you press STOP. Everyone sees
--- every rack, but only the base's owner trains there. The orange pad in front of it sells more XP per rep, and while training a bubble now and then offers a double
--- rep. Everything is decided here on the server; the client reads the Player attributes set in
+-- every rack, but only the base's owner trains there. The orange button in front of it sells more XP
+-- per rep, and while training a bubble now and then offers a double rep. The rack and the button are
+-- Blender models (BaseKit). Everything is decided here on the server; the client reads the Player attributes set in
 -- publish and can only ask through TrainingRemotes (StopTraining, TapBubble).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Training = require(ReplicatedStorage.Shared.Config.Training)
+local BaseKit = require(ReplicatedStorage.Shared.BaseKit)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local PlayerData = require(script.Parent.PlayerData)
@@ -17,20 +19,8 @@ local World = require(ReplicatedStorage.Shared.World)
 local TrainingService = {}
 
 local TICK = 0.25
-local PAD_COLOR = Color3.fromRGB(226, 142, 58)
-local XP_PAD_COLOR = Color3.fromRGB(245, 170, 40)
-local FRAME_COLOR = Color3.fromRGB(70, 74, 82)
-local BAR_COLOR = Color3.fromRGB(200, 205, 212)
-local PLATE_COLOR = Color3.fromRGB(40, 42, 48)
-
--- Rack shape, in studs from the pad's centre. The lifter stands at the centre facing out of the base.
-local UPRIGHT_GAP = 4.2 -- from the centre to each upright
-local UPRIGHT_HEIGHT = 8
-local RACK_BAR_HEIGHT = 5.3
-local RACK_BAR_LENGTH = 12
-local PLATE_OFFSETS = { 4.9, 5.4 } -- from the centre, on both sides
-local PAD_TOP = 0.5
-local SIGN_DISTANCE = 60 -- five racks in a row: only the near ones' signs show
+local PAD_TOP = 0 -- the lifter stands on the ground, inside the rack's dashed circle
+local BAR_PARTS = { Bar = true, Plate = true } -- the loaded bar, hidden while it's on someone's shoulders
 
 local remotes: { [string]: RemoteEvent } = {}
 local training: { [Player]: number } = {} -- the base whose rack each player is training at
@@ -55,73 +45,31 @@ local function makeRemotes()
 	folder.Parent = ReplicatedStorage
 end
 
-local function makeCylinder(parent: Instance, name: string, size: Vector3, position: Vector3, color: Color3): Part
-	local part = World.makePart(parent, name, size, CFrame.new(position), color)
-	part.Shape = Enum.PartType.Cylinder -- along X
-	part.Material = Enum.Material.Metal
-	return part
-end
-
 local function buildRack(parent: Instance, plotIndex: number)
-	local station = Training.rack
-	local origin = Training.rackPosition(plotIndex)
-
 	local model = Instance.new("Model")
 	model.Name = `Rack{plotIndex}`
-	local pad = World.makePad(model, origin, station.padRadius, PAD_COLOR)
+
+	-- Both face out of the base, like the lifter.
+	local rackAt = Training.rackPosition(plotIndex)
+	local rack = BaseKit.place("base_SquatRack", CFrame.lookAt(rackAt, rackAt + FACING), model)
 	local barParts = {}
-
-	for _, side in { -1, 1 } do
-		local x = side * UPRIGHT_GAP
-		World.makePart(model, "RackFoot", Vector3.new(1.6, 0.4, 3), CFrame.new(origin + Vector3.new(x, PAD_TOP + 0.2, 0)), FRAME_COLOR)
-		World.makePart(
-			model,
-			"Upright",
-			Vector3.new(0.8, UPRIGHT_HEIGHT, 0.8),
-			CFrame.new(origin + Vector3.new(x, PAD_TOP + UPRIGHT_HEIGHT / 2, 0)),
-			FRAME_COLOR
-		)
-		World.makePart(
-			model,
-			"Hook",
-			Vector3.new(0.6, 0.3, 0.9),
-			CFrame.new(origin + Vector3.new(x - side * 0.6, RACK_BAR_HEIGHT - 0.3, 0)),
-			FRAME_COLOR
-		)
-	end
-
-	-- The loaded bar rests on the hooks; it disappears while the owner has it on their shoulders.
-	local bar = makeCylinder(
-		model,
-		"RackBar",
-		Vector3.new(RACK_BAR_LENGTH, 0.35, 0.35),
-		origin + Vector3.new(0, RACK_BAR_HEIGHT, 0),
-		BAR_COLOR
-	)
-	table.insert(barParts, bar)
-	for _, offset in PLATE_OFFSETS do
-		for _, side in { -1, 1 } do
-			local plate = makeCylinder(
-				model,
-				"RackPlate",
-				Vector3.new(0.4, 2.8, 2.8),
-				origin + Vector3.new(side * offset, RACK_BAR_HEIGHT, 0),
-				PLATE_COLOR
-			)
-			table.insert(barParts, plate)
+	if rack then
+		for _, part in rack:GetDescendants() do
+			if part:IsA("BasePart") then
+				if BAR_PARTS[part.Name] then
+					table.insert(barParts, part)
+				end
+				if part.Name == "Dash" then
+					part.CanCollide = false
+				end
+			end
 		end
 	end
 	rackBarParts[plotIndex] = barParts
 
-	local signAnchor = World.makePart(model, "SignAnchor", Vector3.one, CFrame.new(origin + Vector3.new(0, UPRIGHT_HEIGHT + 2, 0)), FRAME_COLOR)
-	signAnchor.Transparency = 1
-	signAnchor.CanCollide = false
-	World.makeSign(signAnchor, "TRAIN HERE", 0, SIGN_DISTANCE, 220)
+	local buttonAt = Training.xpPadPosition(plotIndex)
+	BaseKit.place("base_XpButton", CFrame.lookAt(buttonAt, buttonAt + FACING), model)
 
-	local xpPad = World.makePad(model, Training.xpPadPosition(plotIndex), Training.xpUpgrade.padRadius, XP_PAD_COLOR)
-	xpPad.Name = "XpUpgradePad"
-
-	model.PrimaryPart = pad
 	model.Parent = parent
 end
 

@@ -374,8 +374,10 @@ Done one at a time, each in its own step:
    still to do: the arena is `kit_Arena` from `build_world_kit.py`, placed with the corridor by `MapService`, sizes in
    `Config/Map`.)*
 4. **Bases**: 5 small bases in the row, each with its rack, XP pad, sign and owner plate, plus a shop only the owner sees.
-   Capacity 10 to 20. *(Done 2026-11-03 except the owner plate. The rack, stalls and fences are still plain parts made in
-   code, not Blender models.)*
+   Capacity 10 to 20. *(Done 2026-11-03. The rack, XP button, stall, fence and upgrade sign are Blender models,
+   `assets/models/build_base_kit.py`, kept in `Assets.Maps.FernValley.Base` and placed through `BaseKit`. The owner plate
+   and the sign's face follow the mock-ups 13b and 14 in `design/ui-mockups/build.py`. All fences are wood and every base
+   has a rack until questions 1 to 3 in section 15 are answered.)*
 5. **Fern Valley props and decoration**: our own trees, ferns, rocks and rim decoration, in Blender.
 6. **Huge animals**: remove the size cap and scale dinos up until they look absurd on those bases.
 7. **Polish**: lighting, sky, small effects, and a check on phone speed.
@@ -441,7 +443,6 @@ and biome completion rewards (built, in section 12). Announcements are confirmed
 | Every map's dinos built at the same scale | Scale up per map, to 10x at the last map (section 8a) | Owner |
 | No announcements | A server-wide banner for lucky catches (section 6) | Owner |
 | Auto-placement keeps dinos apart | Overlap is fine | Seen |
-| No owner plate | Profile picture, name and $/s over each base | Owner |
 | Luck only picks the dino; mutation and size odds ignore it | Luck also affects mutation and size | Owner |
 | Plain coloured parts with little or no stud texture | Checker and studs on everything | Owner |
 | After landing, the camera circles the egg right away | White ring and dust, cut to black, then the amber walking view | Owner + Seen |

@@ -7,6 +7,7 @@ local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local BaseKit = require(ReplicatedStorage.Shared.BaseKit)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local DinoLife = require(ReplicatedStorage.Shared.Config.DinoLife)
@@ -15,6 +16,7 @@ local Map = require(ReplicatedStorage.Shared.Config.Map)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
+local BaseSigns = require(script.Parent.BaseSigns)
 local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
 local World = require(ReplicatedStorage.Shared.World)
@@ -22,14 +24,8 @@ local World = require(ReplicatedStorage.Shared.World)
 local PlotService = {}
 
 local INCOME_TICK = 1 -- seconds
-local SIGN_HEIGHT = 20
-local SIGN_DISTANCE = 400
 local STATUE_LABEL_DISTANCE = 90
-local FENCE_POST_SPACING = 8
-local UPGRADE_SIGN_SIZE = Vector3.new(10, 5, 1)
-local UPGRADE_SIGN_INSET = 4 -- studs inside the front edge, beside the gate
-local UPGRADE_CLICK_DISTANCE = 40
-local SIGN_INK = Color3.fromRGB(20, 22, 28)
+local OUT = Vector3.new(0, 0, -1) -- out of every base, through its gate
 local SPOT_TRIES = 40
 local HELD_SCALE = 0.35
 local HELD_SIDE = 3.5 -- studs to the character's right
@@ -61,61 +57,25 @@ end
 
 local onUpgradeClicked: (number, Player) -> ()
 
--- A wooden fence from a to b (points on the plot's surface): posts with two rails.
-local function buildFence(model: Model, a: Vector3, b: Vector3)
+-- A wooden fence along a base's edge, from a to b (points on the ground): Blender posts every
+-- Plot.fenceSection studs with rails between them. Posts are shared with the next run at the corners.
+local function buildFence(model: Model, posts: { [string]: boolean }, a: Vector3, b: Vector3)
 	local length = (b - a).Magnitude
 	local direction = (b - a).Unit
-	local posts = math.max(math.ceil(length / FENCE_POST_SPACING), 1)
-	for post = 0, posts do
-		local point = a + direction * (length * post / posts)
-		local part = World.makePart(
-			model,
-			"FencePost",
-			Vector3.new(1.2, Plot.fenceHeight, 1.2),
-			CFrame.new(point + Vector3.new(0, Plot.fenceHeight / 2, 0)),
-			Plot.fenceColor
-		)
-		part.TopSurface = Enum.SurfaceType.Studs
+	local sections = math.max(math.round(length / Plot.fenceSection), 1)
+	for index = 0, sections do
+		local point = a + direction * (length * index / sections)
+		local key = `{math.round(point.X)},{math.round(point.Z)}`
+		if not posts[key] then
+			posts[key] = true
+			BaseKit.place("base_FencePost", CFrame.lookAt(point, point + OUT), model)
+		end
+		if index < sections then
+			-- The rails run along the piece's X, so turn X onto the fence's direction.
+			local middle = a + direction * (length * (index + 0.5) / sections)
+			BaseKit.place("base_FenceRails", CFrame.fromMatrix(middle, direction, Vector3.yAxis), model)
+		end
 	end
-	for _, height in { Plot.fenceHeight * 0.4, Plot.fenceHeight * 0.8 } do
-		local middle = (a + b) / 2 + Vector3.new(0, height, 0)
-		World.makePart(model, "FenceRail", Vector3.new(0.6, 0.6, length), CFrame.lookAt(middle, middle + direction), Plot.fenceColor)
-	end
-end
-
--- Text on one face of the upgrade sign: "8 > 10" over a dark price bar.
-local function makeSignFace(board: BasePart, face: Enum.NormalId)
-	local gui = Instance.new("SurfaceGui")
-	gui.Name = face.Name
-	gui.Face = face
-	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-	gui.PixelsPerStud = 50
-	gui.Enabled = false -- blank until the plot has an owner (setUpgradeSign)
-	gui.Parent = board
-
-	local count = Instance.new("TextLabel")
-	count.Name = "Count"
-	count.BackgroundTransparency = 1
-	count.Position = UDim2.fromScale(0.05, 0.06)
-	count.Size = UDim2.fromScale(0.9, 0.5)
-	count.Font = Enum.Font.GothamBlack
-	count.TextColor3 = Color3.new(1, 1, 1)
-	count.TextStrokeTransparency = 0
-	count.TextScaled = true
-	count.Parent = gui
-
-	local bar = Instance.new("TextLabel")
-	bar.Name = "Price"
-	bar.BackgroundColor3 = SIGN_INK
-	bar.Position = UDim2.fromScale(0.08, 0.62)
-	bar.Size = UDim2.fromScale(0.84, 0.3)
-	bar.Font = Enum.Font.GothamBlack
-	bar.TextColor3 = Color3.new(1, 1, 1)
-	bar.TextScaled = true
-	bar.Parent = gui
-	local barCorner = Instance.new("UICorner")
-	barCorner.CornerRadius = UDim.new(0.25, 0)
-	barCorner.Parent = bar
 end
 
 local function buildPlots()
@@ -138,16 +98,7 @@ local function buildPlots()
 		checker.StudsPerTileU = Map.checkerStuds
 		checker.StudsPerTileV = Map.checkerStuds
 		checker.Parent = ground
-		local signAnchor = World.makePart(
-			model,
-			"SignAnchor",
-			Vector3.new(1, 1, 1),
-			CFrame.new(position + Vector3.new(0, SIGN_HEIGHT, -Plot.size.Z / 2)),
-			Plot.color
-		)
-		signAnchor.Transparency = 1
-		signAnchor.CanCollide = false
-		World.makeSign(signAnchor, "Free plot", 0, SIGN_DISTANCE, 420)
+		BaseSigns.buildPlate(model, plotIndex)
 
 		-- Fence on all four sides, with a gate in the middle of the front edge (the plot's exit).
 		local top = position.Y + Plot.size.Y
@@ -155,41 +106,30 @@ local function buildPlots()
 		local function corner(x: number, z: number): Vector3
 			return Vector3.new(position.X + x, top, position.Z + z)
 		end
-		buildFence(model, corner(-halfX, -halfZ), corner(-halfGate, -halfZ))
-		buildFence(model, corner(halfGate, -halfZ), corner(halfX, -halfZ))
-		buildFence(model, corner(-halfX, halfZ), corner(halfX, halfZ))
-		buildFence(model, corner(-halfX, -halfZ), corner(-halfX, halfZ))
-		buildFence(model, corner(halfX, -halfZ), corner(halfX, halfZ))
+		local fence = Instance.new("Model")
+		fence.Name = "Fence"
+		local posts = {}
+		buildFence(fence, posts, corner(-halfX, -halfZ), corner(-halfGate, -halfZ))
+		buildFence(fence, posts, corner(halfGate, -halfZ), corner(halfX, -halfZ))
+		buildFence(fence, posts, corner(-halfX, halfZ), corner(halfX, halfZ))
+		buildFence(fence, posts, corner(-halfX, -halfZ), corner(-halfX, halfZ))
+		buildFence(fence, posts, corner(halfX, -halfZ), corner(halfX, halfZ))
+		fence.Parent = model
 
-		-- The upgrade sign stands on two legs just inside the gate, above the fence so it can be
-		-- clicked from outside too. Clicking it buys more room.
-		local signBase = corner(halfGate + UPGRADE_SIGN_SIZE.X / 2 + 2, -halfZ + UPGRADE_SIGN_INSET)
-		local legHeight = Plot.fenceHeight + 1
-		for _, side in { -1, 1 } do
-			World.makePart(
-				model,
-				"SignLeg",
-				Vector3.new(1, legHeight, 1),
-				CFrame.new(signBase + Vector3.new(side * (UPGRADE_SIGN_SIZE.X / 2 - 1), legHeight / 2, 0)),
-				Plot.fenceColor
-			)
+		-- The upgrade sign stands on the front fence by the gate. Clicking it buys more room.
+		local signAt = Plot.gatePosition(plotIndex) + Plot.upgradeSign.offset
+		local sign = BaseKit.place("base_UpgradeSign", CFrame.lookAt(signAt, signAt + OUT), model)
+		local board = sign and sign:FindFirstChild("Board") :: BasePart?
+		if board then
+			board.Name = "UpgradeSign"
+			BaseSigns.buildSignFace(board, BaseKit.faceToward(board, OUT))
+			local click = Instance.new("ClickDetector")
+			click.MaxActivationDistance = Plot.upgradeSign.clickDistance
+			click.Parent = board
+			click.MouseClick:Connect(function(player)
+				onUpgradeClicked(plotIndex, player)
+			end)
 		end
-		local board = World.makePart(
-			model,
-			"UpgradeSign",
-			UPGRADE_SIGN_SIZE,
-			CFrame.new(signBase + Vector3.new(0, legHeight + UPGRADE_SIGN_SIZE.Y / 2, 0)),
-			Plot.fenceColor
-		)
-		board.TopSurface = Enum.SurfaceType.Studs
-		makeSignFace(board, Enum.NormalId.Front)
-		makeSignFace(board, Enum.NormalId.Back)
-		local click = Instance.new("ClickDetector")
-		click.MaxActivationDistance = UPGRADE_CLICK_DISTANCE
-		click.Parent = board
-		click.MouseClick:Connect(function(player)
-			onUpgradeClicked(plotIndex, player)
-		end)
 
 		model.Parent = folder
 		plotModels[plotIndex] = model
@@ -206,21 +146,11 @@ local function plotIndexOf(player: Player): number?
 	return nil
 end
 
-local function setSign(plotIndex: number, text: string)
-	plotModels[plotIndex].SignAnchor.Sign.TextLabel.Text = text
-end
-
--- Shows the owner's next upgrade on both faces of the sign. A free plot's sign is blank.
+-- Shows the owner's next upgrade on the sign, and whether they can afford it. A free plot's sign is blank.
 local function setUpgradeSign(plotIndex: number, data)
-	local board = plotModels[plotIndex].UpgradeSign
-	for _, face in { board.Front, board.Back } do
-		face.Enabled = data ~= nil
-		if data then
-			local capacity = Plot.capacity(data.plotUpgrades)
-			local maxed = capacity >= Plot.maxSlots
-			face.Count.Text = if maxed then `{capacity} MAX` else `{capacity} > {Plot.capacity(data.plotUpgrades + 1)}`
-			face.Price.Text = if maxed then "MAXED" else `▲ {Format.cash(Plot.upgradePrice(data.plotUpgrades))}`
-		end
+	local board = plotModels[plotIndex]:FindFirstChild("UpgradeSign", true)
+	if board then
+		BaseSigns.setSignFace(board, data, data and data.cash)
 	end
 end
 
@@ -559,7 +489,7 @@ local function onLoaded(player: Player, data)
 	for plotIndex in plotModels do
 		if not plotOwners[plotIndex] then
 			plotOwners[plotIndex] = player
-			setSign(plotIndex, `{player.DisplayName}'s Plot`)
+			BaseSigns.setPlate(plotModels[plotIndex], player)
 			setUpgradeSign(plotIndex, data)
 			player:SetAttribute("PlotIndex", plotIndex)
 			break
@@ -603,7 +533,7 @@ local function onLeaving(player: Player)
 	local plotIndex = plotIndexOf(player)
 	if plotIndex then
 		plotOwners[plotIndex] = nil
-		setSign(plotIndex, "Free plot")
+		BaseSigns.setPlate(plotModels[plotIndex], nil)
 		setUpgradeSign(plotIndex, nil)
 	end
 	local folder = statueFolders[player]
@@ -648,6 +578,11 @@ local function payIncome()
 			data.lastSeen = os.time()
 			player:SetAttribute("Income", income)
 			player:SetAttribute("BaseIncome", baseIncome(player, data))
+			local plotIndex = plotIndexOf(player)
+			if plotIndex then
+				BaseSigns.setPlateIncome(plotModels[plotIndex], income)
+				setUpgradeSign(plotIndex, data) -- the price turns green once they can afford it
+			end
 		end
 	end
 end

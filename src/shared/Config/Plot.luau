@@ -31,8 +31,20 @@ local Plot = {
 	ownColor = Color3.fromRGB(226, 142, 58), -- edge of the plot that belongs to you
 	homeInset = 6, -- after a catch you land this far inside the plot's front edge (its exit)
 	gateWidth = 12, -- the gap in the fence at the middle of the front edge
-	fenceHeight = 4,
-	fenceColor = Color3.fromRGB(176, 120, 64),
+	fenceSection = 6, -- studs between fence posts: the Blender rails' length (BaseKit base_FenceRails)
+
+	-- The upgrade sign stands on the front fence beside the gate, on the rack's side, facing out.
+	upgradeSign = {
+		offset = Vector3.new(-9, 0, -0.9), -- from the middle of the gate (gatePosition), between it and the rack
+		clickDistance = 40,
+	},
+
+	-- The owner plate floats over the middle of the base (BillboardGui, sized in studs).
+	ownerPlate = {
+		height = 26,
+		size = Vector2.new(18, 15),
+		maxDistance = 1000,
+	},
 }
 
 -- How many dinos a plot holds after this many upgrades.

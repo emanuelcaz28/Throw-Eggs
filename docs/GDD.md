@@ -9,9 +9,9 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
 
 ## Core loop
 
-1. **Train** — step onto the squat rack's pad (every base has one, right of its gate; only its owner trains there): the character is locked in under the bar and squats with it
+1. **Train** — step into the squat rack's dashed circle (every base has one, right of its gate; only its owner trains there): the character is locked in under the bar and squats with it
    on their shoulders; auto-reps give XP until STOP. Level-ups raise **Throw Power** ("LEVEL UP! Throw Power +20").
-   The orange pad beside the rack sells more XP per rep for cash. Now and then an x2 bubble pops up; tapping
+   The round orange button in front of the rack sells more XP per rep for cash. Now and then an x2 bubble pops up; tapping
    it gives a double rep and a purple glow. The level bar and STOP only show while training (`Config/Training`).
 2. **Throw** — step onto the orange platform in the arena's front wall → egg meter: a marker swings up and down a vertical tube with 10 levels
    and slows near the top. Level 10, the top step, is PERFECT and gives the biggest throw.
@@ -30,8 +30,10 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
    click places it there; the server checks the spot. New catches and Equip Best pick a free spot by
    themselves. The plot holds a limited number (start 10); extras go to backpack. Equip Best / Pick Up / Sell.
    Plots (bases) are 48 x 48, five in one row across the back of the arena, fenced, with a gate in the middle
-   of the front edge. An upgrade sign on legs just inside the gate shows "10 > 12" and the price; clicking it
-   buys +2 room (up to 20), each upgrade 6x pricier.
+   of the front edge. A blue upgrade sign on the front fence by the gate shows "🐾 10 › 12" and the price
+   (green when the owner can afford it, red when not, a gold MAX bar at 20); clicking it buys +2 room (up to
+   20), each upgrade 6x pricier. An owner plate floats high over each base: the owner's Roblox headshot, name
+   and $/s (`BaseSigns`, `Config/Plot` ownerPlate). Free bases show no plate.
 5. **Egg Shop** — buy better egg tiers with cash. Better egg = better roll table / more luck.
 
 Loop: train → farther throws → more luck → rarer dinos → more cash → better eggs → rarer dinos.

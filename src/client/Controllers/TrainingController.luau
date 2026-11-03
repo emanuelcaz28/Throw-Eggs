@@ -265,7 +265,8 @@ function TrainingController.start()
 		local function placeSign()
 			local plotIndex = player:GetAttribute("PlotIndex")
 			local rack = plotIndex and workspace:WaitForChild("Racks"):WaitForChild(`Rack{plotIndex}`)
-			sign.Adornee = rack and rack:WaitForChild("XpUpgradePad")
+			local button = rack and rack:WaitForChild("base_XpButton", 10)
+			sign.Adornee = button and button:FindFirstChild("Button")
 			sign.Enabled = sign.Adornee ~= nil
 		end
 		player:GetAttributeChangedSignal("PlotIndex"):Connect(placeSign)
