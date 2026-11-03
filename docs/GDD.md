@@ -9,13 +9,13 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
 
 ## Core loop
 
-1. **Train** — step onto the squat rack's pad: the character is locked in under the bar and squats with it
+1. **Train** — step onto the squat rack's pad (every base has one, right of its gate; only its owner trains there): the character is locked in under the bar and squats with it
    on their shoulders; auto-reps give XP until STOP. Level-ups raise **Throw Power** ("LEVEL UP! Throw Power +20").
    The orange pad beside the rack sells more XP per rep for cash. Now and then an x2 bubble pops up; tapping
    it gives a double rep and a purple glow. The level bar and STOP only show while training (`Config/Training`).
-2. **Throw** — step on the throw lane → egg meter: a marker swings up and down a vertical tube with 10 levels
+2. **Throw** — step onto the orange platform in the arena's front wall → egg meter: a marker swings up and down a vertical tube with 10 levels
    and slows near the top. Level 10, the top step, is PERFECT and gives the biggest throw.
-   The equipped **egg** flies down one long corridor through biomes. Distance = Throw Power × the level's bonus.
+   The equipped **egg** flies down one long corridor, below the arena, through biomes and lands on its floor. Distance = Throw Power × the level's bonus.
    A **Luck multiplier** grows with distance (shown live, top of screen).
 3. **Hatch / reveal** — the egg lands in a biome and hatches. Dino name fills in letter by letter
    (hangman style) while a "1 in X" counter climbs. Labels escalate: LUCKY! → SUPER LUCKY! → INSANE → LEGENDARY → GODLY.
@@ -28,9 +28,10 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
    hotbar (keys 1–0, best first); equipping one makes the character carry a small copy of it. While it's
    carried, a see-through dino follows the pointer over your plot (green = can go, red = can't) and a
    click places it there; the server checks the spot. New catches and Equip Best pick a free spot by
-   themselves. The plot holds a limited number (start 8); extras go to backpack. Equip Best / Pick Up / Sell.
-   Plots are fenced, with a gate in the middle of the front edge. An upgrade sign on legs just inside the
-   gate shows "8 > 10" and the price; clicking it buys +2 room (up to 30), each upgrade 6x pricier.
+   themselves. The plot holds a limited number (start 10); extras go to backpack. Equip Best / Pick Up / Sell.
+   Plots (bases) are 48 x 48, five in one row across the back of the arena, fenced, with a gate in the middle
+   of the front edge. An upgrade sign on legs just inside the gate shows "10 > 12" and the price; clicking it
+   buys +2 room (up to 20), each upgrade 6x pricier.
 5. **Egg Shop** — buy better egg tiers with cash. Better egg = better roll table / more luck.
 
 Loop: train → farther throws → more luck → rarer dinos → more cash → better eggs → rarer dinos.
@@ -78,12 +79,13 @@ MVP ships biomes 1–3 only.
    training level) and a free starter dino (`Config/Shop`).
 9. Timed events: every server runs one at a time (Meteor Shower 2x mutations, Growth Spurt 2x sizes,
    Gold Rush 2x cash), 10 min each with a 20 min break, shown with a top-right timer (`Config/Events`).
-10. Hub leaderboards: MOST DINOS (dinos caught), TOP MONEY (money earned) and LUCKIEST CATCH (rarest
+10. Arena leaderboards (along the right-hand wall, seen from the platform): MOST DINOS (dinos caught), TOP MONEY (money earned) and LUCKIEST CATCH (rarest
     "1 in X"), top 10 across all servers, refreshed every minute (`Config/Leaderboards`).
 11. Offline earnings: on rejoin, the plot pays 50% of its $/s for the time away (up to 8 hours, events not
     counted), with a "Your dinos earned $X while you were away!" message (`Config/Plot`).
-12. Hub stalls just ahead of spawn: an EGG SHOP stall (blue/white awning) and a SELL stall (red/white),
-    each with a shopkeeper and a glowing pad that opens the Egg Shop / My Dinos while you stand on it (`Config/Hub`).
+12. Stalls: an EGG SHOP stall (blue/white awning) left of each base's gate, which only its owner sees, and one
+    SELL stall (red/white) in the arena's open ground, each with a shopkeeper and a glowing pad that opens the
+    Egg Shop / My Dinos while you stand on it (`Config/Hub`).
 13. HUD restyle: square icon buttons with outlined labels (Index and Shop on the left, Dinos on the right; the
     Egg Shop opens only from its stall), big outlined ⚡ Throw Power and cash at the bottom left, hotbar along
     the bottom edge. Everything shrinks to fit short screens. While aiming and flying only Throw Power stays

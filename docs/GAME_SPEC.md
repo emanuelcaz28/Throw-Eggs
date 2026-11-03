@@ -367,11 +367,15 @@ Done one at a time, each in its own step:
 1. **Layout blockout in Blender**: sizes and positions only, checked against the reference. *(Done, approved by the owner.)*
 2. **Real models in Blender**: the 6 animals and 9 props are made and waiting for the owner's OK (`assets/models/build_fern_valley.py`).
    Dino animations are in the same file. Floor, walls with hanging grass and rim, and platform are in `build_world_kit.py`. Colour comes from each part's Color, with see-through stud images on top
-   (`assets/textures/`, applied in Studio as a SurfaceAppearance with AlphaMode Overlay), so one image suits every world. The arena pieces are still to make.
+   (`assets/textures/`, applied in Studio as a SurfaceAppearance with AlphaMode Overlay), so one image suits every world. The arena pieces
+   (floor and its four walls) are in the same file, under one model, `kit_Arena`.
 3. **Into Roblox Studio**: import, apply the stud texture and two-tone checker, sky and lighting. Replace the current
-   ground, and move the lane and arena numbers in `Config`, so throwing still works.
+   ground, and move the lane and arena numbers in `Config`, so throwing still works. *(Done 2026-11-03, sky and lighting
+   still to do: the arena is `kit_Arena` from `build_world_kit.py`, placed with the corridor by `MapService`, sizes in
+   `Config/Map`.)*
 4. **Bases**: 5 small bases in the row, each with its rack, XP pad, sign and owner plate, plus a shop only the owner sees.
-   Capacity 10 to 20.
+   Capacity 10 to 20. *(Done 2026-11-03 except the owner plate. The rack, stalls and fences are still plain parts made in
+   code, not Blender models.)*
 5. **Fern Valley props and decoration**: our own trees, ferns, rocks and rim decoration, in Blender.
 6. **Huge animals**: remove the size cap and scale dinos up until they look absurd on those bases.
 7. **Polish**: lighting, sky, small effects, and a check on phone speed.
@@ -433,19 +437,12 @@ and biome completion rewards (built, in section 12). Announcements are confirmed
 
 | Today | Must become | Source |
 |---|---|---|
-| 6 plots, two rows | 5 bases, one row | Owner + Seen |
-| Plots are 120 × 80 | Much smaller, about 50 × 45 | Owner + Guess |
-| Starts at 8, max 30 | Starts at 10, max 20, +2 each | Owner |
-| One shared Egg Shop stall in the hub | One per base, visible **only to its owner** | Owner |
-| One shared squat rack | One per base, visible to everyone | Owner |
-| XP pad beside the one rack | One per base, in front of its rack | Seen |
 | Statues capped at 1.6× so they "don't swallow the plot" | Remove the cap | Owner |
 | Every map's dinos built at the same scale | Scale up per map, to 10x at the last map (section 8a) | Owner |
 | No announcements | A server-wide banner for lucky catches (section 6) | Owner |
 | Auto-placement keeps dinos apart | Overlap is fine | Seen |
 | No owner plate | Profile picture, name and $/s over each base | Owner |
 | Luck only picks the dino; mutation and size odds ignore it | Luck also affects mutation and size | Owner |
-| Corridor and hub on one flat baseplate | Sunken arena, platform, lower corridor | Owner + Seen |
 | Plain coloured parts with little or no stud texture | Checker and studs on everything | Owner |
 | After landing, the camera circles the egg right away | White ring and dust, cut to black, then the amber walking view | Owner + Seen |
 | The egg wobbles and bursts at 40%, and the dino pops up from nothing and spins | Close-up, then pull back to the dino already standing still over the egg | Owner + Seen |
@@ -456,7 +453,10 @@ and biome completion rewards (built, in section 12). Announcements are confirmed
 | Flight can last up to 8 seconds | About 6 seconds at the last map, shorter for nearer maps, always smooth | Owner |
 | Luck grows evenly with distance | Fast at first, slowing right down (ours is evenly spaced inside each world) | Seen |
 
-Save data note: `plotUpgrades` is already saved, so the capacity change needs a check that existing test saves still fit.
+Done on 2026-11-03: the sunken arena, platform and lower corridor, the throw line on the platform, 5 bases of 48 × 48
+in one row holding 10 to 20, a rack and XP pad at each base, an Egg Shop only its owner sees, and SELL and the
+leaderboards in the arena. Old saves that held more than 20 dinos, or spots outside the smaller fence, are fitted to the
+new base when they load (the best dinos stay, the rest go to the backpack).
 
 ---
 

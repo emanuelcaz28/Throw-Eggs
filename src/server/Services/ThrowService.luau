@@ -1,4 +1,4 @@
--- Builds the throw lane and runs each player's throw: aiming -> flying -> aiming again.
+-- Marks the throw lane on the corridor floor and runs each player's throw: aiming -> flying -> aiming again.
 -- The client only reports how high the meter marker was when it tapped. The server checks that the tap
 -- is allowed and works out the distance itself.
 local Players = game:GetService("Players")
@@ -16,15 +16,13 @@ local PlayerData = require(script.Parent.PlayerData)
 local PlotService = require(script.Parent.PlotService)
 local ShopService = require(script.Parent.ShopService)
 local TrainingService = require(script.Parent.TrainingService)
-local World = require(script.Parent.World)
+local World = require(ReplicatedStorage.Shared.World)
 
 local ThrowService = {}
 
 local TICK = 0.1
-local GROUND_THICKNESS = 1
-local GROUND_TOP = 0.1 -- just above the baseplate, so the two don't flicker
-local PAD_COLOR = Color3.fromRGB(70, 170, 220)
 local MARKER_COLOR = Color3.new(1, 1, 1)
+local MARKER_LIFT = 0.05 -- just above the corridor floor, so the two don't flicker
 
 type ThrowState = { phase: "idle" | "aiming" | "flying" | "revealing", aimStartedAt: number, revealStartedAt: number }
 
@@ -43,35 +41,27 @@ local function makeRemotes()
 	folder.Parent = ReplicatedStorage
 end
 
+-- Thin lines across the corridor floor every markerSpacing studs, a sign at each biome's start
+-- and THROW HERE over the platform. The floor itself is MapService's.
 local function buildLane()
 	local lane = Throw.lane
 	local model = Instance.new("Model")
 	model.Name = "ThrowLane"
 	-- The lane runs far from the player. Without this, Roblox may not send distant
-	-- parts to the client and the egg would fly over nothing.
+	-- parts to the client.
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 
-	local function groundPoint(distance: number): Vector3
-		return lane.origin + lane.direction * distance + Vector3.new(0, GROUND_TOP, 0)
+	local function floorPoint(distance: number): Vector3
+		local point = lane.origin + lane.direction * distance
+		return Vector3.new(point.X, lane.floorY, point.Z)
 	end
 
 	for _, biome in Biomes do
-		local length = biome.endDist - biome.startDist
-		local middle = groundPoint((biome.startDist + biome.endDist) / 2)
-		local ground = World.makePart(
-			model,
-			biome.id,
-			Vector3.new(lane.width, GROUND_THICKNESS, length),
-			CFrame.new(middle - Vector3.new(0, GROUND_THICKNESS / 2, 0)),
-			biome.color
-		)
-		ground.Material = Enum.Material.Grass
-
 		local entrance = World.makePart(
 			model,
 			"BiomeSign",
 			Vector3.new(1, 1, 1),
-			CFrame.new(groundPoint(biome.startDist) + Vector3.new(0, 12, 0)),
+			CFrame.new(floorPoint(biome.startDist) + Vector3.new(0, 12, 0)),
 			biome.color
 		)
 		entrance.Transparency = 1
@@ -85,23 +75,28 @@ local function buildLane()
 			model,
 			"Marker",
 			Vector3.new(lane.width, 0.1, 1),
-			CFrame.new(groundPoint(distance) + Vector3.new(0, 0.05, 0)),
+			CFrame.new(floorPoint(distance) + Vector3.new(0, MARKER_LIFT, 0)),
 			MARKER_COLOR
 		)
 		marker.CanCollide = false
 		marker.Material = Enum.Material.SmoothPlastic
+		marker.Transparency = 0.4
 		World.makeSign(marker, `{distance}`, 3, 200, 120)
 	end
 
-	local pad = World.makePad(model, lane.padPosition, lane.padRadius, PAD_COLOR)
-	World.makeSign(pad, "THROW HERE", 8, 150, 220)
+	local signAnchor = World.makePart(model, "ThrowSign", Vector3.one, CFrame.new(lane.zoneCenter + Vector3.new(0, 10, 0)), MARKER_COLOR)
+	signAnchor.Transparency = 1
+	signAnchor.CanCollide = false
+	World.makeSign(signAnchor, "THROW HERE", 0, 150, 220)
 
 	model.Parent = workspace
 end
 
 local function isOnPad(player: Player): boolean
-	local lane = Throw.lane
-	return World.isOnPad(player, lane.padPosition, lane.padRadius, lane.padHeight)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	return root ~= nil and humanoid ~= nil and humanoid.Health > 0 and Throw.onPlatform(root.Position)
 end
 
 local function onTap(player: Player, height: any)

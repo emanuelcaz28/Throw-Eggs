@@ -1,4 +1,4 @@
--- The three leaderboards in the hub. Every minute each player's scores are saved to an
+-- The three leaderboards in the arena. Every minute each player's scores are saved to an
 -- OrderedDataStore (one per board) and the top lists are read back and drawn on the boards.
 -- If the stores can't be reached (Studio without API access), the boards show the players in
 -- this server instead.
@@ -10,7 +10,7 @@ local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Leaderboards = require(ReplicatedStorage.Shared.Config.Leaderboards)
 local PlayerData = require(script.Parent.PlayerData)
-local World = require(script.Parent.World)
+local World = require(ReplicatedStorage.Shared.World)
 
 local LeaderboardService = {}
 
@@ -90,7 +90,7 @@ end
 local function buildBoard(parent: Instance, board, position: Vector3)
 	local size = Leaderboards.size
 	local center = position + Vector3.new(0, size.Y / 2, 0)
-	local part = World.makePart(parent, board.id, size, CFrame.lookAt(center, center + Vector3.new(0, 0, 1)), PANEL)
+	local part = World.makePart(parent, board.id, size, CFrame.lookAt(center, center + Leaderboards.facing), PANEL)
 	part.TopSurface = Enum.SurfaceType.Studs
 
 	local gui = Instance.new("SurfaceGui")

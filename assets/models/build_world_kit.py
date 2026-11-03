@@ -31,6 +31,17 @@ STUDS_PER_SQUARE = 4
 DRIP_WIDTH = 8
 DRIP_DEPTH = 1.5
 DRIP_LENGTHS = (0, 4, 4, 8, 8, 12, 16)
+WALL_BOTTOM = -48  # the island's outer dirt faces drop this far below the corridor floor
+
+# The sunken arena the bases stand in (GAME_SPEC section 3, build_world_layout.py). In these pieces'
+# coordinates, like the corridor's, the corridor floor is z = 0 and the throw line is y = 0, so the
+# arena floor is 12 up and the arena lies towards -y (Roblox +Z).
+ARENA_HALF_WIDTH = 144
+ARENA_FRONT = 16  # the platform's arena-side edge
+ARENA_BACK = 176
+ARENA_FLOOR = 12
+ARENA_RIM_WIDTH = 56
+CORRIDOR_WALL_START = 40  # the arena's front walls end here and the corridor's walls carry on
 
 FERN_VALLEY = {
     "Floor": "#8fe85a",
@@ -38,6 +49,7 @@ FERN_VALLEY = {
     "Grass": "#a4ea3e",
     "Platform": "#ffa030",
     "Dash": "#ffffff",
+    "ArenaFloor": "#4cc425",
 }
 
 
@@ -160,7 +172,7 @@ def wall(side, seed):
     rng = random.Random(seed)
     half = LANE_WIDTH / 2
     inner, outer = side * half, side * (half + RIM_WIDTH)
-    p.box("Dirt", inner, outer, 0, SECTION, -48, WALL_HEIGHT - 2)
+    p.box("Dirt", inner, outer, 0, SECTION, WALL_BOTTOM, WALL_HEIGHT - 2)
     p.box("Grass", inner, outer, 0, SECTION, WALL_HEIGHT - 2, WALL_HEIGHT)
     face = inner - side * DRIP_DEPTH
     p.box("Grass", inner, face, 0, SECTION, WALL_HEIGHT - 4, WALL_HEIGHT)
@@ -169,6 +181,79 @@ def wall(side, seed):
         if length:
             p.box("Grass", inner, face, y, y + DRIP_WIDTH, WALL_HEIGHT - 4 - length, WALL_HEIGHT - 4)
     return p
+
+
+def drips(p, rng, along, start, end, face_at, depth):
+    """Grass hanging over a wall's inner face: a band along the top with columns of random length.
+
+    along is "x" or "y", the axis the face runs along, from start to end. face_at is the face's
+    position on the other axis and depth is signed: where the grass sticks out to.
+    """
+    a, b = sorted((face_at, face_at + depth))
+    lo, hi = sorted((start, end))
+
+    def box(u1, u2, z1, z2):
+        if along == "x":
+            p.box("Grass", u1, u2, a, b, z1, z2)
+        else:
+            p.box("Grass", a, b, u1, u2, z1, z2)
+
+    box(lo, hi, WALL_HEIGHT - 4, WALL_HEIGHT)
+    u = lo
+    while u < hi:
+        length = rng.choice(DRIP_LENGTHS)
+        if length:
+            box(u, min(u + DRIP_WIDTH, hi), WALL_HEIGHT - 4 - length, WALL_HEIGHT - 4)
+        u += DRIP_WIDTH
+
+
+def block(p, x1, x2, y1, y2):
+    """Dirt from the island's bottom up to the rim, with the rim's grass on top."""
+    p.box("Dirt", x1, x2, y1, y2, WALL_BOTTOM, WALL_HEIGHT - 2)
+    p.box("Grass", x1, x2, y1, y2, WALL_HEIGHT - 2, WALL_HEIGHT)
+
+
+def arena_floor():
+    p = Piece("kit_ArenaFloor")
+    p.box("ArenaFloor", -ARENA_HALF_WIDTH, ARENA_HALF_WIDTH, -ARENA_BACK, -ARENA_FRONT, 0, ARENA_FLOOR)
+    return p
+
+
+def arena_back_wall():
+    """Behind the bases, wide enough to cover both back corners."""
+    p = Piece("kit_ArenaWallBack")
+    rng = random.Random(41)
+    outer = ARENA_HALF_WIDTH + ARENA_RIM_WIDTH
+    block(p, -outer, outer, -ARENA_BACK - ARENA_RIM_WIDTH, -ARENA_BACK)
+    drips(p, rng, "x", -ARENA_HALF_WIDTH, ARENA_HALF_WIDTH, -ARENA_BACK, DRIP_DEPTH)
+    return p
+
+
+def arena_side_wall(side):
+    """Left or right of the arena, between the front and back walls."""
+    p = Piece("kit_ArenaWallWest" if side < 0 else "kit_ArenaWallEast")
+    rng = random.Random(42 + side)
+    inner = side * ARENA_HALF_WIDTH
+    block(p, inner, inner + side * ARENA_RIM_WIDTH, -ARENA_BACK, -ARENA_FRONT)
+    # Stops short of the corners, where the front and back walls' grass already hangs.
+    drips(p, rng, "y", -ARENA_BACK + DRIP_DEPTH, -ARENA_FRONT - DRIP_DEPTH, inner, -side * DRIP_DEPTH)
+    return p
+
+
+def arena_front_wall(side):
+    """Beside the platform, covering a front corner. Its end faces the corridor, so grass hangs there too."""
+    p = Piece("kit_ArenaFrontWest" if side < 0 else "kit_ArenaFrontEast")
+    rng = random.Random(45 + side)
+    inner = side * LANE_WIDTH / 2
+    outer = side * (ARENA_HALF_WIDTH + ARENA_RIM_WIDTH)
+    block(p, inner, outer, -ARENA_FRONT, CORRIDOR_WALL_START)
+    drips(p, rng, "x", inner, side * ARENA_HALF_WIDTH, -ARENA_FRONT, -DRIP_DEPTH)
+    drips(p, rng, "y", -ARENA_FRONT, CORRIDOR_WALL_START, inner, -side * DRIP_DEPTH)
+    return p
+
+
+def arena_pieces():
+    return [arena_floor(), arena_back_wall(), arena_side_wall(-1), arena_side_wall(1), arena_front_wall(-1), arena_front_wall(1)]
 
 
 def platform():
@@ -241,17 +326,28 @@ def main():
     for obj in kit.objects:
         obj.hide_render = True
 
-    # Eight sections end to end show the seams, which should not be visible.
+    # The arena is one of a kind, so its pieces are built where they stand and exported from there.
+    # They go under one root, kit_Arena, so Studio imports them as one model.
+    arena = bpy.data.collections.new("Arena")
+    scene.collection.children.link(arena)
+    arena_root = bpy.data.objects.new("kit_Arena", None)
+    arena.objects.link(arena_root)
+    for piece in arena_pieces():
+        piece.build(arena, FERN_VALLEY, image, (0, 0, 0)).parent = arena_root
+
+    # Eight sections end to end show the seams, which should not be visible. The walls start where
+    # the arena's front walls end, as in the game (Config/Map corridor.wallStartZ).
     for i in range(8):
-        offset = (0, i * SECTION, 0)
-        floor().build(joined, FERN_VALLEY, image, offset)
-        wall(-1, 10 + i).build(joined, FERN_VALLEY, image, offset)
-        wall(1, 30 + i).build(joined, FERN_VALLEY, image, offset)
+        floor().build(joined, FERN_VALLEY, image, (0, i * SECTION, 0))
+        wall(-1, 1).build(joined, FERN_VALLEY, image, (0, CORRIDOR_WALL_START + i * SECTION, 0))
+        wall(1, 2).build(joined, FERN_VALLEY, image, (0, CORRIDOR_WALL_START + i * SECTION, 0))
     platform().build(joined, FERN_VALLEY, image, (0, 0, 0))
 
     RENDERS.mkdir(parents=True, exist_ok=True)
     shoot(scene, "kit_corridor", (0, -30, 20), (0, 200, 14))
     shoot(scene, "kit_from_above", (0, -95, 105), (0, 70, 0))
+    shoot(scene, "arena_from_corridor", (0, 150, 150), (0, -90, 0), lens=18)
+    shoot(scene, "arena_from_back", (0, -330, 170), (0, -20, 0), lens=18)
 
     bpy.ops.wm.save_as_mainfile(filepath=str(HERE / "world_kit.blend"))
     print("saved", HERE / "world_kit.blend")

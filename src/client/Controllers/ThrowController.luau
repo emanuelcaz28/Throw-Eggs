@@ -22,7 +22,7 @@ local ThrowController = {}
 local TAP_ACTION = "ThrowEggTap"
 local CAMERA_OFFSET = Vector3.new(14, 10, 24)
 local EGG_SIZE = Vector3.new(2.4, 3, 2.4)
-local GROUND_TOP = 0.1
+local LAUNCH_FLOOR = 0.5 -- the platform's top, above the arena floor (Config/Map platform.top)
 local CATCH_TIMEOUT = 5 -- seconds to wait for the server's catch after landing
 
 local INK = Color3.fromRGB(20, 22, 28)
@@ -319,7 +319,9 @@ function ThrowController.start()
 		local arc = math.min(distance * flight.arcPerStud, flight.maxArc)
 		local eggConfig = DinoStats.findOption(Eggs, eggId) or Eggs[1]
 		local egg = makeEgg(eggConfig.color)
-		local restHeight = EGG_SIZE.Y / 2 + GROUND_TOP
+		-- The egg leaves from the platform and lands on the corridor floor, which is lower.
+		local launchY = lane.origin.Y + LAUNCH_FLOOR + EGG_SIZE.Y / 2 + flight.launchHeight
+		local landY = lane.floorY + EGG_SIZE.Y / 2
 		local camera = workspace.CurrentCamera
 
 		if isMine then
@@ -344,9 +346,10 @@ function ThrowController.start()
 		while true do
 			local t = math.min((os.clock() - startedAt) / duration, 1)
 			local travelled = distance * t
-			-- Drops from launch height to the ground, plus a hill that peaks at arc halfway.
-			local height = restHeight + flight.launchHeight * (1 - t) + arc * 4 * t * (1 - t)
-			local position = lane.origin + lane.direction * travelled + Vector3.new(0, height, 0)
+			-- Drops from launch height to the corridor floor, plus a hill that peaks at arc halfway.
+			local height = launchY + (landY - launchY) * t + arc * 4 * t * (1 - t)
+			local along = lane.origin + lane.direction * travelled
+			local position = Vector3.new(along.X, height, along.Z)
 			egg.CFrame = CFrame.new(position) * CFrame.Angles(t * 20, 0, 0)
 			if isMine then
 				camera.CFrame = CFrame.lookAt(position + CAMERA_OFFSET, position)

@@ -1,5 +1,6 @@
--- The Egg Shop panel, opened by the Egg Shop stall in the hub. One card per egg tier with the egg
--- spinning on a glow, its luck bonus and a buy / equip button. Display and requests only: the
+-- The Egg Shop panel, opened by the Egg Shop stall at the player's own base. The stall is built
+-- here on the client, so only the base's owner sees it (Config/Hub). One card per egg tier with the
+-- egg spinning on a glow, its luck bonus and a buy / equip button. Display and requests only: the
 -- server checks every purchase.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -8,6 +9,7 @@ local RunService = game:GetService("RunService")
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Hub = require(ReplicatedStorage.Shared.Config.Hub)
+local Stall = require(ReplicatedStorage.Shared.Stall)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local player = Players.LocalPlayer
@@ -132,12 +134,30 @@ function EggShopController.start()
 		end)
 	end
 
+	-- The stall stands at the player's own base, and moves with it if the base changes.
+	local stall: Model? = nil
+	local stallCFrame: CFrame? = nil
+	local function placeStall()
+		if stall then
+			stall:Destroy()
+			stall, stallCFrame = nil, nil
+		end
+		local plotIndex = player:GetAttribute("PlotIndex")
+		if plotIndex then
+			stallCFrame = Hub.stallCFrame(Hub.eggStall, plotIndex)
+			stall = Stall.build("MyEggStall", Hub.eggStall, stallCFrame)
+			stall.Parent = workspace
+		end
+	end
+	player:GetAttributeChangedSignal("PlotIndex"):Connect(placeStall)
+	placeStall()
+
 	-- Stepping onto the Egg Shop stall's pad opens this panel; walking off closes it again.
 	local onStallPad = false
 	RunService.Heartbeat:Connect(function()
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart")
-		local nowOnPad = root ~= nil and Hub.isOnPad(Hub.eggStall, root.Position)
+		local nowOnPad = root ~= nil and stallCFrame ~= nil and Hub.isOnPad(stallCFrame, root.Position)
 		if nowOnPad ~= onStallPad then
 			onStallPad = nowOnPad
 			if nowOnPad then

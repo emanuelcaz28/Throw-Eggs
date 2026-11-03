@@ -1,6 +1,6 @@
--- Builds the squat rack and the XP upgrade pad, and runs training. Stepping on the rack's pad
--- locks the player in under the bar; reps come automatically until they press STOP. The orange
--- pad beside it sells more XP per rep, and while training a bubble now and then offers a double
+-- Builds a squat rack and an XP upgrade pad at every base, and runs training. Stepping on your own
+-- rack's pad locks you in under the bar; reps come automatically until you press STOP. Everyone sees
+-- every rack, but only the base's owner trains there. The orange pad in front of it sells more XP per rep, and while training a bubble now and then offers a double
 -- rep. Everything is decided here on the server; the client reads the Player attributes set in
 -- publish and can only ask through TrainingRemotes (StopTraining, TapBubble).
 local Players = game:GetService("Players")
@@ -8,10 +8,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Training = require(ReplicatedStorage.Shared.Config.Training)
 local Format = require(ReplicatedStorage.Shared.Format)
+local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local PlayerData = require(script.Parent.PlayerData)
 local PlotService = require(script.Parent.PlotService)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
-local World = require(script.Parent.World)
+local World = require(ReplicatedStorage.Shared.World)
 
 local TrainingService = {}
 
@@ -22,22 +23,24 @@ local FRAME_COLOR = Color3.fromRGB(70, 74, 82)
 local BAR_COLOR = Color3.fromRGB(200, 205, 212)
 local PLATE_COLOR = Color3.fromRGB(40, 42, 48)
 
--- Rack shape, in studs from the pad's centre. The lifter stands at the centre facing +Z.
+-- Rack shape, in studs from the pad's centre. The lifter stands at the centre facing out of the base.
 local UPRIGHT_GAP = 4.2 -- from the centre to each upright
 local UPRIGHT_HEIGHT = 8
 local RACK_BAR_HEIGHT = 5.3
 local RACK_BAR_LENGTH = 12
 local PLATE_OFFSETS = { 4.9, 5.4 } -- from the centre, on both sides
 local PAD_TOP = 0.5
+local SIGN_DISTANCE = 60 -- five racks in a row: only the near ones' signs show
 
 local remotes: { [string]: RemoteEvent } = {}
-local training: { [Player]: boolean } = {}
+local training: { [Player]: number } = {} -- the base whose rack each player is training at
 local repProgress: { [Player]: number } = {}
 local wasOnXpPad: { [Player]: boolean } = {}
 local nextBubbleAt: { [Player]: number } = {}
 local activeBubble: { [Player]: { id: number, expires: number } } = {}
 local bubbleCount = 0
-local rackBarParts: { BasePart } = {}
+local rackBarParts: { [number]: { BasePart } } = {} -- per base
+local FACING = Vector3.new(0, 0, -1) -- out of the base, the way the lifter looks
 local rng = Random.new()
 
 local function makeRemotes()
@@ -59,13 +62,14 @@ local function makeCylinder(parent: Instance, name: string, size: Vector3, posit
 	return part
 end
 
-local function buildStation()
-	local station = Training.station
-	local origin = station.position
+local function buildRack(parent: Instance, plotIndex: number)
+	local station = Training.rack
+	local origin = Training.rackPosition(plotIndex)
 
 	local model = Instance.new("Model")
-	model.Name = "TrainingStation"
+	model.Name = `Rack{plotIndex}`
 	local pad = World.makePad(model, origin, station.padRadius, PAD_COLOR)
+	local barParts = {}
 
 	for _, side in { -1, 1 } do
 		local x = side * UPRIGHT_GAP
@@ -86,7 +90,7 @@ local function buildStation()
 		)
 	end
 
-	-- The loaded bar rests on the hooks; it disappears while someone has it on their shoulders.
+	-- The loaded bar rests on the hooks; it disappears while the owner has it on their shoulders.
 	local bar = makeCylinder(
 		model,
 		"RackBar",
@@ -94,7 +98,7 @@ local function buildStation()
 		origin + Vector3.new(0, RACK_BAR_HEIGHT, 0),
 		BAR_COLOR
 	)
-	table.insert(rackBarParts, bar)
+	table.insert(barParts, bar)
 	for _, offset in PLATE_OFFSETS do
 		for _, side in { -1, 1 } do
 			local plate = makeCylinder(
@@ -104,20 +108,30 @@ local function buildStation()
 				origin + Vector3.new(side * offset, RACK_BAR_HEIGHT, 0),
 				PLATE_COLOR
 			)
-			table.insert(rackBarParts, plate)
+			table.insert(barParts, plate)
 		end
 	end
+	rackBarParts[plotIndex] = barParts
 
 	local signAnchor = World.makePart(model, "SignAnchor", Vector3.one, CFrame.new(origin + Vector3.new(0, UPRIGHT_HEIGHT + 2, 0)), FRAME_COLOR)
 	signAnchor.Transparency = 1
 	signAnchor.CanCollide = false
-	World.makeSign(signAnchor, "TRAIN HERE", 0, 150, 220)
+	World.makeSign(signAnchor, "TRAIN HERE", 0, SIGN_DISTANCE, 220)
 
-	local xpPad = World.makePad(model, Training.xpUpgrade.position, Training.xpUpgrade.padRadius, XP_PAD_COLOR)
+	local xpPad = World.makePad(model, Training.xpPadPosition(plotIndex), Training.xpUpgrade.padRadius, XP_PAD_COLOR)
 	xpPad.Name = "XpUpgradePad"
 
 	model.PrimaryPart = pad
-	model.Parent = workspace
+	model.Parent = parent
+end
+
+local function buildRacks()
+	local folder = Instance.new("Folder")
+	folder.Name = "Racks"
+	for plotIndex in Plot.positions do
+		buildRack(folder, plotIndex)
+	end
+	folder.Parent = workspace
 end
 
 local function rootOf(player: Player): (BasePart?, Humanoid?)
@@ -161,10 +175,19 @@ local function addXp(data, amount: number)
 	end
 end
 
-local function updateRackBar()
-	local anyone = next(training) ~= nil
-	for _, part in rackBarParts do
-		part.Transparency = if anyone then 1 else 0
+local function updateRackBar(plotIndex: number?)
+	local parts = plotIndex and rackBarParts[plotIndex]
+	if not parts then
+		return
+	end
+	local inUse = false
+	for _, rack in training do
+		if rack == plotIndex then
+			inUse = true
+		end
+	end
+	for _, part in parts do
+		part.Transparency = if inUse then 1 else 0
 	end
 end
 
@@ -174,22 +197,23 @@ local function scheduleBubble(player: Player)
 end
 
 -- Puts the player under the bar, facing out, and holds them there.
-local function startTraining(player: Player, root: BasePart, humanoid: Humanoid)
-	training[player] = true
+local function startTraining(player: Player, plotIndex: number, root: BasePart, humanoid: Humanoid)
+	training[player] = plotIndex
 	repProgress[player] = 0
 	scheduleBubble(player)
-	local spot = Training.station.position + Vector3.new(0, PAD_TOP + humanoid.HipHeight + root.Size.Y / 2, 0)
-	player.Character:PivotTo(CFrame.lookAt(spot, spot + Vector3.new(0, 0, 1)))
+	local spot = Training.rackPosition(plotIndex) + Vector3.new(0, PAD_TOP + humanoid.HipHeight + root.Size.Y / 2, 0)
+	player.Character:PivotTo(CFrame.lookAt(spot, spot + FACING))
 	root.AssemblyLinearVelocity = Vector3.zero
 	root.Anchored = true
 	player:SetAttribute("IsTraining", true)
-	updateRackBar()
+	updateRackBar(plotIndex)
 end
 
 -- Lets the player go. With moveOut, they're put down in front of the rack, off the pad, so
 -- training doesn't start again straight away.
 local function stopTraining(player: Player, moveOut: boolean)
-	if not training[player] then
+	local plotIndex = training[player]
+	if not plotIndex then
 		return
 	end
 	training[player] = nil
@@ -199,12 +223,11 @@ local function stopTraining(player: Player, moveOut: boolean)
 	if root and humanoid then
 		root.Anchored = false
 		if moveOut then
-			local station = Training.station
-			local spot = station.position + Vector3.new(0, PAD_TOP + humanoid.HipHeight + root.Size.Y / 2, station.stopDistance)
-			player.Character:PivotTo(CFrame.lookAt(spot, spot + Vector3.new(0, 0, 1)))
+			local spot = Training.rackPosition(plotIndex) + Training.rack.stopOffset + Vector3.new(0, PAD_TOP + humanoid.HipHeight + root.Size.Y / 2, 0)
+			player.Character:PivotTo(CFrame.lookAt(spot, spot + FACING))
 		end
 	end
-	updateRackBar()
+	updateRackBar(plotIndex)
 end
 
 local function tryBuyXpUpgrade(player: Player, data)
@@ -221,22 +244,23 @@ local function tryBuyXpUpgrade(player: Player, data)
 end
 
 local function step(dt: number)
-	local station = Training.station
+	local rack = Training.rack
 	local xpPad = Training.xpUpgrade
 	for _, player in Players:GetPlayers() do
 		local data = PlayerData.get(player)
+		local plotIndex = player:GetAttribute("PlotIndex")
 		if data then
 			local root, humanoid = rootOf(player)
-			if training[player] and not root then
+			if training[player] and (not root or training[player] ~= plotIndex) then
 				stopTraining(player, false)
-			elseif not training[player] and root and humanoid then
-				if World.isOnPad(player, station.position, station.padRadius, station.padHeight) then
-					startTraining(player, root, humanoid)
+			elseif not training[player] and root and humanoid and plotIndex then
+				if World.isOnPad(player, Training.rackPosition(plotIndex), rack.padRadius, rack.padHeight) then
+					startTraining(player, plotIndex, root, humanoid)
 				end
 			end
 
-			-- One purchase per step onto the XP pad.
-			local onXpPad = World.isOnPad(player, xpPad.position, xpPad.padRadius, xpPad.padHeight)
+			-- One purchase per step onto the player's own XP pad.
+			local onXpPad = plotIndex ~= nil and World.isOnPad(player, Training.xpPadPosition(plotIndex), xpPad.padRadius, xpPad.padHeight)
 			if onXpPad and not wasOnXpPad[player] then
 				tryBuyXpUpgrade(player, data)
 			end
@@ -292,19 +316,20 @@ end
 
 function TrainingService.start()
 	makeRemotes()
-	buildStation()
+	buildRacks()
 	PlayerData.onLoaded(publish)
 	remotes.StopTraining.OnServerEvent:Connect(function(player)
 		stopTraining(player, true)
 	end)
 	remotes.TapBubble.OnServerEvent:Connect(onTapBubble)
 	Players.PlayerRemoving:Connect(function(player)
+		local plotIndex = training[player]
 		training[player] = nil
 		repProgress[player] = nil
 		wasOnXpPad[player] = nil
 		nextBubbleAt[player] = nil
 		activeBubble[player] = nil
-		updateRackBar()
+		updateRackBar(plotIndex)
 	end)
 	task.spawn(function()
 		while true do

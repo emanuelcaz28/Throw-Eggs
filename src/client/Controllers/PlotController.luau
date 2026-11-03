@@ -400,7 +400,7 @@ function PlotController.start()
 	RunService.Heartbeat:Connect(function()
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart")
-		local nowOnPad = root ~= nil and Hub.isOnPad(Hub.sellStall, root.Position)
+		local nowOnPad = root ~= nil and Hub.isOnPad(Hub.stallCFrame(Hub.sellStall), root.Position)
 		if nowOnPad ~= onStallPad then
 			onStallPad = nowOnPad
 			if nowOnPad then

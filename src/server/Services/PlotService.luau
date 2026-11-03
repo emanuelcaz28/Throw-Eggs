@@ -11,12 +11,13 @@ local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local DinoLife = require(ReplicatedStorage.Shared.Config.DinoLife)
 local Events = require(ReplicatedStorage.Shared.Config.Events)
+local Map = require(ReplicatedStorage.Shared.Config.Map)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
-local World = require(script.Parent.World)
+local World = require(ReplicatedStorage.Shared.World)
 
 local PlotService = {}
 
@@ -89,6 +90,7 @@ local function makeSignFace(board: BasePart, face: Enum.NormalId)
 	gui.Face = face
 	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
 	gui.PixelsPerStud = 50
+	gui.Enabled = false -- blank until the plot has an owner (setUpgradeSign)
 	gui.Parent = board
 
 	local count = Instance.new("TextLabel")
@@ -129,7 +131,13 @@ local function buildPlots()
 			CFrame.new(position + Vector3.new(0, Plot.size.Y / 2, 0)),
 			Plot.color
 		)
-		ground.TopSurface = Enum.SurfaceType.Studs
+		-- The same see-through checker and studs as the arena around it.
+		local checker = Instance.new("Texture")
+		checker.Texture = Map.checkerTexture
+		checker.Face = Enum.NormalId.Top
+		checker.StudsPerTileU = Map.checkerStuds
+		checker.StudsPerTileV = Map.checkerStuds
+		checker.Parent = ground
 		local signAnchor = World.makePart(
 			model,
 			"SignAnchor",
@@ -449,6 +457,23 @@ local function equipBest(data)
 	end
 end
 
+-- Saves from before the bases shrank can hold more dinos than the base now fits, or spots outside
+-- its fence. The best ones stay on the base, the rest go to the backpack, and out-of-bounds dinos
+-- get a new spot (updateSpots).
+local function fitToPlot(data)
+	local placed = plotted(data)
+	table.sort(placed, function(a, b)
+		return incomeOf(a) > incomeOf(b)
+	end)
+	for rank, entry in placed do
+		if rank > capacityOf(data) then
+			entry.onPlot = false
+		elseif entry.x and entry.z and not Plot.inBounds(entry.x, entry.z) then
+			entry.x, entry.z = nil, nil
+		end
+	end
+end
+
 local function onAction(player: Player, action: any, key: any, x: any, z: any)
 	local data = PlayerData.get(player)
 	if not data then
@@ -541,6 +566,7 @@ local function onLoaded(player: Player, data)
 		end
 	end
 	player:SetAttribute("Cash", data.cash)
+	fitToPlot(data)
 	changed(player, data)
 
 	-- Offline earnings wait for the player to press CLAIM on the Welcome back pop-up. They're

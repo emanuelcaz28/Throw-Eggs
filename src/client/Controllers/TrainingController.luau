@@ -139,13 +139,11 @@ local function buildHud()
 	}
 end
 
--- Price and reward floating over the XP upgrade pad. Each player sees their own numbers.
-local function buildPadSign(): (TextLabel, TextLabel)
-	local station = workspace:WaitForChild("TrainingStation")
-	local pad = station:WaitForChild("XpUpgradePad")
+-- Price and reward floating over the XP upgrade pad at the player's own base, so only they see
+-- their numbers. Returns the sign too, so it can move to a new base.
+local function buildPadSign(): (BillboardGui, TextLabel, TextLabel)
 	local sign = Instance.new("BillboardGui")
 	sign.Name = "XpUpgradeSign"
-	sign.Adornee = pad
 	sign.Size = UDim2.fromOffset(220, 90)
 	sign.StudsOffsetWorldSpace = Vector3.new(0, 5, 0)
 	sign.MaxDistance = 120
@@ -157,7 +155,7 @@ local function buildPadSign(): (TextLabel, TextLabel)
 	reward.Position = UDim2.fromScale(0, 0.6)
 	reward.Size = UDim2.fromScale(1, 0.4)
 	reward.TextStrokeTransparency = 0
-	return price, reward
+	return sign, price, reward
 end
 
 local function popText(parent: GuiObject, text: string, color: Color3)
@@ -263,7 +261,15 @@ function TrainingController.start()
 	render()
 
 	task.spawn(function()
-		local price, reward = buildPadSign()
+		local sign, price, reward = buildPadSign()
+		local function placeSign()
+			local plotIndex = player:GetAttribute("PlotIndex")
+			local rack = plotIndex and workspace:WaitForChild("Racks"):WaitForChild(`Rack{plotIndex}`)
+			sign.Adornee = rack and rack:WaitForChild("XpUpgradePad")
+			sign.Enabled = sign.Adornee ~= nil
+		end
+		player:GetAttributeChangedSignal("PlotIndex"):Connect(placeSign)
+		placeSign()
 		local function renderPad()
 			local cost = player:GetAttribute("XpUpgradePrice")
 			local nextXp = player:GetAttribute("NextXpPerRep")

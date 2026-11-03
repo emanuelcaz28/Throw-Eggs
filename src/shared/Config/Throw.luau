@@ -1,14 +1,17 @@
 -- Throw lane and timing meter. Distance = Throw Power * meter multiplier.
 -- Placeholder numbers; tune during playtesting.
 local Throw = {
+	-- The throw platform sits in the arena's front wall (Config/Map). Standing anywhere on it starts the
+	-- meter. The egg leaves from the throw line, its corridor-side edge, and lands on the corridor floor below.
 	lane = {
-		origin = Vector3.new(-30, 0, 0), -- the throw line; biome distances are measured from here
+		origin = Vector3.new(0, 0, 0), -- the throw line at arena level; biome distances are measured from here
 		direction = Vector3.new(0, 0, -1), -- eggs fly along this axis
-		width = 40,
+		floorY = -12, -- the corridor floor, where eggs land (Config/Map corridor.floorY)
+		width = 72, -- the corridor's width (Config/Map platform.width)
 		markerSpacing = 100, -- studs between distance markers
-		padPosition = Vector3.new(-30, 0, 8),
-		padRadius = 5,
-		padHeight = 8, -- how far above the pad still counts
+		zoneCenter = Vector3.new(0, 0.5, 8), -- the platform's top, middle
+		zoneSize = Vector2.new(72, 16), -- across, along the lane
+		zoneHeight = 8, -- how far above the platform still counts
 	},
 
 	meter = {
@@ -53,6 +56,16 @@ end
 -- down near the top, so the sweet zone stays under the marker for a long moment.
 function Throw.markerHeight(elapsed: number): number
 	return (1 - math.cos(2 * math.pi * Throw.meter.cyclesPerSecond * elapsed)) / 2
+end
+
+-- Whether a point (a character's root) is above the throw platform.
+function Throw.onPlatform(position: Vector3): boolean
+	local lane = Throw.lane
+	local offset = position - lane.zoneCenter
+	return math.abs(offset.X) <= lane.zoneSize.X / 2
+		and math.abs(offset.Z) <= lane.zoneSize.Y / 2
+		and offset.Y >= 0
+		and offset.Y <= lane.zoneHeight
 end
 
 function Throw.flightTime(distance: number): number

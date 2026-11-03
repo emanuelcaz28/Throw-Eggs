@@ -3,7 +3,7 @@
     Blender -b fern_valley_models.blend -P export_fbx.py
     Blender -b world_kit.blend -P export_fbx.py
 
-One FBX per model: its Empty or armature and the meshes under it, in the rest pose, without
+One FBX per model: its Empty or armature and everything under it (kit_Arena holds the arena's pieces), in the rest pose, without
 animation (the game moves the bones itself). Models face Roblox -Z.
 """
 from pathlib import Path
@@ -16,7 +16,7 @@ MAPS = ("01_FernValley", "02_DryPlains", "03_Swamp", "04_VolcanoFoothills", "05_
 # Which map each .blend belongs to. A new map's .blend gets a line here.
 MAP_OF_FILE = {"fern_valley_models": "01_FernValley", "world_kit": "01_FernValley", "dry_plains_models": "02_DryPlains"}
 # Blender collection -> folder inside the map's folder.
-EXPORT_COLLECTIONS = {"Animals": "Animals", "Props": "Props", "Kit": "Corridor"}
+EXPORT_COLLECTIONS = {"Animals": "Animals", "Props": "Props", "Kit": "Corridor", "Arena": "Arena"}
 
 
 def main():
@@ -36,12 +36,12 @@ def main():
                     bone.rotation_euler = (0, 0, 0)
             location = root.location.copy()
             root.location = (0, 0, 0)
-            for child in root.children:
+            for child in root.children_recursive:
                 child.hide_render = False
             bpy.context.view_layer.update()
             bpy.ops.object.select_all(action="DESELECT")
             root.select_set(True)
-            for child in root.children:
+            for child in root.children_recursive:
                 child.select_set(True)
             bpy.ops.export_scene.fbx(
                 filepath=str(OUT / map_name / kind / f"{root.name}.fbx"),
