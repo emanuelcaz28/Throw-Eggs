@@ -7,6 +7,7 @@ return {
 		{ id = "Parasaur",     name = "Parasaurolophus", chance = 20, income = 10 },
 		{ id = "Stego",        name = "Stegosaurus",   chance = 100,  income = 40 },
 		{ id = "Raptor",       name = "Velociraptor",  chance = 500,  income = 150 },
+		{ id = "Ptero",        name = "Pteranodon",    chance = 2000, income = 500 },
 	},
 	DryPlains = {
 		{ id = "Pachy",        name = "Pachycephalosaurus", chance = 2,  income = 25 },

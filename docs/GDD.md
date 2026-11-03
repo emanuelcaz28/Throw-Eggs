@@ -1,5 +1,8 @@
 # Throw Eggs for Dinosaurs — Game Design Doc
 
+`docs/GAME_SPEC.md` wins where the two differ (base size and count, map, shop and rack placement). This file
+still describes the game as built.
+
 Genre reference: "Throw Food for Animals" (train → throw → RNG catch → plot income).
 Familiarity hook: eggs + dinos, borrowing recognition from "Steal an Egg"-style games.
 Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
@@ -134,7 +137,8 @@ Exact formulas aren't visible in the recordings, so numbers are readings from th
 
 ### Reveal
 Our step 4 target. In order:
-1. Camera orbits the landed item. "tap to skip" shows on catches without a counter.
+1. Camera orbits the landed item. "tap to skip" shows on catches without a counter. (Corrected in
+   `GAME_SPEC.md`: that "orbit" is the animal's walking view, and the full timing is there.)
 2. Blank letters appear and fill in out of order, with the model sweeping past in close-up.
 3. The "1 in X" counter starts at 1 and rises about 25% every 1/8 second, with a short hold before
    the letters start. It isn't shown on every catch (a Whale and a Gold Winged Imp had none).

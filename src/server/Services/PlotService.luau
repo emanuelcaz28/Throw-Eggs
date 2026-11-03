@@ -3,11 +3,13 @@
 -- equipped (carried beside the character) and then placed anywhere on the plot. The client
 -- can only ask for changes through DinoAction; every request is checked here against the
 -- player's saved data.
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
+local DinoLife = require(ReplicatedStorage.Shared.Config.DinoLife)
 local Events = require(ReplicatedStorage.Shared.Config.Events)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Format = require(ReplicatedStorage.Shared.Format)
@@ -368,6 +370,9 @@ local function rebuildStatues(player: Player, data)
 			local statue = DinoModel.build(entry.id, entry.mutation, position, DinoModel.statueScale(entry.size))
 			local head = statue.Head
 			World.makeSign(head, `{stats.name}\n{Format.cash(stats.income)}/s`, 5, STATUE_LABEL_DISTANCE, 170)
+			statue.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+			statue:SetAttribute("PlotIndex", plotIndex)
+			CollectionService:AddTag(statue, DinoLife.tag)
 			statue.Parent = folder
 		end
 	end

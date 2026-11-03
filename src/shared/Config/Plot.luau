@@ -12,7 +12,6 @@ local Plot = {
 	maxOfflineHours = 8, -- time away beyond this earns nothing more
 	minOfflineSeconds = 60, -- shorter breaks (like a quick rejoin) pay nothing
 	offlinePayoutDelay = 3, -- seconds after joining, so Game Pass bonuses are known by then
-	maxStatueScale = 1.6, -- so the biggest sizes don't swallow the plot
 	placeMargin = 5, -- studs between a dino's feet and the plot's edge
 	autoSpacing = 16, -- dinos placed automatically keep at least this far apart when there's room
 

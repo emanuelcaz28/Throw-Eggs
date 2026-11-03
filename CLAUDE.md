@@ -1,6 +1,7 @@
 # Throw Eggs for Dinosaurs (Roblox)
 
-Read `docs/GDD.md` first. It's the source of truth for the design.
+Read `docs/GAME_SPEC.md` first: it's what the owner wants, and it wins over everything else.
+Then `docs/GDD.md` for the details of what's built.
 
 ## Owner
 - First-time game developer, no prior coding background. Explain Studio steps plainly.

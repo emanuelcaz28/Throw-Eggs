@@ -8,3 +8,6 @@ sourcemap.json
 
 # Blender backups
 *.blend1
+
+# Blender animation preview frames (the .mp4 is kept)
+design/world/models/anim_frames/

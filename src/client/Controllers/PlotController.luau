@@ -474,7 +474,7 @@ function PlotController.start()
 		local model = DinoModel.build(dino.id, dino.mutation, Vector3.zero, DinoModel.statueScale(dino.size))
 		model.Name = "PlacementGhost"
 		for _, part in model:GetDescendants() do
-			if part:IsA("BasePart") then
+			if part:IsA("BasePart") and part.Transparency < 1 then
 				part.Transparency = GHOST_TRANSPARENCY
 			end
 		end

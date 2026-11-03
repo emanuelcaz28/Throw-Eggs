@@ -1,9 +1,12 @@
--- Builds a dino: its block model from ModelBlueprints, tinted towards its mutation's colour.
--- A dino without a blueprint gets a plain eight-block stand-in coloured from its name.
+-- Builds a dino: its imported model from ReplicatedStorage.Assets.Dinos if it has one (made in
+-- Blender, saved in the place, not in Rojo), otherwise its block model from ModelBlueprints.
+-- A dino with neither gets a plain eight-block stand-in coloured from its name.
+-- A mutation tints the skin of an imported model and leaves its face alone.
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 local BlockModel = require(script.Parent.BlockModel)
 local Catch = require(script.Parent.Config.Catch)
 local DinoStats = require(script.Parent.DinoStats)
-local Plot = require(script.Parent.Config.Plot)
 
 local DinoModel = {}
 
@@ -36,13 +39,52 @@ end
 -- How big a dino of this size stands on a plot.
 function DinoModel.statueScale(sizeId: string?): number
 	local size = DinoStats.findOption(Catch.sizes, sizeId)
-	return math.min(if size then size.scale else 1, Plot.maxStatueScale)
+	return if size then size.scale else 1
+end
+
+local SKIN_ROLES = { Body = true, Accent = true, Belly = true, Claw = true }
+local SKIN_TINT = 0.75
+
+local function buildImported(dinoId: string, mutation, origin: Vector3, scale: number): Model?
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local dinos = assets and assets:FindFirstChild("Dinos")
+	local template = dinos and dinos:FindFirstChild(`dino_{dinoId}`)
+	if not template then
+		return nil
+	end
+	local model = template:Clone()
+	model.Name = "Dino"
+	if mutation then
+		for _, part in model:GetChildren() do
+			if part:IsA("MeshPart") and SKIN_ROLES[part.Name] then
+				part.Color = part.Color:Lerp(mutation.color, SKIN_TINT)
+			end
+		end
+	end
+	local _, extents = model:GetBoundingBox()
+	local head = Instance.new("Part")
+	head.Name = "Head"
+	head.Anchored = true
+	head.CanCollide = false
+	head.CanQuery = false
+	head.CanTouch = false
+	head.Transparency = 1
+	head.Size = Vector3.one * 0.2
+	head.CFrame = model:GetPivot() + Vector3.new(0, extents.Y, 0)
+	head.Parent = model
+	model:PivotTo(CFrame.new(origin))
+	model:ScaleTo(scale)
+	return model
 end
 
 -- Builds the dino with its feet at origin. Scaling and spinning happen around the feet.
 -- Not parented: the caller decides where it goes. The "Head" part is the top of the model.
 function DinoModel.build(dinoId: string, mutationId: string?, origin: Vector3, scale: number): Model
 	local mutation = DinoStats.findOption(Catch.mutations, mutationId)
+	local imported = buildImported(dinoId, mutation, origin, scale)
+	if imported then
+		return imported
+	end
 	local blocks = BlockModel.build(`dino_{dinoId}`, origin, mutation and mutation.color, MUTATION_TINT)
 	if blocks then
 		blocks.Name = "Dino"
