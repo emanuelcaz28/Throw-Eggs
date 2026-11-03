@@ -48,7 +48,7 @@ LANE_WIDTH = 72
 PLATFORM_HEIGHT = 0.5
 CORRIDOR_Y = -12  # the corridor floor sits this far below the arena
 CORRIDOR_RIM_WIDTH = 72
-WORLD_LENGTH = 400  # Fern Valley: distance 0 to 400 from the throw line (Config/Biomes)
+WORLD_LENGTH = 400  # Forest: distance 0 to 400 from the throw line (Config/Biomes)
 NEXT_WORLD_STUB = 72  # a short piece of world 2, to show the join
 
 # Grass hanging over the wall tops: a flat band with columns of different lengths under it.
@@ -300,7 +300,7 @@ def build_platform(root):
 
 def build_world_one(root):
     """The reusable piece: floor, two walls with their rims, and floor props."""
-    col = collection("World1_FernValley", root)
+    col = collection("World1_Forest", root)
     rng = random.Random(7)
     lane = LANE_WIDTH / 2
     outer = lane + CORRIDOR_RIM_WIDTH

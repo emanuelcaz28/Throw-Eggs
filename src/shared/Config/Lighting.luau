@@ -41,11 +41,11 @@ return {
 	sunRays = { Intensity = 0.03, Spread = 0.4 },
 
 	-- Each world's own light while the camera is over it: in flight, at the landing and in the reveal.
-	-- Only what differs from the look above is listed; Fern Valley and the arena use the look above.
+	-- Only what differs from the look above is listed; Forest and the arena use the look above.
 	-- SkyController blends to it over worldBlendSeconds, so a fast throw slides through the colours.
 	worldBlendSeconds = 0.6,
 	worlds = {
-		DryPlains = { -- hot and golden
+		Desert = { -- hot and golden
 			lighting = { OutdoorAmbient = Color3.fromRGB(175, 155, 130), ExposureCompensation = 0.15 },
 			atmosphere = { Color = Color3.fromRGB(255, 226, 170), Decay = Color3.fromRGB(235, 170, 95), Density = 0.3, Haze = 1.2 },
 			colorCorrection = { TintColor = Color3.fromRGB(255, 240, 214), Saturation = 0.14 },
@@ -54,6 +54,21 @@ return {
 			lighting = { Brightness = 2, OutdoorAmbient = Color3.fromRGB(120, 145, 120), ExposureCompensation = -0.05 },
 			atmosphere = { Color = Color3.fromRGB(165, 200, 150), Decay = Color3.fromRGB(85, 130, 80), Density = 0.4, Haze = 1.8 },
 			colorCorrection = { TintColor = Color3.fromRGB(220, 242, 212), Saturation = 0.04 },
+		},
+		Volcano = { -- smouldering orange haze, a little darker, so the lava glows
+			lighting = { Brightness = 1.9, OutdoorAmbient = Color3.fromRGB(160, 118, 100), ExposureCompensation = -0.05 },
+			atmosphere = { Color = Color3.fromRGB(255, 168, 120), Decay = Color3.fromRGB(196, 78, 46), Density = 0.42, Haze = 2.2 },
+			colorCorrection = { TintColor = Color3.fromRGB(255, 226, 206), Saturation = 0.12 },
+		},
+		FrozenPeaks = { -- crisp and cold, a pale blue haze; a touch darker so the snow doesn't glare
+			lighting = { OutdoorAmbient = Color3.fromRGB(165, 182, 205), ExposureCompensation = -0.1 },
+			atmosphere = { Color = Color3.fromRGB(214, 234, 255), Decay = Color3.fromRGB(150, 190, 235), Density = 0.36, Haze = 1.6 },
+			colorCorrection = { TintColor = Color3.fromRGB(230, 241, 255), Saturation = 0.06 },
+		},
+		ShadowBog = { -- dusk over the tar: a violet haze and dimmer light, so the wisps glow
+			lighting = { Brightness = 1.7, OutdoorAmbient = Color3.fromRGB(140, 122, 170), ExposureCompensation = -0.1 },
+			atmosphere = { Color = Color3.fromRGB(176, 150, 220), Decay = Color3.fromRGB(96, 68, 150), Density = 0.42, Haze = 2 },
+			colorCorrection = { TintColor = Color3.fromRGB(232, 222, 255), Saturation = 0.1 },
 		},
 	},
 

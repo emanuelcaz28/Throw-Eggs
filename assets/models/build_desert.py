@@ -1,9 +1,9 @@
-"""Builds Dry Plains' animals and props and renders them (run with Blender in background mode).
+"""Builds Desert' animals and props and renders them (run with Blender in background mode).
 
-    Blender -b -P build_dry_plains.py
+    Blender -b -P build_desert.py
 
-Saves dry_plains_models.blend and renders to design/world/models_dry_plains/. Uses the same parts and
-bones as build_fern_valley.py, so the game's walk and idle work unchanged. The first three animals are
+Saves desert_models.blend and renders to design/world/models_desert/. Uses the same parts and
+bones as build_forest.py, so the game's walk and idle work unchanged. The first three animals are
 the silly ones and the last three the fierce ones (docs/GAME_SPEC.md "The style as you advance").
 
 Animals are built at the first map's size, like every map's: the game makes them this map's size
@@ -19,10 +19,10 @@ from mathutils import Vector
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import build_fern_valley as kit  # noqa: E402
-from build_fern_valley import Model, biped_legs, eyes, jaws, nostrils, spikes_along_y, tail, teeth  # noqa: E402
+import build_forest as kit  # noqa: E402
+from build_forest import Model, biped_legs, eyes, jaws, nostrils, spikes_along_y, tail, teeth  # noqa: E402
 
-RENDERS = HERE.parent.parent / "design" / "world" / "models_dry_plains"
+RENDERS = HERE.parent.parent / "design" / "world" / "models_desert"
 
 
 def quad_legs(m, x_front, y_front, x_back, y_back, top, width):
@@ -258,7 +258,7 @@ def t_rex():
 
 
 # ---------------------------------------------------------------------- props
-# Dry Plains swaps Fern Valley's ferns and trees for cacti, dry grass, red rock and the bones of
+# Desert swaps Forest's ferns and trees for cacti, dry grass, red rock and the bones of
 # huge old monsters. Big shapes and strong colours, since the egg passes in about a second.
 
 
@@ -510,10 +510,11 @@ def main():
     player_root.location = (-9, 0, 0)
     kit.set_visible(everything, everything)
     bpy.ops.object.select_all(action="DESELECT")
-    bpy.ops.wm.save_as_mainfile(filepath=str(HERE / "dry_plains_models.blend"))
-    print("saved", HERE / "dry_plains_models.blend")
+    bpy.ops.wm.save_as_mainfile(filepath=str(HERE / "desert_models.blend"))
+    print("saved", HERE / "desert_models.blend")
     for model in models + prop_models:
         print(f"  {model.name}: {sum(len(f) for _, f in model.parts.values())} faces, roles: {sorted(model.parts)}")
 
 
-main()
+if __name__ == "__main__":
+    main()

@@ -1,5 +1,5 @@
 -- The pieces that stand at every base, modelled in Blender (assets/models/build_base_kit.py) and kept in
--- ReplicatedStorage.Assets.Maps.FernValley.Base: base_Stall, base_SquatRack, base_XpButton,
+-- ReplicatedStorage.Assets.Maps.Forest.Base: base_Stall, base_SquatRack, base_XpButton,
 -- base_FencePost, base_FenceRails and base_UpgradeSign. Each one's pivot is its floor centre and its
 -- front faces the pivot's LookVector, so placing one is a single PivotTo. Server and client both use it.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,7 +12,7 @@ local function pieces(): Instance?
 	if not folder then
 		local assets = ReplicatedStorage:WaitForChild("Assets")
 		local maps = assets:WaitForChild("Maps")
-		folder = maps:WaitForChild("FernValley"):FindFirstChild("Base")
+		folder = maps:WaitForChild("Forest"):FindFirstChild("Base")
 	end
 	return folder
 end
@@ -24,7 +24,7 @@ function BaseKit.place(name: string, at: CFrame, parent: Instance, colors: { [st
 	local source = pieces()
 	local original = source and source:FindFirstChild(name)
 	if not original then
-		warn(`[BaseKit] {name} is missing from ReplicatedStorage.Assets.Maps.FernValley.Base: import kit_Base from assets/models/fbx`)
+		warn(`[BaseKit] {name} is missing from ReplicatedStorage.Assets.Maps.Forest.Base: import kit_Base from assets/models/fbx`)
 		return nil
 	end
 	local model = original:Clone()

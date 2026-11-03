@@ -11,6 +11,7 @@ local TweenService = game:GetService("TweenService")
 
 local BlockModel = require(script.Parent.BlockModel)
 local Dinos = require(script.Parent.Config.Dinos)
+local Icons = require(script.Parent.Config.Icons)
 
 local UiKit = {}
 
@@ -52,6 +53,14 @@ UiKit.RARITY = {
 	rare = { "#9ad9ff", "#2f8fe6" },
 	epic = { "#dcb0ff", "#9150e8" },
 	legendary = { "#ffe58a", "#ff9a1f" },
+}
+-- A dino's name written in its rarity (reveal, lucky catch banner).
+UiKit.RARITY_TEXT = {
+	common = "#ffffff",
+	uncommon = "#8dff5a",
+	rare = "#6fd0ff",
+	epic = "#d4a6ff",
+	legendary = "#ffcf3f",
 }
 
 local DESIGN = Vector2.new(1280, 720)
@@ -233,12 +242,14 @@ function UiKit.pulse(button: GuiObject)
 	track("pulse", button, button:FindFirstChildOfClass("UIScale"))
 end
 
--- A small tilted sticker (BEST DEAL!, x2, OWNED) that rocks gently.
-function UiKit.tag(parent: Instance, value: string, style: string, textSize: number?): Frame
+-- A small tilted sticker (BEST DEAL!, x2, OWNED) that rocks gently around its tilt (default -4°).
+-- style is a GRADIENTS key or a {top, bottom} pair.
+function UiKit.tag(parent: Instance, value: string, style: string | { string }, textSize: number?, tilt: number?): Frame
+	tilt = tilt or -4
 	local tag = Instance.new("Frame")
 	tag.AutomaticSize = Enum.AutomaticSize.X
 	tag.Size = UDim2.fromOffset(0, (textSize or 20) + 14)
-	tag.Rotation = -4
+	tag.Rotation = tilt
 	tag.Parent = parent
 	UiKit.gradient(tag, style)
 	UiKit.corner(tag, 12)
@@ -253,7 +264,7 @@ function UiKit.tag(parent: Instance, value: string, style: string, textSize: num
 	if style == "tagGold" then
 		label:FindFirstChildOfClass("UIStroke").Enabled = false
 	end
-	track("wiggle", tag, -4)
+	track("wiggle", tag, tilt)
 	return tag
 end
 
@@ -287,6 +298,32 @@ function UiKit.divider(parent: Instance, value: string, width: number): Frame
 end
 
 -- A 3D block model shown live in the UI. spin turns the camera around it; silhouette shows it black.
+-- The image for an icon key from Config/Icons, or nil while that key has no uploaded image yet.
+-- options: position, size, anchor (all optional; the default fills the parent).
+function UiKit.iconImage(parent: Instance, key: string, options): ImageLabel?
+	local id = Icons[key]
+	if not id or id == "" then
+		return nil
+	end
+	options = options or {}
+	local image = Instance.new("ImageLabel")
+	image.Name = key
+	image.BackgroundTransparency = 1
+	image.Image = id
+	image.ScaleType = Enum.ScaleType.Fit
+	image.AnchorPoint = options.anchor or Vector2.zero
+	image.Position = options.position or UDim2.fromScale(0, 0)
+	image.Size = options.size or UDim2.fromScale(1, 1)
+	image.Parent = parent
+	return image
+end
+
+-- A pack's or pass's picture: its image from Config/Icons when set, else the 3D model's viewport.
+-- options are the viewport's (position, size, spin, yaw), and the image takes the position and size.
+function UiKit.art(parent: Instance, key: string, modelName: string, options): GuiObject
+	return UiKit.iconImage(parent, key, { position = options.position, size = options.size }) or UiKit.viewport(parent, modelName, options)
+end
+
 function UiKit.viewport(parent: Instance, modelName: string, options): ViewportFrame
 	options = options or {}
 	local frame = Instance.new("ViewportFrame")
@@ -427,9 +464,14 @@ function UiKit.panel(gui: ScreenGui, options)
 		stripe.Size = UDim2.fromOffset(26, 170)
 		stripe.Parent = header
 	end
-	local title = UiKit.text(header, (options.icon and options.icon .. " " or "") .. options.title, 46, nil, Enum.TextXAlignment.Left)
-	title.Position = UDim2.fromOffset(26, 14)
-	title.Size = UDim2.new(1, -120, 0, 58)
+	-- The header's icon: its image from Config/Icons when there is one, else the emoji in the title.
+	local image = options.iconKey and UiKit.iconImage(header, options.iconKey, { position = UDim2.fromOffset(24, 15), size = UDim2.fromOffset(58, 58) })
+	if image then
+		image.ZIndex = 2
+	end
+	local title = UiKit.text(header, (options.icon and not image and options.icon .. " " or "") .. options.title, 46, nil, Enum.TextXAlignment.Left)
+	title.Position = UDim2.fromOffset(image and 96 or 26, 14)
+	title.Size = UDim2.new(1, image and -184 or -120, 0, 58)
 	title.ZIndex = 2
 
 	local close = UiKit.button(frame, "X", "red", 58, 58, 30)

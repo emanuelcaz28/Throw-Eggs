@@ -1,5 +1,8 @@
--- Throw lane and timing meter. Distance = Throw Power * meter multiplier.
+-- Throw lane and timing meter, and the throw's cinematic timing. Distance = Throw Power * meter multiplier.
 -- Placeholder numbers; tune during playtesting.
+local Biomes = require(script.Parent.Biomes)
+local Dinos = require(script.Parent.Dinos)
+
 local Throw = {
 	-- The throw platform sits in the arena's front wall (Config/Map). Standing anywhere on it starts the
 	-- meter. The egg leaves from the throw line, its corridor-side edge, and lands on the corridor floor below.
@@ -23,14 +26,81 @@ local Throw = {
 		perfectMultiplier = 1.5, -- at the top level
 	},
 
+	-- Stepping onto the platform: the screen dips to black, and comes back on the thrower standing still on the throw
+	-- spot, facing the corridor with the egg in their right hand, the camera low behind their right shoulder. Only
+	-- Throw Power and the meter stay on screen. Times in seconds.
+	aim = {
+		fadeOut = 0.15,
+		black = 0.12,
+		fadeIn = 0.2,
+		spotZ = 4, -- the throw spot's distance in from the throw line; across, the thrower stays where they stepped on
+		spotMargin = 10, -- kept this far in from the platform's sides
+		cameraOffset = Vector3.new(3.2, 2, 7.5), -- from the thrower's root: right, up, behind
+		cameraPitch = -6, -- degrees, looking slightly down the corridor
+	},
+
+	-- After the tap (docs/GAME_SPEC.md section 7, "Throw"): the result shows for a moment, black bars slide in, then
+	-- the thrower crouches, swings the egg low, spins upright and lunges into a straight-arm release (ThrowWindup,
+	-- made in Blender by assets/animations/build_throw.py). Their camera whips round to face them with the arena
+	-- behind, then whips back to look down the corridor as the egg leaves the hand. The flight, and the server's
+	-- landing, start releaseDelay() after the tap.
+	windup = {
+		holdAfterTap = 0.45, -- the result on the meter before anything moves
+		releaseInClip = 1.1, -- seconds into the clip (build_throw.py RELEASE)
+		-- The published clip. Studio play tests use the clip Rojo syncs to ReplicatedStorage.Shared.Animations,
+		-- so they show the latest build_throw.py; live servers can only play the published one, so republish
+		-- (overwriting this asset) after changing the clip.
+		animationId = "rbxassetid://136948284707759",
+		barHeight = 0.11, -- each black bar, as a share of the screen's height
+		barsAt = 0.2, -- seconds after the tap the bars slide in
+		barSlide = 0.12, -- seconds for the bars to slide in or out
+		barsOutAfterRelease = 0.15,
+		eggGrip = Vector3.new(0, -1, 0), -- the egg's centre from the right hand
+		heldScale = 0.45, -- the egg's size in the hand, against its size in flight and on the ground
+		eggBlend = 0.15, -- share of the flight over which the egg grows from its size in the hand to full size
+		-- The camera round the thrower, keyed in seconds after the tap. yaw: degrees round them, clockwise seen from
+		-- above, 0 = behind; distance and height in studs from their root; side: studs to their right (the aim
+		-- framing); look: 0 = at the thrower's chest, 1 = straight down the corridor.
+		camera = {
+			{ time = 0, yaw = 0, distance = 7.5, height = 2, side = 3.2, look = 1 },
+			{ time = 0.45, yaw = 0, distance = 7.5, height = 2, side = 3.2, look = 1 },
+			{ time = 0.62, yaw = 35, distance = 7.5, height = 2.5, side = 1.5, look = 0.4 },
+			{ time = 0.85, yaw = 172, distance = 9, height = 3.5, side = 0, look = 0 },
+			{ time = 1.25, yaw = 192, distance = 8.5, height = 3, side = 0, look = 0 },
+			{ time = 1.45, yaw = 40, distance = 6.5, height = 1.6, side = 0, look = 0.6 },
+			{ time = 1.55, yaw = -25, distance = 6, height = 1.2, side = 0, look = 1 },
+		},
+	},
+
+	-- The egg's flight down the corridor. It slows as it goes (speed falls to slowDown of its starting speed), and a
+	-- throw to the far end of the last world takes maxTime, nearer ones less. The camera starts low beside the
+	-- thrower, climbs high behind the egg looking down the valley, then drops low again as it comes down.
 	flight = {
-		launchHeight = 4,
-		baseTime = 1.2, -- seconds
-		studsPerSecond = 200,
-		maxTime = 8,
-		arcPerStud = 0.2, -- peak height as a share of the distance
-		maxArc = 80,
+		spin = 8, -- the egg's tumble, in radians a second on average (fastest out of the hand)
+		minTime = 1.5, -- seconds, for the shortest throws
+		maxTime = 6, -- to the end of the last world
+		slowDown = 0.4,
+		arcPerStud = 0.05, -- peak height as a share of the distance
+		maxArc = 18, -- stays inside the valley, under the rim
 		landingPause = 2.5, -- seconds other players' eggs stay on the ground
+		camera = {
+			riseTime = 0.5, -- seconds to climb from the thrower to high behind the egg
+			fallTime = 0.7, -- seconds before landing it starts coming down
+			-- Studs from the egg: how far behind it, how high above it, and how far ahead of it the camera looks.
+			-- High is most of the flight, looking down the valley; low is the landing.
+			high = { behind = 26, above = 14, ahead = 40 },
+			low = { behind = 13, above = 5, ahead = 4 },
+		},
+		trail = { lifetime = 1.1, width = 1.6, transparency = 0.15 }, -- the white streak behind the egg
+		throwPowerHideAt = 0.3, -- seconds into the flight Throw Power leaves the screen
+	},
+
+	-- Where it lands: a flat white ring flashes out on the ground, then a puff of dust rises.
+	landing = {
+		ringRadius = 7,
+		ringTime = 0.3,
+		dustDelay = 0.1,
+		dustColor = Color3.fromRGB(226, 208, 170),
 	},
 }
 
@@ -68,9 +138,36 @@ function Throw.onPlatform(position: Vector3): boolean
 		and offset.Y <= lane.zoneHeight
 end
 
+-- Seconds from the tap until the egg leaves the hand.
+function Throw.releaseDelay(): number
+	return Throw.windup.holdAfterTap + Throw.windup.releaseInClip
+end
+
+-- The farthest an egg can land: the end of the last world that has monsters. A world whose monsters
+-- aren't made yet is built and decorated, and seen ahead during long throws, but nothing lands in it.
+function Throw.maxDistance(): number
+	local farthest = 0
+	for _, biome in Biomes do
+		local dinos = Dinos[biome.id]
+		if dinos and #dinos > 0 then
+			farthest = biome.endDist
+		end
+	end
+	return farthest
+end
+
+-- The flight's length: grows with the square root of the distance, so short throws are still a moment to watch and
+-- the far end of the last world you can reach takes maxTime.
 function Throw.flightTime(distance: number): number
 	local flight = Throw.flight
-	return math.min(flight.baseTime + distance / flight.studsPerSecond, flight.maxTime)
+	local share = math.clamp(distance / Throw.maxDistance(), 0, 1)
+	return flight.minTime + (flight.maxTime - flight.minTime) * math.sqrt(share)
+end
+
+-- Share of the distance travelled at a share of the flight's time (both 0 to 1): fast at first, slowing down.
+function Throw.travelled(t: number): number
+	local slow = 1 - Throw.flight.slowDown
+	return (t - slow / 2 * t * t) / (1 - slow / 2)
 end
 
 return Throw

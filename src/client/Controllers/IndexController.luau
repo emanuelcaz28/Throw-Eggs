@@ -9,7 +9,9 @@ local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Index = require(ReplicatedStorage.Shared.Config.Index)
+local PopText = require(ReplicatedStorage.Shared.PopText)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
+local RevealController = require(script.Parent.RevealController)
 
 local player = Players.LocalPlayer
 
@@ -23,9 +25,11 @@ local TILE_GAP = 12
 local TILES_PER_ROW = 3
 -- Biome card colours; a biome missing here uses the sky gradient.
 local CARD_COLOURS = {
-	FernValley = { "#4fe0ff", "#1aa6e0" },
-	DryPlains = { "#ffc14d", "#ff7a2f" },
+	Forest = { "#4fe0ff", "#1aa6e0" },
+	Desert = { "#ffc14d", "#ff7a2f" },
 	Swamp = { "#8fe05a", "#2f9e6a" },
+	Volcano = { "#ffb347", "#e8481c" },
+	FrozenPeaks = { "#c8f2ff", "#4aa8e0" },
 }
 
 local function buildGui()
@@ -37,7 +41,7 @@ local function buildGui()
 	gui.Parent = player:WaitForChild("PlayerGui")
 
 	-- Left column, above Shop.
-	local open = HudStyle.iconButton(gui, "📖", "Index")
+	local open = HudStyle.iconButton(gui, "📖", "Index", "book")
 	open.AnchorPoint = Vector2.new(0, 0.5)
 	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, -(HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) / 2 * HudStyle.scale())
 	open.Name = "OpenIndex"
@@ -62,7 +66,7 @@ local function buildGui()
 	local total = UiKit.text(bar, "", 40)
 	total.Size = UDim2.fromScale(1, 1)
 	total.ZIndex = 2
-	local book = UiKit.text(panel.body, "📖", 84)
+	local book = UiKit.iconImage(panel.body, "book") or UiKit.text(panel.body, "📖", 84)
 	book.AnchorPoint = Vector2.new(0, 1)
 	book.Position = UDim2.new(0, 12, 1, -6)
 	book.Size = UDim2.fromOffset(110, 100)
@@ -166,6 +170,19 @@ end
 function IndexController.start()
 	local remote = ReplicatedStorage:WaitForChild("IndexRemotes"):WaitForChild("IndexChanged")
 	local hud = buildGui()
+	local completed = {} -- biome ids with every dino caught
+	local heardFromServer = false -- the first list is what they already had, so it shouts nothing
+
+	-- Catching a biome's last dino shouts its reward, once the reveal of that dino is over.
+	local function shoutCompleted(biome)
+		task.spawn(function()
+			while RevealController.isPlaying() do
+				task.wait(0.25)
+			end
+			task.wait(1)
+			PopText.shout(`{string.upper(biome.name)} COMPLETE!`, `+{math.round(Index.cashBonusPerBiome * 100)}% $/s and +{math.round(Index.luckBonusPerBiome * 100)}% luck, for good`)
+		end)
+	end
 
 	local function render(discovered)
 		for _, child in hud.list:GetChildren() do
@@ -175,9 +192,18 @@ function IndexController.start()
 		end
 		local seen, total = 0, 0
 		for order, biome in Biomes do
+			if #(Dinos[biome.id] or {}) == 0 then
+				continue -- no card for a world whose monsters aren't made yet
+			end
 			local found, count = biomeBlock(hud.list, biome, discovered, order)
 			seen += found
 			total += count
+			if count > 0 and found == count and not completed[biome.id] then
+				completed[biome.id] = true
+				if heardFromServer then
+					shoutCompleted(biome)
+				end
+			end
 		end
 		hud.total.Text = `Unlocked: {seen}/{total}`
 		hud.fill.Size = UDim2.fromScale(if total > 0 then seen / total else 0, 1)
@@ -187,7 +213,10 @@ function IndexController.start()
 	hud.open.Activated:Connect(function()
 		UiKit.togglePanel(hud.panel)
 	end)
-	remote.OnClientEvent:Connect(render)
+	remote.OnClientEvent:Connect(function(discovered)
+		render(discovered)
+		heardFromServer = true
+	end)
 	render({})
 end
 

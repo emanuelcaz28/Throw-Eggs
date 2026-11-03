@@ -15,6 +15,8 @@ local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Hub = require(ReplicatedStorage.Shared.Config.Hub)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
+local Pop = require(ReplicatedStorage.Shared.Config.Pop)
+local PopText = require(ReplicatedStorage.Shared.PopText)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local player = Players.LocalPlayer
@@ -33,7 +35,6 @@ local SELL_CONFIRM_TIME = 3 -- seconds the "SURE?" button waits for a second tap
 local GOOD_SPOT = Color3.fromRGB(90, 220, 110)
 local BAD_SPOT = Color3.fromRGB(230, 70, 60)
 local GHOST_TRANSPARENCY = 0.45
-local NOTICE_TIME = 3 -- seconds a message from the server stays up
 local HOTBAR_KEYS = {
 	Enum.KeyCode.One,
 	Enum.KeyCode.Two,
@@ -71,7 +72,7 @@ local function buildGui()
 
 	-- Bottom left, under Throw Power: big outlined cash with the $/s small beneath it.
 	local scale = HudStyle.scale()
-	local cashStat, cash = HudStyle.stat(gui, "💵", CASH, CASH_HEIGHT)
+	local cashStat, cash = HudStyle.stat(gui, "💵", CASH, CASH_HEIGHT, "cash")
 	cashStat.Name = "CashStat"
 	cashStat.AnchorPoint = Vector2.new(0, 1)
 	cashStat.Position = UDim2.new(0, 16, 1, -INCOME_HEIGHT * scale - 12)
@@ -80,7 +81,7 @@ local function buildGui()
 	income.AnchorPoint = Vector2.new(0, 1)
 	HudStyle.outline(income, 2 * scale)
 
-	local open = HudStyle.iconButton(gui, "🐾", "Dinos")
+	local open = HudStyle.iconButton(gui, "🐾", "Dinos", "paw")
 	open.Name = "OpenDinos"
 	open.AnchorPoint = Vector2.new(1, 0.5)
 	open.Position = UDim2.new(1, -16, HudStyle.COLUMN_CENTER, 0)
@@ -93,6 +94,7 @@ local function buildGui()
 		header = "jungle",
 		title = "My Dinos",
 		icon = "🐾",
+		iconKey = "paw",
 		anchor = Vector2.new(1, 0.5),
 		position = UDim2.new(1, -16, 0.5, 0),
 	})
@@ -167,19 +169,10 @@ local function buildGui()
 	hint.Size = UDim2.new(0.8, 0, 0, 34)
 	hint.Visible = false
 
-	-- Messages from the server, like "Plot upgraded!".
-	local notice = UiKit.text(gui, "", 28, UiKit.GOLD)
-	notice.Name = "Notice"
-	notice.AnchorPoint = Vector2.new(0.5, 1)
-	notice.Position = UDim2.new(0.5, 0, 1, -148 * HudStyle.scale())
-	notice.Size = UDim2.new(0.8, 0, 0, 36)
-	notice.Visible = false
-
 	return {
 		hotbar = hotbar,
 		slots = slots,
 		hint = hint,
-		notice = notice,
 		cash = cash,
 		income = income,
 		open = open,
@@ -420,17 +413,8 @@ function PlotController.start()
 		renderList()
 		renderHotbar()
 	end)
-	local noticeToken = 0
-	remotes.Notice.OnClientEvent:Connect(function(text: string, seconds: number?)
-		noticeToken += 1
-		local token = noticeToken
-		hud.notice.Text = text
-		hud.notice.Visible = true
-		task.delay(seconds or NOTICE_TIME, function()
-			if noticeToken == token then
-				hud.notice.Visible = false
-			end
-		end)
+	remotes.Notice.OnClientEvent:Connect(function(text: string, bad: boolean?)
+		PopText.notice(text, not bad)
 	end)
 	-- Training fills the bottom of the screen, so the hotbar steps aside.
 	local function renderHotbarVisible()
@@ -582,12 +566,43 @@ function PlotController.start()
 			send("placeAt", dino.key, target.x, target.z)
 		end
 	end)
-	player:GetAttributeChangedSignal("Cash"):Connect(renderCash)
-	player:GetAttributeChangedSignal("Income"):Connect(renderCash)
+	-- Spending floats a red "-$X" up beside the cash and other gains a green "+$X", but not the plot's $/s
+	-- ticking in every second (PlotService pays exactly the Income attribute each second). A rise in $/s floats
+	-- up beside the $/s line. Both start past the end of the longer number.
+	local lastCash: number? = nil
+	local lastIncome: number? = nil
+	local function moneyPop(text: string, color: Color3, row: TextLabel)
+		local x = math.max(PopText.after(hud.cash).X, PopText.after(hud.income).X)
+		PopText.float(text, color, Vector2.new(x, PopText.after(row).Y), Vector2.new(0, 0.5))
+	end
+	player:GetAttributeChangedSignal("Cash"):Connect(function()
+		local cash = player:GetAttribute("Cash") or 0
+		if lastCash then
+			local change = cash - lastCash
+			local tick = player:GetAttribute("Income") or 0
+			if change < 0 then
+				moneyPop(`-{Format.cash(-change)}`, Pop.colors.spent, hud.cash)
+			elseif change > 0 and math.abs(change - tick) > math.max(1, tick * 0.001) then
+				moneyPop(`+{Format.cash(change)}`, Pop.colors.cash, hud.cash)
+			end
+		end
+		lastCash = cash
+		renderCash()
+	end)
+	player:GetAttributeChangedSignal("Income"):Connect(function()
+		local income = player:GetAttribute("Income") or 0
+		if lastIncome and income > lastIncome then
+			moneyPop(`+{Format.cash(income - lastIncome)}/s`, Pop.colors.cash, hud.income)
+		end
+		lastIncome = income
+		renderCash()
+	end)
 
 	renderList()
 	renderHotbar()
 	renderCash()
+	lastCash = player:GetAttribute("Cash")
+	lastIncome = player:GetAttribute("Income")
 end
 
 return PlotController

@@ -1,28 +1,31 @@
--- The timing meter, the egg's flight and the landing result. Display and input only:
+-- The timing meter, the throw's wind-up, the egg's flight and the landing result. Display and input only:
 -- the server decides when the meter runs and how far every egg goes.
 local ContextActionService = game:GetService("ContextActionService")
+local KeyframeSequenceProvider = game:GetService("KeyframeSequenceProvider")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local Events = require(ReplicatedStorage.Shared.Config.Events)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
+local PopText = require(ReplicatedStorage.Shared.PopText)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
+local UiKit = require(ReplicatedStorage.Shared.UiKit)
 local RevealController = require(script.Parent.RevealController)
+local ThrowCinematic = require(script.Parent.ThrowCinematic)
 
 local player = Players.LocalPlayer
 
 local ThrowController = {}
 
 local TAP_ACTION = "ThrowEggTap"
-local CAMERA_OFFSET = Vector3.new(14, 10, 24)
 local EGG_SIZE = Vector3.new(2.4, 3, 2.4)
-local LAUNCH_FLOOR = 0.5 -- the platform's top, above the arena floor (Config/Map platform.top)
 local CATCH_TIMEOUT = 5 -- seconds to wait for the server's catch after landing
 
 local INK = Color3.fromRGB(20, 22, 28)
@@ -166,36 +169,51 @@ local function buildGui()
 	local _, valueSize = meterBox(LABEL_LEFT, 0, LABEL_WIDTH, LABEL_HEIGHT)
 	value.Size = valueSize
 
+	-- In the pop-up text's look (Config/Pop), since the result word punches in here.
 	local prompt = makeLabel(meter)
 	prompt.Name = "Prompt"
 	prompt.Position, prompt.Size = meterBox(0, PROMPT_TOP, METER_WIDTH, PROMPT_HEIGHT)
+	prompt.FontFace = UiKit.FONT
+	prompt.TextStrokeTransparency = 1
+	local promptOutline = Instance.new("UIStroke")
+	promptOutline.Color = UiKit.INK
+	promptOutline.Thickness = 3
+	promptOutline.LineJoinMode = Enum.LineJoinMode.Round
+	promptOutline.Parent = prompt
 
-	local banner = makeLabel(gui)
-	banner.AnchorPoint = Vector2.new(0.5, 0)
-	banner.Position = UDim2.new(0.5, 0, 0, 90)
-	banner.Size = UDim2.new(0.8, 0, 0, 44)
-	banner.Visible = false
+	local luckPanel = ThrowCinematic.buildLuckPanel(gui)
+	local fade = ThrowCinematic.buildFade(gui.Parent)
 
-	local luck = makeLabel(gui)
-	luck.AnchorPoint = Vector2.new(0.5, 0)
-	luck.Position = UDim2.new(0.5, 0, 0, 16)
-	luck.Size = UDim2.new(0.8, 0, 0, 64)
-	luck.TextColor3 = PERFECT
-	luck.Visible = false
+	-- The wind-up's black bars, in their own layer under the meter that reaches the screen's very top.
+	local barsGui = Instance.new("ScreenGui")
+	barsGui.Name = "ThrowBars"
+	barsGui.IgnoreGuiInset = true
+	barsGui.ResetOnSpawn = false
+	barsGui.DisplayOrder = -1
+	barsGui.Parent = gui.Parent
+	local bars = {}
+	for _, top in { true, false } do
+		local bar = Instance.new("Frame")
+		bar.Name = if top then "TopBar" else "BottomBar"
+		bar.AnchorPoint = Vector2.new(0, if top then 1 else 0)
+		bar.Position = UDim2.fromScale(0, if top then 0 else 1)
+		bar.Size = UDim2.fromScale(1, Throw.windup.barHeight)
+		bar.BackgroundColor3 = Color3.new(0, 0, 0)
+		bar.BorderSizePixel = 0
+		bar.Parent = barsGui
+		table.insert(bars, { frame = bar, top = top })
+	end
 
 	return {
+		bars = bars,
 		meter = meter,
 		zone = zone,
 		marker = marker,
 		value = value,
 		prompt = prompt,
-		banner = banner,
-		luck = luck,
+		luckPanel = luckPanel,
+		fade = fade,
 	}
-end
-
-local function luckText(luck: number): string
-	return string.format("Luck x%.1f", luck)
 end
 
 local function makeEgg(color: Color3): Part
@@ -213,6 +231,91 @@ local function makeEgg(color: Color3): Part
 	mesh.Parent = egg
 	egg.Parent = workspace
 	return egg
+end
+
+-- Slides the wind-up's bars onto the screen, or off it.
+local function showBars(hud, shown: boolean)
+	local info = TweenInfo.new(Throw.windup.barSlide, Enum.EasingStyle.Quad, if shown then Enum.EasingDirection.Out else Enum.EasingDirection.In)
+	for _, bar in hud.bars do
+		local y = if bar.top then (if shown then Throw.windup.barHeight else 0) else (if shown then 1 - Throw.windup.barHeight else 1)
+		TweenService:Create(bar.frame, info, { Position = UDim2.fromScale(0, y) }):Play()
+	end
+end
+
+-- The wind-up clip to play: in Studio the clip that Rojo syncs (the latest build_throw.py), registered for
+-- testing; live, the published one.
+local windupAnimation: Animation? = nil
+local function getWindupAnimation(): Animation?
+	if windupAnimation then
+		return windupAnimation
+	end
+	local id = Throw.windup.animationId
+	if RunService:IsStudio() then
+		local clips = ReplicatedStorage.Shared:FindFirstChild("Animations")
+		local clip = clips and clips:FindFirstChild("ThrowWindup")
+		if clip then
+			id = KeyframeSequenceProvider:RegisterKeyframeSequence(clip)
+		end
+	end
+	if id == "" then
+		return nil
+	end
+	local animation = Instance.new("Animation")
+	animation.Name = "ThrowWindup"
+	animation.AnimationId = id
+	windupAnimation = animation
+	return animation
+end
+
+-- After the tap: the result holds, the bars slide in, then the thrower crouches, spins and lunges, holding the egg
+-- in their right hand until the release. Their own camera whips round to face them and back (Config/Throw
+-- windup.camera). Returns once the egg leaves the hand (where it then is) and the camera's pose at that moment,
+-- after the same wait on every screen so they all stay in step.
+local function windUp(thrower: Player, egg: BasePart, isMine: boolean, hud, spot: CFrame?): (Vector3, CFrame?)
+	local settings = Throw.windup
+	local character = thrower.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local hand = character and character:FindFirstChild("RightHand") :: BasePart?
+	local camera = workspace.CurrentCamera
+	local startedAt = os.clock()
+	local track = nil
+	local barsShown = false
+	egg.Size = EGG_SIZE * settings.heldScale
+	while true do
+		local elapsed = os.clock() - startedAt
+		if hand and hand.Parent then
+			egg.CFrame = hand.CFrame * CFrame.new(settings.eggGrip)
+		end
+		if isMine then
+			if not barsShown and elapsed >= settings.barsAt then
+				barsShown = true
+				showBars(hud, true)
+			end
+			-- The thrower's own screen plays the clip; everyone else sees it through replication.
+			if not track and elapsed >= settings.holdAfterTap and humanoid then
+				local animator = humanoid:FindFirstChildOfClass("Animator")
+				local animation = getWindupAnimation()
+				if animator and animation then
+					track = animator:LoadAnimation(animation)
+					track:Play(0.05)
+					track.Stopped:Once(function()
+						track:Destroy()
+					end)
+				end
+			end
+			if spot then
+				camera.CFrame = ThrowCinematic.windupCamera(spot, elapsed)
+			end
+		end
+		if elapsed >= Throw.releaseDelay() then
+			break
+		end
+		RunService.RenderStepped:Wait()
+	end
+	if isMine then
+		task.delay(settings.barsOutAfterRelease, showBars, hud, false)
+	end
+	return egg.Position, if isMine then camera.CFrame else nil
 end
 
 local function serverLuck(): number
@@ -238,9 +341,23 @@ function ThrowController.start()
 	local remotes = ReplicatedStorage:WaitForChild("ThrowRemotes")
 	local hud = buildGui()
 
+	-- Downloaded now, so even the first throw spins: a clip still loading plays nothing.
+	task.spawn(function()
+		local animation = getWindupAnimation()
+		if animation then
+			game:GetService("ContentProvider"):PreloadAsync({ animation })
+		end
+	end)
+
 	local aiming = false
 	local aimStartedAt = 0
 	local markerHeight = 0
+	local heldEgg: BasePart? = nil -- in the thrower's hand from the dip to black until the release
+	local spot: CFrame? = nil -- where this player stands to throw, while they're on the platform
+	local equippedEggId: string? = nil
+	ReplicatedStorage:WaitForChild("EggRemotes"):WaitForChild("EggsChanged").OnClientEvent:Connect(function(_owned, equipped)
+		equippedEggId = equipped
+	end)
 
 	local function placeMarker(height: number)
 		local center = (TUBE_TOP + TUBE_HEIGHT * (1 - height)) / METER_HEIGHT
@@ -251,6 +368,18 @@ function ThrowController.start()
 		hud.prompt.Text = if inZone then "TAP NOW!" else "TAP!"
 		hud.prompt.TextColor3 = TEXT
 		hud.zone.BackgroundColor3 = PERFECT
+	end
+
+	-- What the meter says the moment the player taps, before anything moves.
+	local function showResult(height: number)
+		local level = Throw.level(height)
+		local perfect = Throw.isPerfect(height)
+		hud.prompt.Text = if perfect then "PERFECT!" elseif level >= 8 then "GREAT!" elseif level >= 5 then "GOOD" else "OK"
+		hud.prompt.TextColor3 = if perfect then GOLD else TEXT
+		if perfect then
+			hud.zone.BackgroundColor3 = GOLD
+		end
+		PopText.punch(hud.prompt)
 	end
 
 	-- Stops taking taps. The meter stays on screen until hideMeter.
@@ -264,9 +393,20 @@ function ThrowController.start()
 		hud.meter.Visible = false
 	end
 
+	-- Lets the character go again: after the landing, or when the throw is called off.
+	local function releaseCharacter()
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root then
+			root.Anchored = false
+		end
+		spot = nil
+	end
+
 	local function tap()
 		if aiming and os.clock() - aimStartedAt >= Throw.meter.minTime then
 			stopAiming()
+			showResult(markerHeight)
 			remotes.Tap:FireServer(markerHeight)
 		end
 	end
@@ -283,14 +423,41 @@ function ThrowController.start()
 			markerHeight = Throw.markerHeight(os.clock() - aimStartedAt)
 			placeMarker(markerHeight)
 		end
+		-- Held in the right hand while aiming; the wind-up moves it itself.
+		local character = player.Character
+		local hand = character and character:FindFirstChild("RightHand") :: BasePart?
+		if heldEgg and spot and hand then
+			heldEgg.CFrame = hand.CFrame * CFrame.new(Throw.windup.eggGrip)
+		end
 	end)
 
+	-- Stepping onto the platform: a dip to black, and back on the thrower standing on the throw spot with the egg
+	-- in hand, the camera low behind their right shoulder, and only Throw Power and the meter left on screen.
 	remotes.MeterStart.OnClientEvent:Connect(function()
-		aiming = true
-		aimStartedAt = os.clock()
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if not (root and humanoid) then
+			return
+		end
+		local aim = Throw.aim
+		ThrowCinematic.fade(hud.fade, true, aim.fadeOut)
+		spot = ThrowCinematic.throwSpot(root, humanoid)
+		root.CFrame = spot
+		root.AssemblyLinearVelocity = Vector3.zero
+		root.Anchored = true
+		local equipped = DinoStats.findOption(Eggs, equippedEggId) or Eggs[1]
+		heldEgg = heldEgg or makeEgg(equipped.color)
+		heldEgg.Size = EGG_SIZE * Throw.windup.heldScale
+		local camera = workspace.CurrentCamera
+		camera.CameraType = Enum.CameraType.Scriptable
+		camera.CFrame = ThrowCinematic.windupCamera(spot, 0)
+		setHudsEnabled(false, true)
 		placeMarker(0)
 		hud.meter.Visible = true
-		setHudsEnabled(false, true)
+		task.wait(aim.black)
+		aiming = true
+		aimStartedAt = os.clock()
 		-- Taken over while aiming so Space throws instead of jumping.
 		ContextActionService:BindAction(TAP_ACTION, function(_, inputState)
 			if inputState == Enum.UserInputState.Begin then
@@ -298,63 +465,91 @@ function ThrowController.start()
 			end
 			return Enum.ContextActionResult.Sink
 		end, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
+		ThrowCinematic.fade(hud.fade, false, aim.fadeIn)
 	end)
 
 	remotes.MeterCancel.OnClientEvent:Connect(function()
 		hideMeter()
+		releaseCharacter()
+		if heldEgg then
+			heldEgg:Destroy()
+			heldEgg = nil
+		end
+		workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 		setHudsEnabled(true)
 	end)
 
 	local pendingCatch = nil
 	remotes.Landed.OnClientEvent:Connect(function(catch)
 		pendingCatch = catch
-		hud.luck.Text = luckText(catch.luck)
+		-- The server's own number, in case this screen's differs a little.
+		hud.luckPanel.set(catch.luck)
 	end)
 
-	remotes.Launched.OnClientEvent:Connect(function(thrower: Player, distance: number, perfect: boolean, eggId: string)
+	remotes.Launched.OnClientEvent:Connect(function(thrower: Player, distance: number, _perfect: boolean, eggId: string)
 		local isMine = thrower == player
 		local lane = Throw.lane
 		local flight = Throw.flight
 		local duration = Throw.flightTime(distance)
 		local arc = math.min(distance * flight.arcPerStud, flight.maxArc)
 		local eggConfig = DinoStats.findOption(Eggs, eggId) or Eggs[1]
-		local egg = makeEgg(eggConfig.color)
-		-- The egg leaves from the platform and lands on the corridor floor, which is lower.
-		local launchY = lane.origin.Y + LAUNCH_FLOOR + EGG_SIZE.Y / 2 + flight.launchHeight
+		local egg = if isMine and heldEgg then heldEgg else makeEgg(eggConfig.color)
+		egg.Color = eggConfig.color
+		if isMine then
+			heldEgg = nil
+		end
+		local trail = ThrowCinematic.addTrail(egg)
+		-- The egg lands on the corridor floor, which is lower than the platform, on the lane's middle line.
 		local landY = lane.floorY + EGG_SIZE.Y / 2
+		local landing = lane.origin + lane.direction * distance
 		local camera = workspace.CurrentCamera
 
 		if isMine then
 			stopAiming()
-			if perfect then
-				hud.zone.BackgroundColor3 = GOLD
-				hud.prompt.TextColor3 = GOLD
-				hud.prompt.Text = "PERFECT!"
-			end
 			task.delay(RESULT_HOLD, function()
 				if not aiming then
 					hud.meter.Visible = false
 				end
 			end)
 			camera.CameraType = Enum.CameraType.Scriptable
-			hud.banner.Text = if perfect then "PERFECT!" else ""
-			hud.banner.Visible = true
-			hud.luck.Visible = true
+		end
+
+		-- The egg is in the thrower's hand until the release, then flies from exactly there in a straight line (seen
+		-- from above) to where it lands, tumbling end over end from the way the hand held it. No jump or swerve.
+		local releasedAt, cameraFrom = windUp(thrower, egg, isMine, hud, if isMine then spot else nil)
+		local heldTurn = egg.CFrame.Rotation
+		local tumbleAxis = lane.direction:Cross(Vector3.yAxis).Unit
+		trail.Enabled = true
+		if isMine then
+			hud.luckPanel.show(true)
+			task.delay(flight.throwPowerHideAt, function()
+				local training = player.PlayerGui:FindFirstChild("TrainingHud")
+				if training and not aiming then
+					training.Enabled = false
+				end
+			end)
 		end
 
 		local startedAt = os.clock()
 		while true do
-			local t = math.min((os.clock() - startedAt) / duration, 1)
-			local travelled = distance * t
-			-- Drops from launch height to the corridor floor, plus a hill that peaks at arc halfway.
-			local height = launchY + (landY - launchY) * t + arc * 4 * t * (1 - t)
-			local along = lane.origin + lane.direction * travelled
+			local elapsed = os.clock() - startedAt
+			local t = math.min(elapsed / duration, 1)
+			local share = Throw.travelled(t)
+			local travelled = distance * share
+			-- Drops from the hand to the corridor floor, plus a hill that peaks at arc halfway.
+			local height = releasedAt.Y + (landY - releasedAt.Y) * t + arc * 4 * t * (1 - t)
+			local along = releasedAt:Lerp(landing, share)
 			local position = Vector3.new(along.X, height, along.Z)
-			egg.CFrame = CFrame.new(position) * CFrame.Angles(t * 20, 0, 0)
-			if isMine then
-				camera.CFrame = CFrame.lookAt(position + CAMERA_OFFSET, position)
-				hud.banner.Text = if perfect then `PERFECT! {math.floor(travelled)} studs` else `{math.floor(travelled)} studs`
-				hud.luck.Text = luckText(Luck.at(travelled) * eggConfig.luckBonus * (player:GetAttribute("IndexLuck") or 1) * serverLuck() * Events.multiplier("luck"))
+			local grow = math.clamp(t / Throw.windup.eggBlend, 0, 1)
+			local eased = grow * grow * (3 - 2 * grow)
+			egg.Size = EGG_SIZE * (Throw.windup.heldScale + (1 - Throw.windup.heldScale) * eased)
+			-- Spins with the distance covered, so it turns fastest out of the hand and slows as the egg does.
+			local tumble = CFrame.fromAxisAngle(tumbleAxis, -flight.spin * duration * share)
+			egg.CFrame = CFrame.new(position) * tumble * heldTurn
+			if isMine and cameraFrom then
+				camera.CFrame = ThrowCinematic.flightCamera(cameraFrom, position, elapsed, duration)
+				local luck = Luck.at(travelled) * eggConfig.luckBonus * (player:GetAttribute("IndexLuck") or 1) * serverLuck() * Events.multiplier("luck")
+				hud.luckPanel.set(luck, Luck.biomeAt(travelled))
 			end
 			if t >= 1 then
 				break
@@ -362,9 +557,8 @@ function ThrowController.start()
 			RunService.RenderStepped:Wait()
 		end
 
-		if isMine then
-			hud.banner.Text = `{math.floor(distance)} studs · {Luck.biomeAt(distance).name}`
-		end
+		trail.Enabled = false
+		ThrowCinematic.landingEffects(Vector3.new(egg.Position.X, lane.floorY, egg.Position.Z))
 		if not isMine then
 			task.wait(flight.landingPause)
 			egg:Destroy()
@@ -376,8 +570,8 @@ function ThrowController.start()
 		while not pendingCatch and waitedFor < CATCH_TIMEOUT do
 			waitedFor += task.wait()
 		end
-		hud.banner.Visible = false
-		hud.luck.Visible = false
+		hud.luckPanel.fadeOut(0.25)
+		releaseCharacter()
 
 		local catch = pendingCatch
 		pendingCatch = nil

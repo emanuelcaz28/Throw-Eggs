@@ -1,5 +1,5 @@
 -- Shows Throw Power at all times, and while training the level/XP bar, the STOP button, the
--- level-up pop-up and the x2 bubble. Also writes the price on the XP upgrade pad. Display and
+-- x2 bubble and the pop-ups (+XP, x2!, LEVEL UP!). Also writes the price on the XP upgrade pad. Display and
 -- requests only: every value is read from attributes the server sets on the local player.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -7,6 +7,8 @@ local TweenService = game:GetService("TweenService")
 
 local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
+local Pop = require(ReplicatedStorage.Shared.Config.Pop)
+local PopText = require(ReplicatedStorage.Shared.PopText)
 local Training = require(ReplicatedStorage.Shared.Config.Training)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
@@ -18,7 +20,6 @@ local POWER = Color3.fromRGB(90, 190, 255)
 local AFFORD = Color3.fromRGB(120, 235, 120)
 local TOO_PRICEY = Color3.fromRGB(240, 70, 60)
 local TEXT = Color3.new(1, 1, 1)
-local LEVEL_UP_TIME = 1.4
 local BUBBLE_SIZE = 112
 local POWER_HEIGHT = 52 -- before scaling for small screens
 local POWER_ABOVE_BOTTOM = 98 -- clears the cash and $/s beneath it
@@ -42,7 +43,7 @@ local function buildHud()
 	gui.Parent = player:WaitForChild("PlayerGui")
 
 	-- Always on screen, bottom left, just above the cash (PlotController draws that).
-	local powerStat, power = HudStyle.stat(gui, "⚡", POWER, POWER_HEIGHT)
+	local powerStat, power = HudStyle.stat(gui, "⚡", POWER, POWER_HEIGHT, "bolt")
 	powerStat.Name = "PowerStat"
 	powerStat.AnchorPoint = Vector2.new(0, 1)
 	powerStat.Position = UDim2.new(0, 16, 1, -POWER_ABOVE_BOTTOM * HudStyle.scale())
@@ -91,20 +92,6 @@ local function buildHud()
 	stop.Position = UDim2.new(0.5, 0, 0, 0)
 	stop.Visible = false
 
-	local levelUp = UiKit.text(gui, "LEVEL UP!", 84, Color3.fromRGB(255, 177, 59))
-	levelUp.Name = "LevelUp"
-	levelUp.AnchorPoint = Vector2.new(0.5, 0.5)
-	levelUp.Position = UDim2.fromScale(0.5, 0.22)
-	levelUp.Size = UDim2.new(0.6, 0, 0, 100)
-	levelUp.Visible = false
-	local levelUpScale = Instance.new("UIScale")
-	levelUpScale.Scale = UiKit.scale()
-	levelUpScale.Parent = levelUp
-	local levelUpPower = UiKit.text(levelUp, "", 36, POWER)
-	levelUpPower.Name = "Power"
-	levelUpPower.Position = UDim2.new(0, 0, 1, -8)
-	levelUpPower.Size = UDim2.new(1, 0, 0, 44)
-
 	local bubble = Instance.new("TextButton")
 	bubble.Name = "Bubble"
 	bubble.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -133,8 +120,6 @@ local function buildHud()
 		level = level,
 		xp = xp,
 		stop = stop,
-		levelUp = levelUp,
-		levelUpPower = levelUpPower,
 		bubble = bubble,
 	}
 end
@@ -158,49 +143,13 @@ local function buildPadSign(): (BillboardGui, TextLabel, TextLabel)
 	return sign, price, reward
 end
 
-local function popText(parent: GuiObject, text: string, color: Color3)
-	local label = makeLabel(parent, Enum.Font.GothamBlack, color, Enum.TextXAlignment.Center)
-	label.AnchorPoint = Vector2.new(0.5, 1)
-	label.Position = UDim2.new(0.5, 0, 0, -4)
-	label.Size = UDim2.new(1, 0, 0, 26)
-	label.Text = text
-	label.TextStrokeTransparency = 0.3
-	local tween = TweenService:Create(label, TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Position = UDim2.new(0.5, 0, 0, -36),
-		TextTransparency = 1,
-		TextStrokeTransparency = 1,
-	})
-	tween.Completed:Once(function()
-		label:Destroy()
-	end)
-	tween:Play()
-end
-
 function TrainingController.start()
 	local remotes = ReplicatedStorage:WaitForChild("TrainingRemotes")
 	local hud = buildHud()
 	local lastLevel: number? = nil
 	local lastXp: number? = nil
 	local lastPower: number? = nil
-	local levelUpToken = 0
 	local bubbleId: number? = nil
-
-	local function showLevelUp(gained: number)
-		levelUpToken += 1
-		local token = levelUpToken
-		hud.levelUp.Text = "LEVEL UP!"
-		hud.levelUpPower.Text = `Throw Power +{gained}`
-		hud.levelUp.Visible = true
-		local pop = hud.levelUp:FindFirstChildOfClass("UIScale")
-		local full = UiKit.scale()
-		pop.Scale = full * 0.5
-		TweenService:Create(pop, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Scale = full }):Play()
-		task.delay(LEVEL_UP_TIME, function()
-			if levelUpToken == token then
-				hud.levelUp.Visible = false
-			end
-		end)
-	end
 
 	local function render()
 		local power = player:GetAttribute("ThrowPower")
@@ -220,9 +169,9 @@ function TrainingController.start()
 		hud.fill:TweenSize(UDim2.fromScale(math.clamp(xp / needed, 0, 1), 1), "Out", "Quad", 0.2, true)
 
 		if lastLevel and level > lastLevel and lastPower then
-			showLevelUp(power - lastPower)
+			PopText.shout("LEVEL UP!", `Throw Power +{power - lastPower}`)
 		elseif isTraining and lastXp and level == lastLevel and xp > lastXp then
-			popText(hud.bar, `+{Format.short(xp - lastXp)} XP`, TEXT)
+			PopText.float(`+{Format.short(xp - lastXp)} XP`, Pop.colors.xp, PopText.above(hud.bar))
 		end
 		if not isTraining then
 			hud.bubble.Visible = false
@@ -252,8 +201,8 @@ function TrainingController.start()
 		if bubbleId then
 			remotes.TapBubble:FireServer(bubbleId)
 			bubbleId = nil
+			PopText.float(`x{Training.bubble.multiplier}!`, Pop.colors.boost, PopText.above(hud.bubble))
 			hud.bubble.Visible = false
-			popText(hud.bar, `x{Training.bubble.multiplier}!`, Color3.fromRGB(200, 150, 255))
 		end
 	end)
 

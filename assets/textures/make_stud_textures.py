@@ -3,7 +3,7 @@
     python3 make_stud_textures.py
 
 stud.png is one stud for animals and props. checker_studs_overlay.png is a 2 x 2 checker with 4 studs per
-square, for floors and walls. Their UVs are set in build_fern_valley.py and build_world_kit.py.
+square, for floors and walls. Their UVs are set in build_forest.py and build_world_kit.py.
 """
 import math
 import struct

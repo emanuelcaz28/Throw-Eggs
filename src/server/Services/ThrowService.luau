@@ -4,7 +4,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Events = require(ReplicatedStorage.Shared.Config.Events)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
@@ -32,7 +31,7 @@ local remotes: { [string]: RemoteEvent } = {}
 local function makeRemotes()
 	local folder = Instance.new("Folder")
 	folder.Name = "ThrowRemotes"
-	for _, name in { "MeterStart", "MeterCancel", "Tap", "Launched", "Landed", "RevealDone" } do
+	for _, name in { "MeterStart", "MeterCancel", "Tap", "Launched", "Landed", "RevealDone", "LuckyCatch" } do
 		local remote = Instance.new("RemoteEvent")
 		remote.Name = name
 		remote.Parent = folder
@@ -41,8 +40,9 @@ local function makeRemotes()
 	folder.Parent = ReplicatedStorage
 end
 
--- Thin lines across the corridor floor every markerSpacing studs, a sign at each biome's start
--- and THROW HERE over the platform. The floor itself is MapService's.
+-- Thin lines across the corridor floor every markerSpacing studs and THROW HERE over the platform. The floor
+-- itself is MapService's. There are no floating labels down the corridor, as in the reference: the world's name
+-- shows in the flight's luck panel instead.
 local function buildLane()
 	local lane = Throw.lane
 	local model = Instance.new("Model")
@@ -56,20 +56,7 @@ local function buildLane()
 		return Vector3.new(point.X, lane.floorY, point.Z)
 	end
 
-	for _, biome in Biomes do
-		local entrance = World.makePart(
-			model,
-			"BiomeSign",
-			Vector3.new(1, 1, 1),
-			CFrame.new(floorPoint(biome.startDist) + Vector3.new(0, 12, 0)),
-			biome.color
-		)
-		entrance.Transparency = 1
-		entrance.CanCollide = false
-		World.makeSign(entrance, biome.name, 0, 600, 320)
-	end
-
-	local maxDistance = Biomes[#Biomes].endDist
+	local maxDistance = Throw.maxDistance()
 	for distance = lane.markerSpacing, maxDistance, lane.markerSpacing do
 		local marker = World.makePart(
 			model,
@@ -81,7 +68,6 @@ local function buildLane()
 		marker.CanCollide = false
 		marker.Material = Enum.Material.SmoothPlastic
 		marker.Transparency = 0.4
-		World.makeSign(marker, `{distance}`, 3, 200, 120)
 	end
 
 	local signAnchor = World.makePart(model, "ThrowSign", Vector3.one, CFrame.new(lane.zoneCenter + Vector3.new(0, 10, 0)), MARKER_COLOR)
@@ -117,7 +103,7 @@ local function onTap(player: Player, height: any)
 	end
 
 	height = math.clamp(height, 0, 1)
-	local maxDistance = Biomes[#Biomes].endDist
+	local maxDistance = Throw.maxDistance()
 	local distance = math.min(power * Throw.multiplier(height), maxDistance)
 
 	-- The egg in hand when it leaves counts, even if the player swaps mid-flight.
@@ -126,7 +112,7 @@ local function onTap(player: Player, height: any)
 	state.phase = "flying"
 	remotes.Launched:FireAllClients(player, distance, Throw.isPerfect(height), egg.id)
 
-	task.delay(Throw.flightTime(distance), function()
+	task.delay(Throw.releaseDelay() + Throw.flightTime(distance), function()
 		if states[player] ~= state then
 			return
 		end
@@ -150,6 +136,24 @@ local function onTap(player: Player, height: any)
 		state.phase = "revealing"
 		state.revealStartedAt = os.clock()
 		remotes.Landed:FireClient(player, catch)
+
+		-- Lucky catch banner for everyone else in the server. The catcher's own client shows it
+		-- after their reveal, from the catch it already has.
+		if catch.oneIn >= Reveal.luckyBanner.minOneIn then
+			local announcement = {
+				player = player.Name,
+				id = catch.id,
+				name = catch.name,
+				size = catch.size,
+				mutation = catch.mutation,
+				oneIn = catch.oneIn,
+			}
+			for _, other in Players:GetPlayers() do
+				if other ~= player then
+					remotes.LuckyCatch:FireClient(other, announcement)
+				end
+			end
+		end
 	end)
 end
 

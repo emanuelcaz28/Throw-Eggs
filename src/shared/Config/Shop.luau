@@ -41,7 +41,7 @@ local Shop = {
 		name = "Free Starter Dino",
 		description = "A free Gallimimus to start your plot",
 		id = "Gallimimus",
-		biomeId = "FernValley",
+		biomeId = "Forest",
 	},
 }
 

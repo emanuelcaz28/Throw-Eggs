@@ -36,7 +36,7 @@ local function buildGui()
 	gui.Parent = player:WaitForChild("PlayerGui")
 
 	local width = #Eggs * CARD_SIZE.X + (#Eggs - 1) * CARD_GAP + 60
-	local panel = UiKit.panel(gui, { name = "ShopPanel", width = math.max(width, 600), height = 540, header = "sky", title = "Egg Shop", icon = "🥚" })
+	local panel = UiKit.panel(gui, { name = "ShopPanel", width = math.max(width, 600), height = 540, header = "sky", title = "Egg Shop", icon = "🥚", iconKey = "egg" })
 	local row = Instance.new("Frame")
 	row.BackgroundTransparency = 1
 	row.Position = UDim2.fromOffset(30, 20)

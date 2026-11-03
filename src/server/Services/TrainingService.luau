@@ -181,7 +181,7 @@ end
 local function tryBuyXpUpgrade(player: Player, data)
 	local price = Training.xpUpgradePrice(data.xpUpgrades)
 	if data.cash < price then
-		PlotService.notify(player, `You need {Format.cash(price)} for more XP per rep`)
+		PlotService.notify(player, `You need {Format.cash(price)} for more XP per rep`, true)
 		return
 	end
 	data.cash -= price

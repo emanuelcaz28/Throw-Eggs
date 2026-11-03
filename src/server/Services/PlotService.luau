@@ -459,14 +459,15 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 	end
 end
 
--- A short message above the player's hotbar, like "Plot upgraded!". seconds is optional.
 -- Pays a Shop cash pack: minutes of the plot's $/s without events (Config/Shop). The caller saves the data.
 function PlotService.payCashPack(player: Player, data, pack)
 	earn(player, data, Shop.cashPackAmount(pack, baseIncome(player, data)))
 end
 
-function PlotService.notify(player: Player, text: string, seconds: number?)
-	remotes.Notice:FireClient(player, text, seconds)
+-- A short message above the player's hotbar, like "Plot upgraded!". bad shows it in red, for things that
+-- didn't work, like "You need $500".
+function PlotService.notify(player: Player, text: string, bad: boolean?)
+	remotes.Notice:FireClient(player, text, bad)
 end
 
 -- Stores a new catch: on the plot if there's room, otherwise in the backpack.
@@ -558,16 +559,16 @@ onUpgradeClicked = function(plotIndex: number, player: Player)
 		return
 	end
 	if plotOwners[plotIndex] ~= player then
-		remotes.Notice:FireClient(player, "That's someone else's plot")
+		remotes.Notice:FireClient(player, "That's someone else's plot", true)
 		return
 	end
 	if capacityOf(data) >= Plot.maxSlots then
-		remotes.Notice:FireClient(player, "Your plot is as big as it gets!")
+		remotes.Notice:FireClient(player, "Your plot is as big as it gets!", true)
 		return
 	end
 	local price = Plot.upgradePrice(data.plotUpgrades)
 	if data.cash < price then
-		remotes.Notice:FireClient(player, `You need {Format.cash(price)} for this upgrade`)
+		remotes.Notice:FireClient(player, `You need {Format.cash(price)} for this upgrade`, true)
 		return
 	end
 	data.cash -= price
@@ -583,9 +584,10 @@ local function payIncome()
 		local data = PlayerData.get(player)
 		if data then
 			local income = totalIncome(player, data)
+			-- $/s first: the client tells this tick from other cash by comparing the two.
+			player:SetAttribute("Income", income)
 			earn(player, data, income * INCOME_TICK)
 			data.lastSeen = os.time()
-			player:SetAttribute("Income", income)
 			player:SetAttribute("BaseIncome", baseIncome(player, data))
 			local plotIndex = plotIndexOf(player)
 			if plotIndex then

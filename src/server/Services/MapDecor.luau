@@ -1,11 +1,13 @@
 -- Puts the Blender props around the map (Config/Decor): trees, hedges, rocks and the rest along each
--- biome's stretch of the corridor and up on its rims, eggs along the arena's rim, and small things
--- behind the bases. Called by MapService once the arena and corridor are built.
+-- biome's stretch of the corridor and up on its rims, set pieces across it and down its walls, eggs
+-- along the arena's rim, and small things behind the bases. Called by MapService once the arena and
+-- corridor are built.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Decor = require(ReplicatedStorage.Shared.Config.Decor)
 local Map = require(ReplicatedStorage.Shared.Config.Map)
+local Roles = require(ReplicatedStorage.Shared.Roles)
 
 local MapDecor = {}
 
@@ -18,9 +20,30 @@ local function propsOf(biomeId: string): Instance?
 	return biome and biome:FindFirstChild("Props")
 end
 
+local ALONG = Vector3.new(0, 0, -1) -- down the corridor
+
+-- Props that have to point a certain way (a lava fall down a wall, an arch across the corridor) carry a
+-- tiny "Front" part on their front side in Blender. Where it lies from the pivot shows which way the
+-- import left the prop facing, so it can be turned the right way whatever the importer did. The marker
+-- itself is removed.
+local function frontOf(model: Model): Vector3?
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") and Roles.of(part) == "Front" then
+			local offset = model:GetPivot():PointToObjectSpace(part.Position)
+			part:Destroy()
+			if Vector2.new(offset.X, offset.Z).Magnitude > 0.01 then
+				return Vector3.new(offset.X, 0, offset.Z)
+			end
+			return nil
+		end
+	end
+	return nil
+end
+
 -- A copy of a prop standing on `position`, turned `yaw` degrees and scaled. Props nobody can reach
 -- aren't solid, which also keeps them out of the physics. A missing prop is skipped with a warning.
-local function place(parent: Instance, folder: Instance, name: string, position: Vector3, yaw: number, scale: number, solid: boolean)
+-- With `face`, a prop that has a Front marker is first turned so its front points that way.
+local function place(parent: Instance, folder: Instance, name: string, position: Vector3, yaw: number, scale: number, solid: boolean, face: Vector3?)
 	local original = folder:FindFirstChild(name)
 	if not original then
 		warn(`[MapDecor] {name} is missing from {folder:GetFullName()}: import it from assets/models/fbx`)
@@ -34,10 +57,16 @@ local function place(parent: Instance, folder: Instance, name: string, position:
 			part.CanTouch = false
 		end
 	end
+	Roles.lightUp(model)
 	if scale ~= 1 then
 		model:ScaleTo(scale)
 	end
-	model:PivotTo(CFrame.new(position) * CFrame.Angles(0, math.rad(yaw), 0))
+	local turn = math.rad(yaw)
+	local front = frontOf(model)
+	if face and front then
+		turn += math.atan2(face.X, face.Z) - math.atan2(front.X, front.Z)
+	end
+	model:PivotTo(CFrame.new(position) * CFrame.Angles(0, turn, 0))
 	model.Parent = parent
 end
 
@@ -99,6 +128,23 @@ local function decorateBiome(parent: Instance, biome, rules)
 			end
 		end
 		distance += between(rng, rim.gap)
+	end
+
+	-- Things spanning the corridor overhead, resting on both rims (turned across it, if they say which way is front).
+	for _, spot in rules.overhead or {} do
+		place(parent, folder, spot.name, Vector3.new(0, Map.walls.rimY, -(biome.startDist + spot.distance)), spot.yaw, spot.scale, false, ALONG)
+	end
+
+	-- Things on a corridor wall's top edge, facing the middle: lava pouring down into the corridor.
+	for _, spot in rules.walls or {} do
+		local position = Vector3.new(spot.side * wallInside, Map.walls.rimY, -(biome.startDist + spot.distance))
+		place(parent, folder, spot.name, position, spot.yaw or 0, spot.scale or 1, false, Vector3.new(-spot.side, 0, 0))
+	end
+
+	-- Set pieces at fixed spots: volcanoes on the rims, cracks of lava across the floor.
+	for _, spot in rules.spots or {} do
+		local y = if spot.on == "floor" then Map.corridor.floorY else Map.walls.rimY
+		place(parent, folder, spot.name, Vector3.new(spot.x, y, -(biome.startDist + spot.distance)), spot.yaw, spot.scale, false)
 	end
 end
 

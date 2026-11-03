@@ -20,8 +20,8 @@ from mathutils import Vector
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import build_fern_valley as kit  # noqa: E402
-from build_fern_valley import Model  # noqa: E402
+import build_forest as kit  # noqa: E402
+from build_forest import Model  # noqa: E402
 
 RENDERS = HERE.parent.parent / "design" / "world" / "models_base"
 kit.NO_STUDS.update({"Dash", "Bar", "Plate", "Hook", "Board"})

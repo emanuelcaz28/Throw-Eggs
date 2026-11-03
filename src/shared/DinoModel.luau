@@ -1,12 +1,14 @@
 -- Builds a dino: its imported model from ReplicatedStorage.Assets.Dinos if it has one (made in
 -- Blender, saved in the place, not in Rojo), otherwise its block model from ModelBlueprints.
 -- A dino with neither gets a plain eight-block stand-in coloured from its name.
--- A mutation tints the skin of an imported model and leaves its face alone.
+-- A mutation tints the skin of an imported model and leaves its face alone. Glowing parts (the Volcano
+-- monsters' eyes, mouths and lava) light up, see Roles.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BlockModel = require(script.Parent.BlockModel)
 local Catch = require(script.Parent.Config.Catch)
 local DinoStats = require(script.Parent.DinoStats)
+local Roles = require(script.Parent.Roles)
 
 local DinoModel = {}
 
@@ -46,6 +48,42 @@ end
 local SKIN_ROLES = { Body = true, Accent = true, Belly = true, Claw = true }
 local SKIN_TINT = 0.75
 
+-- Bones only move the parts joined to the part that holds them, and the importer leaves the colour parts
+-- loose. So each part that isn't joined yet gets a Motor6D to the bones' part; models joined in Studio
+-- before are left as they are.
+local function joinParts(model: Model)
+	local holder = nil
+	for _, bone in model:GetDescendants() do
+		if bone:IsA("Bone") then
+			holder = bone:FindFirstAncestorWhichIsA("BasePart")
+			break
+		end
+	end
+	if not holder then
+		return
+	end
+	local joined = { [holder] = true }
+	for _, joint in model:GetDescendants() do
+		if joint:IsA("JointInstance") or joint:IsA("WeldConstraint") then
+			if joint.Part0 then
+				joined[joint.Part0] = true
+			end
+			if joint.Part1 then
+				joined[joint.Part1] = true
+			end
+		end
+	end
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") and not joined[part] then
+			local motor = Instance.new("Motor6D")
+			motor.Part0 = holder
+			motor.Part1 = part
+			motor.C0 = holder.CFrame:ToObjectSpace(part.CFrame)
+			motor.Parent = holder
+		end
+	end
+end
+
 local function buildImported(dinoId: string, mutation, origin: Vector3, scale: number): Model?
 	local assets = ReplicatedStorage:FindFirstChild("Assets")
 	local dinos = assets and assets:FindFirstChild("Dinos")
@@ -55,13 +93,16 @@ local function buildImported(dinoId: string, mutation, origin: Vector3, scale: n
 	end
 	local model = template:Clone()
 	model.Name = "Dino"
-	if mutation then
-		for _, part in model:GetChildren() do
-			if part:IsA("MeshPart") and SKIN_ROLES[part.Name] then
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored = true
+			if mutation and SKIN_ROLES[Roles.of(part)] then
 				part.Color = part.Color:Lerp(mutation.color, SKIN_TINT)
 			end
 		end
 	end
+	joinParts(model)
+	Roles.lightUp(model)
 	local _, extents = model:GetBoundingBox()
 	local head = Instance.new("Part")
 	head.Name = "Head"

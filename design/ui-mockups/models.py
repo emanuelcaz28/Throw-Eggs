@@ -81,7 +81,7 @@ def quadruped(main, belly, *, w=5, leg=3, body=(8, 4), tail=6, head=(4, 3), head
     return m, (hx, 0, hz, hl, w, hh)
 
 
-# --- Fern Valley --------------------------------------------------------------------------
+# --- Forest --------------------------------------------------------------------------
 
 def compy():
     m, _ = theropod("#7ed957", "#e8f7b8", w=3, leg=3, body=(5, 3), tail=6, neck=1, head=(4, 2), stripes="#3e9f3a")
@@ -127,7 +127,7 @@ def raptor():
     return m
 
 
-# --- Dry Plains ---------------------------------------------------------------------------
+# --- Desert ---------------------------------------------------------------------------
 
 def pachy():
     m, (hx, hy, hz, hl, hw, hh) = theropod("#9b7bd6", "#e6dcff", w=4, leg=4, body=(6, 4), tail=7, neck=2, head=(4, 3))
@@ -290,7 +290,7 @@ def island(top, dirt, size=12):
     return m
 
 
-def fern_valley():
+def forest():
     m = island("#7ed957", "#a86b3c")
     m.box(7, 9, 3, 5, 7, 12, "#8a5a2b")
     m.box(5, 11, 1, 7, 12, 15, "#4fbf4a")
@@ -302,7 +302,7 @@ def fern_valley():
     return m
 
 
-def dry_plains():
+def desert():
     m = island("#f2d27a", "#c98a4a")
     m.box(7, 8, 6, 7, 7, 13, "#4fa34a")
     m.box(6, 7, 6, 7, 9, 11, "#4fa34a")
@@ -327,7 +327,7 @@ def swamp():
     return m
 
 
-BIOMES = {"FernValley": fern_valley, "DryPlains": dry_plains, "Swamp": swamp}
+BIOMES = {"Forest": forest, "Desert": desert, "Swamp": swamp}
 
 # --- Shop art -----------------------------------------------------------------------------
 

@@ -32,24 +32,39 @@ local Map = {
 
 	corridor = {
 		floorY = -12, -- below the arena, so the platform's front is a dirt face
-		section = 64, -- length of one corridor piece (Assets.Maps.FernValley.Corridor)
+		section = 64, -- length of one corridor piece (Assets.Maps.Forest.Corridor)
 		wallStartZ = -40, -- the arena's front wall ends here; the corridor walls carry on from it
 		extra = 36, -- corridor beyond the farthest biome, so the last eggs land well inside it
 		barrierHeight = 40, -- invisible wall at the throw line, so nobody walks off the platform
 	},
 
-	-- The kit's corridor pieces are Fern Valley's colours. Other biomes recolour them; a role
+	-- The kit's corridor pieces are Forest's colours. Other biomes recolour them; a role
 	-- that isn't listed keeps the kit's colour.
 	biomeColors = {
-		DryPlains = {
+		Desert = {
 			Floor = Color3.fromRGB(246, 226, 162),
 			Dirt = Color3.fromRGB(194, 150, 92),
 			Grass = Color3.fromRGB(217, 189, 119),
 		},
 		Swamp = {
-			Floor = Color3.fromRGB(96, 140, 78),
+			Floor = Color3.fromRGB(78, 132, 102), -- murky blue-green, so it reads as bog and not as the rims' grass
 			Dirt = Color3.fromRGB(92, 74, 52),
 			Grass = Color3.fromRGB(110, 150, 70),
+		},
+		Volcano = {
+			Floor = Color3.fromRGB(93, 75, 69), -- dark volcanic rock
+			Dirt = Color3.fromRGB(61, 48, 46),
+			Grass = Color3.fromRGB(116, 64, 46), -- scorched red earth on the rims and hanging over the walls
+		},
+		FrozenPeaks = {
+			Floor = Color3.fromRGB(211, 225, 236), -- packed snow, a little blue so the rims' white stands out
+			Dirt = Color3.fromRGB(127, 159, 184), -- frozen earth
+			Grass = Color3.fromRGB(242, 247, 251), -- snow on the rims and hanging over the walls
+		},
+		ShadowBog = {
+			Floor = Color3.fromRGB(106, 90, 142), -- slate violet, so the black tar pits stand out on it
+			Dirt = Color3.fromRGB(69, 54, 79), -- dark plum earth
+			Grass = Color3.fromRGB(77, 125, 104), -- deep teal moss on the rims and hanging over the walls
 		},
 	},
 

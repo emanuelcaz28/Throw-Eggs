@@ -62,7 +62,7 @@ local function packRow(list: Instance, packs, colours, amountColour: Color3?, or
 		holder.Parent = row
 		local frame = card(holder, width, 250, colours, 0)
 		frame.Position = UDim2.fromOffset(0, 12)
-		UiKit.viewport(frame, pack.art, { spin = true, position = UDim2.fromOffset(16, 14), size = UDim2.new(1, -32, 0, 118) })
+		UiKit.art(frame, pack.art, pack.art, { spin = true, position = UDim2.fromOffset(16, 14), size = UDim2.new(1, -32, 0, 118) })
 		result.amounts[index] = at(UiKit.text(frame, "", 30, amountColour), 0, 136, width, 40)
 		local button = UiKit.button(frame, "SOON", "grey", width - 36, 48, 24)
 		button.AnchorPoint = Vector2.new(0.5, 1)
@@ -86,7 +86,7 @@ local function buildGui()
 	gui.DisplayOrder = 4 -- above the other panels
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	local open = HudStyle.iconButton(gui, "🛍️", "Shop")
+	local open = HudStyle.iconButton(gui, "🛍️", "Shop", "shop")
 	open.AnchorPoint = Vector2.new(0, 0.5)
 	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, (HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) / 2 * HudStyle.scale())
 	open.Name = "OpenShop"
@@ -102,14 +102,14 @@ local function buildGui()
 	UiKit.corner(timer, 16)
 	UiKit.stroke(timer, 4)
 
-	local panel = UiKit.panel(gui, { name = "ShopPanel", width = PANEL_SIZE.X, height = PANEL_SIZE.Y, header = "sun", title = "Shop", icon = "🛍️" })
+	local panel = UiKit.panel(gui, { name = "ShopPanel", width = PANEL_SIZE.X, height = PANEL_SIZE.Y, header = "sun", title = "Shop", icon = "🛍️", iconKey = "shop" })
 	local list = UiKit.scrollList(panel.body, UDim2.fromOffset(16, 4), UDim2.new(1, -24, 1, -16), 14)
 
 	-- Boosts: Server Luck.
 	UiKit.divider(list, "Boosts", LIST_WIDTH).LayoutOrder = 1
 	local luck = card(list, LIST_WIDTH, 170, { "#9cf28f", "#2fbf5a" }, 2)
 	-- Flat art faces the camera instead of spinning, so it never turns edge-on.
-	UiKit.viewport(luck, "clover", { yaw = math.rad(72), position = UDim2.fromOffset(30, 6), size = UDim2.fromOffset(170, 160) })
+	UiKit.art(luck, "clover", "clover", { yaw = math.rad(72), position = UDim2.fromOffset(30, 6), size = UDim2.fromOffset(170, 160) })
 	at(UiKit.text(luck, Shop.serverLuck.name, 36, nil, Enum.TextXAlignment.Left), 230, 18, 440, 44)
 	at(UiKit.text(luck, Shop.serverLuck.description, 19, nil, Enum.TextXAlignment.Left), 230, 62, 460, 24)
 	local multiplier = UiKit.text(luck, `x1 > x{Shop.serverLuck.multiplier}`, 46, UiKit.GOLD, Enum.TextXAlignment.Left)
@@ -140,10 +140,10 @@ local function buildGui()
 	row.Padding = UDim.new(0, 16)
 	row.SortOrder = Enum.SortOrder.LayoutOrder
 	row.Parent = passes
-	local function passCard(item, colours, art, order)
+	local function passCard(item, colours, key, art, order)
 		local frame = card(passes, (LIST_WIDTH - 16) / 2, 204, colours, order)
 		at(UiKit.text(frame, item.name, 32, nil, Enum.TextXAlignment.Left), 20, 12, 300, 40)
-		UiKit.viewport(frame, art, { spin = art ~= "bolts_M", yaw = math.rad(72), position = UDim2.fromOffset(16, 52), size = UDim2.fromOffset(170, 140) })
+		UiKit.art(frame, key, art, { spin = art ~= "bolts_M", yaw = math.rad(72), position = UDim2.fromOffset(16, 52), size = UDim2.fromOffset(170, 140) })
 		local tag = UiKit.tag(frame, `x{item.multiplier}`, "tagGold", 22)
 		tag.Position = UDim2.fromOffset(130, 146)
 		local desc = UiKit.text(frame, item.description, 22)
@@ -153,8 +153,8 @@ local function buildGui()
 		button.Position = UDim2.fromOffset(220, 128)
 		return button
 	end
-	local cashButton = passCard(Shop.doubleCash, { "#7fd4ff", "#2f7fe6" }, "cash_L", 1)
-	local trainingButton = passCard(Shop.doubleTraining, { "#d3a3ff", "#7b4dff" }, "bolts_M", 2)
+	local cashButton = passCard(Shop.doubleCash, { "#7fd4ff", "#2f7fe6" }, "pass_cash", "cash_L", 1)
+	local trainingButton = passCard(Shop.doubleTraining, { "#d3a3ff", "#7b4dff" }, "pass_training", "bolts_M", 2)
 
 	-- Free: the starter dino.
 	UiKit.divider(list, "Free", LIST_WIDTH).LayoutOrder = 8

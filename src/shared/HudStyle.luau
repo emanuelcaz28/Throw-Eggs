@@ -1,7 +1,10 @@
 -- The look shared by the always-on HUD: big square icon buttons with an outlined label, and
--- large outlined numbers with an icon (⚡ Throw Power, cash). Client only. Icons are emoji until
--- real icon images exist. Sizes shrink on short screens (phones) so everything still fits.
+-- large outlined numbers with an icon (⚡ Throw Power, cash). Client only. An icon is its image from
+-- Config/Icons when one is set, else the emoji given. Sizes shrink on short screens (phones) so
+-- everything still fits.
 local GuiService = game:GetService("GuiService")
+
+local UiKit = require(script.Parent.UiKit)
 
 local HudStyle = {}
 
@@ -58,7 +61,7 @@ end
 
 -- A square button: dark rounded frame, big icon, label overlapping the bottom edge.
 -- The caller sets Position and AnchorPoint; the size is already scaled.
-function HudStyle.iconButton(parent: Instance, icon: string, label: string): TextButton
+function HudStyle.iconButton(parent: Instance, icon: string, label: string, iconKey: string?): TextButton
 	local size = HudStyle.BUTTON_SIZE * HudStyle.scale()
 	local button = Instance.new("TextButton")
 	button.Size = UDim2.fromOffset(size, size)
@@ -108,6 +111,9 @@ function HudStyle.iconButton(parent: Instance, icon: string, label: string): Tex
 	iconLabel.AnchorPoint = Vector2.new(0.5, 0)
 	iconLabel.Position = UDim2.fromScale(0.5, 0.08)
 	iconLabel.Size = UDim2.fromScale(0.72, 0.66)
+	if iconKey and UiKit.iconImage(button, iconKey, { anchor = Vector2.new(0.5, 0), position = UDim2.fromScale(0.5, 0.08), size = UDim2.fromScale(0.72, 0.66) }) then
+		iconLabel.Visible = false
+	end
 
 	local name = text(button, label, TEXT)
 	name.Name = "Label"
@@ -121,7 +127,7 @@ end
 
 -- A big outlined number with an icon to its left. Returns the frame and the number's label;
 -- the caller sets the frame's Position and AnchorPoint.
-function HudStyle.stat(parent: Instance, icon: string, color: Color3, height: number): (Frame, TextLabel)
+function HudStyle.stat(parent: Instance, icon: string, color: Color3, height: number, iconKey: string?): (Frame, TextLabel)
 	local scaled = height * HudStyle.scale()
 	local frame = Instance.new("Frame")
 	frame.BackgroundTransparency = 1
@@ -131,6 +137,9 @@ function HudStyle.stat(parent: Instance, icon: string, color: Color3, height: nu
 	local iconLabel = text(frame, icon, TEXT)
 	iconLabel.Name = "Icon"
 	iconLabel.Size = UDim2.fromOffset(scaled, scaled)
+	if iconKey and UiKit.iconImage(frame, iconKey, { size = UDim2.fromOffset(scaled, scaled) }) then
+		iconLabel.Visible = false
+	end
 
 	local number = text(frame, "", color)
 	number.Name = "Value"

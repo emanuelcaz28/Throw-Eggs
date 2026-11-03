@@ -183,6 +183,10 @@ An empty base's owner shows "$0/s".
 The name line includes size and mutation. Our lower limit for showing one is still to be tuned **[Guess]**: start at
 1 in 10K within the server. This replaces the "rarer than 1 in 1M" idea in section 13.
 
+**[Built]** From mock-ups 12 and 12b: INSANE (cyan), LEGENDARY (pink) and GODLY (turning rainbow) panels, the clover
+landing with a half turn, 6 seconds on screen, one at a time with the rarest first. It never shows during your own
+reveal; your own catch appears once you've tapped through it. Limit and timings are in `Config/Reveal` (`luckyBanner`).
+
 ---
 
 ## 7. How you play
@@ -199,9 +203,29 @@ The name line includes size and mutation. Our lower limit for showing one is sti
   slows near the top. Level 10 is PERFECT and gives the biggest throw.
 - **[Built]** Distance = Throw Power × the level's bonus. Our meter multiplies on purpose, unlike the reference's flat bonus.
 - **[Built]** All HUD except Throw Power hides while aiming and flying.
-- **[Seen]** Walking onto the platform: a quick fade to dark, then the camera is behind the player for aiming.
-- **[Seen]** After the tap: black bars slide in at the top and bottom. The character does a big spinning wind-up
-  while the camera whips around them, showing the arena behind, for about 1 second. Then the item is released.
+- **[Seen]** The owner's recording of the throw (`~/Documents/Screen Recording 2026-11-03 at 20.02.26.mov`,
+  watched frame by frame for the first 10 seconds). Times in seconds:
+
+  | Time | What happens |
+  |---|---|
+  | 1.3 to 1.5 | The player walks onto the platform; the whole screen dips to black. |
+  | 1.6 to 2.1 | Back from black on a new scene: the player stands still on the throw spot facing down the corridor, the camera low behind their right shoulder. All HUD is gone except Throw Power. |
+  | 2.1 | The meter rises in beside the player, "TAP TO THROW!" under it. |
+  | 3.0 | Tap: the result (+13, "+13 POWER", GOOD) holds on the meter for about half a second. |
+  | 3.1 | Thin black bars slide in at the top and bottom. |
+  | 3.45 to 3.7 | The thrower crouches and swings the item low on the right; the camera starts to swing round. |
+  | 3.7 to 3.85 | The camera whips round to face the thrower, showing the arena and bases behind them. |
+  | 3.85 to 4.2 | They spin upright with the item raised, then drop into a deep lunge, arm swinging through. |
+  | 4.3 | Release with a straight arm from the lunge; the camera is behind the thrower again, low, looking down the corridor. The bars slide away. |
+  | 4.4 | A thick white streak trails behind the item; the luck panel appears with the world's name. |
+
+- **[Built]** All of that: the dip to black onto the throw spot (`Config/Throw` `aim`), the held egg, the result on
+  the meter, the bars, and the camera's keyed path round the thrower (`windup.camera`). The clip is made in Blender on
+  the MrXen0 R15 rig and converted straight to a KeyframeSequence (`assets/animations/build_throw.py`, previews in
+  `design/animations/throw/`), synced by Rojo to `ReplicatedStorage.Shared.Animations.ThrowWindup`. Studio play tests
+  play that clip, so they always show the latest build; live games play the published
+  rbxassetid://136948284707759, which has to be republished over the same asset after each change. The egg is
+  0.45× its size in the hand and grows back as it flies. The camera work is in `ThrowCinematic`.
 
 ### Flight
 - **[Built]** The camera follows the egg down the corridor through the worlds. The luck multiplier climbs live at the
@@ -215,6 +239,14 @@ The name line includes size and mutation. Our lower limit for showing one is sti
   strip holds the world's name in that world's colour, with a small icon.
 - **[Seen]** Luck climbs fast and then slows right down. Half-second readings from one throw at 6883 power:
   13.54, 22.13, 28.84, 34.41, 38.51, 41.13, 43.20, 44.74, 46.34, 47.99, 49.37, 50.14 (final).
+- **[Built]** The flight camera climbs from the thrower to high behind the egg (looking down the valley, the egg low
+  in the middle of the screen) and drops low behind it at the end (`Config/Throw` `flight.camera`). The egg slows as
+  it goes, and flights run from 1.5 s for short throws to 6 s at the far end of the last world. A white trail
+  follows it. The luck panel at the top shows the luck number in a see-through panel tinted for the world, with the
+  world's name in a dark strip under it, and pops each time the egg crosses into a new world. The floating distance
+  numbers and world names that stood in the corridor are gone, as in the reference.
+- **[Built]** Landing: a white ring flashes out on the ground and a puff of dust rises (`Config/Throw` `landing`).
+  The walking view and the reveal after it are the next job.
 
 ### Landing and arrival: the animal walks to the egg
 **[Owner]** Pay special attention to this part. The animal walking towards what you threw is the key moment, then its
@@ -247,7 +279,12 @@ name shows up slowly.
 - **[Seen]** This catch had no "1 in X" counter; earlier recordings show one on other catches (see the GDD's Reveal notes).
 - **[Built]** The roll is decided on landing. The counter is suspense only.
 - **[Built]** Labels escalate: LUCKY! → SUPER LUCKY! → INSANE! → LEGENDARY! → GODLY!
-- **[Built]** Very rare catches get a light beam and a "YOU CAUGHT!" banner on the base. Tapping skips ahead.
+- **[Built]** Very rare catches get a light beam and a "YOU CAUGHT!" banner on the base (1 in 1K to 10K; rarer ones
+  get the lucky catch banner instead). Tapping skips ahead.
+- **[Built]** The text follows mock-ups 15 to 16b: white dashes that fill with letters at the bottom centre, then the
+  rarity colour wash with two rings and sparkles, and the final text with no panel (size and mutation, name in its
+  rarity colour, NEW! on a first catch, $/s, the "1 in X" and the tier sticker on lucky catches, tap to continue),
+  then white for half a second. The camera walk is still the old egg orbit and hatch, a separate job.
 
 ### Earn
 - **[Built]** Dinos on your base earn $/s. Spare ones go in the backpack.
@@ -327,9 +364,11 @@ Old saves keep their sizes under the new names (Big → Thicc, Large → Absolut
 
 | World | Dinos, most common first |
 |---|---|
-| Fern Valley | Compy, Gallimimus, Parasaurolophus, Stegosaurus, Velociraptor |
-| Dry Plains | Pachycephalosaurus, Ankylosaurus, Triceratops, Carnotaurus, T-Rex |
-| Swamp | Baryonyx, Dilophosaurus, Sarcosuchus, Brachiosaurus, Spinosaurus |
+| Forest | Compy, Gallimimus, Parasaurolophus, Stegosaurus, Velociraptor |
+| Desert | Pachycephalosaurus, Ankylosaurus, Triceratops, Carnotaurus, T-Rex |
+| Swamp | Soggy Dimetrodon, Burpasaurus, Baryonyx, Sir Chomps-a-Lot, Neckzilla, Spinosaurus |
+| Volcano | Toasty Raptor, Burnt Ankylo, Hot Sauce Trike, Magma Stego, Obsidian Rex, Volcano King |
+| Frozen Peaks | Brain Freeze, Woolly Rhino, Chilly Mammoth, Sabertooth, Frost Raptor, Blizzard Rex |
 
 ---
 
@@ -347,14 +386,14 @@ Each map's animals are about 1.39x the size of the previous map's, which reaches
 
 | # | Map | Size | Animals, most common first |
 |---|---|---|---|
-| 1 | Fern Valley | 1x | Compy, Gallimimus, Parasaurolophus, Stegosaurus, Velociraptor, Pteranodon |
-| 2 | Dry Plains | 1.4x | Dusty Proto, Bonkhead, Grumposaurus, Triceratops, Carnotaurus, T-Rex |
+| 1 | Forest | 1x | Compy, Gallimimus, Parasaurolophus, Stegosaurus, Velociraptor, Pteranodon |
+| 2 | Desert | 1.4x | Dusty Proto, Bonkhead, Grumposaurus, Triceratops, Carnotaurus, T-Rex |
 | 3 | Swamp | 1.9x | Soggy Dimetrodon, Burpasaurus, Baryonyx, Sir Chomps-a-Lot, Neckzilla, Spinosaurus |
-| 4 | Volcano Foothills | 2.7x | Toasty Raptor, Burnt Ankylo, Hot Sauce Trike, Magma Stego, Obsidian Rex, Volcano King |
-| 5 | Ice Age Tundra | 3.7x | Brain Freeze, Woolly Rhino, Chilly Mammoth, Sabertooth, Frost Raptor, Blizzard Rex |
-| 6 | Tar Pits | 5.2x | Sticky Steve, Slow Bob, Terror Bird, Pitch Raptor, Tar Titan, Bog Rex |
-| 7 | Deep Sea Trench | 7.2x | Spiral Gary, Derpichthys, Dunkleosteus, Plesiosaur, Megalodon, Mosasaurus |
-| 8 | Meteor Crater | 10x | Cosmic Chicken, Alien Steve, Comet Trike, Crystal Raptor, Void Rex, Meteor King |
+| 4 | Volcano | 2.7x | Toasty Raptor, Burnt Ankylo, Hot Sauce Trike, Magma Stego, Obsidian Rex, Volcano King |
+| 5 | Frozen Peaks | 3.7x | Brain Freeze, Woolly Rhino, Chilly Mammoth, Sabertooth, Frost Raptor, Blizzard Rex |
+| 6 | Shadow Bog | 5.2x | Sticky Steve, Slow Bob, Terror Bird, Pitch Raptor, Tar Titan, Bog Rex |
+| 7 | The Abyss | 7.2x | Spiral Gary, Derpichthys, Dunkleosteus, Plesiosaur, Megalodon, Mosasaurus |
+| 8 | Starfall Crater | 10x | Cosmic Chicken, Alien Steve, Comet Trike, Crystal Raptor, Void Rex, Meteor King |
 
 ### The style as you advance
 **[Owner]** Keep the same chunky stud style, but as the maps go on, add absurd, funny models and names alongside
@@ -365,6 +404,14 @@ good-looking, aggressive dinos.
   fierce ones (angry brows, smaller eyes, lots of teeth, horns, dark colours).
 - **Both get stronger with each map:** sillier jokes and meaner, more fantastical dinos. The last map's rarest should look like a boss.
 - **Names are ours:** none come from the reference game, and they stay readable in the letter-by-letter reveal.
+- **[Owner] Map 4, Volcano:** a bit more aggressive than the maps before, with a different face.
+  **[Built]** The Volcano face: eyes that glow like embers with an upright slit pupil, under a heavy brow that slants
+  down to the nose, and a snarl that glows inside like a furnace, jagged teeth top and bottom and often tusks. Even
+  the silly ones are angry: a raptor still smoking from the lava, an ankylo whose tail club is on fire, a trike that ate
+  the hot sauce (chili horns, steam, a burning tongue). The rare ones are lava and obsidian, and Volcano King, the map's
+  boss, is a hulking lava monster walking on its knuckles with a crown of burning horns and a volcano on its back.
+  They also have a **jaw bone**: they snap it as they walk and roar once per idle (head up, jaw wide, arms out), in
+  Blender (`build_volcano.py`) and in the game (`DinoLifeController`).
 
 ### How animal models are made
 - **Simple shapes:** chunky blocks and tapered blocks, no fine detail. The silhouette should read from far away.
@@ -387,16 +434,20 @@ good-looking, aggressive dinos.
 
 **[Owner]** Modelled in Blender, stud texture applied in Roblox Studio.
 
+**[Owner]** World names (chosen 2026-11-04: simple first, more serious further on): Forest, Desert, Swamp, Volcano,
+Frozen Peaks, Shadow Bog, The Abyss, Starfall Crater. Code ids, files and Studio folders use the same names (Forest,
+Desert, Swamp, Volcano, FrozenPeaks, ShadowBog, Abyss, StarfallCrater); no save stores a world id.
+
 | # | World | Luck at its end |
 |---|---|---|
-| 1 | Fern Valley | 2x |
-| 2 | Dry Plains | 5x |
+| 1 | Forest | 2x |
+| 2 | Desert | 5x |
 | 3 | Swamp | 9x |
-| 4 | Volcano Foothills | 14x |
-| 5 | Ice Age Tundra | 20x |
-| 6 | Tar Pits | 27x |
-| 7 | Deep Sea Trench | 35x |
-| 8 | Meteor Crater | 45x |
+| 4 | Volcano | 14x |
+| 5 | Frozen Peaks | 20x |
+| 6 | Shadow Bog | 27x |
+| 7 | The Abyss | 35x |
+| 8 | Starfall Crater | 45x |
 
 **[Seen]** Far worlds change colour and props completely: sand with cactus and skulls, dark rock with lava and
 black spires, neon purple with crystals. The reference's thumbnail shows worlds stepping **down** one after another (see section 15).
@@ -418,7 +469,7 @@ grass hanging over the wall tops, open blue sky, and raised grass with trees on 
 Done one at a time, each in its own step:
 
 1. **Layout blockout in Blender**: sizes and positions only, checked against the reference. *(Done, approved by the owner.)*
-2. **Real models in Blender**: the 6 animals and 9 props are made and waiting for the owner's OK (`assets/models/build_fern_valley.py`).
+2. **Real models in Blender**: the 6 animals and 9 props are made and waiting for the owner's OK (`assets/models/build_forest.py`).
    Dino animations are in the same file. Floor, walls with hanging grass and rim, and platform are in `build_world_kit.py`. Colour comes from each part's Color, with see-through stud images on top
    (`assets/textures/`, applied in Studio as a SurfaceAppearance with AlphaMode Overlay), so one image suits every world. The arena pieces
    (floor and its four walls) are in the same file, under one model, `kit_Arena`.
@@ -428,11 +479,11 @@ Done one at a time, each in its own step:
    `Config/Map`.)*
 4. **Bases**: 5 small bases in the row, each with its rack, XP pad, sign and owner plate, plus a shop only the owner sees.
    Capacity 10 to 20. *(Done 2026-11-03. The rack, XP button, stall, fence and upgrade sign are Blender models,
-   `assets/models/build_base_kit.py`, kept in `Assets.Maps.FernValley.Base` and placed through `BaseKit`. The owner plate
+   `assets/models/build_base_kit.py`, kept in `Assets.Maps.Forest.Base` and placed through `BaseKit`. The owner plate
    and the sign's face follow the mock-ups 13b and 14 in `design/ui-mockups/build.py`. All fences are wood and every base
    has a rack until questions 1 to 3 in section 15 are answered.)*
-5. **Fern Valley props and decoration**: our own trees, ferns, rocks and rim decoration, in Blender. *(Placed
-   2026-11-03: the 9 props from `build_fern_valley.py` stand along the corridor floor (kept off the middle), as big
+5. **Forest props and decoration**: our own trees, ferns, rocks and rim decoration, in Blender. *(Placed
+   2026-11-03: the 9 props from `build_forest.py` stand along the corridor floor (kept off the middle), as big
    trees on its rims, as eggs along the arena's rim and as small things behind the bases. `MapDecor` places them
    from `Config/Decor`, the corridor's with a fixed seed so every server matches. Props are scaled up to suit the
    walls, which makes their studs a little bigger than the walls' studs.)*
@@ -447,18 +498,64 @@ Done one at a time, each in its own step:
    clouds are solid because see-through parts cost phones the most. Per-world sky and light come with step 8.)*
 8. **Then the other worlds**: each one copies the first world's pieces with its own look, and they get joined up.
    One world at a time:
-   - **Dry Plains** *(done 2026-11-03, in Studio under `Assets.Maps.DryPlains.Props` and `Assets.Dinos`)*: 9 props in `build_dry_plains.py` (saguaro,
+   - **Desert** *(done 2026-11-03, in Studio under `Assets.Maps.Desert.Props` and `Assets.Dinos`)*: 9 props in `build_desert.py` (saguaro,
      barrel cactus, tumbleweed, a giant skull, a rib cage, a red mesa, a dead tree, dry grass, a boulder), placed by
-     `Config/Decor` like Fern Valley's, sparser, with mesas, giant cacti and bones on the rims. Its animals are now
+     `Config/Decor` like Forest's, sparser, with mesas, giant cacti and bones on the rims. Its animals are now
      built at the first map's size like every map's, since the game makes them 1.4x (they were made 1.4x in Blender
      too, which doubled up). Bonkhead's model is now `dino_Pachy`, the game's id.
    - **Per-world light** *(built)*: `Config/Lighting` `worlds` gives each world its own light, haze and tint, golden
-     for Dry Plains and murky green for the Swamp. `SkyController` blends to it in 0.6 s while the camera is over that
-     world, so it covers the flight, the landing and the reveal, and back in the arena it returns to Fern Valley's.
-   - **Swamp**: its 6 animals and its props, still to make.
+     for Desert and murky green for the Swamp. `SkyController` blends to it in 0.6 s while the camera is over that
+     world, so it covers the flight, the landing and the reveal, and back in the arena it returns to Forest's.
+   - **Swamp** *(props made 2026-11-03, organised into `Assets.Maps.Swamp.Props` the same evening: they had been left in Workspace)*:
+     10 props in `build_swamp.py` (a bald cypress on stilt roots with hanging moss, a weeping willow, lily pads with a
+     pink flower, cattails, a mossy log, giant purple and teal toadstools, a bubbling bog pool, a hut on stilts, a
+     lantern post, and a fallen giant tree lying across the corridor from rim to rim with vines hanging under it).
+     `Config/Decor` places them like Desert' props, plus a new `overhead` list for the fallen tree. The corridor floor is now a
+     murky blue-green (`Config/Map`) so it doesn't blend into the rims' grass. Renders, including a stretch of
+     corridor, are in `design/world/models_swamp/`. Its 6 monsters (made 2026-11-04, `build_swamp_monsters.py`, renders and
+     `swamp_animation_preview.mp4` in `design/world/monsters_swamp/`): Soggy Dimetrodon (a drenched, flopped sail and a
+     lily pad on its head), Burpasaurus (mid-burp, frill flared), Baryonyx (with a fish), Sir Chomps-a-Lot (a croc with a
+     monocle and a gold tooth), Neckzilla (an angry swamp sauropod with reeds growing on its back) and Spinosaurus (the
+     boss, a red sail). The first maps' face, the Volcano's jaw bone and roar. Ids stay the old stand-ins' (Bary, Dilo,
+     Sarco, Brachio, Spino) plus Dimetro, so owned monsters get the new models. Imported and play-tested 2026-11-04.
+   - **Volcano** *(made 2026-11-03; imported and organised in `Assets.Dinos` and `Assets.Maps.Volcano.Props`; play-tested: props placed, monsters walk, snap and roar on a base)*: the 6 monsters, animated,
+     and 11 props in `build_volcano.py`: a smoking volcano with lava running down it (on the rims), obsidian
+     spires, lava pools, charred trees with embers, steam vents, basalt columns, glowing lava rocks, fire flowers, flat
+     cracks of lava across the floor (they can lie in the middle, where eggs land), lava falls pouring down the corridor
+     walls and a rock arch over the corridor with lava running along it. `Config/Decor` places them, with two new lists:
+     `walls` (on a wall's top edge, facing the middle) and `spots` (set pieces at fixed places, on the rim or the floor).
+     Props that must face a certain way carry a small `Front` part that `MapDecor` uses to turn them, then removes. Dark
+     rock floor, scorched red rims (`Config/Map`), orange haze (`Config/Lighting`). Glowing parts (lava, embers, fire,
+     the monsters' eyes and mouths) get the Neon material in the game (`shared/Roles.luau`). Renders, a corridor stretch
+     and `volcano_animation_preview.mp4` are in `design/world/models_volcano/`. Built before the Swamp's animals, at the
+     owner's request; it's the world after the Swamp (1,500 to 2,200 studs, 14x luck, 2.7x size).
+   - **Frozen Peaks** *(map made, imported and play-tested 2026-11-03, in `Assets.Maps.FrozenPeaks.Props`; monsters later, at the owner's request)*:
+     12 props in `build_frozen_peaks.py`: snowy pines (the signature tree), ice crystal spikes, a glacier and giant
+     mammoth tusks arching out of the snow (landmarks on the rims), an igloo with a warm lit doorway, a campfire with log
+     benches, frosted bushes with red berries, snowy boulders, snow drifts, flat frozen ponds across the floor, frozen
+     waterfalls down the walls and an ice arch over the corridor. Packed-snow floor, frozen blue walls, white rims
+     (`Config/Map`), crisp pale blue haze (`Config/Lighting`), placed by `Config/Decor`. Renders in
+     `design/world/models_frozen_peaks/`. **Until a world has monsters, eggs can't land in it** (`Throw.maxDistance`): it's
+     built and decorated and seen ahead during long throws, has no Index card and can't be completed. Its 6 monsters
+     (made 2026-11-04, `build_frozen_peaks_monsters.py`, renders and `frozen_peaks_animation_preview.mp4` in
+     `design/world/monsters_frozen_peaks/`): Brain Freeze (ice cream splatted on its head), Woolly Rhino (fur over its eyes),
+     Chilly Mammoth (hat, scarf, an icicle off its trunk), then the frost face on the fierce ones, eyes glowing icy blue:
+     Sabertooth, Frost Raptor (glowing ice crystals) and Blizzard Rex (the boss: shaggy white, ice armour and crown,
+     frost breath). Glowing crystals are the `IceGlow` role (Neon). With them in `Config/Dinos`, throws reach Frozen Peaks. Imported and play-tested 2026-11-04.
+   - **Shadow Bog** *(map made, imported into `Assets.Maps.ShadowBog.Props` and play-tested 2026-11-04: 152 props placed; monsters later, at the owner's request)*:
+     a tar pit at dusk, slate violet and black so it doesn't read as the Swamp's green or the Volcano's orange.
+     12 props in `build_shadow_bog.py`: crooked black gloom trees with beards of moss and glowing pods (the
+     signature tree), thorn bushes, leaning slate shards, mounds of bubbling tar, dead reeds, a snapping bog plant,
+     will-o'-wisps with sleepy faces, a hollow stump with two eyes glaring out of it, the skeleton of a huge
+     long-necked monster sinking in the tar (the landmark on the rims), flat tar pits across the floor, tar oozing
+     down the walls with a skull stuck in it, and an arch of braided roots over the corridor. Slate violet floor, dark
+     plum walls, deep teal moss on the rims (`Config/Map`), violet dusk haze (`Config/Lighting`), placed by
+     `Config/Decor`. Glowing parts are `Glow` and `Wisp` (Neon). Renders in `design/world/models_shadow_bog/`.
+     It's world 6 (3,000 to 3,900 studs, 27x luck, 5.2x size); like Frozen Peaks before its monsters, eggs can't
+     land in it until it has some.
    - **Joining**: whether the floor steps down at each world (question 5 in section 15) is still open.
 
-The walking reveal, the throw wind-up and the flight camera are a separate job, after the world.
+The walking reveal and the flight camera are a separate job, after the world. The throw wind-up is built (section 7).
 
 ---
 
@@ -486,6 +583,16 @@ The walking reveal, the throw wind-up and the flight camera are a separate job, 
 - Everything shrinks to fit short screens.
 
 **[Seen]** The reference's gear icon sits next to Throw Power, and spending shows a red "-$X" floating up from cash.
+
+**[Built]** Pop-up text, designed in Figma ([Throw Eggs - Pop-up Text](https://www.figma.com/design/RPcPJ7Qm7DBI6957rW04cG),
+where each motion plays) and built in `PopText` with its looks and timings in `Config/Pop`. No panel behind any of it,
+just a thick ink outline and a hard shadow:
+- **Float:** a red "-$X" beside the cash when spending, a green "+$X" for other gains (not the income ticking in every
+  second), "+$X/s" when income rises, "+XP" over the training bar and "x2!" from the bubble.
+- **Shout:** LEVEL UP!, an event starting (in its colour) and a world completed in the Index (after the reveal), big
+  and gold in the upper middle.
+- **Notice:** server messages above the hotbar, gold when something worked, red with a shake when it didn't.
+- **Punch:** the meter's result word (PERFECT!, GREAT!…) punches in on the tap.
 
 ---
 
@@ -517,13 +624,10 @@ and biome completion rewards (built, in section 12). Announcements are confirmed
 | No announcements | A server-wide banner for lucky catches (section 6) | Owner |
 | Auto-placement keeps dinos apart | Overlap is fine | Seen |
 | Plain coloured parts with little or no stud texture | Checker and studs on everything | Owner |
-| After landing, the camera circles the egg right away | White ring and dust, cut to black, then the amber walking view | Owner + Seen |
+| After landing, the camera circles the egg right away | Cut to black, then the amber walking view (the ring and dust are built) | Owner + Seen |
 | The egg wobbles and bursts at 40%, and the dino pops up from nothing and spins | Close-up, then pull back to the dino already standing still over the egg | Owner + Seen |
 | Yellow letter tiles at the top | White outlined letters with blanks at the bottom centre | Seen |
 | Final result in a panel with chips | Plain text at the bottom, a NEW! sticker, a rarity-coloured wash | Seen |
-| Throw starts instantly | Black bars and a spinning wind-up with a whipping camera | Seen |
-| Egg flight with one fixed camera offset | Camera low, then high, then low, with a white trail on the floor | Seen |
-| Flight can last up to 8 seconds | About 6 seconds at the last map, shorter for nearer maps, always smooth | Owner |
 | Luck grows evenly with distance | Fast at first, slowing right down (ours is evenly spaced inside each world) | Seen |
 
 Done on 2026-11-03: the sunken arena, platform and lower corridor, the throw line on the platform, 5 bases of 48 × 48

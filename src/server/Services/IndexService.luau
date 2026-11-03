@@ -13,7 +13,11 @@ local IndexService = {}
 local changedRemote: RemoteEvent
 
 local function biomeComplete(data, biomeId: string): boolean
-	for _, dino in Dinos[biomeId] do
+	local dinos = Dinos[biomeId]
+	if not dinos or #dinos == 0 then
+		return false -- a world whose monsters aren't made yet can't be completed
+	end
+	for _, dino in dinos do
 		if not data.discovered[dino.id] then
 			return false
 		end

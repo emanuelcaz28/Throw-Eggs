@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Events = require(ReplicatedStorage.Shared.Config.Events)
+local PopText = require(ReplicatedStorage.Shared.PopText)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local player = Players.LocalPlayer
@@ -18,7 +19,6 @@ local TEXT = Color3.new(1, 1, 1)
 local MUTED = Color3.fromRGB(190, 195, 205)
 local TIMER_TOP = 16
 local TIMER_BELOW_LUCK = 70 -- moves down when the Server Luck timer is showing
-local ANNOUNCE_HOLD = 4 -- seconds the "event started" text stays up
 local TINT_STRENGTH = 0.15
 local METEOR_EVERY = 0.4 -- seconds between meteors
 local METEOR_FALL_TIME = 1.6
@@ -41,17 +41,7 @@ local function buildGui()
 	UiKit.corner(timer, 16)
 	UiKit.stroke(timer, 4)
 
-	local announce = UiKit.text(gui, "", 64)
-	announce.Name = "EventAnnounce"
-	announce.AnchorPoint = Vector2.new(0.5, 0.5)
-	announce.Position = UDim2.fromScale(0.5, 0.2)
-	announce.Size = UDim2.new(0.8, 0, 0, 80)
-	announce.Visible = false
-	local detail = UiKit.text(announce, "", 30)
-	detail.Name = "Detail"
-	detail.Position = UDim2.new(0, 0, 1, 4)
-
-	return { timer = timer, announce = announce, detail = detail }
+	return { timer = timer }
 end
 
 local function clock(seconds: number): string
@@ -97,21 +87,6 @@ function EventController.start()
 	tint.Parent = Lighting
 
 	local shownId = nil
-	local announceToken = 0
-
-	local function announce(event)
-		announceToken += 1
-		local token = announceToken
-		hud.announce.Text = `{string.upper(event.name)}!`
-		hud.announce.TextColor3 = event.color
-		hud.detail.Text = `{event.description} for {clock(event.seconds)}`
-		hud.announce.Visible = true
-		task.delay(ANNOUNCE_HOLD, function()
-			if announceToken == token then
-				hud.announce.Visible = false
-			end
-		end)
-	end
 
 	local function onEventChanged()
 		local event = Events.active()
@@ -123,7 +98,7 @@ function EventController.start()
 		local tintColor = if event then TEXT:Lerp(event.color, TINT_STRENGTH) else TEXT
 		TweenService:Create(tint, TweenInfo.new(2), { TintColor = tintColor }):Play()
 		if event then
-			announce(event)
+			PopText.shout(`{string.upper(event.name)}!`, `{event.description} for {clock(event.seconds)}`, event.color)
 		end
 	end
 

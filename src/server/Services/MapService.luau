@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Map = require(ReplicatedStorage.Shared.Config.Map)
+local Roles = require(ReplicatedStorage.Shared.Roles)
 local World = require(ReplicatedStorage.Shared.World)
 local MapDecor = require(script.Parent.MapDecor)
 
@@ -24,17 +25,12 @@ local function kitPiece(folder: Instance?, name: string): Model?
 	return piece:Clone()
 end
 
--- The importer names each part after its Blender object (kit_Floor_Floor); the colour role is the last word.
-local function role(part: BasePart): string
-	return string.match(part.Name, "([^_]+)$") or part.Name
-end
-
 local function prepare(model: Model, colors: { [string]: Color3 }?)
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
 			part.Anchored = true
 			part.CastShadow = false -- huge walls would put whole corridor sections in shade
-			local color = colors and colors[role(part)]
+			local color = colors and colors[Roles.of(part)]
 			if color then
 				part.Color = color
 			end
@@ -116,7 +112,7 @@ local function buildBarrier(parent: Instance)
 end
 
 function MapService.start()
-	local assets = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("Maps"):WaitForChild("FernValley")
+	local assets = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("Maps"):WaitForChild("Forest")
 	local kit = assets:WaitForChild("Corridor")
 
 	-- The old flat ground is replaced by the arena.

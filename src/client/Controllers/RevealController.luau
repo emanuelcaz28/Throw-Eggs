@@ -1,7 +1,9 @@
--- The hatch reveal: the egg shakes while the name fills in letter tiles and the "1 in X" counter
--- climbs, the dino bursts out, and a card shows what was caught. Display only: the server has
--- already rolled the catch, and all of this is suspense leading up to that result.
--- The look is UI design v2 (mock-ups 09-11 in design/ui-mockups/build.py), built with UiKit.
+-- The hatch reveal: the egg shakes while the name fills in out of order over blank dashes and the
+-- "1 in X" counter climbs, the dino bursts out, then the screen washes in the rarity's colour and
+-- the catch is written straight on the screen. Display only: the server has already rolled the
+-- catch, and all of this is suspense leading up to that result.
+-- The look is UI design v2 (mock-ups 09-10 for the counter, 15-16b for the letters and the final
+-- colour moment, in design/ui-mockups/build.py), built with UiKit.
 local ContextActionService = game:GetService("ContextActionService")
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
@@ -28,10 +30,13 @@ local SPIN_SPEED = 0.6
 local WOBBLE_SPEED = 18
 local MAX_WOBBLE = math.rad(22)
 local POP_TIME = 0.45
-local LETTER_POP = 1.4 -- a letter tile lands this big and settles back to normal size
+local LETTER_POP = 1.3 -- a letter lands this big and settles back to normal size
+local LETTER_SIZE = 64
 local LABEL_WIGGLE = 3 -- degrees the luck label rocks either way
-local CARD_WIDTH = 640
 local BEAM_HEIGHT = 90
+local WASH_TRANSPARENCY = 0.5 -- how strongly the rarity colour covers the screen at the end
+local RING_SIZES = { 620, 680 } -- the two rings round the dino, in design pixels
+local NEW_COLORS = { "#ffc14d", "#ff7a2f" }
 local BANNER_HEIGHT = 132
 local STORED_TEXT = {
 	backpack = "Plot full: sent to your backpack",
@@ -196,81 +201,154 @@ local function buildGui()
 	local pillEdge = UiKit.stroke(pillInner, 4, UiKit.PANEL_EDGE)
 	padSides(pillInner, 8, 26)
 	row(pillInner, 8)
-	local clover = UiKit.viewport(pillInner, "clover", { spin = true, size = UDim2.fromOffset(66, 66) })
+	local clover = UiKit.art(pillInner, "clover", "clover", { spin = true, size = UDim2.fromOffset(66, 66) })
 	clover.LayoutOrder = 1
 	rowText(pillInner, "1 in", 34, UiKit.MUTED, 78).LayoutOrder = 2
 	local counter = rowText(pillInner, "1", 58, nil, 78)
 	counter.LayoutOrder = 3
 
-	-- Bottom: the name as letter tiles, filled in out of order.
+	-- Bottom: the name as blank dashes, filled in out of order (mock-up 15).
 	local letters = Instance.new("Frame")
 	letters.Name = "Letters"
 	letters.AnchorPoint = Vector2.new(0.5, 1)
-	letters.Position = UDim2.new(0.5, 0, 1, -14)
-	letters.Size = UDim2.fromOffset(1200, 112)
+	letters.Position = UDim2.fromScale(0.5, 1)
+	letters.Size = UDim2.fromOffset(1200, 160)
 	letters.BackgroundTransparency = 1
 	letters.Visible = false
+	letters.ZIndex = 3
 	letters.Parent = gui
 	addScale(letters, scale)
 	local tileRow = Instance.new("Frame")
 	tileRow.BackgroundTransparency = 1
-	tileRow.Size = UDim2.new(1, 0, 0, 72)
+	tileRow.AnchorPoint = Vector2.new(0, 1)
+	tileRow.Position = UDim2.new(0, 0, 1, -74)
+	tileRow.Size = UDim2.new(1, 0, 0, math.round(LETTER_SIZE * 1.1))
 	tileRow.Parent = letters
-	row(tileRow, 6)
-	local hint = UiKit.text(letters, "tap to skip", 24)
-	hint.Position = UDim2.fromOffset(0, 80)
+	row(tileRow, 4).VerticalAlignment = Enum.VerticalAlignment.Bottom
+	local hint = UiKit.text(letters, "tap to skip", 20)
+	hint.AnchorPoint = Vector2.new(0, 1)
+	hint.Position = UDim2.new(0, 0, 1, -22)
 
-	-- The final card: header in the dino's rarity colours with its name, then mutation, size and $/s.
-	local card = UiKit.panel(gui, {
-		name = "RevealCard",
-		width = CARD_WIDTH,
-		height = 220,
-		title = "",
-		anchor = Vector2.new(0.5, 1),
-		position = UDim2.new(0.5, 0, 1, -16),
-	})
-	card.close.Visible = false
-	local name = UiKit.text(card.header, "", 56)
-	name.Position = UDim2.fromOffset(70, 8) -- clear of the NEW BEST! tag on the right
-	name.Size = UDim2.new(1, -140, 0, 70)
-	name.TextScaled = true
-	name.ZIndex = 2
-	local nameLimit = Instance.new("UITextSizeConstraint")
-	nameLimit.MaxTextSize = 56
-	nameLimit.Parent = name
+	-- The final text, straight on the screen with no panel (mock-ups 16 and 16b): size and
+	-- mutation small, the name big in its rarity colour with a NEW! sticker, $/s, then the odds on
+	-- lucky catches and "tap to continue".
+	local final = Instance.new("Frame")
+	final.Name = "Final"
+	final.AnchorPoint = Vector2.new(0.5, 1)
+	final.Position = UDim2.new(0.5, 0, 1, -16)
+	final.Size = UDim2.fromOffset(1200, 320)
+	final.BackgroundTransparency = 1
+	final.Visible = false
+	final.ZIndex = 3
+	final.Parent = gui
+	addScale(final, scale)
+	local stack = Instance.new("UIListLayout")
+	stack.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	stack.VerticalAlignment = Enum.VerticalAlignment.Bottom
+	stack.SortOrder = Enum.SortOrder.LayoutOrder
+	stack.Parent = final
 
-	local chips = Instance.new("Frame")
-	chips.BackgroundTransparency = 1
-	chips.Position = UDim2.fromOffset(0, 14)
-	chips.Size = UDim2.new(1, 0, 0, 58)
-	chips.Parent = card.body
-	row(chips, 12)
-	local mutationChip = chip(chips, 58, 1)
-	padSides(mutationChip, 18, 18)
-	local mutation = rowText(mutationChip, "", 28, nil, 58)
-	local sizeChip = chip(chips, 58, 2)
-	padSides(sizeChip, 18, 18)
-	local sizeName = rowText(sizeChip, "", 28, UiKit.GOLD, 58)
-	local incomeChip = chip(chips, 58, 3)
-	padSides(incomeChip, 10, 18)
-	UiKit.viewport(incomeChip, "cash_S", { spin = true, size = UDim2.fromOffset(52, 50) }).LayoutOrder = 1
-	local income = rowText(incomeChip, "", 34, UiKit.CASH, 58)
-	income.LayoutOrder = 2
+	local tags = Instance.new("Frame")
+	tags.BackgroundTransparency = 1
+	tags.Size = UDim2.new(1, 0, 0, 34)
+	tags.LayoutOrder = 1
+	tags.Parent = final
+	row(tags, 12)
+	local sizeName = rowText(tags, "", 26, UiKit.GOLD, 34)
+	sizeName.LayoutOrder = 1
+	local mutation = rowText(tags, "", 26, nil, 34)
+	mutation.LayoutOrder = 2
 
-	local message = UiKit.text(card.body, "", 22, UiKit.GOLD)
-	message.Position = UDim2.fromOffset(0, 84)
-	local continueHint = UiKit.text(card.body, "tap to continue", 22, UiKit.MUTED)
-	continueHint.AnchorPoint = Vector2.new(0.5, 0) -- it pulses around its middle
+	local nameRow = Instance.new("Frame")
+	nameRow.BackgroundTransparency = 1
+	nameRow.Size = UDim2.new(1, 0, 0, 86)
+	nameRow.LayoutOrder = 2
+	nameRow.Parent = final
+	local name = rowText(nameRow, "", 70, nil, 86)
+	name.AnchorPoint = Vector2.new(0.5, 0)
+	name.Position = UDim2.fromScale(0.5, 0)
+	name:FindFirstChildOfClass("UIStroke").Thickness = 8
+	-- Hangs off the name's right end, so the name itself stays centred.
+	local newTag = UiKit.tag(nameRow, "NEW!", NEW_COLORS, 30, 9)
+	newTag.AnchorPoint = Vector2.new(0, 0.5)
+	newTag.Visible = false
+	local function placeNewTag()
+		newTag.Position = UDim2.new(0.5, name.TextBounds.X / 2 + 14, 0, 22)
+	end
+	name:GetPropertyChangedSignal("TextBounds"):Connect(placeNewTag)
+	placeNewTag()
+
+	local income = UiKit.text(final, "", 36, UiKit.CASH)
+	income.Size = UDim2.new(1, 0, 0, 44)
+	income.LayoutOrder = 3
+	income:FindFirstChildOfClass("UIStroke").Thickness = 6
+
+	local oddsRow = Instance.new("Frame")
+	oddsRow.BackgroundTransparency = 1
+	oddsRow.Size = UDim2.new(1, 0, 0, 42)
+	oddsRow.LayoutOrder = 4
+	oddsRow.Parent = final
+	row(oddsRow, 6)
+	UiKit.art(oddsRow, "clover", "clover", { size = UDim2.fromOffset(38, 38) }).LayoutOrder = 1
+	local finalOdds = rowText(oddsRow, "", 28, nil, 42)
+	finalOdds.LayoutOrder = 2
+	finalOdds:FindFirstChildOfClass("UIStroke").Thickness = 5
+
+	local message = UiKit.text(final, "", 22, UiKit.GOLD)
+	message.Size = UDim2.new(1, 0, 0, 30)
+	message.LayoutOrder = 5
+
+	local continueHint = UiKit.text(final, "tap to continue", 18)
+	continueHint.Size = UDim2.new(1, 0, 0, 30)
+	continueHint.LayoutOrder = 6
 	addScale(continueHint, 1)
 	UiKit.pulse(continueHint)
 
-	local newBest = UiKit.tag(card.frame, "NEW BEST!", "tagGold", 28)
-	local newDino = UiKit.tag(card.frame, "NEW DINO!", "green", 28)
-	for _, tag in { newBest, newDino } do
-		tag.AnchorPoint = Vector2.new(1, 0.5)
-		tag.Position = UDim2.new(1, 26, 0, 0)
-		tag.ZIndex = 5
-		tag.Visible = false
+	-- On lucky catches the luck tier's sticker sits at the top of the final screen (mock-up 16b).
+	local stickerHolder = Instance.new("Frame")
+	stickerHolder.Name = "TierSticker"
+	stickerHolder.AnchorPoint = Vector2.new(0.5, 0)
+	stickerHolder.Position = UDim2.new(0.5, 0, 0, inset + 24)
+	stickerHolder.Size = UDim2.fromOffset(1000, 80)
+	stickerHolder.BackgroundTransparency = 1
+	stickerHolder.ZIndex = 3
+	stickerHolder.Parent = gui
+	addScale(stickerHolder, scale)
+
+	-- The colour moment: the screen washes in the rarity's colour, and two rings grow round the dino.
+	local wash = Instance.new("Frame")
+	wash.Name = "Wash"
+	wash.Size = UDim2.fromScale(1, 1)
+	wash.BackgroundTransparency = 1
+	wash.BorderSizePixel = 0
+	wash.ZIndex = 0
+	wash.Parent = gui
+	-- Clearer in the middle, where the dino stands, stronger towards the top and bottom.
+	local washFade = Instance.new("UIGradient")
+	washFade.Rotation = 90
+	washFade.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.45, 0.55),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	washFade.Parent = wash
+	local washRings = {}
+	for index, thickness in { 16, 6 } do
+		local washRing = Instance.new("Frame")
+		washRing.Name = `WashRing{index}`
+		washRing.AnchorPoint = Vector2.new(0.5, 0.5)
+		washRing.Position = UDim2.fromScale(0.5, 0.5)
+		washRing.BackgroundTransparency = 1
+		washRing.Visible = false
+		washRing.ZIndex = 2
+		washRing.Parent = gui
+		local roundCorner = Instance.new("UICorner")
+		roundCorner.CornerRadius = UDim.new(0.5, 0)
+		roundCorner.Parent = washRing
+		local edge = Instance.new("UIStroke")
+		edge.Thickness = thickness * scale
+		edge.Parent = washRing
+		washRings[index] = { frame = washRing, stroke = edge, size = RING_SIZES[index] }
 	end
 
 	-- Back on the plot, very rare catches keep a "YOU CAUGHT!" banner up for a while.
@@ -309,7 +387,7 @@ local function buildGui()
 	local odds = chip(banner, 38, 0)
 	odds.Position = UDim2.fromOffset(132, 82)
 	padSides(odds, 6, 14)
-	UiKit.viewport(odds, "clover", { size = UDim2.fromOffset(32, 32) }).LayoutOrder = 1
+	UiKit.art(odds, "clover", "clover", { size = UDim2.fromOffset(32, 32) }).LayoutOrder = 1
 	local bannerOdds = rowText(odds, "", 22, nil, 38)
 	bannerOdds.LayoutOrder = 2
 
@@ -337,17 +415,19 @@ local function buildGui()
 		counter = counter,
 		letters = letters,
 		tileRow = tileRow,
-		card = card,
+		final = final,
 		name = name,
-		mutationChip = mutationChip,
+		newTag = newTag,
 		mutation = mutation,
-		sizeChip = sizeChip,
 		sizeName = sizeName,
 		income = income,
+		oddsRow = oddsRow,
+		finalOdds = finalOdds,
 		message = message,
-		continueHint = continueHint,
-		newBest = newBest,
-		newDino = newDino,
+		stickerHolder = stickerHolder,
+		sticker = nil,
+		wash = wash,
+		washRings = washRings,
 		banner = banner,
 		bannerTile = bannerTile,
 		bannerName = bannerName,
@@ -403,8 +483,9 @@ local function addBeam(anchor: BasePart, ground: Vector3, width: number, color: 
 	end
 end
 
--- One tile per letter or digit; other characters (the "-" in T-Rex) sit between them as plain text.
--- Returns the tiles by their position in the name.
+-- One slot per letter or digit with a white dash under it, a gap between words. Other characters
+-- (the "-" in T-Rex) show from the start. Each letter has a fixed slot, so the name never shifts.
+-- Returns the slots by their position in the name.
 local function buildLetterTiles(name: string)
 	for _, child in hud.tileRow:GetChildren() do
 		if child:IsA("GuiObject") then
@@ -412,30 +493,40 @@ local function buildLetterTiles(name: string)
 		end
 	end
 	local tiles = {}
+	local cellWidth = math.round(LETTER_SIZE * 0.72)
+	local cellHeight = math.round(LETTER_SIZE * 1.1)
 	for index = 1, #name do
 		local char = name:sub(index, index)
+		local cell = Instance.new("Frame")
+		cell.BackgroundTransparency = 1
+		cell.LayoutOrder = index
+		cell.Size = UDim2.fromOffset(if char == " " then LETTER_SIZE // 2 else cellWidth, cellHeight)
+		cell.Parent = hud.tileRow
+		if char == " " then
+			continue
+		end
+		local label = UiKit.text(cell, if char:match("%w") then "" else char, LETTER_SIZE)
+		label.AnchorPoint = Vector2.new(0.5, 1)
+		label.Position = UDim2.fromScale(0.5, 1)
+		label.Size = UDim2.new(0, cellWidth * 2, 1, 0) -- wide letters (M, W) may spill into the gap
+		label:FindFirstChildOfClass("UIStroke").Thickness = 7
 		if char:match("%w") then
-			local tile = Instance.new("Frame")
-			tile.LayoutOrder = index
-			tile.Size = UDim2.fromOffset(52, 64)
-			tile.BackgroundColor3 = UiKit.DEEP
-			tile.Parent = hud.tileRow
-			UiKit.corner(tile, 14)
-			UiKit.stroke(tile, 4)
-			local label = UiKit.text(tile, "", 40)
-			label.Size = UDim2.fromScale(1, 1)
-			tiles[index] = { tile = tile, label = label, pop = addScale(tile, 1), char = char }
-		else
-			local label = UiKit.text(hud.tileRow, char, 40)
-			label.LayoutOrder = index
-			label.Size = UDim2.fromOffset(22, 64)
+			local dash = Instance.new("Frame")
+			dash.AnchorPoint = Vector2.new(0.5, 1)
+			dash.Position = UDim2.new(0.5, 0, 1, -math.round(LETTER_SIZE * 0.12))
+			dash.Size = UDim2.fromOffset(math.round(LETTER_SIZE * 0.58), 12)
+			dash.BackgroundColor3 = WHITE
+			dash.Parent = cell
+			UiKit.corner(dash, 5)
+			UiKit.stroke(dash, 4)
+			tiles[index] = { dash = dash, label = label, pop = addScale(label, 1), char = char }
 		end
 	end
 	return tiles
 end
 
 local function showLetter(entry)
-	UiKit.gradient(entry.tile, "yellow")
+	entry.dash.Visible = false
 	entry.label.Text = entry.char
 	entry.pop.Scale = LETTER_POP
 	tween(entry.pop, 0.3, { Scale = 1 }, Enum.EasingStyle.Back)
@@ -494,6 +585,49 @@ local function pulse(tier)
 end
 
 local bannerShows = 0
+local playing = false
+local finishedEvent = Instance.new("BindableEvent")
+
+-- Fires with the catch once the player has tapped through its reveal and is back on their base.
+RevealController.finished = finishedEvent.Event
+
+function RevealController.isPlaying(): boolean
+	return playing
+end
+
+-- The colour moment: the rarity colour washes in, the rings grow out from the dino and sparkles
+-- burst on it.
+local function colourMoment(rarity: string, sparkles: ParticleEmitter)
+	local pair = UiKit.RARITY[rarity]
+	local light, deep = Color3.fromHex(pair[1]), Color3.fromHex(pair[2])
+	hud.wash.BackgroundColor3 = deep
+	hud.wash.BackgroundTransparency = 1
+	tween(hud.wash, Reveal.washTime, { BackgroundTransparency = WASH_TRANSPARENCY })
+	for _, glow in hud.glows do
+		glow.BackgroundColor3 = deep
+	end
+	for index, washRing in hud.washRings do
+		washRing.stroke.Color = if index == 1 then WHITE else light
+		washRing.stroke.Transparency = if index == 1 then 0.65 else 0
+		washRing.frame.Size = UDim2.fromOffset(0, 0)
+		washRing.frame.Visible = true
+		local full = washRing.size * hud.scale
+		tween(washRing.frame, Reveal.washTime, { Size = UDim2.fromOffset(full, full) }, Enum.EasingStyle.Back)
+	end
+	sparkles.Color = ColorSequence.new(light, WHITE)
+	sparkles:Emit(80)
+end
+
+local function clearColourMoment()
+	hud.wash.BackgroundTransparency = 1
+	for _, washRing in hud.washRings do
+		washRing.frame.Visible = false
+	end
+	if hud.sticker then
+		hud.sticker:Destroy()
+		hud.sticker = nil
+	end
+end
 
 -- Slides the "YOU CAUGHT!" banner down from the top, and back up after a while.
 local function showCaughtBanner(catch, fullName: string)
@@ -526,9 +660,7 @@ function RevealController.start()
 	hud = buildGui()
 end
 
--- Plays the whole reveal and returns once the player has tapped through it.
--- The egg part is taken over and destroyed here.
-function RevealController.play(catch, egg: BasePart)
+local function play(catch, egg: BasePart)
 	local camera = workspace.CurrentCamera
 	local landing = egg.Position
 	local ground = Vector3.new(landing.X, landing.Y - egg.Size.Y / 2, landing.Z)
@@ -551,6 +683,7 @@ function RevealController.play(catch, egg: BasePart)
 	local finished = false
 	local cardShown = false
 	local cardShownAt = 0
+	local rarity = UiKit.rarityOf(catch.id)
 	local done = Instance.new("BindableEvent")
 
 	for _, glow in hud.glows do
@@ -563,7 +696,8 @@ function RevealController.play(catch, egg: BasePart)
 	hud.counter.Text = "1"
 	hud.top.Visible = true
 	hud.letters.Visible = true
-	UiKit.closePanel(hud.card)
+	hud.final.Visible = false
+	clearColourMoment()
 
 	local function setTier(tier)
 		currentTier = tier
@@ -598,25 +732,36 @@ function RevealController.play(catch, egg: BasePart)
 			addBeam(anchor, ground, math.max(extents.X, extents.Z) * 0.8, finalTier.color)
 		end
 
+		hud.top.Visible = false
 		hud.letters.Visible = false
-		UiKit.setHeader(hud.card, UiKit.rarityOf(catch.id))
-		hud.name.Text = upperName
-		hud.mutationChip.Visible = mutation ~= nil
+		colourMoment(rarity, sparkles)
+
+		if finalTier then
+			local sticker = UiKit.tag(hud.stickerHolder, finalTier.sticker.label, finalTier.sticker.colors, 52, -4)
+			sticker.AnchorPoint = Vector2.new(0.5, 0)
+			sticker.Position = UDim2.fromScale(0.5, 0)
+			hud.sticker = sticker
+		end
+
+		hud.sizeName.Visible = size ~= nil
+		hud.sizeName.Text = if size then size.name else ""
+		hud.mutation.Visible = mutation ~= nil
 		hud.mutation.Text = if mutation then mutation.name else ""
 		hud.mutation.TextColor3 = if mutation then mutation.color else WHITE
-		hud.sizeChip.Visible = size ~= nil
-		hud.sizeName.Text = if size then size.name else ""
+		hud.name.Text = upperName
+		hud.name.TextColor3 = Color3.fromHex(UiKit.RARITY_TEXT[rarity])
+		hud.newTag.Visible = catch.isNew == true
 		hud.income.Text = `{Format.cash(catch.income)}/s`
-		hud.newBest.Visible = catch.newBest == true
-		hud.newDino.Visible = catch.isNew == true and not catch.newBest
+		hud.oddsRow.Visible = finalTier ~= nil
+		hud.finalOdds.Text = `1 in {Format.commas(catch.oneIn)}`
 
 		local message = if catch.completedBiome
 			then `{catch.completedBiome} complete! Permanent bonus earned`
+			elseif catch.newBest and not catch.isNew then "NEW BEST!"
 			else STORED_TEXT[catch.storedIn]
+		hud.message.Visible = message ~= nil
 		hud.message.Text = message or ""
-		hud.continueHint.Position = UDim2.new(0.5, 0, 0, if message then 114 else 84)
-		hud.card.frame.Size = UDim2.fromOffset(CARD_WIDTH, if message then 250 else 220)
-		UiKit.openPanel(hud.card)
+		hud.final.Visible = true
 	end
 
 	local function onTap()
@@ -721,12 +866,16 @@ function RevealController.play(catch, egg: BasePart)
 	inputConnection:Disconnect()
 	ContextActionService:UnbindAction(SKIP_ACTION)
 
-	-- White flash back to the player, who is moved home while the screen is white.
-	tween(hud.flash, 0.15, { BackgroundTransparency = 0 }).Completed:Wait()
-	returnHome()
-	UiKit.closePanel(hud.card)
+	-- The text goes at once, the screen fades to white, holds, then fades into the player's base.
+	hud.final.Visible = false
 	hud.top.Visible = false
 	hud.letters.Visible = false
+	if hud.sticker then
+		hud.sticker.Visible = false
+	end
+	tween(hud.flash, Reveal.whiteIn, { BackgroundTransparency = 0 }).Completed:Wait()
+	returnHome()
+	clearColourMoment()
 	hud.ring.Visible = false
 	for _, glow in hud.glows do
 		glow.BackgroundTransparency = 1
@@ -739,9 +888,11 @@ function RevealController.play(catch, egg: BasePart)
 	end
 	anchor:Destroy()
 	camera.CameraType = Enum.CameraType.Custom
-	tween(hud.flash, 0.3, { BackgroundTransparency = 1 })
+	task.wait(Reveal.whiteHold)
+	tween(hud.flash, Reveal.whiteOut, { BackgroundTransparency = 1 })
 
-	if catch.oneIn >= Reveal.caughtBannerMinOneIn then
+	-- Rare enough for the lucky catch banner (LuckyBannerController shows it): no second banner.
+	if catch.oneIn >= Reveal.caughtBannerMinOneIn and catch.oneIn < Reveal.luckyBanner.minOneIn then
 		local prefix = ""
 		if size then
 			prefix ..= size.name .. " "
@@ -751,6 +902,18 @@ function RevealController.play(catch, egg: BasePart)
 		end
 		showCaughtBanner(catch, prefix .. upperName)
 	end
+end
+
+-- Plays the whole reveal and returns once the player has tapped through it.
+-- The egg part is taken over and destroyed here.
+function RevealController.play(catch, egg: BasePart)
+	playing = true
+	local ok, err = pcall(play, catch, egg)
+	playing = false
+	if not ok then
+		error(err, 0)
+	end
+	finishedEvent:Fire(catch)
 end
 
 return RevealController

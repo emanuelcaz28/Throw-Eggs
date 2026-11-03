@@ -1,6 +1,7 @@
 -- Brings plot dinos to life: each walks to a random spot on its plot, idles, and repeats, moving its
 -- skeleton as it goes. Runs on each client only; the server just places the dino. The poses copy the
--- Walk and Idle loops in assets/models/build_fern_valley.py. Dinos without bones still walk, stiffly.
+-- Walk and Idle loops in assets/models/build_forest.py, and the jaw and roar of the monsters that
+-- have a Jaw bone copy build_volcano.py. Dinos without bones still walk, stiffly.
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -83,8 +84,49 @@ IDLE.Head = function(t)
 	return 0.09 * sin(3 * t), 0, 0.36 * sin(t) + 0.08 * sin(3 * t), 0
 end
 
+-- Monsters with a Jaw bone (from Volcano on) snap it in time with their steps, and roar once
+-- per idle loop: head thrown up, jaw dropped wide, arms out and a shake of the head. ROAR is added on
+-- top of the idle above, for those monsters only.
+local function roar(t: number): number
+	return ((1 - cos(t)) / 2) ^ 10 -- 0 most of the loop, up to 1 halfway through it
+end
+
+WALK.Jaw = function(p)
+	return -0.08 * (0.5 + 0.5 * sin(2 * p)), 0, 0, 0
+end
+IDLE.Jaw = function(t)
+	return -0.03 * (0.5 + 0.5 * sin(4 * t)) - 0.55 * roar(t), 0, 0, 0
+end
+
+local ROAR = {}
+ROAR.Spine = function(t)
+	return 0.03 * roar(t), 0, 0, 0
+end
+ROAR.ArmL = function(t)
+	return 0.45 * roar(t), 0, 0, 0
+end
+ROAR.ArmR = ROAR.ArmL
+ROAR.Tail1 = function(t)
+	return 0.08 * roar(t), 0, 0, 0
+end
+ROAR.Neck = function(t)
+	return 0.12 * roar(t), 0, 0, 0
+end
+ROAR.Head = function(t)
+	local r = roar(t)
+	return 0.3 * r, 0, 0.08 * sin(14 * t) * r, 0
+end
+
 local function zero()
 	return 0, 0, 0, 0
+end
+
+local function plus(a, b)
+	return function(x)
+		local ax, ay, az, ab = a(x)
+		local bx, by, bz, bb = b(x)
+		return ax + bx, ay + by, az + bz, ab + bb
+	end
 end
 
 local dinos: { [Model]: any } = {}
@@ -110,16 +152,26 @@ local function add(model: Model)
 	local scale = model:GetScale()
 	local bones = {}
 	local legHeight = nil
+	local roars = false
+	for _, bone in model:GetDescendants() do
+		if bone:IsA("Bone") and bone.Name == "Jaw" then
+			roars = true
+		end
+	end
 	for _, bone in model:GetDescendants() do
 		if bone:IsA("Bone") then
 			-- The pose axes, in the bone's own space, measured while the dino stands at rest.
 			local function axis(direction: Vector3): Vector3
 				return bone.WorldCFrame:VectorToObjectSpace(pivot:VectorToWorldSpace(direction))
 			end
+			local idle = IDLE[bone.Name] or zero
+			if roars and ROAR[bone.Name] then
+				idle = plus(idle, ROAR[bone.Name])
+			end
 			table.insert(bones, {
 				bone = bone,
 				walk = WALK[bone.Name] or zero,
-				idle = IDLE[bone.Name] or zero,
+				idle = idle,
 				pitch = axis(Vector3.xAxis),
 				roll = axis(-Vector3.zAxis),
 				yaw = axis(Vector3.yAxis),

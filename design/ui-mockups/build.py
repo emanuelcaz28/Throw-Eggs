@@ -67,8 +67,8 @@ RARITY = {  # top, bottom of the tile gradient; label colour
     "legendary": ("#ffe58a", "#ff9a1f", "#ffcf3f"),
 }
 BIOMES = [
-    ("FernValley", "Fern Valley", ("#4fe0ff", "#1aa6e0"), [("Compy", "Compy", "1 in 2"), ("Gallimimus", "Gallimimus", "1 in 5"), ("Parasaur", "Parasaurolophus", "1 in 20"), ("Stego", "Stegosaurus", "1 in 100"), ("Raptor", "Velociraptor", "1 in 500")], 5),
-    ("DryPlains", "Dry Plains", ("#ffc14d", "#ff7a2f"), [("Pachy", "Pachycephalosaurus", "1 in 2"), ("Ankylo", "Ankylosaurus", "1 in 6"), ("Triceratops", "Triceratops", "1 in 30"), ("Carno", "Carnotaurus", "1 in 150"), ("TRex", "T-Rex", "1 in 1,000")], 3),
+    ("Forest", "Forest", ("#4fe0ff", "#1aa6e0"), [("Compy", "Compy", "1 in 2"), ("Gallimimus", "Gallimimus", "1 in 5"), ("Parasaur", "Parasaurolophus", "1 in 20"), ("Stego", "Stegosaurus", "1 in 100"), ("Raptor", "Velociraptor", "1 in 500")], 5),
+    ("Desert", "Desert", ("#ffc14d", "#ff7a2f"), [("Pachy", "Pachycephalosaurus", "1 in 2"), ("Ankylo", "Ankylosaurus", "1 in 6"), ("Triceratops", "Triceratops", "1 in 30"), ("Carno", "Carnotaurus", "1 in 150"), ("TRex", "T-Rex", "1 in 1,000")], 3),
     ("Swamp", "Swamp", ("#8fe05a", "#2f9e6a"), [("Bary", "Baryonyx", "1 in 2"), ("Dilo", "Dilophosaurus", "1 in 8"), ("Sarco", "Sarcosuchus", "1 in 40"), ("Brachio", "Brachiosaurus", "1 in 250"), ("Spino", "Spinosaurus", "1 in 2,000")], 1),
 ]
 ORDER = ["common", "uncommon", "rare", "epic", "legendary"]
@@ -160,6 +160,7 @@ body{{background:#0e0b18;font-family:'Fredoka One','Fredoka','Arial Rounded MT B
 .head.jungle{{background:linear-gradient(90deg,#7ee35a,#1fa860)}}
 .head.sky{{background:linear-gradient(90deg,#4fe0ff,#2f7fe6)}}
 .head.gold{{background:linear-gradient(90deg,#ffe066,#ff9a1f)}}
+.head.steel{{background:linear-gradient(90deg,#8fa4ff,#5a5fe0)}}
 .sheen{{position:absolute;left:55%;top:0;width:280px;height:88px;background:repeating-linear-gradient(115deg,rgba(255,255,255,0.22) 0 26px,transparent 26px 52px)}}
 .headtitle{{position:relative;display:flex;align-items:center;gap:12px}}
 .close{{position:absolute;right:16px;top:14px;width:58px;height:58px;border-radius:16px;border:4px solid {INK};background:linear-gradient(#ff7a6b,#e8392f);box-shadow:inset 0 -6px 0 rgba(0,0,0,0.22),0 4px 0 {INK};display:flex;align-items:center;justify-content:center}}
@@ -214,7 +215,7 @@ style_guide = f'''<div style="position:absolute;left:0;top:0;width:1280px;height
 <div style="display:flex;flex-wrap:wrap;gap:14px;width:500px;align-items:center">{robux("99")}{button("CLAIM", "green", 170, 58, 28)}{button("EQUIP", "blue", 140, 58, 26)}{button("SELL", "red", 120, 58, 26)}{button("OWNED", "grey", 140, 58, 24)}
 {tag("BEST DEAL!", "gold")}{tag("LIMITED", "redt")}{tag("+50% MORE", "purplet")}{tag("NEW!", "greent")}</div></div>
 <div style="position:absolute;left:48px;top:500px"><div class="label">Blender renders</div><div style="display:flex;gap:6px;align-items:flex-end">
-{img("dino_TRex", 130, 110)}{img("dino_Stego", 130, 110)}{img("dino_Triceratops", 130, 110)}{img("dino_Spino", 130, 110)}{img("dino_Brachio", 130, 110)}{img("egg_GoldenEgg", 80, 100)}{img("egg_PrismEgg", 80, 100)}{img("biome_FernValley", 120, 120)}{img("cash_L", 120, 100)}{img("clover", 90, 90)}{img("gift", 80, 80)}</div></div>'''
+{img("dino_TRex", 130, 110)}{img("dino_Stego", 130, 110)}{img("dino_Triceratops", 130, 110)}{img("dino_Spino", 130, 110)}{img("dino_Brachio", 130, 110)}{img("egg_GoldenEgg", 80, 100)}{img("egg_PrismEgg", 80, 100)}{img("biome_Forest", 120, 120)}{img("cash_L", 120, 100)}{img("clover", 90, 90)}{img("gift", 80, 80)}</div></div>'''
 screens.append(f'<section class="screen" data-name="00 Style guide" style="height:720px">{style_guide}</section>')
 
 # --- 01 Main HUD -----------------------------------------------------------------------------
@@ -734,7 +735,123 @@ notes2 = f'''<div style="position:absolute;left:0;top:0;width:1280px;height:1080
 <div class="note"><span class="ol" style="font-size:22px;color:#ffcf3f">Rare catches</span><span class="muted" style="font-size:16px">Frame 16b is a guess until we see a rare catch in the reference: the luck tier sticker on top and "1 in X" under the $/s.</span></div></div></div>'''
 screens.append(f'<section class="screen" data-name="17 Notes banner plate sign reveal" style="height:1080px">{notes2}</section>')
 
+# --- 18 Settings (gear next to Throw Power, as in the reference) -------------------------------
+# The owner picked the settings (2026-11-03): music, sound effects, and hiding other players' dinos.
+
+def gear(size=40, color="#cbd3ff"):
+    teeth = "".join(f'<rect x="27" y="2" width="10" height="14" rx="3" fill="{color}" stroke="{INK}" stroke-width="3.5" transform="rotate({a} 32 32)"/>' for a in range(0, 360, 45))
+    return f'''<svg width="{size}" height="{size}" viewBox="0 0 64 64">{teeth}<circle cx="32" cy="32" r="19" fill="{color}" stroke="{INK}" stroke-width="4"/><circle cx="32" cy="32" r="8" fill="#4a3a75" stroke="{INK}" stroke-width="4"/></svg>'''
+
+def note_icon(size=44):
+    return f'''<svg width="{size}" height="{size}" viewBox="0 0 64 64"><path d="M24 46 V12 L54 6 V40" fill="none" stroke="{INK}" stroke-width="12" stroke-linejoin="round"/><path d="M24 46 V12 L54 6 V40" fill="none" stroke="#ff8fc8" stroke-width="5" stroke-linejoin="round"/><ellipse cx="16" cy="48" rx="10" ry="8" fill="#ff8fc8" stroke="{INK}" stroke-width="4"/><ellipse cx="46" cy="42" rx="10" ry="8" fill="#ff8fc8" stroke="{INK}" stroke-width="4"/></svg>'''
+
+def speaker(size=44, muted=False):
+    if muted:
+        waves = f'<path d="M44 24 L56 40 M56 24 L44 40" stroke="{INK}" stroke-width="11" stroke-linecap="round"/><path d="M44 24 L56 40 M56 24 L44 40" stroke="#ff6b5e" stroke-width="5" stroke-linecap="round"/>'
+    else:
+        waves = f'<path d="M42 22 Q48 32 42 42 M49 15 Q60 32 49 49" fill="none" stroke="{INK}" stroke-width="10" stroke-linecap="round"/><path d="M42 22 Q48 32 42 42 M49 15 Q60 32 49 49" fill="none" stroke="#ffe066" stroke-width="4" stroke-linecap="round"/>'
+    return f'''<svg width="{size}" height="{size}" viewBox="0 0 64 64"><path d="M6 24 H16 L32 10 V54 L16 40 H6 Z" fill="#ffe066" stroke="{INK}" stroke-width="4.5" stroke-linejoin="round"/>{waves}</svg>'''
+
+def gear_button(left, bottom, size=58, pressed=False):
+    lift = "inset 0 -2px 0 rgba(0,0,0,0.25)" if pressed else f"inset 0 -6px 0 rgba(0,0,0,0.25),0 4px 0 {INK}"
+    return f'''<div style="position:absolute;left:{left}px;bottom:{bottom}px;width:{size}px;height:{size}px;border-radius:{round(size * 0.3)}px;border:4px solid {INK};background:linear-gradient(#4a3a75,#2a2045);box-shadow:inset 0 0 0 3px #5b4a8c,{lift};display:flex;align-items:center;justify-content:center">{gear(round(size * 0.72))}</div>'''
+
+def stats_with_gear():
+    return stats() + gear_button(278, 124)
+
+def slider(value, width=300):
+    fill = round((width - 8) * value / 100)
+    knob = 4 + fill - 19
+    body = f'<div class="fill" style="width:{fill}px;background:linear-gradient(#8af25a,#3fbf22)"></div>' if value else ""
+    return f'''<div style="position:relative;width:{width}px;height:44px;display:flex;align-items:center">
+<div class="bar" style="width:{width}px;height:30px;border-radius:15px">{body}</div>
+<div style="position:absolute;left:{max(knob, -4)}px;top:0;width:38px;height:38px;border-radius:50%;border:4px solid {INK};background:linear-gradient(#ffffff,#d9d2f2);box-shadow:0 3px 0 {INK}"></div></div>'''
+
+def toggle(on, w=124, h=56):
+    knob = h - 14
+    left = w - knob - 11 if on else 3
+    face = "linear-gradient(#8af25a,#3fbf22)" if on else "#120d22"
+    word = "ON" if on else "OFF"
+    word_pos = "left:14px" if on else "right:14px"
+    word_col = "#ffffff" if on else "#8f85b3"
+    return f'''<div style="position:relative;flex:none;width:{w}px;height:{h}px;border-radius:{h // 2}px;border:4px solid {INK};background:{face};box-shadow:inset 0 -5px 0 rgba(0,0,0,0.22)">
+<span class="ol thin" style="position:absolute;{word_pos};top:{(h - 34) // 2}px;font-size:24px;color:{word_col}">{word}</span>
+<div style="position:absolute;left:{left}px;top:3px;width:{knob}px;height:{knob}px;border-radius:50%;border:4px solid {INK};background:linear-gradient(#ffffff,#d9d2f2);box-shadow:0 3px 0 {INK}"></div></div>'''
+
+def setting_row(icon, title, control, sub=None, value=None):
+    sub_html = f'<span class="muted" style="font-size:16px;line-height:1.2">{sub}</span>' if sub else ""
+    value_html = f'<span class="ol thin" style="width:64px;text-align:right;font-size:24px">{value}</span>' if value is not None else ""
+    return f'''<div class="row" style="height:{104 if sub else 88}px;gap:14px;padding:0 18px">
+<div style="flex:none;width:62px;height:62px;border-radius:18px;border:4px solid {INK};background:#120d22;display:flex;align-items:center;justify-content:center">{icon}</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span class="ol" style="font-size:28px;white-space:nowrap">{title}</span>{sub_html}</div>
+{control}{value_html}</div>'''
+
+def settings_panel(left, top, music=80, sfx=100, hide=False, width=720):
+    music_icon = note_icon(42) if music else speaker(42, True)
+    return f'''<div class="panel" style="left:{left}px;top:{top}px;width:{width}px;height:584px">
+{head("Settings", "steel", gear(46))}
+<div style="display:flex;flex-direction:column;gap:10px;padding:6px 22px 0">
+{divider("Sound")}
+{setting_row(music_icon, "Music", slider(music, 230), value="OFF" if music == 0 else f"{music}%")}
+{setting_row(speaker(42, sfx == 0), "Sound effects", slider(sfx, 230), value="OFF" if sfx == 0 else f"{sfx}%")}
+{divider("Bases")}
+{setting_row(track(42), "Hide other players' dinos", toggle(hide), sub="Other bases look empty to you.<br>Helps on slow phones.")}
+</div></div>'''
+
+SIDES = f'''{side_button(book(64), "Index", "left:24px;top:236px")}{side_button(bag(64), "Shop", "left:24px;top:372px")}{side_button(track(64), "Dinos", "right:24px;top:304px")}'''
+
+panel_screen = f'''{SIDES}{stats_with_gear()}{hotbar(1)}
+<div class="dim"></div>
+{settings_panel(280, 56)}'''
+screens.append(screen("18 Settings panel", panel_screen))
+
+hud_gear = f'''{SIDES}{stats_with_gear()}{hotbar(1)}
+<div style="position:absolute;left:254px;bottom:100px;width:106px;height:106px;border-radius:50%;border:5px dashed #ffe066"></div>
+<div style="position:absolute;left:374px;bottom:138px;display:flex;flex-direction:column;gap:2px"><span class="ol" style="font-size:26px;color:#ffe066">Settings button</span><span class="ol thin" style="font-size:18px">Next to Throw Power, like the reference.</span></div>'''
+screens.append(screen("18a HUD with settings button", hud_gear))
+
+states = f'''{dark_board("Settings · controls and states", "Two sliders and one switch. Changes apply at once and are saved to the player's account.")}
+<div style="position:absolute;left:48px;top:140px;display:flex;flex-direction:column;gap:20px;width:580px">
+<div class="label" style="margin:0">Volume slider</div>
+<div style="display:flex;align-items:center;gap:16px">{slider(80, 300)}<span class="ol thin" style="font-size:24px">80%</span><span class="muted" style="font-size:16px">drag the knob or tap the bar</span></div>
+<div style="display:flex;align-items:center;gap:16px">{slider(35, 300)}<span class="ol thin" style="font-size:24px">35%</span></div>
+<div style="display:flex;align-items:center;gap:16px">{slider(0, 300)}<span class="ol thin" style="font-size:24px">OFF</span><span class="muted" style="font-size:16px">at 0 the icon becomes a muted speaker</span></div>
+<div style="display:flex;gap:16px;align-items:center">{note_icon(52)}{speaker(52)}{speaker(52, True)}<span class="muted" style="font-size:16px">music · sound · muted</span></div>
+</div>
+<div style="position:absolute;left:680px;top:140px;display:flex;flex-direction:column;gap:20px;width:560px">
+<div class="label" style="margin:0">Switch</div>
+<div style="display:flex;align-items:center;gap:20px">{toggle(False)}<span class="muted" style="font-size:16px">Off: every base shows its dinos (default)</span></div>
+<div style="display:flex;align-items:center;gap:20px">{toggle(True)}<span class="muted" style="font-size:16px">On: the knob slides right, the face turns green</span></div>
+<div class="label" style="margin:10px 0 0">Gear button</div>
+<div style="display:flex;align-items:center;gap:30px">
+<div style="position:relative;width:66px;height:66px">{gear_button(0, 4)}</div>
+<div style="position:relative;width:66px;height:66px">{gear_button(0, 0, pressed=True)}</div>
+<span class="muted" style="font-size:16px">normal · pressed (squashes like every button)</span></div>
+</div>
+<div style="position:absolute;left:48px;top:530px;width:1184px;display:flex;gap:20px">
+<div class="note" style="flex:1"><span class="ol" style="font-size:22px;color:#8dff5a">Defaults</span><span class="muted" style="font-size:16px">Music 80%, sound effects 100%, other players' dinos shown.</span></div>
+<div class="note" style="flex:1"><span class="ol" style="font-size:22px;color:#6fe3ff">Saved</span><span class="muted" style="font-size:16px">Kept with the player's data, so it carries over between servers and devices.</span></div>
+<div class="note" style="flex:1"><span class="ol" style="font-size:22px;color:#ffe066">Panel</span><span class="muted" style="font-size:16px">Opens with the same pop as the other panels. X or the gear closes it.</span></div></div>'''
+screens.append(f'<section class="screen" data-name="18b Settings controls" style="height:720px">{states}</section>')
+
+_others = [f'''<div style="position:absolute;left:40px;top:250px">{img("dino_Stego", 250, 230)}</div>''',
+           f'''<div style="position:absolute;left:210px;top:300px">{img("dino_Compy", 120, 100)}</div>''',
+           f'''<div style="position:absolute;left:840px;top:120px">{img("dino_Brachio", 460, 420)}</div>''']
+hidden = arena
+for _piece in _others:
+    assert _piece in hidden
+    hidden = hidden.replace(_piece, "")
+hidden += f'''<div class="pill" style="left:440px;top:16px"><span class="ol thin" style="font-size:22px;color:#ffe066">Hide other players' dinos: ON</span></div>
+<div style="position:absolute;left:0;right:0;top:72px;text-align:center"><span class="ol thin" style="font-size:20px">Only your own dinos show. Owner plates, signs and racks stay.</span></div>'''
+screens.append(f'<section class="screen" data-name="18c Other players dinos hidden" style="height:720px">{hidden}</section>')
+
 html = f'''<!doctype html><html><head><meta charset="utf-8"><title>Throw Eggs UI v2</title><style>{CSS}</style></head><body>{"".join(screens)}</body></html>'''
 out = HERE / "ui.html"
 out.write_text(html)
+# python3 build.py 18 /path/sub.html also writes just the screens whose names start with "18".
+import sys
+if len(sys.argv) == 3:
+    picked = [x for x in screens if f'data-name="{sys.argv[1]}' in x]
+    pathlib.Path(sys.argv[2]).write_text(html.replace("".join(screens), "".join(picked)))
+    print(sys.argv[2], len(picked), "screens")
 print(out, len(html) // 1024, "KB", len(screens), "screens")

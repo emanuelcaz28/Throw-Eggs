@@ -1,8 +1,8 @@
 """Builds the first map's animals and props and renders them (run with Blender in background mode).
 
-    Blender -b -P build_fern_valley.py
+    Blender -b -P build_forest.py
 
-Saves fern_valley_models.blend and renders to design/world/models/.
+Saves forest_models.blend and renders to design/world/models/.
 
 The style is in docs/GAME_SPEC.md section 8a: chunky simple shapes, with the effort in the faces.
 Each model is an Empty with one mesh per colour role under it, because a Roblox MeshPart has one
@@ -1013,8 +1013,8 @@ def main():
     scene.frame_set(0)
 
     bpy.ops.object.select_all(action="DESELECT")
-    bpy.ops.wm.save_as_mainfile(filepath=str(HERE / "fern_valley_models.blend"))
-    print("saved", HERE / "fern_valley_models.blend")
+    bpy.ops.wm.save_as_mainfile(filepath=str(HERE / "forest_models.blend"))
+    print("saved", HERE / "forest_models.blend")
     for model in animal_models + prop_models:
         count = sum(len(faces) for _, faces in model.parts.values())
         print(f"  {model.name}: {count} faces, roles: {sorted(model.parts)}")
