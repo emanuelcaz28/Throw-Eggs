@@ -30,6 +30,7 @@ local CARD_COLOURS = {
 	Swamp = { "#8fe05a", "#2f9e6a" },
 	Volcano = { "#ffb347", "#e8481c" },
 	FrozenPeaks = { "#c8f2ff", "#4aa8e0" },
+	ShadowBog = { "#c9a2ff", "#7a3fd6" },
 }
 
 local function buildGui()

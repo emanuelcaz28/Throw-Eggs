@@ -45,4 +45,13 @@ return {
 		{ id = "FrostRaptor",   name = "Frost Raptor",    chance = 400,  income = 4500000 },
 		{ id = "BlizzardRex",   name = "Blizzard Rex",    chance = 3000, income = 25000000 },
 	},
+	-- Models from assets/models/build_shadow_bog_monsters.py (dino_<id>).
+	ShadowBog = {
+		{ id = "StickySteve",   name = "Sticky Steve",    chance = 2,    income = 200000 },
+		{ id = "SlowBob",       name = "Slow Bob",        chance = 4,    income = 450000 },
+		{ id = "TerrorBird",    name = "Terror Bird",     chance = 12,   income = 1250000 },
+		{ id = "PitchRaptor",   name = "Pitch Raptor",    chance = 60,   income = 5000000 },
+		{ id = "TarTitan",      name = "Tar Titan",       chance = 400,  income = 22000000 },
+		{ id = "BogRex",        name = "Bog Rex",         chance = 3000, income = 125000000 },
+	},
 }

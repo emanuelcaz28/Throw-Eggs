@@ -51,7 +51,7 @@ Loop: train → farther throws → more luck → rarer dinos → more cash → b
 | 7 | The Abyss | 35x |
 | 8 | Starfall Crater | 45x |
 
-MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Peaks (5) is built too, map and monsters; biomes 6–8 come later.
+MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Peaks (5) is built too, map and monsters, and so is Shadow Bog (6); biomes 7–8 come later.
 
 ## Differentiators (things the reference doesn't have)
 

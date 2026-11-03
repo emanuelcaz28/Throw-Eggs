@@ -369,6 +369,7 @@ Old saves keep their sizes under the new names (Big → Thicc, Large → Absolut
 | Swamp | Soggy Dimetrodon, Burpasaurus, Baryonyx, Sir Chomps-a-Lot, Neckzilla, Spinosaurus |
 | Volcano | Toasty Raptor, Burnt Ankylo, Hot Sauce Trike, Magma Stego, Obsidian Rex, Volcano King |
 | Frozen Peaks | Brain Freeze, Woolly Rhino, Chilly Mammoth, Sabertooth, Frost Raptor, Blizzard Rex |
+| Shadow Bog | Sticky Steve, Slow Bob, Terror Bird, Pitch Raptor, Tar Titan, Bog Rex |
 
 ---
 
@@ -542,7 +543,7 @@ Done one at a time, each in its own step:
      Chilly Mammoth (hat, scarf, an icicle off its trunk), then the frost face on the fierce ones, eyes glowing icy blue:
      Sabertooth, Frost Raptor (glowing ice crystals) and Blizzard Rex (the boss: shaggy white, ice armour and crown,
      frost breath). Glowing crystals are the `IceGlow` role (Neon). With them in `Config/Dinos`, throws reach Frozen Peaks. Imported and play-tested 2026-11-04.
-   - **Shadow Bog** *(map made, imported into `Assets.Maps.ShadowBog.Props` and play-tested 2026-11-04: 152 props placed; monsters later, at the owner's request)*:
+   - **Shadow Bog** *(map made, imported into `Assets.Maps.ShadowBog.Props` and play-tested 2026-11-04: 152 props placed; monsters made 2026-11-04, imported and organised in `Assets.Dinos` the same day)*:
      a tar pit at dusk, slate violet and black so it doesn't read as the Swamp's green or the Volcano's orange.
      12 props in `build_shadow_bog.py`: crooked black gloom trees with beards of moss and glowing pods (the
      signature tree), thorn bushes, leaning slate shards, mounds of bubbling tar, dead reeds, a snapping bog plant,
@@ -551,8 +552,22 @@ Done one at a time, each in its own step:
      down the walls with a skull stuck in it, and an arch of braided roots over the corridor. Slate violet floor, dark
      plum walls, deep teal moss on the rims (`Config/Map`), violet dusk haze (`Config/Lighting`), placed by
      `Config/Decor`. Glowing parts are `Glow` and `Wisp` (Neon). Renders in `design/world/models_shadow_bog/`.
-     It's world 6 (3,000 to 3,900 studs, 27x luck, 5.2x size); like Frozen Peaks before its monsters, eggs can't
-     land in it until it has some.
+     It's world 6 (3,000 to 3,900 studs, 27x luck, 5.2x size).
+     **[Owner]** Its monsters: a step more aggressive and interesting than the Frozen Peaks', weird in a good way, and
+     they don't have to make sense as animals. **[Built]** The 6 (`build_shadow_bog_monsters.py`, renders and
+     `shadow_bog_animation_preview.mp4` in `design/world/monsters_shadow_bog/`) all get the bog face: glowing magenta
+     eyes with a slit pupil, never just a plain pair (spare eyes crowd round, or one is far too big), and a maw glowing
+     violet inside, crammed with crooked bone-white teeth, with tar dripping off the jaw. Even the common ones are
+     hostile: Sticky Steve (a dollop of tar with a grin too wide for it, one huge eye and one tiny one, arms up to
+     grab, a bone stuck through its head), Slow Bob (a slug wearing a horned skull as its shell, a lamprey mouth and
+     three eye stalks), Terror Bird (plucked and black, a hooked beak full of teeth, five eyes, skeleton wings), then
+     Pitch Raptor (its face splits four ways, with a pincer each side of its jaws; six spider eyes, mantis scythes, a
+     bone tail blade), Tar Titan (no neck, its whole front one mouth of gravestone teeth, seven eyes, ribs bursting
+     out of its back round a trapped wisp) and Bog Rex (the boss: three heads, a bare skull with a third eye in the
+     middle and a cyclops and a three-eyed head on necks from its shoulders, an open rib cage with a wisp inside,
+     a crown of roots hung with glowing pods). Extra parts ride the Wing bones, which roll as they walk: Slow Bob's
+     eye stalks, Pitch Raptor's pincers, Terror Bird's wings and Bog Rex's side heads. With them in `Config/Dinos`,
+     throws reach Shadow Bog.
    - **Joining**: whether the floor steps down at each world (question 5 in section 15) is still open.
 
 The walking reveal and the flight camera are a separate job, after the world. The throw wind-up is built (section 7).
