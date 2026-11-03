@@ -509,6 +509,231 @@ banner = f'''<div class="panel" style="left:310px;top:16px;width:660px;height:13
 {stats()}{hotbar(1)}'''
 screens.append(screen("11 Reveal caught banner", banner))
 
+# --- 12-17 Lucky catch banner, owner plate, upgrade sign, new reveal (GAME_SPEC sections 5-7) ----
+
+def sparkle(size, color="#ffffff"):
+    return f'''<svg width="{size}" height="{size}" viewBox="0 0 64 64"><path d="M32 2 C35 22 42 29 62 32 C42 35 35 42 32 62 C29 42 22 35 2 32 C22 29 29 22 32 2 Z" fill="{color}" stroke="{INK}" stroke-width="3" stroke-linejoin="round"/></svg>'''
+
+def up_arrow(size, color):
+    return f'''<svg width="{size}" height="{size}" viewBox="0 0 64 64"><path d="M32 6 L58 36 H42 V58 H22 V36 H6 Z" fill="{color}" stroke="{INK}" stroke-width="5" stroke-linejoin="round"/></svg>'''
+
+def chevron(size, color="#ffffff"):
+    return f'''<svg width="{size}" height="{size}" viewBox="0 0 64 64"><path d="M20 10 L46 32 L20 54" fill="none" stroke="{INK}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 10 L46 32 L20 54" fill="none" stroke="{color}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>'''
+
+def avatar(size, skin, shirt, bg):
+    """Stand-in for the player's Roblox headshot (the game loads the real one)."""
+    pic = f'''<svg width="{size}" height="{size}" viewBox="0 0 64 64"><rect x="10" y="46" width="44" height="30" rx="10" fill="{shirt}" stroke="{INK}" stroke-width="3.5"/><rect x="17" y="12" width="30" height="32" rx="9" fill="{skin}" stroke="{INK}" stroke-width="3.5"/><ellipse cx="26" cy="26" rx="3" ry="4" fill="{INK}"/><ellipse cx="38" cy="26" rx="3" ry="4" fill="{INK}"/><path d="M25 34 Q32 40 39 34" fill="none" stroke="{INK}" stroke-width="3" stroke-linecap="round"/></svg>'''
+    ring = max(3, round(size * 0.05))
+    return f'''<div style="width:{size + ring * 4}px;height:{size + ring * 4}px;border-radius:50%;border:{ring + 1}px solid {INK};background:#ffffff;padding:{ring - 1}px"><div style="width:100%;height:100%;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 40% 30%,#ffffff,{bg} 70%);display:flex;align-items:flex-end;justify-content:center">{pic}</div></div>'''
+
+TIERS = {  # banner panel, sticker; label colours follow Config/Reveal tiers
+    "INSANE": ("linear-gradient(#c9fdfd,#3fd6d6)", "linear-gradient(#e6ffff,#5aebeb)", "INSANE LUCK!", "1 in 10K"),
+    "LEGENDARY": ("linear-gradient(#ffd3f3,#ff6fd2)", "linear-gradient(#ffe8f9,#ff78dc)", "LEGENDARY LUCK!!", "1 in 100K"),
+    "GODLY": ("linear-gradient(100deg,#ff8f8f,#ffd36b 25%,#b4ff7a 50%,#6fe3ff 75%,#c58bff)", "linear-gradient(#f4ffe6,#beff78)", "GODLY LUCK!!!", "1 in 1M"),
+}
+
+def lucky_banner(left, top, player, catch, catch_color, odds, tier, width=880):
+    panel, sticker, label, _ = TIERS[tier]
+    return f'''<div style="position:absolute;left:{left}px;top:{top}px;width:{width}px;height:196px">
+<div class="card" style="position:absolute;left:78px;top:30px;width:{width - 96}px;height:150px;border-width:6px;border-radius:32px;background:{panel};display:flex;flex-direction:column;align-items:center;justify-content:center;padding-left:64px;gap:2px">
+<div class="sheen" style="left:auto;right:30px;height:150px;width:250px"></div>
+<span class="ol" style="position:relative;font-size:28px;white-space:nowrap">{player} CAUGHT</span>
+<span class="ol" style="position:relative;font-size:37px;white-space:nowrap;color:{catch_color};-webkit-text-stroke:6px {INK}">{catch}</span>
+<span class="ol" style="position:relative;font-size:40px;white-space:nowrap">{odds}</span></div>
+<div style="position:absolute;left:0;top:4px;transform:rotate(-12deg)">{img("clover", 176, 176)}</div>
+<div style="position:absolute;right:-10px;top:0"><span class="tag" style="font-size:26px;padding:2px 14px;background:{sticker};transform:rotate(7deg)">{label}</span></div></div>'''
+
+def owner_plate(left, top, name, income, pic, s=1.0, width=320):
+    return f'''<div style="position:absolute;left:{left}px;top:{top}px;width:{width}px;display:flex;flex-direction:column;align-items:center;gap:{round(4 * s)}px">
+{avatar(round(84 * s), *pic)}
+<span class="ol" style="font-size:{round(30 * s)}px;white-space:nowrap;-webkit-text-stroke:{max(3, round(5 * s))}px {INK};margin-top:{round(2 * s)}px">{name}</span>
+<span class="ol" style="font-size:{round(26 * s)}px;white-space:nowrap;color:#8dff5a;-webkit-text-stroke:{max(3, round(5 * s))}px {INK};margin-top:{round(-6 * s)}px">{income}</span></div>'''
+
+def sign_face(left, top, now, nxt, price, state="buy", s=1.0):
+    """The face of the upgrade sign (a SurfaceGui on the sign part). state: buy, short (can't afford), max."""
+    w, h = round(300 * s), round(224 * s)
+    stroke = max(3, round(5 * s))
+    if state == "max":
+        numbers = f'<span class="ol" style="font-size:{round(72 * s)}px;-webkit-text-stroke:{stroke + 1}px {INK}">{now}</span>'
+        bar_bg, bar_inner = "linear-gradient(#ffe066,#f5a815)", f'<span class="ol" style="font-size:{round(42 * s)}px;-webkit-text-stroke:{stroke}px {INK}">MAX</span>'
+    else:
+        color = "#8dff5a" if state == "buy" else "#ff6b5e"
+        numbers = f'''<span class="ol" style="font-size:{round(64 * s)}px;-webkit-text-stroke:{stroke + 1}px {INK}">{now}</span>{chevron(round(38 * s))}<span class="ol" style="font-size:{round(64 * s)}px;color:#ffe066;-webkit-text-stroke:{stroke + 1}px {INK}">{nxt}</span>'''
+        bar_bg, bar_inner = "#120d22", f'{up_arrow(round(36 * s), color)}<span class="ol" style="font-size:{round(42 * s)}px;color:{color};-webkit-text-stroke:{stroke}px {INK}">{price}</span>'
+    return f'''<div style="position:absolute;left:{left}px;top:{top}px;width:{w}px;height:{h}px;border-radius:{round(28 * s)}px;border:{round(6 * s)}px solid {INK};background:linear-gradient(#8ad8ff,#2f8ce6);box-shadow:inset 0 {round(-8 * s)}px 0 rgba(0,0,0,0.2),inset 0 {round(4 * s)}px 0 rgba(255,255,255,0.4);display:flex;flex-direction:column;align-items:center;padding:{round(10 * s)}px {round(12 * s)}px {round(12 * s)}px">
+<div style="display:flex;align-items:center;gap:{round(6 * s)}px;height:{round(120 * s)}px">{track(round(78 * s), "#ff9f43")}{numbers}</div>
+<div style="width:100%;flex:1;border-radius:{round(18 * s)}px;border:{max(3, round(4 * s))}px solid {INK};background:{bar_bg};box-shadow:inset 0 {round(5 * s)}px 0 rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;gap:{round(6 * s)}px">{bar_inner}</div></div>'''
+
+def dark_board(title, subtitle, height=720):
+    return f'''<div style="position:absolute;left:0;top:0;width:1280px;height:{height}px;background:#150f24"></div>
+<div style="position:absolute;left:48px;top:28px"><div class="ol" style="font-size:44px">{title}</div><div class="muted" style="font-size:19px;margin-top:4px">{subtitle}</div></div>'''
+
+def caption(left, top, width, title, text, color="#ffe066"):
+    return f'''<div style="position:absolute;left:{left}px;top:{top}px;width:{width}px;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center"><span class="ol thin" style="font-size:22px;color:{color}">{title}</span><span class="muted" style="font-size:16px">{text}</span></div>'''
+
+def stripes(x, y, w, h, step, c1, c2, across=True):
+    """Checker stripes as separate blocks (html_to_figma drops repeating-linear-gradient)."""
+    out, i, pos, size = [], 0, 0, (w if across else h)
+    while pos < size:
+        n = min(step, size - pos)
+        box = f"left:{x + pos}px;top:{y}px;width:{n}px;height:{h}px" if across else f"left:{x}px;top:{y + pos}px;width:{w}px;height:{n}px"
+        out.append(f'<div style="position:absolute;{box};background:{c1 if i % 2 == 0 else c2}"></div>')
+        pos, i = pos + step, i + 1
+    return "".join(out)
+
+# 12 Lucky catch banner: everyone in the server sees it at the top centre, even while training.
+training_under = training[training.index("</div>") + 6:]
+banner_live = f'''{training_under}
+{side_button(book(64), "Index", "left:24px;top:236px")}{side_button(bag(64), "Shop", "left:24px;top:372px")}{side_button(track(64), "Dinos", "right:24px;top:304px")}
+{lucky_banner(200, 10, "RexRunner_88", "HUGE DIAMOND SPINOSAURUS", "#ffcf3f", "1 in 445K", "LEGENDARY")}'''
+screens.append(screen("12 Lucky catch banner", banner_live))
+
+tier_rows = []
+for i, (tier, player, catch, color, odds) in enumerate([
+        ("INSANE", "PteroPilot", "GOLD TRICERATOPS", "#6fd0ff", "1 in 18.2K"),
+        ("LEGENDARY", "RexRunner_88", "HUGE DIAMOND SPINOSAURUS", "#ffcf3f", "1 in 445K"),
+        ("GODLY", "eggsalad", "COLOSSAL EMERALD T-REX", "#ffcf3f", "1 in 26.3M")]):
+    top = 112 + i * 200
+    tier_rows.append(lucky_banner(24, top, player, catch, color, odds, tier))
+    tier_rows.append(caption(920, top + 66, 330, f"{tier} · from {TIERS[tier][3]}", "Panel and sticker take the luck tier's colour. The dino line uses its rarity colour."))
+tiers_board = dark_board("Lucky catch banner · tiers", "Shown to everyone in the server for catches of 1 in 10K or rarer. Below that, only the catcher sees it (in the reveal).") + "".join(tier_rows)
+screens.append(f'<section class="screen" data-name="12b Lucky catch banner tiers" style="height:720px">{tiers_board}</section>')
+
+# 13 Owner plate + upgrade sign in the world: tiny bases, huge dinos (the joke of the game).
+def base_patch(x, y, w, h, mine=False):
+    posts = "".join(f'<div style="position:absolute;left:{x + px}px;top:{y + h - 34}px;width:12px;height:36px;border-radius:3px;background:#9c6534;border:3px solid {INK}"></div>'
+                    for px in [0, w * 0.2, w * 0.4 - 12, w * 0.6, w * 0.8, w - 12])
+    gate_l, gate_r = x + w * 0.4, x + w * 0.6
+    rails = "".join(f'<div style="position:absolute;left:{a}px;top:{y + h - 30 + dy}px;width:{b - a}px;height:9px;border-radius:3px;background:#c58848;border:3px solid {INK}"></div>'
+                    for a, b in [(x, gate_l), (gate_r, x + w)] for dy in [0, 14])
+    back = f'<div style="position:absolute;left:{x}px;top:{y - 4}px;width:{w}px;height:9px;border-radius:3px;background:#c58848;border:3px solid {INK}"></div>'
+    return f'{stripes(x, y, w, h, 38, "#8ce872", "#76d85e")}{back}{posts}{rails}'
+
+arena = f'''<div style="position:absolute;left:0;top:0;width:1280px;height:720px;background:linear-gradient(#3b4fb8,#7d9cff 60%)"></div>
+<div style="position:absolute;left:0;top:236px;width:1280px;height:16px;background:#58c23f"></div>{stripes(0, 252, 1280, 54, 48, "#8a5632", "#74462a")}
+<div style="position:absolute;left:0;top:306px;width:1280px;height:414px;background:linear-gradient(#55c040,#41a830)"></div>
+{base_patch(30, 350, 380, 150)}{base_patch(450, 350, 380, 150, mine=True)}{base_patch(870, 350, 380, 150)}
+<div style="position:absolute;left:40px;top:250px">{img("dino_Stego", 250, 230)}</div>
+<div style="position:absolute;left:210px;top:300px">{img("dino_Compy", 120, 100)}</div>
+<div style="position:absolute;left:500px;top:300px">{img("dino_Triceratops", 200, 180)}</div>
+<div style="position:absolute;left:840px;top:120px">{img("dino_Brachio", 460, 420)}</div>
+{sign_face(652, 428, 10, 12, "$1K", "buy", 0.26)}{sign_face(232, 428, 16, 18, "$216K", "short", 0.26)}{sign_face(1072, 428, 20, "", "", "max", 0.26)}
+{owner_plate(70, 120, "dino_mum", "$0/s", ("#ffd9b0", "#ff6b8a", "#ffd166"), 0.8, 300)}
+{owner_plate(490, 96, "RexRunner_88", "$1.24K/s", ("#f2c48d", "#4f8dff", "#6fe3ff"), 1.0, 300)}
+{owner_plate(910, 40, "MegaEggs", "$48.6M/s", ("#c98b5a", "#3fbf22", "#c58bff"), 0.8, 300)}
+{side_button(book(64), "Index", "left:24px;top:236px")}{side_button(bag(64), "Shop", "left:24px;top:372px")}{side_button(track(64), "Dinos", "right:24px;top:304px")}
+{stats()}{hotbar(1)}'''
+screens.append(f'<section class="screen" data-name="13 Owner plate and sign in the world" style="height:720px">{arena}</section>')
+
+plates = f'''{dark_board("Owner plate", "Floats high over every base, seen by everyone. No panel behind it: picture, name, $/s.")}
+<div style="position:absolute;left:60px;top:150px;width:1160px;height:330px;border-radius:30px;border:4px solid {INK};background:linear-gradient(#3b4fb8,#7d9cff)"></div>
+{owner_plate(80, 190, "RexRunner_88", "$1.24K/s", ("#f2c48d", "#4f8dff", "#6fe3ff"), 1.5, 360)}
+{owner_plate(460, 190, "MegaEggs", "$48.6M/s", ("#c98b5a", "#3fbf22", "#c58bff"), 1.5, 360)}
+{owner_plate(840, 190, "dino_mum", "$0/s", ("#ffd9b0", "#ff6b8a", "#ffd166"), 1.5, 360)}
+{caption(80, 500, 360, "Playing", "Real Roblox headshot in a white ring. $/s updates every second.")}
+{caption(460, 500, 360, "Big earner", "Same size for everyone; the number is the show-off.", "#8dff5a")}
+{caption(840, 500, 360, "Nothing placed yet", "Shows $0/s, never hidden, so every base has an owner.", "#cbbff0")}
+<div class="note" style="position:absolute;left:60px;top:590px;width:1160px"><span class="muted" style="font-size:17px">Name is the Roblox username (DisplayName under 20 letters if we prefer). $/s uses the same short numbers as the HUD: $1.24K, $48.6M, $3.1B. An empty base (no player in it) shows no plate at all.</span></div>'''
+screens.append(f'<section class="screen" data-name="13b Owner plate close-up" style="height:720px">{plates}</section>')
+
+signs = f'''{dark_board("Base upgrade sign", "On the front fence by the gate. Everyone sees it; only the owner can buy. Each upgrade adds 2 dinos, 10 up to 20.")}
+<div style="position:absolute;left:60px;top:140px;width:1160px;height:360px;border-radius:30px;border:4px solid {INK};background:linear-gradient(#55c040,#41a830)"></div>
+{sign_face(110, 190, 10, 12, "$1K", "buy", 1.0)}{sign_face(490, 190, 16, 18, "$216K", "short", 1.0)}{sign_face(870, 190, 20, "", "", "max", 1.0)}
+{caption(80, 430, 360, "Can buy", "Now › next. Green price: you have the cash.", "#8dff5a")}
+{caption(460, 430, 360, "Not enough cash", "Same sign, price turns red.", "#ff6b5e")}
+{caption(840, 430, 360, "Top level", "20 and MAX on a gold bar. Nothing to buy.", "#ffe066")}
+<div style="position:absolute;left:60px;top:528px;width:1160px;display:flex;flex-direction:column;align-items:center;gap:10px">
+<span class="ol" style="font-size:30px;color:#ffe066">Base upgraded! It now holds 12 dinos</span>
+<span class="ol" style="font-size:26px;color:#ff6b5e">You need $4.2K more</span></div>
+<div class="muted" style="position:absolute;left:0;right:0;top:640px;text-align:center;font-size:17px">Prices from Config/Plot: $1K, $6K, $36K, $216K, $1.3M. Messages use the existing floating text at the top of the screen.</div>'''
+screens.append(f'<section class="screen" data-name="14 Base upgrade sign" style="height:720px">{signs}</section>')
+
+# 15-16 New reveal: letters at the bottom centre with no panel, then the rarity colour moment.
+def corridor(tint=None):
+    wash = f'<div style="position:absolute;left:0;top:0;width:1280px;height:720px;background:{tint}"></div>' if tint else ""
+    return f'''<div style="position:absolute;left:0;top:0;width:1280px;height:720px;background:linear-gradient(#5fb2ff,#bfe6ff 50%)"></div>
+<div style="position:absolute;left:0;top:300px;width:1280px;height:420px;background:linear-gradient(#5fcf48,#3fa52e)"></div>
+{stripes(230, 300, 820, 420, 82, "#62d24b", "#55c341")}
+<div style="position:absolute;left:0;top:60px;width:230px;height:26px;background:#58c23f"></div>{stripes(0, 86, 230, 634, 60, "#8a5632", "#74462a", across=False)}
+<div style="position:absolute;left:1050px;top:60px;width:230px;height:26px;background:#58c23f"></div>{stripes(1050, 86, 230, 634, 60, "#8a5632", "#74462a", across=False)}
+<div style="position:absolute;left:230px;top:560px;width:820px;height:10px;background:rgba(255,255,255,0.55)"></div>{wash}'''
+
+def name_cells(name, shown, size=64, bottom=74):
+    cells = []
+    for i, ch in enumerate(name):
+        if ch == " ":
+            cells.append(f'<div style="width:{size // 2}px"></div>')
+        elif i in shown or not ch.isalnum():  # hyphens and other marks show from the start
+            cells.append(f'<div style="width:{round(size * 0.72)}px;display:flex;justify-content:center"><span class="ol" style="font-size:{size}px;-webkit-text-stroke:7px {INK}">{ch}</span></div>')
+        else:
+            cells.append(f'<div style="width:{round(size * 0.72)}px;height:{round(size * 1.1)}px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:{round(size * 0.12)}px"><div style="width:{round(size * 0.58)}px;height:12px;border-radius:5px;background:#ffffff;border:4px solid {INK}"></div></div>')
+    return f'<div style="position:absolute;left:0;right:0;bottom:{bottom}px;display:flex;justify-content:center;align-items:flex-end;gap:4px">{"".join(cells)}</div>'
+
+filling = f'''{corridor()}
+<div style="position:absolute;left:330px;top:70px">{img("dino_Spino", 620, 460)}</div>
+<div style="position:absolute;left:628px;top:392px;transform:rotate(78deg)">{img("egg_GoldenEgg", 72, 86)}</div>
+{name_cells("SPINOSAURUS", {0, 2, 4, 5, 7, 8, 10})}
+<div class="ol thin" style="position:absolute;left:0;right:0;bottom:22px;text-align:center;font-size:20px;color:#ffffff">tap to skip</div>'''
+screens.append(screen("15 Reveal name filling in", filling))
+
+def final_stack(tags, name, name_color, income, new=True, extra=""):
+    new_tag = f'<div style="position:absolute;right:-118px;top:2px"><span class="tag" style="font-size:30px;padding:2px 14px;background:linear-gradient(#ffc14d,#ff7a2f);transform:rotate(9deg)">NEW!</span></div>' if new else ""
+    return f'''<div style="position:absolute;left:0;right:0;bottom:16px;display:flex;flex-direction:column;align-items:center">
+<div style="display:flex;gap:12px">{tags}</div>
+<div style="position:relative"><span class="ol" style="font-size:70px;white-space:nowrap;color:{name_color};-webkit-text-stroke:8px {INK}">{name}</span>{new_tag}</div>
+<span class="ol" style="font-size:36px;color:#8dff5a;-webkit-text-stroke:6px {INK};margin-top:-4px">{income}</span>{extra}
+<span class="ol thin" style="font-size:18px;margin-top:6px;color:#ffffff">tap to continue</span></div>'''
+
+def colour_moment(rgb, light):
+    r, g, b = rgb
+    return f'''<div style="position:absolute;left:0;top:0;width:1280px;height:720px;background:radial-gradient(circle at 50% 44%,rgba({r},{g},{b},0.18),rgba({r},{g},{b},0.62) 58%,rgba({r},{g},{b},0.82))"></div>
+<div style="position:absolute;left:330px;top:-10px;width:620px;height:620px;border-radius:50%;border:16px solid rgba(255,255,255,0.35)"></div>
+<div style="position:absolute;left:300px;top:-40px;width:680px;height:680px;border-radius:50%;border:6px solid {light}"></div>'''
+
+def sparkles(points):
+    return "".join(f'<div style="position:absolute;left:{x}px;top:{y}px">{sparkle(s, c)}</div>' for x, y, s, c in points)
+
+final_plain = f'''{corridor()}
+{colour_moment((150, 80, 232), "#e3c4ff")}
+<div style="position:absolute;left:400px;top:20px">{img("dino_Brachio", 480, 440)}</div>
+<div style="position:absolute;left:628px;top:354px;transform:rotate(78deg)">{img("egg_SpottedEgg", 62, 76)}</div>
+{sparkles([(470, 90, 44, "#ffffff"), (760, 60, 30, "#e3c4ff"), (820, 230, 40, "#ffffff"), (520, 300, 28, "#e3c4ff"), (690, 180, 22, "#ffffff"), (430, 210, 20, "#ffffff")])}
+{final_stack('<span class="ol thin" style="font-size:26px;color:#8fe4ff">DIAMOND</span>', "BRACHIOSAURUS", "#d4a6ff", "$60K/s")}'''
+screens.append(screen("16 Reveal final colour moment", final_plain))
+
+odds_line = f'<div style="display:flex;align-items:center;gap:6px;margin-top:2px">{img("clover", 34, 34)}<span class="ol" style="font-size:28px;-webkit-text-stroke:5px {INK}">1 in 12,530</span></div>'
+final_rare = f'''{corridor()}
+{colour_moment((255, 176, 32), "#fff0b0")}
+<div style="position:absolute;left:330px;top:40px">{img("dino_Spino", 620, 430)}</div>
+<div style="position:absolute;left:640px;top:352px;transform:rotate(78deg)">{img("egg_GoldenEgg", 62, 76)}</div>
+{sparkles([(420, 110, 46, "#ffffff"), (820, 90, 34, "#fff0b0"), (880, 280, 42, "#ffffff"), (470, 330, 30, "#fff0b0"), (650, 160, 24, "#ffffff"), (380, 240, 22, "#ffffff"), (760, 360, 26, "#ffffff")])}
+<div style="position:absolute;left:0;right:0;top:24px;display:flex;justify-content:center"><span class="tag" style="font-size:52px;padding:4px 24px;border-width:6px;border-radius:22px;background:{TIERS["INSANE"][1]};transform:rotate(-4deg)">INSANE LUCK!</span></div>
+{final_stack('<span class="ol thin" style="font-size:26px;color:#ffe066">HUGE</span><span class="ol thin" style="font-size:26px;color:#7ef0a0">EMERALD</span>', "SPINOSAURUS", "#ffcf3f", "$1.8M/s", new=False, extra=odds_line)}'''
+screens.append(screen("16b Reveal final, rare catch (guess)", final_rare))
+
+# 17 Notes for all four.
+banner_notes = [("Arrives", "Drops in from above the top edge with a small bounce (0.35 s). The clover spins in a half turn as it lands."),
+                ("Stays", "6 seconds, then slides back up. The sticker rocks ±5° and the GODLY panel's rainbow scrolls."),
+                ("Queue", "One at a time. A rarer catch waiting in line goes first. Never covers the reveal of your own catch."),
+                ("Name line", "Size, mutation, then the dino, in the dino's rarity colour. The player's own line is white.")]
+plate_sign_notes = [("Owner plate", "A BillboardGui high above the base, sized in studs so it shrinks with distance like the world does. Always on top, so giant dinos can't hide it."),
+                    ("Picture", "The player's Roblox headshot, loaded by the game. A white ring and ink outline keep it readable on any sky."),
+                    ("Upgrade sign", "A SurfaceGui on the sign part. Owner walks into it (or presses E) to buy. The sign bounces and the number pops when it changes."),
+                    ("Others' signs", "Show the owner's level and price, but do nothing for other players.")]
+reveal_notes = [("Blanks", "One white dash per letter at the bottom centre, a gap between words. Each letter has a fixed slot, so the name never shifts."),
+                ("Fill", "A letter every 0.2 s in random order, each popping in at 130% and settling. Order: _________R_ › S_I__S_UR_S › SPINOSAURUS."),
+                ("Colour moment", "When the last letter lands: the rarity colour washes in (1 s), the ring grows out from the dino, sparkles twinkle on it."),
+                ("Final text", "No panel. Size and mutation small, the name big in its rarity colour, NEW! only for a first catch, $/s, tap to continue.")]
+wash_row = "".join(f'<div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:120px;height:56px;border-radius:16px;border:4px solid {INK};background:{tile_bg(r).split(":", 1)[1].rstrip(";")}"></div><span class="ol thin" style="font-size:16px">{r.upper()}</span></div>' for r in ORDER)
+notes2 = f'''<div style="position:absolute;left:0;top:0;width:1280px;height:1080px;background:#150f24"></div>
+<div style="position:absolute;left:40px;top:24px;display:flex;gap:40px">{note_list("Lucky catch banner", banner_notes, "#ff78dc")}{note_list("Owner plate & sign", plate_sign_notes, "#6fe3ff")}</div>
+<div style="position:absolute;left:40px;top:560px;display:flex;gap:40px">{note_list("Reveal text", reveal_notes, "#ffcf3f")}
+<div style="display:flex;flex-direction:column;gap:12px;width:580px"><span class="ol" style="font-size:34px">Colour wash = rarity</span>
+<div style="display:flex;gap:-0px;justify-content:space-between">{wash_row}</div>
+<div class="note"><span class="ol" style="font-size:22px;color:#ffcf3f">After the tap</span><span class="muted" style="font-size:16px">Text disappears at once, the screen fades to white (0.3 s), holds white for 0.5 s, then fades into your base with the HUD back.</span></div>
+<div class="note"><span class="ol" style="font-size:22px;color:#ffcf3f">Rare catches</span><span class="muted" style="font-size:16px">Frame 16b is a guess until we see a rare catch in the reference: the luck tier sticker on top and "1 in X" under the $/s.</span></div></div></div>'''
+screens.append(f'<section class="screen" data-name="17 Notes banner plate sign reveal" style="height:1080px">{notes2}</section>')
+
 html = f'''<!doctype html><html><head><meta charset="utf-8"><title>Throw Eggs UI v2</title><style>{CSS}</style></head><body>{"".join(screens)}</body></html>'''
 out = HERE / "ui.html"
 out.write_text(html)
