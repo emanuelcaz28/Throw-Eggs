@@ -11,3 +11,6 @@ sourcemap.json
 
 # Blender animation preview frames (the .mp4 is kept)
 design/world/models/anim_frames/
+
+# Python
+__pycache__/
