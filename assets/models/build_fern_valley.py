@@ -1020,4 +1020,5 @@ def main():
         print(f"  {model.name}: {count} faces, roles: {sorted(model.parts)}")
 
 
-main()
+if __name__ == "__main__":
+    main()

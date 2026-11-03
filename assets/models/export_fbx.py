@@ -14,7 +14,7 @@ OUT = Path(bpy.data.filepath).parent / "fbx"
 # One folder per map, in throw order (GAME_SPEC section 8a), so the owner imports map by map.
 MAPS = ("01_FernValley", "02_DryPlains", "03_Swamp", "04_VolcanoFoothills", "05_IceAgeTundra", "06_TarPits", "07_DeepSeaTrench", "08_MeteorCrater")
 # Which map each .blend belongs to. A new map's .blend gets a line here.
-MAP_OF_FILE = {"fern_valley_models": "01_FernValley", "world_kit": "01_FernValley"}
+MAP_OF_FILE = {"fern_valley_models": "01_FernValley", "world_kit": "01_FernValley", "dry_plains_models": "02_DryPlains"}
 # Blender collection -> folder inside the map's folder.
 EXPORT_COLLECTIONS = {"Animals": "Animals", "Props": "Props", "Kit": "Corridor"}
 

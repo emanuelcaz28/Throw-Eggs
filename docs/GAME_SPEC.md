@@ -295,24 +295,23 @@ Each map's animals are about 1.39x the size of the previous map's, which reaches
 | # | Map | Size | Animals, most common first |
 |---|---|---|---|
 | 1 | Fern Valley | 1x | Compy, Gallimimus, Parasaurolophus, Stegosaurus, Velociraptor, Pteranodon |
-| 2 | Dry Plains | 1.4x | Protoceratops, Pachycephalosaurus, Ankylosaurus, Triceratops, Carnotaurus, T-Rex |
-| 3 | Swamp | 1.9x | Dimetrodon, Baryonyx, Dilophosaurus, Sarcosuchus, Brachiosaurus, Spinosaurus |
-| 4 | Volcano Foothills | 2.7x | Ash Raptor, Cinder Ankylo, Magma Stego, Lava Trike, Obsidian Rex, Volcano King |
-| 5 | Ice Age Tundra | 3.7x | Frost Raptor, Woolly Rhino, Sabertooth, Mammoth, Glacier Trike, Blizzard Rex |
-| 6 | Tar Pits | 5.2x | Tar Crawler, Terror Bird, Giant Sloth, Pitch Raptor, Tar Titan, Bog Rex |
-| 7 | Deep Sea Trench | 7.2x | Ammonite, Dunkleosteus, Ichthyosaur, Plesiosaur, Megalodon, Mosasaurus |
-| 8 | Meteor Crater | 10x | Crystal Raptor, Comet Trike, Star Stego, Nova Spino, Void Rex, Meteor King |
+| 2 | Dry Plains | 1.4x | Dusty Proto, Bonkhead, Grumposaurus, Triceratops, Carnotaurus, T-Rex |
+| 3 | Swamp | 1.9x | Soggy Dimetrodon, Burpasaurus, Baryonyx, Sir Chomps-a-Lot, Neckzilla, Spinosaurus |
+| 4 | Volcano Foothills | 2.7x | Toasty Raptor, Burnt Ankylo, Hot Sauce Trike, Magma Stego, Obsidian Rex, Volcano King |
+| 5 | Ice Age Tundra | 3.7x | Brain Freeze, Woolly Rhino, Chilly Mammoth, Sabertooth, Frost Raptor, Blizzard Rex |
+| 6 | Tar Pits | 5.2x | Sticky Steve, Slow Bob, Terror Bird, Pitch Raptor, Tar Titan, Bog Rex |
+| 7 | Deep Sea Trench | 7.2x | Spiral Gary, Derpichthys, Dunkleosteus, Plesiosaur, Megalodon, Mosasaurus |
+| 8 | Meteor Crater | 10x | Cosmic Chicken, Alien Steve, Comet Trike, Crystal Raptor, Void Rex, Meteor King |
 
-### How animals move
-- **[Owner]** Animals on a base are alive: they walk freely around it and move their heads, tails and so on. Nothing
-  complicated, but smooth and continuous.
-- **[Owner]** They alternate between walking and standing idle for about 10 seconds.
-- **Poses:** Walk (1 second per stride) and Idle (8 seconds: breathing, head looking around, tail swaying). Made in Blender;
-  the game plays the same movements by moving each dino's bones from code, so nothing is uploaded as an animation.
-- **[Built]** Dinos pick a spot on the base, walk to it, idle about 10 seconds, repeat (`DinoLifeController`, `Config/DinoLife`). It's purely
-  visual and runs on each player's computer. Still to check: phone speed with 100 dinos.
-- **[Built]** Imported dinos live in `ReplicatedStorage.Assets.Dinos`, saved in the place, not in Rojo. Each colour part needs a
-  `Motor6D` to `RootPart`: without it the bones move but the mesh doesn't follow.
+### The style as you advance
+**[Owner]** Keep the same chunky stud style, but as the maps go on, add absurd, funny models and names alongside
+good-looking, aggressive dinos.
+
+- **Map 1 is cute:** friendly faces and real dino names.
+- **From map 2, each map mixes the two:** common animals are the silly ones (goofy names, derpy faces), and the rarest are the
+  fierce ones (angry brows, smaller eyes, lots of teeth, horns, dark colours).
+- **Both get stronger with each map:** sillier jokes and meaner, more fantastical dinos. The last map's rarest should look like a boss.
+- **Names are ours:** none come from the reference game, and they stay readable in the letter-by-letter reveal.
 
 ### How animal models are made
 - **Simple shapes:** chunky blocks and tapered blocks, no fine detail. The silhouette should read from far away.
@@ -367,8 +366,8 @@ Done one at a time, each in its own step:
 
 1. **Layout blockout in Blender**: sizes and positions only, checked against the reference. *(Done, approved by the owner.)*
 2. **Real models in Blender**: the 6 animals and 9 props are made and waiting for the owner's OK (`assets/models/build_fern_valley.py`).
-   Dino animations are in the same file. Floor, walls with hanging grass and rim, and platform are in `build_world_kit.py`, with one
-   grey checker-and-stud image (`assets/textures/checker_studs.png`) that tints to each world's colours. The arena pieces are still to make.
+   Dino animations are in the same file. Floor, walls with hanging grass and rim, and platform are in `build_world_kit.py`. Colour comes from each part's Color, with see-through stud images on top
+   (`assets/textures/`, applied in Studio as a SurfaceAppearance with AlphaMode Overlay), so one image suits every world. The arena pieces are still to make.
 3. **Into Roblox Studio**: import, apply the stud texture and two-tone checker, sky and lighting. Replace the current
    ground, and move the lane and arena numbers in `Config`, so throwing still works.
 4. **Bases**: 5 small bases in the row, each with its rack, XP pad, sign and owner plate, plus a shop only the owner sees.

@@ -10,8 +10,9 @@ return {
 		{ id = "Ptero",        name = "Pteranodon",    chance = 2000, income = 500 },
 	},
 	DryPlains = {
-		{ id = "Pachy",        name = "Pachycephalosaurus", chance = 2,  income = 25 },
-		{ id = "Ankylo",       name = "Ankylosaurus",  chance = 6,    income = 70 },
+		{ id = "Proto",        name = "Dusty Proto",   chance = 2,    income = 15 },
+		{ id = "Pachy",        name = "Bonkhead",      chance = 4,    income = 25 },
+		{ id = "Ankylo",       name = "Grumposaurus",  chance = 8,    income = 70 },
 		{ id = "Triceratops",  name = "Triceratops",   chance = 30,   income = 250 },
 		{ id = "Carno",        name = "Carnotaurus",   chance = 150,  income = 900 },
 		{ id = "TRex",         name = "T-Rex",         chance = 1000, income = 4000 },
