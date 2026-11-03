@@ -38,19 +38,21 @@ end
 -- boost multiplies every option's chance, so 2 turns "1 in 20" into "1 in 10".
 local function rollExtra(options, boost: number)
 	for _, option in options do
-		if rng:NextNumber() < boost / option.chance then
+		if rng:NextNumber() < math.min(boost / option.chance, Catch.maxChance) then
 			return option
 		end
 	end
 	return nil
 end
 
--- A full catch: the dino plus its mutation and size, and what they add up to.
--- The "1 in X" shown stays the normal odds, even when an event boosts the extras.
+-- A full catch: the dino plus its mutation and size, and what they add up to. Luck makes the
+-- mutation and size likelier too (Catch.luckPower), on top of any event boost.
+-- The "1 in X" shown stays the normal odds, even when luck or an event boosts the extras.
 function DinoRoll.rollCatch(biomeId: string, luck: number, mutationBoost: number, sizeBoost: number)
 	local dino = DinoRoll.roll(biomeId, luck)
-	local mutation = rollExtra(Catch.mutations, mutationBoost)
-	local size = rollExtra(Catch.sizes, sizeBoost)
+	local luckBoost = math.max(luck, 1) ^ Catch.luckPower
+	local mutation = rollExtra(Catch.mutations, mutationBoost * luckBoost)
+	local size = rollExtra(Catch.sizes, sizeBoost * luckBoost)
 
 	local entry = { id = dino.id, mutation = mutation and mutation.id, size = size and size.id }
 	local stats = DinoStats.describe(entry)

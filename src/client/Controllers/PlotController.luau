@@ -471,7 +471,7 @@ function PlotController.start()
 			return ghost
 		end
 		clearGhost()
-		local model = DinoModel.build(dino.id, dino.mutation, Vector3.zero, DinoModel.statueScale(dino.size))
+		local model = DinoModel.build(dino.id, dino.mutation, Vector3.zero, DinoModel.statueScale(dino.id, dino.size))
 		model.Name = "PlacementGhost"
 		for _, part in model:GetDescendants() do
 			if part:IsA("BasePart") and part.Transparency < 1 then

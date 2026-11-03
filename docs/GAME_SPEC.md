@@ -30,7 +30,7 @@ room. This is the look we want on purpose, and it's what makes the game funny an
 ## 2. How we work
 
 - **[Owner]** Same structure and mechanics as the reference game, and the map should look very similar to it.
-- **[Owner]** Our own names, models, numbers and assets: eggs and dinos instead of food and animals. Nothing is
+- **[Owner]** Our own names, models, numbers and assets: eggs and monsters (dinos among them) instead of food and animals. Nothing is
   taken directly from the reference game.
 - **[Owner]** Don't add systems the reference game doesn't have without asking. Rebirth was rejected for this reason.
 - **[Owner]** Models are made plainly in Blender, with no studs modelled in. The stud texture is applied afterwards in
@@ -258,16 +258,56 @@ name shows up slowly.
 
 ---
 
-## 8. Dinosaurs
+## 8. Monsters
 
-- **[Owner]** Depending on luck, an animal can get a mutation, a size, both or neither: "Diamond Big", "Gold Huge", or
-  just "Diamond" at standard size.
-- **[Owner]** Animals **get bigger as you advance**. On the first map they're small. The **standard** size of the last
-  map's animals is about **10x** the first map's. Mutations and sizes come on top of that.
+- **[Owner]** The creatures are **monsters**, not only dinosaurs, so any kind of creature can be made. The dinos already
+  built stay, and later maps can still have dinosaurs alongside other monsters. (Whether the game's name, the "Dinos"
+  labels and the code's names change too is still to be decided.)
+- **[Owner]** Depending on luck, a monster can get a colour mutation, a size mutation, both or neither: "Diamond Big",
+  "Gold Huge", or just "Diamond" at standard size.
+
+### Size: two separate things [Owner]
+
+1. **Standard size comes from progress only.** Monsters get bigger as you advance: the first map's are small, and the
+   last map's **standard** size is about **10x** the first map's. A catch with no size mutation is always exactly its
+   map's standard size.
+2. **Abnormal sizes come from size mutations only.** Nothing else makes a monster bigger (or different) than its map's
+   standard. A size mutation scales the monster up from its map's standard size.
+
+The size mutation tiers work **the same as the reference game's**, with our own names. The reference has Big, Large,
+Monstrous, Huge and Colossal **[Seen/Owner]** (Colossal exists, it just wasn't in our recordings), and a Giant size from
+its Rainbow Egg **[Web, unconfirmed]**. Their order, odds and scale aren't published anywhere, so ours stay our own
+numbers.
+
+**[Owner]** Our six size mutations, smallest to biggest: **Thicc → Absolute Unit → Chonker → Mega Chonk → Planet-Sized →
+Unit of Doom**. **[Built]** (`Config/Catch`), scale is on top of the map's standard size:
+
+| Size | Chance | Income | Scale |
+|---|---|---|---|
+| Thicc | 1 in 10 | ×1.5 | 1.3× |
+| Absolute Unit | 1 in 40 | ×2.5 | 1.6× |
+| Chonker | 1 in 150 | ×4 | 2× |
+| Mega Chonk | 1 in 600 | ×8 | 2.6× |
+| Planet-Sized | 1 in 2,500 | ×20 | 3.5× |
+| Unit of Doom | 1 in 10,000 | ×50 | 5× |
+
+**[Built]** Luck makes mutations and sizes likelier too, gently: their chances are multiplied by luck^0.4 (`Config/Catch`
+`luckPower`), and no single one goes above a 1 in 2 chance. Roughly, checked with 200,000 test rolls each:
+
+| Luck | Thicc | Chonker | Unit of Doom |
+|---|---|---|---|
+| 1x | 1 in 10 | 1 in 150 | 1 in 10,000 |
+| 2x (end of map 1) | 1 in 7 | 1 in 110 | 1 in 7,600 |
+| 45x (end of map 8) | 1 in 2 | 1 in 33 | 1 in 2,200 |
+| 300x (map 8, best egg, every boost) | 1 in 2 | 1 in 15 | 1 in 1,000 |
+
+The "1 in X" shown on a catch stays the normal odds.
+
+Old saves keep their sizes under the new names (Big → Thicc, Large → Absolute Unit, Huge → Chonker, Colossal → Mega Chonk).
+
 - **[Owner]** Models are simple, not complex at all, but must have **good faces**. All animals get the stud texture in Studio.
 - **[Built]** Mutations: Gold (1 in 20, ×2 income), Diamond (1 in 100, ×5), Emerald (1 in 500, ×15).
-- **[Built]** Sizes: Big (1 in 10, ×1.5 income, 1.2× scale), Large (1 in 40, ×2.5, 1.5×), Huge (1 in 200, ×6, 2×),
-  Colossal (1 in 1000, ×20, 3×).
+- **[Built]** Each map's standard size is `standardScale` in `Config/Biomes`: 1x, 1.4x, 1.9x for maps 1 to 3.
 - **[Seen]** The reference's mutated animals are recoloured all over (gold, rainbow and so on), with the face still readable.
   It also has a Ruby mutation.
 - **[Built]** Blocky models from `assets/models/blueprints.json`.
@@ -383,7 +423,10 @@ Done one at a time, each in its own step:
    trees on its rims, as eggs along the arena's rim and as small things behind the bases. `MapDecor` places them
    from `Config/Decor`, the corridor's with a fixed seed so every server matches. Props are scaled up to suit the
    walls, which makes their studs a little bigger than the walls' studs.)*
-6. **Huge animals**: remove the size cap and scale dinos up until they look absurd on those bases.
+6. **Huge animals**: each map's standard size grows (to 10x at the last map), and size mutations scale up from that
+   standard, with no cap, until late-game monsters look absurd on those bases (section 8). *(Done 2026-11-03: the six
+   size mutations and per-map standard size are in, on the base, in the hand-placement preview and in the reveal. The
+   carried copy stays small.)*
 7. **Polish**: lighting, sky, small effects, and a check on phone speed.
 8. **Then the other worlds**: each one copies the first world's pieces with its own look, and they get joined up.
 
@@ -443,11 +486,8 @@ and biome completion rewards (built, in section 12). Announcements are confirmed
 
 | Today | Must become | Source |
 |---|---|---|
-| Statues capped at 1.6× so they "don't swallow the plot" | Remove the cap | Owner |
-| Every map's dinos built at the same scale | Scale up per map, to 10x at the last map (section 8a) | Owner |
 | No announcements | A server-wide banner for lucky catches (section 6) | Owner |
 | Auto-placement keeps dinos apart | Overlap is fine | Seen |
-| Luck only picks the dino; mutation and size odds ignore it | Luck also affects mutation and size | Owner |
 | Plain coloured parts with little or no stud texture | Checker and studs on everything | Owner |
 | After landing, the camera circles the egg right away | White ring and dust, cut to black, then the amber walking view | Owner + Seen |
 | The egg wobbles and bursts at 40%, and the dino pops up from nothing and spins | Close-up, then pull back to the dino already standing still over the egg | Owner + Seen |

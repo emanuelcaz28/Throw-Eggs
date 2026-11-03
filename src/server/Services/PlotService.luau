@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BaseKit = require(ReplicatedStorage.Shared.BaseKit)
+local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local DinoLife = require(ReplicatedStorage.Shared.Config.DinoLife)
@@ -305,7 +306,7 @@ local function rebuildStatues(player: Player, data)
 		local stats = DinoStats.describe(entry)
 		if stats then
 			local position = spotPosition(plotIndex, entry.x, entry.z)
-			local statue = DinoModel.build(entry.id, entry.mutation, position, DinoModel.statueScale(entry.size))
+			local statue = DinoModel.build(entry.id, entry.mutation, position, DinoModel.statueScale(entry.id, entry.size))
 			local head = statue.Head
 			World.makeSign(head, `{stats.name}\n{Format.cash(stats.income)}/s`, 5, STATUE_LABEL_DISTANCE, 170)
 			statue.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
@@ -404,6 +405,13 @@ local function fitToPlot(data)
 	end
 end
 
+-- Saves from before the six size mutations keep their dino's size under its new name.
+local function renameOldSizes(data)
+	for _, entry in data.dinos do
+		entry.size = Catch.renamedSizes[entry.size] or entry.size
+	end
+end
+
 local function onAction(player: Player, action: any, key: any, x: any, z: any)
 	local data = PlayerData.get(player)
 	if not data then
@@ -496,6 +504,7 @@ local function onLoaded(player: Player, data)
 		end
 	end
 	player:SetAttribute("Cash", data.cash)
+	renameOldSizes(data)
 	fitToPlot(data)
 	changed(player, data)
 

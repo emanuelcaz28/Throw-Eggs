@@ -536,7 +536,7 @@ function RevealController.play(catch, egg: BasePart)
 	local showCounter = catch.oneIn >= Reveal.counterMinOneIn
 	local mutation = DinoStats.findOption(Catch.mutations, catch.mutation)
 	local size = DinoStats.findOption(Catch.sizes, catch.size)
-	local dinoScale = if size then size.scale else 1
+	local dinoScale = DinoModel.statueScale(catch.id, catch.size)
 	local upperName = catch.name:upper()
 	local letterOrder = shuffledLetterIndexes(upperName)
 	local tiles = buildLetterTiles(upperName)

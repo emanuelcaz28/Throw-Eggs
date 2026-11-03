@@ -36,10 +36,11 @@ function DinoModel.color(name: string, mutationId: string?): Color3
 	return Color3.fromHSV(hue / 360, BASE_SATURATION, BASE_VALUE)
 end
 
--- How big a dino of this size stands on a plot.
-function DinoModel.statueScale(sizeId: string?): number
+-- How big a dino stands on a plot and in the reveal: its biome's standard size, times its size
+-- mutation if it has one.
+function DinoModel.statueScale(dinoId: string, sizeId: string?): number
 	local size = DinoStats.findOption(Catch.sizes, sizeId)
-	return if size then size.scale else 1
+	return DinoStats.standardScale(dinoId) * (if size then size.scale else 1)
 end
 
 local SKIN_ROLES = { Body = true, Accent = true, Belly = true, Claw = true }
