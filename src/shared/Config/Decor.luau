@@ -1,5 +1,5 @@
--- Props placed around the map: trees, hedges, rocks and the rest, modelled in Blender
--- (assets/models/build_fern_valley.py) and kept in ReplicatedStorage.Assets.Maps.<biome>.Props.
+-- Props placed around the map: trees, hedges, rocks and the rest, modelled in Blender (each map's
+-- assets/models/build_<map>.py) and kept in ReplicatedStorage.Assets.Maps.<biome>.Props.
 -- Spots follow the approved blockout (assets/models/build_world_layout.py). The corridor's are picked
 -- with a fixed seed, so every server gets the same ones; change `seed` for a different arrangement.
 --
@@ -50,6 +50,52 @@ return {
 					{ name = "prop_BlockTree", weight = 5, scale = { 1.8, 2.4 } },
 					{ name = "prop_CycadTree", weight = 3, scale = { 2, 2.6 } },
 					{ name = "prop_Hedge", weight = 2, scale = { 1.3, 1.6 } },
+				},
+			},
+		},
+
+		-- Sparser than Fern Valley: open sand with cacti, dry grass and old bones, red rock up top.
+		-- Props from assets/models/build_dry_plains.py.
+		DryPlains = {
+			seed = 12,
+
+			floor = {
+				firstDistance = 12,
+				gap = { 16, 30 },
+				side = { 20, 27 },
+				props = {
+					{ name = "prop_Saguaro", weight = 22, scale = { 1.2, 1.6 } },
+					{ name = "prop_BarrelCactus", weight = 14, scale = { 1.2, 1.6 } },
+					{ name = "prop_Skull", weight = 12, scale = { 1.3, 1.8 } },
+					{ name = "prop_Boulder", weight = 14, scale = { 1.2, 1.7 } },
+					{ name = "prop_DeadTree", weight = 12, scale = { 1.2, 1.5 } },
+					{ name = "prop_Tumbleweed", weight = 10, scale = { 1.1, 1.5 } },
+					{ name = "prop_DryGrass", weight = 10, scale = { 1.3, 1.8 } },
+					{ name = "prop_RibCage", weight = 4, scale = { 1.3, 1.6 } },
+				},
+				extras = {
+					chance = 0.55,
+					spread = 8,
+					props = {
+						{ name = "prop_DryGrass", weight = 4, scale = { 0.9, 1.3 } },
+						{ name = "prop_Tumbleweed", weight = 2, scale = { 0.7, 1 } },
+						{ name = "prop_Boulder", weight = 2, scale = { 0.5, 0.8 } },
+					},
+				},
+			},
+
+			-- Mesas, giant cacti and the bones of something enormous along the rims.
+			rim = {
+				firstDistance = 8,
+				gap = { 20, 34 },
+				chance = 0.8,
+				side = { 56, 94 },
+				props = {
+					{ name = "prop_Mesa", weight = 5, scale = { 1.8, 2.6 } },
+					{ name = "prop_Saguaro", weight = 4, scale = { 2, 2.6 } },
+					{ name = "prop_RibCage", weight = 2, scale = { 2.2, 3 } },
+					{ name = "prop_Skull", weight = 2, scale = { 2.5, 3.2 } },
+					{ name = "prop_DeadTree", weight = 2, scale = { 2, 2.6 } },
 				},
 			},
 		},

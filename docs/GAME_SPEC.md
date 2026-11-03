@@ -446,6 +446,17 @@ Done one at a time, each in its own step:
    clouds round the island on each player's screen only. Phone check: about 1,100 parts in play, which is light, and the
    clouds are solid because see-through parts cost phones the most. Per-world sky and light come with step 8.)*
 8. **Then the other worlds**: each one copies the first world's pieces with its own look, and they get joined up.
+   One world at a time:
+   - **Dry Plains** *(done 2026-11-03, in Studio under `Assets.Maps.DryPlains.Props` and `Assets.Dinos`)*: 9 props in `build_dry_plains.py` (saguaro,
+     barrel cactus, tumbleweed, a giant skull, a rib cage, a red mesa, a dead tree, dry grass, a boulder), placed by
+     `Config/Decor` like Fern Valley's, sparser, with mesas, giant cacti and bones on the rims. Its animals are now
+     built at the first map's size like every map's, since the game makes them 1.4x (they were made 1.4x in Blender
+     too, which doubled up). Bonkhead's model is now `dino_Pachy`, the game's id.
+   - **Per-world light** *(built)*: `Config/Lighting` `worlds` gives each world its own light, haze and tint, golden
+     for Dry Plains and murky green for the Swamp. `SkyController` blends to it in 0.6 s while the camera is over that
+     world, so it covers the flight, the landing and the reveal, and back in the arena it returns to Fern Valley's.
+   - **Swamp**: its 6 animals and its props, still to make.
+   - **Joining**: whether the floor steps down at each world (question 5 in section 15) is still open.
 
 The walking reveal, the throw wind-up and the flight camera are a separate job, after the world.
 

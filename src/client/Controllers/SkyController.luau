@@ -1,9 +1,13 @@
--- Chunky block clouds drifting slowly around the floating island (Config/Lighting clouds). They're
--- built on this player's screen only, so they cost the server and the network nothing.
+-- The sky on this player's screen: chunky block clouds drifting slowly around the floating island,
+-- and each world's own light while the camera is over it (Config/Lighting clouds and worlds). Both
+-- happen on this screen only, so they cost the server and the network nothing.
+local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
-local Lighting = require(ReplicatedStorage.Shared.Config.Lighting)
+local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
+local LightingConfig = require(ReplicatedStorage.Shared.Config.Lighting)
 local Map = require(ReplicatedStorage.Shared.Config.Map)
 
 local SkyController = {}
@@ -16,7 +20,7 @@ end
 
 -- One cloud: a few flat white blocks bunched together, pivoted at its middle.
 local function buildCloud(rng: Random, parent: Instance): Model
-	local settings = Lighting.clouds
+	local settings = LightingConfig.clouds
 	local model = Instance.new("Model")
 	model.Name = "Cloud"
 	local count = rng:NextInteger(settings.blocks[1], settings.blocks[2])
@@ -43,14 +47,78 @@ local function buildCloud(rng: Random, parent: Instance): Model
 	return model
 end
 
+-- Which world the camera is over. The corridor runs along -Z from the throw line, so anything
+-- before it (the arena and the platform) is nil, which uses the main look.
+local function worldAt(z: number): string?
+	local distance = -z
+	if distance <= 0 then
+		return nil
+	end
+	for _, biome in Biomes do
+		if distance < biome.endDist then
+			return biome.id
+		end
+	end
+	return Biomes[#Biomes].id
+end
+
+-- Blends Lighting and the server's atmosphere and colour effects towards the world under the
+-- camera. Only properties some world changes are touched; a world without its own look (Fern
+-- Valley) gets the main look's values for those.
+local function followWorlds()
+	local targets = {
+		lighting = Lighting,
+		atmosphere = Lighting:WaitForChild(LightingConfig.names.atmosphere),
+		colorCorrection = Lighting:WaitForChild(LightingConfig.names.colorCorrection),
+	}
+	local looks = {}
+	local function lookFor(worldId: string?)
+		local key = worldId or ""
+		if not looks[key] then
+			local own = LightingConfig.worlds[worldId or ""] or {}
+			local look = {}
+			for group in targets do
+				look[group] = {}
+				for _, other in LightingConfig.worlds do
+					for property in other[group] or {} do
+						local value = own[group] and own[group][property]
+						look[group][property] = if value ~= nil then value else LightingConfig[group][property]
+					end
+				end
+			end
+			looks[key] = look
+		end
+		return looks[key]
+	end
+
+	local info = TweenInfo.new(LightingConfig.worldBlendSeconds, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	local current = false -- nothing applied yet; nil is the main look
+	RunService.RenderStepped:Connect(function()
+		local world = worldAt(workspace.CurrentCamera.CFrame.Position.Z)
+		if LightingConfig.worlds[world or ""] == nil then
+			world = nil
+		end
+		if world == current then
+			return
+		end
+		current = world
+		-- A new tween on the same properties replaces the one still running.
+		for group, values in lookFor(world) do
+			TweenService:Create(targets[group], info, values):Play()
+		end
+	end)
+end
+
 function SkyController.start()
-	local settings = Lighting.clouds
+	task.spawn(followWorlds)
+
+	local settings = LightingConfig.clouds
 	local rng = Random.new(settings.seed)
 	local folder = Instance.new("Folder")
 	folder.Name = "Clouds"
 
 	-- Around the middle of the island: halfway between the arena and the far end of the corridor.
-	local centre = Vector3.new(0, 0, (Map.arena.backZ - 1500) / 2)
+	local centre = Vector3.new(0, 0, (Map.arena.backZ - Biomes[#Biomes].endDist) / 2)
 	local direction = settings.direction.Unit
 	local clouds = {}
 	for _ = 1, settings.count do

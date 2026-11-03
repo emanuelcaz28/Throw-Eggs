@@ -27,6 +27,9 @@ return {
 		Haze = 0.4,
 	},
 
+	-- What LightingService calls the effects, so SkyController finds these and not an event's own tint.
+	names = { atmosphere = "Atmosphere", colorCorrection = "WorldColor" },
+
 	colorCorrection = {
 		Saturation = 0.18, -- the slightly neon greens
 		Contrast = 0.06,
@@ -36,6 +39,23 @@ return {
 
 	bloom = { Intensity = 0.4, Size = 24, Threshold = 1.6 },
 	sunRays = { Intensity = 0.03, Spread = 0.4 },
+
+	-- Each world's own light while the camera is over it: in flight, at the landing and in the reveal.
+	-- Only what differs from the look above is listed; Fern Valley and the arena use the look above.
+	-- SkyController blends to it over worldBlendSeconds, so a fast throw slides through the colours.
+	worldBlendSeconds = 0.6,
+	worlds = {
+		DryPlains = { -- hot and golden
+			lighting = { OutdoorAmbient = Color3.fromRGB(175, 155, 130), ExposureCompensation = 0.15 },
+			atmosphere = { Color = Color3.fromRGB(255, 226, 170), Decay = Color3.fromRGB(235, 170, 95), Density = 0.3, Haze = 1.2 },
+			colorCorrection = { TintColor = Color3.fromRGB(255, 240, 214), Saturation = 0.14 },
+		},
+		Swamp = { -- murky and green
+			lighting = { Brightness = 2, OutdoorAmbient = Color3.fromRGB(120, 145, 120), ExposureCompensation = -0.05 },
+			atmosphere = { Color = Color3.fromRGB(165, 200, 150), Decay = Color3.fromRGB(85, 130, 80), Density = 0.4, Haze = 1.8 },
+			colorCorrection = { TintColor = Color3.fromRGB(220, 242, 212), Saturation = 0.04 },
+		},
+	},
 
 	-- Chunky block clouds drifting around the island, built on each player's screen only.
 	clouds = {
