@@ -374,6 +374,183 @@ return {
 				{ name = "prop_TarPit", distance = 850, x = -3, on = "floor", yaw = 110, scale = 1.2 },
 			},
 		},
+
+		-- The bottom of the ocean, the most decorated world: a reef in warm colours (branching and brain coral,
+		-- tube sponges, anemones, giant clams, tube worms, urchins and starfish, kelp and sea grass) with glowing
+		-- jellyfish drifting over it, hydrothermal vents, an anchor or a treasure chest now and then; shipwrecks and
+		-- giant ammonite shells on the rims, reefs down the walls, coral arches over the corridor and shell patches
+		-- across the floor. Denser than the other worlds. Props from assets/models/build_abyss.py.
+		Abyss = {
+			seed = 61,
+
+			floor = {
+				firstDistance = 10,
+				gap = { 10, 20 },
+				side = { 19, 27 },
+				props = {
+					{ name = "prop_BranchCoral", weight = 16, scale = { 1.3, 1.7 } },
+					{ name = "prop_Kelp", weight = 14, scale = { 1.2, 1.6 } },
+					{ name = "prop_BrainCoral", weight = 10, scale = { 1.2, 1.6 } },
+					{ name = "prop_TubeSponges", weight = 10, scale = { 1.2, 1.6 } },
+					{ name = "prop_Anemones", weight = 10, scale = { 1.2, 1.6 } },
+					{ name = "prop_SeaUrchins", weight = 8, scale = { 1.2, 1.6 } },
+					{ name = "prop_Jellyfish", weight = 8, scale = { 1.1, 1.4 } },
+					{ name = "prop_TubeWorms", weight = 7, scale = { 1.2, 1.6 } },
+					{ name = "prop_GiantClam", weight = 6, scale = { 1.1, 1.4 } },
+					{ name = "prop_ThermalVent", weight = 4, scale = { 1.1, 1.4 } },
+					{ name = "prop_Anchor", weight = 3, scale = { 1.1, 1.3 } },
+					{ name = "prop_TreasureChest", weight = 2, scale = { 1.2, 1.4 } },
+				},
+				extras = {
+					chance = 0.75,
+					spread = 8,
+					props = {
+						{ name = "prop_SeaGrass", weight = 5, scale = { 0.8, 1.2 } },
+						{ name = "prop_BrainCoral", weight = 2, scale = { 0.5, 0.7 } },
+						{ name = "prop_SeaUrchins", weight = 2, scale = { 0.5, 0.8 } },
+						{ name = "prop_Anemones", weight = 2, scale = { 0.5, 0.8 } },
+					},
+				},
+			},
+
+			rim = {
+				firstDistance = 6,
+				gap = { 14, 24 },
+				chance = 0.9,
+				side = { 54, 96 },
+				props = {
+					{ name = "prop_Kelp", weight = 5, scale = { 2, 2.6 } },
+					{ name = "prop_BranchCoral", weight = 5, scale = { 2, 2.6 } },
+					{ name = "prop_BrainCoral", weight = 2, scale = { 2, 2.6 } },
+					{ name = "prop_TubeSponges", weight = 2, scale = { 2, 2.4 } },
+					{ name = "prop_Jellyfish", weight = 3, scale = { 1.8, 2.2 } },
+					{ name = "prop_SeaGrass", weight = 2, scale = { 2.2, 2.8 } },
+				},
+			},
+
+			overhead = {
+				{ name = "prop_CoralArch", distance = 200, yaw = 0, scale = 1 },
+				{ name = "prop_CoralArch", distance = 520, yaw = -5, scale = 1.1 },
+				{ name = "prop_CoralArch", distance = 850, yaw = 4, scale = 1 },
+			},
+
+			walls = {
+				{ name = "prop_WallReef", distance = 60, side = 1 },
+				{ name = "prop_WallReef", distance = 190, side = -1 },
+				{ name = "prop_WallReef", distance = 330, side = 1 },
+				{ name = "prop_WallReef", distance = 470, side = -1 },
+				{ name = "prop_WallReef", distance = 610, side = 1 },
+				{ name = "prop_WallReef", distance = 760, side = -1 },
+				{ name = "prop_WallReef", distance = 900, side = 1 },
+			},
+
+			-- The shell patches are flat, so they can lie in the middle where the eggs land.
+			spots = {
+				{ name = "prop_Shipwreck", distance = 140, x = -74, on = "rim", yaw = 20, scale = 1.3 },
+				{ name = "prop_Ammonite", distance = 400, x = 72, on = "rim", yaw = 90, scale = 1.6 },
+				{ name = "prop_Shipwreck", distance = 640, x = 75, on = "rim", yaw = 200, scale = 1.3 },
+				{ name = "prop_Ammonite", distance = 820, x = -72, on = "rim", yaw = 250, scale = 1.7 },
+				{ name = "prop_ShellPatch", distance = 40, x = -3, on = "floor", yaw = 20, scale = 1.2 },
+				{ name = "prop_ShellPatch", distance = 160, x = 5, on = "floor", yaw = 140, scale = 1.3 },
+				{ name = "prop_ShellPatch", distance = 280, x = -4, on = "floor", yaw = 70, scale = 1.2 },
+				{ name = "prop_ShellPatch", distance = 410, x = 2, on = "floor", yaw = 200, scale = 1.4 },
+				{ name = "prop_ShellPatch", distance = 540, x = -2, on = "floor", yaw = 300, scale = 1.2 },
+				{ name = "prop_ShellPatch", distance = 680, x = 4, on = "floor", yaw = 40, scale = 1.3 },
+				{ name = "prop_ShellPatch", distance = 800, x = -3, on = "floor", yaw = 110, scale = 1.2 },
+				{ name = "prop_ShellPatch", distance = 930, x = 3, on = "floor", yaw = 250, scale = 1.3 },
+			},
+		},
+
+		-- The last world, where the stars came down, at night: crystal clusters with a shard floating over them,
+		-- alien star-flowers, moon rocks, glowing meteorites, glowing tufts and now and then a crashed probe on
+		-- the floor; floating rocks, crystals and star lamps on the rims, with landmarks among them (a fallen
+		-- star in its crater, crystal spires with a turning halo, observatories), ringed planets and comets in the
+		-- sky beyond them, stardust pouring down the walls, crystal arches over the corridor and star-scorched
+		-- craters across the floor. Props from assets/models/build_starfall_crater.py; what moves is in
+		-- Config/PropMotion.
+		StarfallCrater = {
+			seed = 71,
+
+			floor = {
+				firstDistance = 12,
+				gap = { 13, 24 },
+				side = { 20, 27 },
+				props = {
+					{ name = "prop_StarCrystals", weight = 16, scale = { 1.2, 1.6 } },
+					{ name = "prop_StarBloom", weight = 14, scale = { 1.2, 1.6 } },
+					{ name = "prop_MoonRock", weight = 12, scale = { 1.2, 1.6 } },
+					{ name = "prop_Meteorite", weight = 10, scale = { 1.1, 1.4 } },
+					{ name = "prop_GlowTufts", weight = 10, scale = { 1.3, 1.7 } },
+					{ name = "prop_CrashedProbe", weight = 5, scale = { 1.1, 1.3 } },
+				},
+				extras = {
+					chance = 0.65,
+					spread = 8,
+					props = {
+						{ name = "prop_GlowTufts", weight = 5, scale = { 0.8, 1.1 } },
+						{ name = "prop_MoonRock", weight = 3, scale = { 0.5, 0.7 } },
+						{ name = "prop_StarBloom", weight = 2, scale = { 0.6, 0.8 } },
+					},
+				},
+			},
+
+			rim = {
+				firstDistance = 8,
+				gap = { 16, 28 },
+				chance = 0.85,
+				side = { 56, 94 },
+				props = {
+					{ name = "prop_StarCrystals", weight = 6, scale = { 2, 2.6 } },
+					{ name = "prop_FloatingRocks", weight = 4, scale = { 2, 2.6 } },
+					{ name = "prop_StarLamp", weight = 4, scale = { 1.8, 2.2 } },
+					{ name = "prop_MoonRock", weight = 3, scale = { 2, 2.6 } },
+					{ name = "prop_StarBloom", weight = 3, scale = { 2, 2.4 } },
+				},
+			},
+
+			overhead = {
+				{ name = "prop_CrystalArch", distance = 300, yaw = 0, scale = 1 },
+				{ name = "prop_CrystalArch", distance = 760, yaw = 4, scale = 1.1 },
+			},
+
+			walls = {
+				{ name = "prop_StardustFall", distance = 70, side = 1 },
+				{ name = "prop_StardustFall", distance = 210, side = -1 },
+				{ name = "prop_StardustFall", distance = 380, side = 1 },
+				{ name = "prop_StardustFall", distance = 540, side = -1 },
+				{ name = "prop_StardustFall", distance = 700, side = 1 },
+				{ name = "prop_StardustFall", distance = 880, side = -1 },
+				{ name = "prop_StardustFall", distance = 1020, side = 1 },
+			},
+
+			-- Planets and comets hang high in the sky beyond the rims (their models start well above the ground).
+			-- The craters are flat, so they can lie in the middle where the eggs land.
+			spots = {
+				{ name = "prop_FallenStar", distance = 140, x = 78, on = "rim", yaw = 200, scale = 1.6 },
+				{ name = "prop_FallenStar", distance = 620, x = -76, on = "rim", yaw = 30, scale = 1.5 },
+				{ name = "prop_FallenStar", distance = 1040, x = 80, on = "rim", yaw = 160, scale = 1.8 },
+				{ name = "prop_CrystalSpire", distance = 60, x = -72, on = "rim", yaw = 20, scale = 1.6 },
+				{ name = "prop_CrystalSpire", distance = 420, x = 74, on = "rim", yaw = 140, scale = 1.5 },
+				{ name = "prop_CrystalSpire", distance = 860, x = -74, on = "rim", yaw = 260, scale = 1.7 },
+				{ name = "prop_Observatory", distance = 260, x = -82, on = "rim", yaw = 300, scale = 1.5 },
+				{ name = "prop_Observatory", distance = 960, x = 84, on = "rim", yaw = 120, scale = 1.4 },
+				{ name = "prop_RingedPlanet", distance = 200, x = -130, on = "rim", yaw = 15, scale = 2.4 },
+				{ name = "prop_RingedPlanet", distance = 700, x = 140, on = "rim", yaw = 200, scale = 2.8 },
+				{ name = "prop_Comet", distance = 100, x = 120, on = "rim", yaw = 120, scale = 2 },
+				{ name = "prop_Comet", distance = 480, x = -140, on = "rim", yaw = 300, scale = 2.2 },
+				{ name = "prop_Comet", distance = 900, x = 130, on = "rim", yaw = 60, scale = 2 },
+				{ name = "prop_StarCrater", distance = 40, x = -3, on = "floor", yaw = 20, scale = 1.2 },
+				{ name = "prop_StarCrater", distance = 120, x = 4, on = "floor", yaw = 140, scale = 1.3 },
+				{ name = "prop_StarCrater", distance = 230, x = -4, on = "floor", yaw = 70, scale = 1.2 },
+				{ name = "prop_StarCrater", distance = 330, x = 3, on = "floor", yaw = 200, scale = 1.4 },
+				{ name = "prop_StarCrater", distance = 450, x = -2, on = "floor", yaw = 300, scale = 1.2 },
+				{ name = "prop_StarCrater", distance = 560, x = 4, on = "floor", yaw = 40, scale = 1.3 },
+				{ name = "prop_StarCrater", distance = 680, x = -3, on = "floor", yaw = 110, scale = 1.2 },
+				{ name = "prop_StarCrater", distance = 790, x = 2, on = "floor", yaw = 250, scale = 1.4 },
+				{ name = "prop_StarCrater", distance = 900, x = -4, on = "floor", yaw = 330, scale = 1.2 },
+				{ name = "prop_StarCrater", distance = 1010, x = 3, on = "floor", yaw = 80, scale = 1.3 },
+			},
+		},
 	},
 
 	-- The arena's props, from the first biome's folder.

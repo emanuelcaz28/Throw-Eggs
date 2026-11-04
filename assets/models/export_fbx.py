@@ -18,7 +18,10 @@ MAP_OF_FILE = {"forest_models": "01_Forest", "world_kit": "01_Forest", "desert_m
                "volcano_models": "04_Volcano",
                "frozen_peaks_models": "05_FrozenPeaks",
                "shadow_bog_models": "06_ShadowBog",
-               "swamp_monsters": "03_Swamp", "frozen_peaks_monsters": "05_FrozenPeaks", "shadow_bog_monsters": "06_ShadowBog"}
+               "abyss_models": "07_Abyss",
+               "starfall_crater_models": "08_StarfallCrater",
+               "swamp_monsters": "03_Swamp", "frozen_peaks_monsters": "05_FrozenPeaks", "shadow_bog_monsters": "06_ShadowBog",
+               "abyss_monsters": "07_Abyss", "starfall_crater_monsters": "08_StarfallCrater"}
 # Blender collection -> folder inside the map's folder.
 EXPORT_COLLECTIONS = {"Animals": "Animals", "Props": "Props", "Kit": "Corridor", "Arena": "Arena", "Base": "Base"}
 

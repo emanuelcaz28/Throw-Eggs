@@ -2,7 +2,7 @@
 Swamp on (the first maps and the Volcano have their own, in their build scripts).
 
 Renders, per monster: whole, face, straight on and mid-roar; a lineup, the lineup in Gold, and an animation
-preview video (each walk twice, then the idle through its roar). The walk and idle are the Volcano's
+preview video (each walk twice, then the idle through its roar; a map can pass its own moves). The walk and idle are the Volcano's
 (build_volcano.py): every map's moves plus the jaw snap and the roar, as DinoLifeController plays them.
 """
 import math
@@ -32,7 +32,11 @@ def set_sky(scene, hex_colour):
     sky.inputs["Color"].default_value = (*kit.srgb_to_linear(hex_colour), 1)
 
 
-def build_and_render(models, renders, blend_path, video_name, sky="#8fd0ff", ground="#6ccf4a", glow_roles=(), spacing=18):
+def build_and_render(models, renders, blend_path, video_name, sky="#8fd0ff", ground="#6ccf4a", glow_roles=(), spacing=18,
+                     animate_fn=animate, walk_frames=None):
+    """animate_fn(armature) makes the (walk, idle) actions, the Volcano's by default; walk_frames is one walk
+    cycle's length (the swimmers' tail beat is longer than a stride)."""
+    walk_frames = walk_frames or kit.WALK_FRAMES
     scene = kit.setup_scene()
     kit.RENDERS = renders
     renders.mkdir(parents=True, exist_ok=True)
@@ -81,7 +85,7 @@ def build_and_render(models, renders, blend_path, video_name, sky="#8fd0ff", gro
     for node, value in saved:
         node.outputs[0].default_value = value
 
-    actions = [animate(root) for root in roots]
+    actions = [animate_fn(root) for root in roots]
     for root, pair in zip(roots, actions):
         root.animation_data.action = pair[1]
     scene.frame_set(ROAR_FRAME)
@@ -104,7 +108,7 @@ def build_and_render(models, renders, blend_path, video_name, sky="#8fd0ff", gro
     camera.rotation_euler = (Vector((middle, 0, 5)) - camera.location).to_track_quat("-Z", "Y").to_euler()
     scene.camera = camera
     scene.render.resolution_x, scene.render.resolution_y = 1800, 640
-    shots = [(0, f % kit.WALK_FRAMES) for f in range(0, kit.WALK_FRAMES * 2, 2)]
+    shots = [(0, f % walk_frames) for f in range(0, walk_frames * 2, 2)]
     shots += [(1, f) for f in range(ROAR_FRAME - 50, ROAR_FRAME + 50, 2)]
     for number, (which, frame) in enumerate(shots):
         for root, pair in zip(roots, actions):

@@ -9,7 +9,6 @@ return {
 	{ id = "Volcano", name = "Volcano", startDist = 1500, endDist = 2200, luck = 14, standardScale = 2.7, color = Color3.fromRGB(214, 84, 44) },
 	{ id = "FrozenPeaks", name = "Frozen Peaks", startDist = 2200, endDist = 3000, luck = 20, standardScale = 3.7, color = Color3.fromRGB(120, 196, 236) },
 	{ id = "ShadowBog", name = "Shadow Bog", startDist = 3000, endDist = 3900, luck = 27, standardScale = 5.2, color = Color3.fromRGB(150, 98, 220) },
-	-- Later updates:
-	-- { id = "Abyss",    name = "The Abyss",         ... luck = 35, standardScale = 7.2 },
-	-- { id = "StarfallCrater",     name = "Starfall Crater",   ... luck = 45, standardScale = 10 },
+	{ id = "Abyss", name = "The Abyss", startDist = 3900, endDist = 4900, luck = 35, standardScale = 7.2, color = Color3.fromRGB(64, 190, 230) },
+	{ id = "StarfallCrater", name = "Starfall Crater", startDist = 4900, endDist = 6000, luck = 45, standardScale = 10, color = Color3.fromRGB(255, 200, 80) },
 }

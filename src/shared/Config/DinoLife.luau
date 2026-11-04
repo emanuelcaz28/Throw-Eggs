@@ -5,6 +5,9 @@ return {
 	idleSeconds = 10,
 	idleJitter = 2, -- idle lasts idleSeconds plus or minus this, so dinos don't move in step
 	strideSeconds = 1, -- one full walk cycle
+	-- Monsters with a Swim bone (The Abyss) swim instead: one tail beat takes strideSeconds, and they cruise at
+	-- speed studs a second at the first map's size.
+	swim = { strideSeconds = 1.2, speed = 2.2 },
 	idleLoopSeconds = 8,
 	turnSpeed = 2.5, -- radians per second
 	blendTime = 0.35, -- seconds to ease between idle and walk

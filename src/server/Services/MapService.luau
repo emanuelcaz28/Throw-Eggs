@@ -80,16 +80,17 @@ local function buildCorridor(parent: Instance, kit: Instance)
 		place(model, kit, "kit_WallEast", start, colors)
 	end
 
-	-- The far end: a dirt wall up to the rim between the corridor walls.
+	-- The far end: a dirt wall up to the rim between the corridor walls, in the last biome's colour.
 	local walls = Map.walls
 	local endZ = -length
 	local height = walls.rimY - walls.bottomY
+	local lastColors = biomeColorsAt(length)
 	local endWall = World.makePart(
 		model,
 		"EndWall",
 		Vector3.new(Map.platform.width, height, 8),
 		CFrame.new(0, walls.bottomY + height / 2, endZ - 4),
-		Map.colors.dirt
+		lastColors and lastColors.Dirt or Map.colors.dirt
 	)
 	endWall.CastShadow = false
 

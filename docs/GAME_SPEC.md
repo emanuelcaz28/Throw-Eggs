@@ -370,6 +370,7 @@ Old saves keep their sizes under the new names (Big → Thicc, Large → Absolut
 | Volcano | Toasty Raptor, Burnt Ankylo, Hot Sauce Trike, Magma Stego, Obsidian Rex, Volcano King |
 | Frozen Peaks | Brain Freeze, Woolly Rhino, Chilly Mammoth, Sabertooth, Frost Raptor, Blizzard Rex |
 | Shadow Bog | Sticky Steve, Slow Bob, Terror Bird, Pitch Raptor, Tar Titan, Bog Rex |
+| Starfall Crater | Craterback, Stargazer, Comet Trike, Ringhorn, Nebulasaur, Star Sovereign |
 
 ---
 
@@ -394,7 +395,7 @@ Each map's animals are about 1.39x the size of the previous map's, which reaches
 | 5 | Frozen Peaks | 3.7x | Brain Freeze, Woolly Rhino, Chilly Mammoth, Sabertooth, Frost Raptor, Blizzard Rex |
 | 6 | Shadow Bog | 5.2x | Sticky Steve, Slow Bob, Terror Bird, Pitch Raptor, Tar Titan, Bog Rex |
 | 7 | The Abyss | 7.2x | Spiral Gary, Derpichthys, Dunkleosteus, Plesiosaur, Megalodon, Mosasaurus |
-| 8 | Starfall Crater | 10x | Cosmic Chicken, Alien Steve, Comet Trike, Crystal Raptor, Void Rex, Meteor King |
+| 8 | Starfall Crater | 10x | Craterback, Stargazer, Comet Trike, Ringhorn, Nebulasaur, Star Sovereign |
 
 ### The style as you advance
 **[Owner]** Keep the same chunky stud style, but as the maps go on, add absurd, funny models and names alongside
@@ -413,6 +414,17 @@ good-looking, aggressive dinos.
   boss, is a hulking lava monster walking on its knuckles with a crown of burning horns and a volcano on its back.
   They also have a **jaw bone**: they snap it as they walk and roar once per idle (head up, jaw wide, arms out), in
   Blender (`build_volcano.py`) and in the game (`DinoLifeController`).
+- **[Owner] Map 8, Starfall Crater (2026-11-04):** the run of ever-angrier faces stops here. Nice-looking,
+  interesting monsters that fit the biome: **not cute, but not aggressive, above all in the face.**
+  **[Built]** The starfall face (`build_starfall_crater_monsters.py`): long half-closed almond eyes, dark as the night
+  sky, with a glowing four-point star for an iris under a level lid of skin (a level lid reads calm; slanted ones read
+  angry or sad), and a quiet closed mouth with no teeth. Inside the mouth is the night sky dotted with stars, so the
+  roar turns into a song. Calm, old, a little strange: Craterback (a grazer with a crater on its back and a fallen
+  star stuck in it), Stargazer (a stilt-legged bird always looking up, star-tipped plumes), Comet Trike (its frill is
+  a comet's head, the tail streaming back over its body), Ringhorn (a stag with crystal antlers and a planet's ring
+  round them), Nebulasaur (a long-necked giant made of night sky, a pink nebula on its flanks) and Star Sovereign,
+  the boss: a robed king of the stars with a crown, a halo, a star-topped staff and a stardust beard. Its boss look
+  comes from size and grandeur, not from a snarl.
 
 ### How animal models are made
 - **Simple shapes:** chunky blocks and tapered blocks, no fine detail. The silhouette should read from far away.
@@ -568,6 +580,47 @@ Done one at a time, each in its own step:
      a crown of roots hung with glowing pods). Extra parts ride the Wing bones, which roll as they walk: Slow Bob's
      eye stalks, Pitch Raptor's pincers, Terror Bird's wings and Bog Rex's side heads. With them in `Config/Dinos`,
      throws reach Shadow Bog.
+   - **The Abyss** *(map made, imported into `Assets.Maps.Abyss.Props` and play-tested 2026-11-04: 232 props placed; monsters imported into `Assets.Dinos` and play-tested the same day: they hover and swim head first on a base)*:
+     the bottom of the ocean, and on the owner's request the most decorated world so far (18 props, placed denser than
+     the others). Deep blue sand, dark abyssal walls and sea-green reef flats on the rims (`Config/Map`), a dim blue
+     underwater haze (`Config/Lighting`). In `build_abyss.py`: branching coral (the signature), brain coral, tube
+     sponges, tall golden kelp, anemones with glowing tips, a giant clam with a glowing pearl, tube worms, urchins and
+     starfish, sea grass, jellyfish drifting high over the floor, hydrothermal vents with glowing cracks and smoke,
+     a rusty anchor, an open treasure chest; set pieces: sunken shipwrecks and giant ammonite shells on the rims, reefs
+     tumbling down the walls (`walls`), three coral arches over the corridor (`overhead`) and flat shell patches across
+     the floor. Glowing parts are `Glow` (cyan), `Shine` (pink) and `Ember` (Neon). Renders in
+     `design/world/models_abyss/`. World 7 (3,900 to 4,900 studs, 35x luck, 7.2x size). Its 6 monsters (made 2026-11-04,
+     `build_abyss_monsters.py`, renders and `abyss_animation_preview.mp4` in `design/world/monsters_abyss/`), all very
+     aggressive at the owner's request, with the abyss face (glowing cyan eyes under a heavy brow, a crimson mouth gaping
+     open, glowing spots down the flanks): Spiral Gary (a spiked ammonite with a hooked beak and eight tentacles),
+     Derpichthys (an anglerfish all underbite and needle fangs, with a pink lure), Dunkleosteus (an armoured helmet with
+     glowing seams and blade jaws), Plesiosaur (rearing to strike, needle teeth splayed), Megalodon (two rows of teeth,
+     claw scars, a harpoon in its back) and Mosasaurus (the boss: croc jaws with two rows of teeth, a horn crown and a
+     crest of glowing spines). They **swim**: a Swim bone tells `DinoLifeController` to play the swim and hover moves
+     instead of the walk (tail beats, fins and flippers, pulsing tentacles, a bobbing lure), with an attack once per
+     idle loop (they rear up and lunge, jaw wide, shaking their head and thrashing their tail); they float just above
+     the ground, so they hover over the base (`Config/DinoLife` `swim`). With them in `Config/Dinos`, throws reach The Abyss.
+   - **Monsters walk head first** *(fixed 2026-11-04)*: 30 of the 36 imported monsters face their pivot's +Z (the importer
+     turns them round), so they walked backwards and their jaws and roars bent the wrong way. `DinoLifeController` now
+     tells which way each one faces from its head and tail bones.
+   - **Starfall Crater** *(map made, imported into `Assets.Maps.StarfallCrater.Props` and play-tested 2026-11-04: 202 props placed, and the moving parts move; monsters later, at the owner's request)*:
+     **[Owner]** the last world, nicer and more decorative than the maps before, with objects that move where it makes
+     sense. **[Built]** Where the stars came down: a crater field at night. Midnight-blue crater rock, deep navy walls,
+     pale moon dust on the rims (`Config/Map`), and the sky turns to night over it, stars and all (`Config/Lighting`
+     sets ClockTime 0 with a thin blue haze, so the glow pops). 16 props in `build_starfall_crater.py`: crystal clusters
+     (the signature) with a shard floating and turning over them and motes of light circling, alien star-flowers whose
+     gold star turns, moon rocks with craters, a skidded meteorite glowing through its cracks, glowing tufts, a crashed
+     probe whose dish still turns and whose light still blinks; floating rocks bobbing over a glowing crater and star
+     lamps on the rims; landmarks: a fallen star plunged point first into its crater (its heart pulsing, sparkles
+     circling), crystal spires with a gold halo turning round them, little observatories whose domes turn; ringed
+     planets (turning, moons going round) and comets (gliding head first across the sky, fading out and back) beyond
+     the rims; stardust pouring down the walls with sparkles falling for ever (`walls`), two crystal arches with a
+     turning gyroscope (`overhead`), and flat star-scorched craters across the floor. **What moves**: each moving piece
+     is its own colour role, and `PropMotionController` moves it on each player's screen only, within 700 studs of the
+     camera (spin, bob, pulse, fall and drift, numbers in `Config/PropMotion`, the same as `MOTION` in the Blender
+     script). Renders and two videos (`starfall_flight.mp4` down the corridor, `starfall_motion.mp4` close up) in
+     `design/world/models_starfall_crater/`. World 8 (4,900 to 6,000 studs, 45x luck, 10x size); eggs can't land in it
+     until it has monsters. The wall at the corridor's far end takes the last world's colour.
    - **Joining**: whether the floor steps down at each world (question 5 in section 15) is still open.
 
 The walking reveal and the flight camera are a separate job, after the world. The throw wind-up is built (section 7).

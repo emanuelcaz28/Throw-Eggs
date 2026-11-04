@@ -70,6 +70,16 @@ return {
 			atmosphere = { Color = Color3.fromRGB(176, 150, 220), Decay = Color3.fromRGB(96, 68, 150), Density = 0.42, Haze = 2 },
 			colorCorrection = { TintColor = Color3.fromRGB(232, 222, 255), Saturation = 0.1 },
 		},
+		Abyss = { -- deep under the sea: dim blue light and a thick blue haze, so the reef's glow stands out
+			lighting = { Brightness = 1.5, OutdoorAmbient = Color3.fromRGB(95, 140, 185), ExposureCompensation = -0.1 },
+			atmosphere = { Color = Color3.fromRGB(70, 150, 210), Decay = Color3.fromRGB(20, 62, 125), Density = 0.5, Haze = 2.4 },
+			colorCorrection = { TintColor = Color3.fromRGB(205, 232, 255), Saturation = 0.18 },
+		},
+		StarfallCrater = { -- the last world is at night: the sky turns to stars, and the crystals and star-stuff glow
+			lighting = { ClockTime = 0, Brightness = 1.2, OutdoorAmbient = Color3.fromRGB(120, 130, 185), ExposureCompensation = 0.25 },
+			atmosphere = { Color = Color3.fromRGB(96, 106, 176), Decay = Color3.fromRGB(32, 34, 92), Density = 0.3, Haze = 0.8 },
+			colorCorrection = { TintColor = Color3.fromRGB(222, 228, 255), Saturation = 0.2 },
+		},
 	},
 
 	-- Chunky block clouds drifting around the island, built on each player's screen only.

@@ -54,4 +54,22 @@ return {
 		{ id = "TarTitan",      name = "Tar Titan",       chance = 400,  income = 22000000 },
 		{ id = "BogRex",        name = "Bog Rex",         chance = 3000, income = 125000000 },
 	},
+	-- Models from assets/models/build_abyss_monsters.py (dino_<id>). They swim and hover (DinoLifeController).
+	Abyss = {
+		{ id = "SpiralGary",    name = "Spiral Gary",     chance = 2,    income = 1000000 },
+		{ id = "Derpichthys",   name = "Derpichthys",     chance = 4,    income = 2250000 },
+		{ id = "Dunkleosteus",  name = "Dunkleosteus",    chance = 12,   income = 6250000 },
+		{ id = "Plesiosaur",    name = "Plesiosaur",      chance = 60,   income = 25000000 },
+		{ id = "Megalodon",     name = "Megalodon",       chance = 400,  income = 110000000 },
+		{ id = "Mosasaurus",    name = "Mosasaurus",      chance = 3000, income = 625000000 },
+	},
+	-- Models from assets/models/build_starfall_crater_monsters.py (dino_<id>). Calm faces, by the owner's wish.
+	StarfallCrater = {
+		{ id = "Craterback",    name = "Craterback",      chance = 2,    income = 5000000 },
+		{ id = "Stargazer",     name = "Stargazer",       chance = 4,    income = 11000000 },
+		{ id = "CometTrike",    name = "Comet Trike",     chance = 12,   income = 31000000 },
+		{ id = "Ringhorn",      name = "Ringhorn",        chance = 60,   income = 125000000 },
+		{ id = "Nebulasaur",    name = "Nebulasaur",      chance = 400,  income = 550000000 },
+		{ id = "StarSovereign", name = "Star Sovereign",  chance = 3000, income = 3100000000 },
+	},
 }

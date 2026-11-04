@@ -66,6 +66,16 @@ local Map = {
 			Dirt = Color3.fromRGB(69, 54, 79), -- dark plum earth
 			Grass = Color3.fromRGB(77, 125, 104), -- deep teal moss on the rims and hanging over the walls
 		},
+		Abyss = {
+			Floor = Color3.fromRGB(59, 120, 160), -- deep blue sand, so the warm corals stand out on it
+			Dirt = Color3.fromRGB(29, 53, 87), -- dark abyssal rock
+			Grass = Color3.fromRGB(51, 163, 160), -- sea-green reef flats on the rims and hanging over the walls
+		},
+		StarfallCrater = {
+			Floor = Color3.fromRGB(48, 58, 114), -- midnight-blue crater rock, so the glow of what fell stands out
+			Dirt = Color3.fromRGB(35, 43, 84), -- deep navy walls
+			Grass = Color3.fromRGB(170, 180, 226), -- pale moon dust on the rims and hanging over the walls
+		},
 	},
 
 	-- The arena, built from plain parts with the same see-through checker and studs as the kit.
