@@ -63,7 +63,9 @@ local function worldAt(z: number): string?
 end
 
 -- Blends Lighting and the server's atmosphere and colour effects towards the world under the
--- camera. Only properties some world changes are touched; a world without its own look (Fern
+-- camera. The reveal can hand it a world of its own and a thinner haze, through two attributes on the camera:
+-- WorldFocusZ (the egg's spot: its world's look stays on even when the camera pulls back over the next world) and
+-- HazeScale (the atmosphere's density and haze are scaled by it, so a giant seen from far off isn't lost in the haze). Only properties some world changes are touched; a world without its own look (Fern
 -- Valley) gets the main look's values for those.
 local function followWorlds()
 	local targets = {
@@ -72,8 +74,8 @@ local function followWorlds()
 		colorCorrection = Lighting:WaitForChild(LightingConfig.names.colorCorrection),
 	}
 	local looks = {}
-	local function lookFor(worldId: string?)
-		local key = worldId or ""
+	local function lookFor(worldId: string?, hazeScale: number)
+		local key = `{worldId or ""}@{hazeScale}`
 		if not looks[key] then
 			local own = LightingConfig.worlds[worldId or ""] or {}
 			local look = {}
@@ -86,6 +88,10 @@ local function followWorlds()
 					end
 				end
 			end
+			for _, property in { "Density", "Haze" } do
+				local value = look.atmosphere[property] or LightingConfig.atmosphere[property]
+				look.atmosphere[property] = value * hazeScale
+			end
 			looks[key] = look
 		end
 		return looks[key]
@@ -93,17 +99,21 @@ local function followWorlds()
 
 	local info = TweenInfo.new(LightingConfig.worldBlendSeconds, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 	local current = false -- nothing applied yet; nil is the main look
+	local currentHaze = 1
 	RunService.RenderStepped:Connect(function()
-		local world = worldAt(workspace.CurrentCamera.CFrame.Position.Z)
+		local camera = workspace.CurrentCamera
+		local focusZ = camera:GetAttribute("WorldFocusZ")
+		local hazeScale = camera:GetAttribute("HazeScale") or 1
+		local world = worldAt(if typeof(focusZ) == "number" then focusZ else camera.CFrame.Position.Z)
 		if LightingConfig.worlds[world or ""] == nil then
 			world = nil
 		end
-		if world == current then
+		if world == current and hazeScale == currentHaze then
 			return
 		end
-		current = world
+		current, currentHaze = world, hazeScale
 		-- A new tween on the same properties replaces the one still running.
-		for group, values in lookFor(world) do
+		for group, values in lookFor(world, hazeScale) do
 			TweenService:Create(targets[group], info, values):Play()
 		end
 	end)

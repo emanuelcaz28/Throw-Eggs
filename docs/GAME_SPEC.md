@@ -285,9 +285,45 @@ name shows up slowly.
 - **[Built]** Very rare catches get a light beam and a "YOU CAUGHT!" banner on the base (1 in 1K to 10K; rarer ones
   get the lucky catch banner instead). Tapping skips ahead.
 - **[Built]** The text follows mock-ups 15 to 16b: white dashes that fill with letters at the bottom centre, then the
-  rarity colour wash with two rings and sparkles, and the final text with no panel (size and mutation, name in its
-  rarity colour, NEW! on a first catch, $/s, the "1 in X" and the tier sticker on lucky catches, tap to continue),
-  then white for half a second.
+  final moment and the final text with no panel (tier sticker on lucky catches, size and mutation, name in its rarity
+  colour, NEW! on a first catch, $/s, the "1 in X" on lucky catches, tap to continue), then white for half a second.
+- **[Owner, 2026-11-04] No rings, and luck only when it's really lucky.** The old rings round the monster looked cheap
+  and made the animal feel unimportant. The "1 in X" showed on nearly every catch (a common monster with a common size
+  is already "1 in 160"), so it meant nothing. And the clover icon and box round the odds looked ugly. **[Built]** now:
+  - **Luck only from 1 in 1,000:** rarer catches get the counter, the luck labels, the tier sticker, the "1 in X" and
+    the tier sticker. Commoner ones show none of that (`Config/Reveal` `counterMinOneIn`).
+  - **The final moment:** a quick white flash, then light rays in the rarity's colour burst out from behind the monster
+    and turn slowly, two layers turning opposite ways (`RevealRays`, `Config/Reveal` `rays`). Rarer luck labels get
+    more rays, brighter and faster, a bigger sparkle burst, and from SUPER LUCKY! up a camera shake that grows to
+    GODLY! (`shake`). The name pops in. The rarity colour and the luck glow light only the top and bottom edges,
+    softly, so the monster keeps its own colours. The old light pillar is gone: it covered the monster. Sparkles stay
+    round the monster, so on a giant they don't fly past the camera.
+  - **The "1 in X":** plain big outlined text lit in the luck tier's colour, with no icon and no box, at the top
+    during the climb and under $/s at the end.
+  - **The tier sticker** sits just above the name instead of at the top of the screen, so it never covers the head.
+  - **Framing:** the camera ends low, looking up a little, and frames the monster and the egg in the part of the
+    screen the text leaves free, so nothing overlaps. A big monster may stand with its feet behind the sticker and the
+    top of its name, so it fills more of the screen (its egg is a speck). The camera never goes below the ground.
+  - **Nothing in the way [Owner, 2026-11-04: a Planet-Sized Bog Rex showed only blue]:** a giant's camera ends up to
+    thousands of studs back. So during the reveal the light stays the egg's world's, even when the camera is over the
+    next world (it had switched to the Abyss's thick blue water). The world's haze thins the further back the camera
+    ends (`closeUp` `clearDistance`, `minHaze`). The bases' statues hide, and so do the map's decorations standing
+    between the camera and the monster, on the catcher's screen only, until the white flash.
+  - Dark mutation names (SHADOW) are lifted towards white so they read on the dark outline.
+  - Tested on every map's rarest monster with big sizes, and common catches (screenshots in `design/reveal/final/`).
+- **[Owner, 2026-11-04] Lucky catches take their time.** While the numbers climb the reveal must slowly show the
+  monster, and the luck labels must be more fascinating. Common catches stay quick. **[Built]** (`Config/Reveal`
+  `lucky`, `closeUp` `slowHold`, `slowAcross`, `slowRise`):
+  - **Length:** the counter climbs for 4.5 seconds at 1 in 1,000 up to 9 at 1 in 100 billion, plus a 0.8 second
+    pause on each luck label it reaches. So 1 in 1,000 takes about 6 seconds and the rarest about 14 (measured:
+    1 in 1,200 took 6.2 s, a 1 in 60 billion Bog Rex 13.7 s). Commoner catches are as before (1.5 s for a Compy).
+  - **Camera, feet to head:** the close-up on the egg holds 0.8 seconds, then the camera turns from the egg to the
+    monster's front feet and slowly pulls back and up its body over the whole climb, so the head comes into view
+    last and the final framing lands with the last number. No circling.
+  - **Labels slam in:** each new label (LUCKY! up to IMPOSSIBLE!) lands huge in the middle of the screen, see-through
+    to solid with a bounce, then a flash in its colour, a camera jolt that grows with the label, and a burst of
+    sparkles. The counter pauses on the label's own number ("1 in 10,000" under INSANE!) and the letters wait. At
+    the end of the pause the label flies up to its place at the top and the climb goes on. A tap still skips ahead.
 - **[Owner]** The walk depends on the catch: a very rare monster starts far from the egg, and a very big one starts way
   above the map. It simulates the POV of each monster. Made in-game, not in Blender: it changes with every catch's
   rarity and size and with where the egg landed, so a camera script works it out on the spot.
@@ -318,7 +354,9 @@ name shows up slowly.
   - **The monster is simply there:** behind the black after the walk, the caught monster stands still where its walk
     ended, at its real size (its map's standard size × its size mutation), facing the way it walked. It never pops out
     of the egg or spins. The egg lies upright on the ground and never moves.
-  - **Where the egg lies:** between the monster's front feet. With a giant, the egg lies far enough ahead of its feet
+  - **Where the egg lies [Owner, 2026-11-04: too close before]:** a clear gap ahead of the monster's front feet, half
+    its length (`closeUp` `aheadShare`) and at most 15 egg heights, turned 60° away from the camera's side so the egg
+    sits beside the monster on screen rather than in front of the lens. Worked out from the spot described next. With a giant, the egg lies far enough ahead of its feet
     for both feet to show in the close-up (a Unit of Doom's feet stand on the corridor's rims, either side of it).
     Where the monster's body is too low to stand over the egg, the egg lies just in front of its feet, worked out from
     the model's real shape. A monster under 2.5 egg heights tall (the first map's, like the Compy) would hide behind

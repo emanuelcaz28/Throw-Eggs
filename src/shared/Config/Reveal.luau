@@ -6,7 +6,31 @@ return {
 	counterStepTime = 0.125, -- ...every this many seconds, until it hits the real number
 	minClimbTime = 1.5, -- shortest time before the final card, even for common catches
 	maxClimbTime = 9,
-	counterMinOneIn = 10, -- catches more common than this show no counter
+	-- Catches more common than this show nothing about luck: no counter, no luck label, no "1 in X", no tier sticker
+	-- (the owner's wish, 2026-11-04: seeing "1 in 160" on every catch made none of them special).
+	counterMinOneIn = 1000,
+
+	-- Lucky catches (the ones with the counter) take their time (the owner's wish, 2026-11-04): the counter climbs for
+	-- minClimb seconds at counterMinOneIn up to maxClimb at rarestOneIn (evenly on a log scale), and pauses holdTime
+	-- on each luck label it reaches, so 1 in 1,000 takes about 6 seconds and the rarest about 14. Meanwhile the camera
+	-- rises slowly from the egg and the feet to the whole monster, ending with the last number (closeUp slowHold).
+	lucky = {
+		minClimb = 4.5,
+		maxClimb = 9,
+		rarestOneIn = 100000000000,
+		holdTime = 0.8,
+		-- Each new label slams in huge in the middle of the screen, then flies up to its place at the top.
+		slamScale = 2.3, -- its size in the middle, against its size at the top...
+		slamFrom = 4, -- ...starting this big and see-through, landing in slamIn seconds
+		slamIn = 0.28,
+		slamFly = 0.3, -- the flight to the top, at the end of the pause
+		slamY = 0.5, -- where it lands, as a share of the screen's height
+		flash = 0.55, -- a flash in the label's colour as it lands: how strong (0 = solid, 1 = none)...
+		flashTime = 0.35, -- ...and how fast it fades
+		-- The camera jolts as it lands: degrees, by the label (LUCKY! first), dying away over joltTime.
+		jolt = { 0.4, 0.6, 0.9, 1.2, 1.6, 2 },
+		joltTime = 0.45,
+	},
 	skipDelay = 0.4, -- ignore taps this soon, so the throw tap can't skip the reveal
 
 	-- The server frees the player for the next throw once they finish the reveal,
@@ -16,8 +40,45 @@ return {
 	caughtBannerMinOneIn = 1000, -- catches this rare keep a "YOU CAUGHT!" banner up afterwards...
 	caughtBannerTime = 6, -- ...unless they're rare enough for the lucky catch banner below
 
-	-- After the last letter lands: the rarity colour washes over the screen and a ring grows round the dino.
+	-- After the last letter lands: a white flash, the rarity colour lights the screen's top and bottom edges, and light
+	-- rays burst out behind the monster (rays, below). The middle of the screen stays clear, so the monster keeps its
+	-- own colours.
 	washTime = 1,
+	washTransparency = 0.72, -- how strongly the colour covers the top and bottom edges
+	finalGlow = 0.3, -- the luck tier's edge glow fades down to at most this strength at the end (0 to 1)
+	flashTransparency = 0.3, -- how strong the white flash is at its peak...
+	flashTime = 0.45, -- ...and how fast it fades
+	namePop = 1.35, -- the name lands this big and settles back to normal size
+
+	-- The light rays behind the monster at the final moment (RevealRays). Rays are measured against the monster's size;
+	-- each pair of numbers goes from a catch with no luck label to one with the rarest label.
+	rays = {
+		count = 10, -- rays in the main layer...
+		bigCount = 22,
+		opacity = 0.45, -- how strong they are at their root (0 to 1)...
+		bigOpacity = 0.8,
+		turnSpeed = 8, -- degrees a second...
+		bigTurnSpeed = 22,
+		length = 1.6, -- how far they reach, times the monster's height or width (the bigger)
+		shortShare = 0.72, -- every other ray reaches only this share
+		width = 0.5, -- how much of the circle a ray's tip covers (1 = rays touching)
+		rootWidth = 0.08, -- a ray's width at its root, against its tip
+		innerLength = 0.62, -- the thinner rays in between: their reach...
+		innerWidth = 0.3, -- ...width...
+		innerOpacity = 0.55, -- ...strength...
+		innerSpin = 0.6, -- ...and speed, turning the other way
+		brightness = 1.6,
+		behind = 0.35, -- how far behind the monster's middle, times its size
+		downFade = 2.5, -- rays pointing down shrink away: gone 24 degrees below level, so none streak over the ground
+		openTime = 0.55, -- they shoot out over this time
+		pulse = 0.04, -- they breathe in and out by this share...
+		pulseRate = 0.6, -- ...this many times a second
+	},
+
+	-- The camera shakes at the final moment on lucky catches: degrees, by the catch's luck label (none for the first
+	-- ones), dying away over shakeTime.
+	shake = { 0, 0, 0.35, 0.7, 1.1, 1.6, 2.2 },
+	shakeTime = 0.9,
 	-- After the final tap: fade to white, hold, then fade into the player's base.
 	whiteIn = 0.3,
 	whiteHold = 0.5,
@@ -150,6 +211,16 @@ return {
 		feetBehind = 1.5,
 		besideBelow = 2.5,
 		eggGap = 0.3,
+		-- Then the egg lies a clear gap further ahead, this share of the monster's length, so the two never look stuck
+		-- together (the owner's wish, 2026-11-04).
+		aheadShare = 0.5,
+		maxAhead = 15, -- but never more than this many egg heights
+		aheadAngle = 60, -- degrees off straight ahead, away from the camera's side
+		-- On lucky catches the close-up holds only slowHold seconds, then the camera rises and pulls back over the whole
+		-- rest of the climb, ending with the last number.
+		slowHold = 0.8,
+		slowAcross = 0.3, -- share of the pull back spent turning from the egg to the monster's feet
+		slowRise = 1.6, -- how late the view climbs up the body (1 = evenly; higher = the head comes later)
 		-- How long the close-up holds: holdShare of the climb (the name filling in and the counter climbing), but
 		-- between minHold and maxHold.
 		holdShare = 0.3,
@@ -165,9 +236,18 @@ return {
 		-- Where it ends: the monster and the egg fill the screen with margin to spare, from far enough back that
 		-- depthShare of their length is in front of the camera too, looking down from endElevation. It always ends
 		-- at least minPullBack times further back than the close-up, so tiny monsters still pull back.
-		margin = 1.3,
-		depthShare = 0.3,
-		endElevation = 10,
+		margin = 1.15,
+		depthShare = 0.15,
+		endElevation = 4, -- low, looking up at the monster a little, so it towers and the egg shows above the text
+		-- They're framed in the part of the screen the final text leaves free, topGap design pixels under the top bar,
+		-- and never in less than minBand of the screen's height.
+		topGap = 12,
+		textGap = 40, -- design pixels kept clear above the text for small monsters: the egg, nearest the camera, sits lowest
+		minBand = 0.4,
+		-- The world's haze thins when the camera ends further back than clearDistance studs: scaled by clearDistance
+		-- over the distance, down to minHaze (SkyController HazeScale), so a giant seen from far off stays clear.
+		clearDistance = 250,
+		minHaze = 0.12,
 		minPullBack = 1.5,
 		-- Once the pull back is over the camera holds still, with no circling (the owner's wish, 2026-11-04).
 		-- Below the corridor's rim the camera keeps wallMargin studs inside its walls; each stud above the rim lets it
@@ -178,7 +258,7 @@ return {
 
 	-- Each label appears when the counter passes minOneIn. Lowest first. glow is how strongly the
 	-- tier's colour lights the top and bottom of the screen (0 = none, 1 = solid at the edge).
-	-- Catches with a label also get a light beam of that colour, and the final screen shows the
+	-- The final screen of a catch with a label shows the
 	-- tier's sticker (sticker = its label and {top, bottom} colours). panel colours the lucky catch
 	-- banner; more than two colours make a scrolling rainbow.
 	tiers = {
