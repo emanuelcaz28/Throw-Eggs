@@ -80,6 +80,14 @@ return {
 			atmosphere = { Color = Color3.fromRGB(96, 106, 176), Decay = Color3.fromRGB(32, 34, 92), Density = 0.3, Haze = 0.8 },
 			colorCorrection = { TintColor = Color3.fromRGB(222, 228, 255), Saturation = 0.2 },
 		},
+		-- Under the eclipse: still night, with the first glow of dawn behind a thick jade-green jungle mist, so
+		-- the jade and the lanterns glow. ClockTime stays below 6 on purpose: the blend tweens it as a number,
+		-- and coming from Starfall's 0 anything past dawn would flash through daylight.
+		EclipseTemple = {
+			lighting = { ClockTime = 5.6, Brightness = 1.4, OutdoorAmbient = Color3.fromRGB(120, 160, 140), ExposureCompensation = 0.2 },
+			atmosphere = { Color = Color3.fromRGB(90, 150, 125), Decay = Color3.fromRGB(30, 70, 60), Density = 0.42, Haze = 2.2 },
+			colorCorrection = { TintColor = Color3.fromRGB(226, 248, 232), Saturation = 0.18 },
+		},
 	},
 
 	-- Chunky block clouds drifting around the island, built on each player's screen only.

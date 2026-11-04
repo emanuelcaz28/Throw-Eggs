@@ -33,6 +33,7 @@ local CARD_COLOURS = {
 	ShadowBog = { "#c9a2ff", "#7a3fd6" },
 	Abyss = { "#7ff0ff", "#1f6fb8" },
 	StarfallCrater = { "#ffe27a", "#2e3a8c" },
+	EclipseTemple = { "#7dffb8", "#7a3a3a" },
 }
 
 local function buildGui()

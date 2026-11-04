@@ -141,10 +141,12 @@ local function decorateBiome(parent: Instance, biome, rules)
 		place(parent, folder, spot.name, position, spot.yaw or 0, spot.scale or 1, false, Vector3.new(-spot.side, 0, 0))
 	end
 
-	-- Set pieces at fixed spots: volcanoes on the rims, cracks of lava across the floor.
+	-- Set pieces at fixed spots: volcanoes on the rims, cracks of lava across the floor. With `face`, a set
+	-- piece with a Front marker turns it towards the corridor's middle ("middle") or down it ("along").
 	for _, spot in rules.spots or {} do
 		local y = if spot.on == "floor" then Map.corridor.floorY else Map.walls.rimY
-		place(parent, folder, spot.name, Vector3.new(spot.x, y, -(biome.startDist + spot.distance)), spot.yaw, spot.scale, false)
+		local face = if spot.face == "middle" then Vector3.new(-math.sign(spot.x), 0, 0) elseif spot.face == "along" then ALONG else nil
+		place(parent, folder, spot.name, Vector3.new(spot.x, y, -(biome.startDist + spot.distance)), spot.yaw, spot.scale, false, face)
 	end
 end
 

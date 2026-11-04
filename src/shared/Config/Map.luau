@@ -76,6 +76,11 @@ local Map = {
 			Dirt = Color3.fromRGB(35, 43, 84), -- deep navy walls
 			Grass = Color3.fromRGB(170, 180, 226), -- pale moon dust on the rims and hanging over the walls
 		},
+		EclipseTemple = {
+			Floor = Color3.fromRGB(128, 70, 66), -- red laterite flagstones, warm after Starfall's blue, so the jade glow stands out
+			Dirt = Color3.fromRGB(74, 46, 58), -- dark carved temple walls
+			Grass = Color3.fromRGB(58, 128, 74), -- jungle on the rims and hanging over the walls
+		},
 	},
 
 	-- The arena, built from plain parts with the same see-through checker and studs as the kit.
@@ -84,8 +89,14 @@ local Map = {
 		dirt = Color3.fromRGB(173, 106, 62),
 		grass = Color3.fromRGB(164, 234, 62),
 	},
-	checkerTexture = "rbxassetid://126276110612056", -- assets/textures/checker_studs_overlay.png
+	checkerTexture = "rbxassetid://126276110612056", -- assets/textures/checker_studs_overlay.png (no longer used)
 	checkerStuds = 16, -- one image is 2 x 2 squares of 8 studs
+	-- Every model, the ground and the walls use this MaterialVariant (in the place's MaterialService): classic
+	-- square Roblox studs, lit by a normal map, one stud per stud whatever the part's size (StudsPerTile 1). Its
+	-- maps are the Resurface plugin's (colour rbxassetid://10509831729, normal rbxassetid://10509831753), which the
+	-- owner picked on 2026-11-04. Glowing and face parts stay smooth. Our own round-stud maps are in
+	-- assets/textures/make_studs.py if they're ever wanted again.
+	studsMaterial = "Studs",
 
 	spawn = Vector3.new(0, 0, 40), -- in the open ground, between the platform and the bases
 }

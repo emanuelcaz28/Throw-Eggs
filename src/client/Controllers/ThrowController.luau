@@ -10,7 +10,6 @@ local UserInputService = game:GetService("UserInputService")
 
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
-local Events = require(ReplicatedStorage.Shared.Config.Events)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local PopText = require(ReplicatedStorage.Shared.PopText)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
@@ -548,7 +547,7 @@ function ThrowController.start()
 			egg.CFrame = CFrame.new(position) * tumble * heldTurn
 			if isMine and cameraFrom then
 				camera.CFrame = ThrowCinematic.flightCamera(cameraFrom, position, elapsed, duration)
-				local luck = Luck.at(travelled) * eggConfig.luckBonus * (player:GetAttribute("IndexLuck") or 1) * serverLuck() * Events.multiplier("luck")
+				local luck = Luck.at(travelled) * eggConfig.luckBonus * (player:GetAttribute("IndexLuck") or 1) * serverLuck()
 				hud.luckPanel.set(luck, Luck.biomeAt(travelled))
 			end
 			if t >= 1 then

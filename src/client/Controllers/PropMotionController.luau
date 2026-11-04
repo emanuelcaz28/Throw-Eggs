@@ -1,6 +1,7 @@
 -- Makes the map's props move on this player's screen (Config/PropMotion): crystal shards bobbing and
 -- turning, moons going round their planets, observatory domes turning, stardust pouring down the walls,
--- comets gliding across the sky. The server places the props once and they hold still there; the movement
+-- comets gliding across the sky, lanterns and bells swinging, statues turning their heads. The server
+-- places the props once and they hold still there; the movement
 -- is drawn here only, so it costs the server and the network nothing. Only props near the camera move.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -73,15 +74,40 @@ local function watch(folder: Instance)
 	folder.ChildAdded:Connect(add)
 end
 
+-- The prop's own directions: its upright, its Blender X ("across") and its Blender Y ("ahead"). The importer
+-- may flip X and Y; that only reverses which way a part turns, never the axis.
+local function axisOf(prop: Prop, axis: string?): Vector3
+	if axis == "across" then
+		return prop.pivot.RightVector
+	elseif axis == "ahead" then
+		return prop.pivot.LookVector
+	end
+	return prop.pivot.UpVector
+end
+
+-- The point a part turns round: its own middle ("self"), or `height` studs (at size 1) straight above the
+-- prop's pivot, which is the pivot itself without a height.
+local function centreOf(prop: Prop, mover: Mover): Vector3
+	if mover.motion.about == "self" then
+		return mover.base.Position
+	end
+	return prop.pivot.Position + prop.pivot.UpVector * (mover.motion.height or 0) * prop.scale
+end
+
+local function turned(cf: CFrame, centre: Vector3, axis: Vector3, angle: number): CFrame
+	return CFrame.new(centre) * CFrame.fromAxisAngle(axis, angle) * CFrame.new(-centre) * cf
+end
+
 -- Where a moving part is at time t.
 local function placeOf(prop: Prop, mover: Mover, t: number): CFrame
 	local motion = mover.motion
 	local cf = mover.base
 	local cycle = if motion.period then t / motion.period + prop.phase else 0
+	if motion.swing then
+		cf = turned(cf, centreOf(prop, mover), axisOf(prop, motion.axis), math.rad(motion.swing) * math.sin(TAU * cycle))
+	end
 	if motion.spin then
-		local centre = if motion.about == "self" then cf.Position else prop.pivot.Position
-		local turn = CFrame.Angles(0, math.rad(motion.spin) * t, 0)
-		cf = CFrame.new(centre) * turn * CFrame.new(-centre) * cf
+		cf = turned(cf, centreOf(prop, mover), axisOf(prop, motion.axis), math.rad(motion.spin) * t)
 	end
 	if motion.bob then
 		cf += Vector3.new(0, motion.bob * prop.scale * math.sin(TAU * cycle), 0)
@@ -117,7 +143,7 @@ function PropMotionController.start()
 			end
 			for _, mover in prop.movers do
 				local motion = mover.motion
-				if motion.spin or motion.bob or motion.fall then
+				if motion.spin or motion.swing or motion.bob or motion.fall then
 					count += 1
 					parts[count] = mover.part
 					cframes[count] = placeOf(prop, mover, t)

@@ -4,7 +4,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Events = require(ReplicatedStorage.Shared.Config.Events)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
@@ -118,9 +117,9 @@ local function onTap(player: Player, height: any)
 		end
 		local data = PlayerData.get(player)
 		local indexLuck = if data then IndexService.luckMultiplier(data) else 1
-		local luck = Luck.at(distance) * egg.luckBonus * indexLuck * ShopService.serverLuckMultiplier() * Events.multiplier("luck")
+		local luck = Luck.at(distance) * egg.luckBonus * indexLuck * ShopService.serverLuckMultiplier()
 		local biome = Luck.biomeAt(distance)
-		local catch = DinoRoll.rollCatch(biome.id, luck, Events.multiplier("mutationChance"), Events.multiplier("sizeChance"))
+		local catch = DinoRoll.rollCatch(biome.id, luck, 1, 1)
 		catch.luck = luck
 		catch.newBest = data ~= nil and catch.income > data.bestIncome
 		if catch.newBest then

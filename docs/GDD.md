@@ -50,6 +50,7 @@ Loop: train → farther throws → more luck → rarer dinos → more cash → b
 | 6 | Shadow Bog | 27x |
 | 7 | The Abyss | 35x |
 | 8 | Starfall Crater | 45x |
+| 9 | Eclipse Temple | 1M (GAME_SPEC section 9 has the current luck plan) |
 
 MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Peaks (5) is built too, map and monsters, and so is Shadow Bog (6); The Abyss (7) and Starfall Crater (8) have their maps, their monsters come later (Starfall Crater's are in the game: `build_starfall_crater_monsters.py`, imported into `Assets.Dinos`, listed in `Config/Dinos`).
 

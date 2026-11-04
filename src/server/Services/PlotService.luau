@@ -12,7 +12,6 @@ local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local DinoLife = require(ReplicatedStorage.Shared.Config.DinoLife)
-local Events = require(ReplicatedStorage.Shared.Config.Events)
 local Map = require(ReplicatedStorage.Shared.Config.Map)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Format = require(ReplicatedStorage.Shared.Format)
@@ -92,13 +91,9 @@ local function buildPlots()
 			CFrame.new(position + Vector3.new(0, Plot.size.Y / 2, 0)),
 			Plot.color
 		)
-		-- The same see-through checker and studs as the arena around it.
-		local checker = Instance.new("Texture")
-		checker.Texture = Map.checkerTexture
-		checker.Face = Enum.NormalId.Top
-		checker.StudsPerTileU = Map.checkerStuds
-		checker.StudsPerTileV = Map.checkerStuds
-		checker.Parent = ground
+		-- The same studs as the arena around it and every model (Config/Map studsMaterial).
+		ground.Material = Enum.Material.SmoothPlastic
+		ground.MaterialVariant = Map.studsMaterial
 		BaseSigns.buildPlate(model, plotIndex)
 
 		-- Fence on all four sides, with a gate in the middle of the front edge (the plot's exit).
@@ -185,7 +180,7 @@ local function baseIncome(player: Player, data): number
 end
 
 local function totalIncome(player: Player, data): number
-	return baseIncome(player, data) * Events.multiplier("income")
+	return baseIncome(player, data)
 end
 
 local function sellPrice(entry): number

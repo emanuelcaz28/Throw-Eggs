@@ -33,9 +33,10 @@ def set_sky(scene, hex_colour):
 
 
 def build_and_render(models, renders, blend_path, video_name, sky="#8fd0ff", ground="#6ccf4a", glow_roles=(), spacing=18,
-                     animate_fn=animate, walk_frames=None):
+                     animate_fn=animate, walk_frames=None, glow=2.4):
     """animate_fn(armature) makes the (walk, idle) actions, the Volcano's by default; walk_frames is one walk
-    cycle's length (the swimmers' tail beat is longer than a stride)."""
+    cycle's length (the swimmers' tail beat is longer than a stride). glow is the glowing roles' strength in the
+    renders; lower it if a colour clips (green turning cyan)."""
     walk_frames = walk_frames or kit.WALK_FRAMES
     scene = kit.setup_scene()
     kit.RENDERS = renders
@@ -51,7 +52,7 @@ def build_and_render(models, renders, blend_path, video_name, sky="#8fd0ff", gro
         root = model.build(animals)
         root.location = (i * spacing, 0, 0)
         roots.append(root)
-    light_up(roots, glow_roles)
+    light_up(roots, glow_roles, glow)
     middle = (len(models) - 1) * spacing / 2
 
     ground_mesh = bpy.data.meshes.new("Ground")

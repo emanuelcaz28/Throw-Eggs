@@ -16,5 +16,8 @@ return {
 	nearDistance = 120,
 	farDistance = 350,
 	farFrameSkip = 6,
+	-- Monsters bigger than this (their size against the first map's) cast no shadow, so a size-mutated giant
+	-- doesn't put half the map in the dark. Normal-sized ones keep theirs.
+	shadowMaxScale = 4,
 	midFrameSkip = 2,
 }

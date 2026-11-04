@@ -457,6 +457,7 @@ Old saves keep their sizes under the new names (Big → Thicc, Large → Absolut
 | Frozen Peaks | Brain Freeze, Woolly Rhino, Chilly Mammoth, Sabertooth, Frost Raptor, Blizzard Rex |
 | Shadow Bog | Sticky Steve, Slow Bob, Terror Bird, Pitch Raptor, Tar Titan, Bog Rex |
 | Starfall Crater | Craterback, Stargazer, Comet Trike, Ringhorn, Nebulasaur, Star Sovereign |
+| Eclipse Temple | Idol Ollie, Mossy Mo, Lantern Larry, Jade Jaguar, Plumed Wyrm, Eclipse Devourer |
 
 ---
 
@@ -511,6 +512,19 @@ good-looking, aggressive dinos.
   round them), Nebulasaur (a long-necked giant made of night sky, a pink nebula on its flanks) and Star Sovereign,
   the boss: a robed king of the stars with a crown, a halo, a star-topped staff and a stardust beard. Its boss look
   comes from size and grandeur, not from a snarl.
+- **[Built] Map 9, Eclipse Temple (2026-11-04):** after Starfall's calm faces the run picks up again, for the first
+  of the mysterious, dark maps: temple thieves and squatters at the common end, the temple's guardians at the rare
+  end, then a boss. They share the **eclipse eye** (`build_eclipse_temple_monsters.py`): a black iris ringed with
+  glowing jade, like the eclipsed sun over the map. The silly ones have it in a white eye; the fierce ones have no
+  white at all, just the black eye and its jade ring under a gold mask, which is what makes them unsettling. Idol
+  Ollie (a cross-eyed toad wearing a stolen gold idol as a helmet, the idol's stern face peering over its eyes, its
+  tongue hanging out), Mossy Mo (a sleepy sloth with a temple ruin and a little jungle on its back, one eye shut;
+  its roar is a yawn), Lantern Larry (a lanky temple monkey with a lantern, a gold mask pushed up on its head and
+  a gold tooth in a sneaky grin), Jade Jaguar (an obsidian guardian cat with glowing jade rosettes and a gold mask),
+  Plumed Wyrm (a feathered serpent-dragon with a huge crest and ruff of green, gold and red plumes) and Eclipse
+  Devourer, the boss: a four-armed obsidian god-beast that swallowed the sun, with a black sun and its corona
+  behind a pale skull of a head under a gold mask, the eaten sun glowing in its chest, a black sun in each raised
+  hand, great horns, a third eye and jade fire in its throat. The rarer ones stand bigger.
 
 ### How animal models are made
 - **Simple shapes:** chunky blocks and tapered blocks, no fine detail. The silhouette should read from far away.
@@ -536,6 +550,9 @@ good-looking, aggressive dinos.
 **[Owner]** World names (chosen 2026-11-04: simple first, more serious further on): Forest, Desert, Swamp, Volcano,
 Frozen Peaks, Shadow Bog, The Abyss, Starfall Crater. Code ids, files and Studio folders use the same names (Forest,
 Desert, Swamp, Volcano, FrozenPeaks, ShadowBog, Abyss, StarfallCrater); no save stores a world id.
+**[Built]** Map 9 is **Eclipse Temple** (`EclipseTemple`), a name we picked for the first of the mysterious, dark
+maps; the owner can rename it (only `name` in `Config/Biomes` changes).
+**[Built]** Map 11 is **Midnight Carnival** (`MidnightCarnival`), our name too, built while map 10 isn't made yet.
 
 | # | World | Luck at its end |
 |---|---|---|
@@ -707,6 +724,50 @@ Done one at a time, each in its own step:
      script). Renders and two videos (`starfall_flight.mp4` down the corridor, `starfall_motion.mp4` close up) in
      `design/world/models_starfall_crater/`. World 8 (4,900 to 6,000 studs, 45x luck, 10x size); eggs can't land in it
      until it has monsters. The wall at the corridor's far end takes the last world's colour.
+   - **Eclipse Temple** *(map and monsters made 2026-11-04, imported into `Assets.Maps.EclipseTemple.Props` and `Assets.Dinos` and play-tested the same day: 256 props placed; its own light not yet seen in play)*: **[Owner]** a very nice
+     map 9, made in Blender with animated props; maps 9 to 15 mysterious and dark. **[Built]** A lost temple city
+     swallowed by the jungle, frozen under a total eclipse: red laterite floor, dark carved plum walls with jungle
+     hanging over them, jungle-green rims (`Config/Map`), and the night before dawn behind a thick jade mist
+     (`Config/Lighting`, ClockTime 5.6, kept under 6 so the blend from Starfall doesn't flash through daylight). Its
+     own light is glowing jade, with gold lantern light. 17 props in `build_eclipse_temple.py`, 16 of them with moving
+     parts: guardian heads half sunk in the floor with glowing eyes (the signature), jungle trees and fronds with
+     glowing pods, temple ruins, stone posts with a lantern swinging on its hook, spirit braziers burning jade fire
+     with sparks rising, flowers with one big eye that looks from side to side, giant stone hands holding up a
+     floating orb, a rare bronze orrery with three rings turning round an orb; on the rims floating monoliths
+     circling, sky lanterns drifting round a shrine; landmarks: stepped temples with glyph-crystals circling a
+     floating orb, guardian statues whose heads slowly turn to watch the eggs go by, black eclipsed suns in the sky
+     with their corona turning; carved faces in the walls pouring glowing spirit water into the corridor (`walls`),
+     temple gates with four-faced pillars and a bell and lanterns swinging under the lintel (`overhead`), and flat
+     rune circles whose rings turn opposite ways across the floor. Placed by `Config/Decor`; statues, temples and
+     eclipses turn to the corridor with a new `face` option on spots. It added a **swing** move and turning round
+     a sideways axis to `PropMotionController` (`Config/PropMotion`). Renders and two videos (`eclipse_motion.mp4`
+     close up, `eclipse_flight.mp4` at the flight camera's height) in `design/world/models_eclipse_temple/`.
+     World 9 (6,000 to 7,200 studs, 1M luck, 1.49x size). The recipe it was made with, for every map after it, is
+     `docs/MAP_RECIPE.md`. Its 6 monsters (section 8a) are in `build_eclipse_temple_monsters.py`, with renders and
+     `eclipse_temple_animation_preview.mp4` in `design/world/monsters_eclipse_temple/` and FBX files in
+     `fbx/09_EclipseTemple/Animals/`. They're in `Config/Dinos` (chances 2, 4, 12, 60, 400, 3000; income 100x
+     Starfall's: 1e16 to 5e18), so throws reach Eclipse Temple.
+   - **Midnight Carnival** *(map 11's world made 2026-11-04, in Blender; FBX files ready in `fbx/11_MidnightCarnival/Props/`, not imported yet; monsters later)*:
+     **[Owner]** a very nice map 11, made in Blender; maps 10 to 15 mysterious and dark. **[Built]** A travelling fair
+     that set up at midnight and never left: nobody runs it, yet every ride still turns and every bulb still burns.
+     Deep teal midway floor, crimson walls like a big top's curtain with gold fringe hanging over them, gold straw on
+     the rims (`Config/Map`), midnight with stars behind a thin plum haze (`Config/Lighting`, ClockTime 0). Its own
+     light is warm carnival bulbs, a little pink neon, and the pale glow of ghosts riding the rides. 19 props in
+     `build_midnight_carnival.py`, 18 with moving parts: striped tents with a waving pennant and a glowing door (the
+     signature), jack-in-the-boxes whose clown bobs and wobbles on its spring while the crank turns, popcorn carts
+     popping for ever, a fortune teller whose head turns over a glowing crystal ball, strength testers whose puck rings
+     the bell, balloon carts whose balloons sway (one grins), lamp posts with a swinging sign and a crow that looks
+     round, now and then a carousel with horses rising and falling in turn, crates as filler; on the rims swing rides
+     with ghosts in the chairs, purple-and-gold hot-air balloons swaying on their ropes and teal helter-skelters;
+     landmarks: Ferris wheels turning, big tops whose searchlights sweep the sky, clown-faced fun houses with spiral
+     eyes turning and a pulsing red nose, and sleeping crescent moons hung in the sky on a rope like a stage prop,
+     swaying with stars on strings; giant popcorn boxes tipped over the wall tops pouring popcorn down into the
+     corridor (`walls`), roller-coaster loops over the corridor with two cars of ghost riders going round (`overhead`),
+     and flat circus rings with chasing bulbs across the floor. Renders and two videos (`carnival_motion.mp4`,
+     `carnival_flight.mp4`) in `design/world/models_midnight_carnival/`. Planned as world 11 (8,500 to 9,900 studs,
+     25M luck, 1.64x size); `Config/Map`, `Lighting`, `Decor`, `PropMotion`, `Roles` and the Index card colours are
+     in, but it isn't in `Config/Biomes` yet, because map 10 (7,200 to 8,500) doesn't exist and a gap there would
+     paint the carnival's colours from Eclipse Temple's end.
    - **Joining**: whether the floor steps down at each world (question 5 in section 15) is still open.
 
 The walking reveal and the flight camera are a separate job, after the world. The throw wind-up is built (section 7).

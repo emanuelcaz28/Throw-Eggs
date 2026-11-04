@@ -72,4 +72,13 @@ return {
 		{ id = "Nebulasaur",    name = "Nebulasaur",      chance = 400,  income = 550000000 },
 		{ id = "StarSovereign", name = "Star Sovereign",  chance = 3000, income = 3100000000 },
 	},
+	-- Models from assets/models/build_eclipse_temple_monsters.py (dino_<id>): temple thieves to temple guardians.
+	EclipseTemple = {
+		{ id = "IdolOllie",       name = "Idol Ollie",       chance = 2,    income = 1e16 },
+		{ id = "MossyMo",         name = "Mossy Mo",         chance = 4,    income = 3e16 },
+		{ id = "LanternLarry",    name = "Lantern Larry",    chance = 12,   income = 1e17 },
+		{ id = "JadeJaguar",      name = "Jade Jaguar",      chance = 60,   income = 4e17 },
+		{ id = "PlumedWyrm",      name = "Plumed Wyrm",      chance = 400,  income = 2e18 },
+		{ id = "EclipseDevourer", name = "Eclipse Devourer", chance = 3000, income = 5e18 },
+	},
 }

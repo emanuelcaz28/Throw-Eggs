@@ -11,4 +11,5 @@ return {
 	{ id = "ShadowBog", name = "Shadow Bog", startDist = 3000, endDist = 3900, luck = 27, standardScale = 5.2, color = Color3.fromRGB(150, 98, 220) },
 	{ id = "Abyss", name = "The Abyss", startDist = 3900, endDist = 4900, luck = 35, standardScale = 7.2, color = Color3.fromRGB(64, 190, 230) },
 	{ id = "StarfallCrater", name = "Starfall Crater", startDist = 4900, endDist = 6000, luck = 45, standardScale = 10, color = Color3.fromRGB(255, 200, 80) },
+	{ id = "EclipseTemple", name = "Eclipse Temple", startDist = 6000, endDist = 7200, luck = 1000000, standardScale = 1.49, color = Color3.fromRGB(80, 230, 150) },
 }

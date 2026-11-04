@@ -37,6 +37,27 @@ Roles.glowing = {
 	CometHead = true,
 	CometTail = true,
 	LampStar = true,
+	-- Eclipse Temple (assets/models/build_eclipse_temple.py): jade runes, eyes and spirit fire, lantern light,
+	-- glowing pods and the eclipse's corona. Flame, Ember, Orb, Stream and Falling are above.
+	Jade = true,
+	Gaze = true,
+	Pod = true,
+	Lamp = true,
+	FlameCore = true,
+	Iris = true,
+	Sigil = true,
+	RuneInner = true,
+	RuneOuter = true,
+	Glyph = true,
+	RuneA = true,
+	RuneB = true,
+	RuneC = true,
+	LampA = true,
+	LampB = true,
+	LampC = true,
+	Corona = true,
+	EclipseRing = true,
+	BellGlow = true,
 }
 
 function Roles.of(part: Instance): string

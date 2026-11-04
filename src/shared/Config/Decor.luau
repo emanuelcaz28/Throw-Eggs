@@ -551,6 +551,98 @@ return {
 				{ name = "prop_StarCrater", distance = 1010, x = 3, on = "floor", yaw = 80, scale = 1.3 },
 			},
 		},
+
+		-- A lost temple city swallowed by the jungle under an eclipse: guardian heads half sunk in the floor
+		-- (the signature), jungle trees and fronds, broken ruins, swinging lanterns, spirit braziers, flowers
+		-- with an eye that looks round, giant stone hands holding an orb and now and then an orrery on the
+		-- floor; jungle, guardian heads, floating monoliths and sky lanterns on the rims, with landmarks among
+		-- them (stepped temples, guardian statues whose heads turn, eclipsed suns in the sky), carved faces
+		-- pouring spirit water down the walls, temple gates with a swinging bell over the corridor and rune
+		-- circles across the floor. Props from assets/models/build_eclipse_temple.py (DECOR there is the same
+		-- list, for its renders); what moves is in Config/PropMotion.
+		EclipseTemple = {
+			seed = 91,
+
+			floor = {
+				firstDistance = 12,
+				gap = { 12, 22 },
+				side = { 24, 34 },
+				props = {
+					{ name = "prop_GuardianHead", weight = 14, scale = { 1.5, 2 } },
+					{ name = "prop_JungleTree", weight = 10, scale = { 1, 1.3 } },
+					{ name = "prop_JungleFronds", weight = 12, scale = { 1.2, 1.6 } },
+					{ name = "prop_TempleRuin", weight = 10, scale = { 1.2, 1.6 } },
+					{ name = "prop_HangingLantern", weight = 9, scale = { 1.2, 1.4 } },
+					{ name = "prop_WatcherBloom", weight = 8, scale = { 1.2, 1.5 } },
+					{ name = "prop_SpiritBrazier", weight = 8, scale = { 1.2, 1.5 } },
+					{ name = "prop_StoneHand", weight = 6, scale = { 1.2, 1.5 } },
+					{ name = "prop_Orrery", weight = 4, scale = { 1.1, 1.3 } },
+				},
+				extras = {
+					chance = 0.7,
+					spread = 8,
+					props = {
+						{ name = "prop_JungleFronds", weight = 5, scale = { 0.7, 1 } },
+						{ name = "prop_TempleRuin", weight = 2, scale = { 0.5, 0.7 } },
+						{ name = "prop_SpiritBrazier", weight = 2, scale = { 0.7, 0.9 } },
+					},
+				},
+			},
+
+			rim = {
+				firstDistance = 6,
+				gap = { 14, 24 },
+				chance = 0.9,
+				side = { 64, 102 },
+				props = {
+					{ name = "prop_JungleTree", weight = 6, scale = { 1.9, 2.5 } },
+					{ name = "prop_GuardianHead", weight = 4, scale = { 2, 2.6 } },
+					{ name = "prop_FloatingMonoliths", weight = 3, scale = { 1.8, 2.3 } },
+					{ name = "prop_SkyLanterns", weight = 3, scale = { 1.8, 2.2 } },
+					{ name = "prop_TempleRuin", weight = 2, scale = { 2, 2.6 } },
+					{ name = "prop_JungleFronds", weight = 2, scale = { 2, 2.6 } },
+				},
+			},
+
+			overhead = {
+				{ name = "prop_TempleGate", distance = 260, yaw = 0, scale = 1 },
+				{ name = "prop_TempleGate", distance = 780, yaw = 0, scale = 1.05 },
+			},
+
+			walls = {
+				{ name = "prop_FaceFall", distance = 80, side = 1 },
+				{ name = "prop_FaceFall", distance = 230, side = -1 },
+				{ name = "prop_FaceFall", distance = 400, side = 1 },
+				{ name = "prop_FaceFall", distance = 560, side = -1 },
+				{ name = "prop_FaceFall", distance = 720, side = 1 },
+				{ name = "prop_FaceFall", distance = 900, side = -1 },
+				{ name = "prop_FaceFall", distance = 1080, side = 1 },
+			},
+
+			-- Statues and temples turn to face the corridor, the eclipses face down it (face, using their Front
+			-- marker). The eclipses hang high in the sky beyond the island (the disc is 40 studs up at size 1). The
+			-- rune circles are flat, so they can lie in the middle where the eggs land.
+			spots = {
+				{ name = "prop_GuardianStatue", distance = 60, x = 80, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_GuardianStatue", distance = 480, x = -80, on = "rim", yaw = 0, scale = 1.6, face = "middle" },
+				{ name = "prop_GuardianStatue", distance = 880, x = 80, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_StepTemple", distance = 150, x = -86, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_StepTemple", distance = 620, x = 86, on = "rim", yaw = 0, scale = 1.6, face = "middle" },
+				{ name = "prop_StepTemple", distance = 1040, x = -86, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_Eclipse", distance = 300, x = -170, on = "rim", yaw = 0, scale = 2.4, face = "along" },
+				{ name = "prop_Eclipse", distance = 940, x = 180, on = "rim", yaw = 0, scale = 2.8, face = "along" },
+				{ name = "prop_RuneCircle", distance = 40, x = -3, on = "floor", yaw = 20, scale = 1.2 },
+				{ name = "prop_RuneCircle", distance = 150, x = 4, on = "floor", yaw = 140, scale = 1.2 },
+				{ name = "prop_RuneCircle", distance = 270, x = -4, on = "floor", yaw = 70, scale = 1.2 },
+				{ name = "prop_RuneCircle", distance = 380, x = 3, on = "floor", yaw = 200, scale = 1.2 },
+				{ name = "prop_RuneCircle", distance = 500, x = -2, on = "floor", yaw = 300, scale = 1.2 },
+				{ name = "prop_RuneCircle", distance = 610, x = 4, on = "floor", yaw = 40, scale = 1.2 },
+				{ name = "prop_RuneCircle", distance = 740, x = -3, on = "floor", yaw = 110, scale = 1.2 },
+				{ name = "prop_RuneCircle", distance = 850, x = 2, on = "floor", yaw = 250, scale = 1.2 },
+				{ name = "prop_RuneCircle", distance = 960, x = -4, on = "floor", yaw = 330, scale = 1.2 },
+				{ name = "prop_RuneCircle", distance = 1090, x = 3, on = "floor", yaw = 80, scale = 1.2 },
+			},
+		},
 	},
 
 	-- The arena's props, from the first biome's folder.

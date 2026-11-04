@@ -2,6 +2,7 @@
 
 Read `docs/GAME_SPEC.md` first: it's what the owner wants, and it wins over everything else.
 Then `docs/GDD.md` for the details of what's built.
+Making a new map (world)? Follow `docs/MAP_RECIPE.md` instead of studying the older maps.
 
 ## Owner
 - First-time game developer, no prior coding background. Explain Studio steps plainly.

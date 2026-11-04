@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BlockModel = require(script.Parent.BlockModel)
 local Catch = require(script.Parent.Config.Catch)
+local DinoLife = require(script.Parent.Config.DinoLife)
 local DinoStats = require(script.Parent.DinoStats)
 local Roles = require(script.Parent.Roles)
 
@@ -119,19 +120,33 @@ local function buildImported(dinoId: string, mutation, origin: Vector3, scale: n
 	return model
 end
 
+-- Monsters are scenery: players walk straight through them (a giant on your base would otherwise knock you off
+-- it), and only ones of normal size cast a shadow (Config/DinoLife shadowMaxScale).
+local function settle(model: Model, scale: number): Model
+	local shadow = scale <= DinoLife.shadowMaxScale
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.CanCollide = false
+			part.CanTouch = false
+			part.CastShadow = shadow
+		end
+	end
+	return model
+end
+
 -- Builds the dino with its feet at origin. Scaling and spinning happen around the feet.
 -- Not parented: the caller decides where it goes. The "Head" part is the top of the model.
 function DinoModel.build(dinoId: string, mutationId: string?, origin: Vector3, scale: number): Model
 	local mutation = DinoStats.findOption(Catch.mutations, mutationId)
 	local imported = buildImported(dinoId, mutation, origin, scale)
 	if imported then
-		return imported
+		return settle(imported, scale)
 	end
 	local blocks = BlockModel.build(`dino_{dinoId}`, origin, mutation and mutation.color, MUTATION_TINT)
 	if blocks then
 		blocks.Name = "Dino"
 		blocks:ScaleTo(scale)
-		return blocks
+		return settle(blocks, scale)
 	end
 	local color = DinoModel.color(dinoId, mutationId)
 	local model = Instance.new("Model")
@@ -150,7 +165,7 @@ function DinoModel.build(dinoId: string, mutationId: string?, origin: Vector3, s
 	end
 	model.WorldPivot = CFrame.new(origin)
 	model:ScaleTo(scale)
-	return model
+	return settle(model, scale)
 end
 
 return DinoModel
