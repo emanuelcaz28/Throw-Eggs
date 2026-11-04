@@ -16,18 +16,20 @@ return {
 		{ id = "Gold", name = "GOLD", chance = 30, incomeMultiplier = 2, color = Color3.fromRGB(255, 205, 70) },
 	},
 	-- Size mutations are the only way a monster grows past its biome's standard size (Config/Biomes
-	-- standardScale); scale multiplies that standard size, with no cap.
+	-- standardScale); scale multiplies that standard size, up to 100x. Luck makes them likelier (luckPower).
+	-- 100x of map 15's 2x standard is about 2,000 studs, the most Roblox allows for one part.
 	sizes = {
-		{ id = "UnitOfDoom", name = "UNIT OF DOOM", chance = 10000, incomeMultiplier = 50, scale = 5 },
-		{ id = "PlanetSized", name = "PLANET-SIZED", chance = 2500, incomeMultiplier = 20, scale = 3.5 },
-		{ id = "MegaChonk", name = "MEGA CHONK", chance = 600, incomeMultiplier = 8, scale = 2.6 },
-		{ id = "Chonker", name = "CHONKER", chance = 150, incomeMultiplier = 4, scale = 2 },
-		{ id = "AbsoluteUnit", name = "ABSOLUTE UNIT", chance = 40, incomeMultiplier = 2.5, scale = 1.6 },
-		{ id = "Thicc", name = "THICC", chance = 10, incomeMultiplier = 1.5, scale = 1.3 },
+		{ id = "UnitOfDoom", name = "UNIT OF DOOM", chance = 10000, incomeMultiplier = 50, scale = 100 },
+		{ id = "PlanetSized", name = "PLANET-SIZED", chance = 2500, incomeMultiplier = 20, scale = 35 },
+		{ id = "MegaChonk", name = "MEGA CHONK", chance = 600, incomeMultiplier = 8, scale = 12 },
+		{ id = "Chonker", name = "CHONKER", chance = 150, incomeMultiplier = 4, scale = 5 },
+		{ id = "AbsoluteUnit", name = "ABSOLUTE UNIT", chance = 40, incomeMultiplier = 2.5, scale = 2.5 },
+		{ id = "Thicc", name = "THICC", chance = 10, incomeMultiplier = 1.5, scale = 1.5 },
 	},
 	-- Luck also makes mutations and sizes likelier, but much more gently than it shifts which dino
-	-- hatches: their chances are multiplied by luck ^ luckPower. At 0.4, 2x luck gives 1.3x,
-	-- 45x gives 4.6x and 300x (far biome, best egg, every boost) gives 9.8x.
+	-- hatches: their chances are multiplied by luck ^ luckPower, with luck counted from the biome's
+	-- start like the dino roll. At 0.4, 5x luck (a biome's far end) gives 1.9x, 15x (and the best egg)
+	-- gives 3x and 1,500x (with the 100x Luck boost too) gives 19x.
 	luckPower = 0.4,
 	-- No single mutation or size is ever likelier than this, however much luck and event boost.
 	maxChance = 0.5,

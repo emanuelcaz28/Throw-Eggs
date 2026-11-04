@@ -105,6 +105,13 @@ function BaseSigns.buildPlate(parent: Instance, plotIndex: number)
 	local income = label(gui, "Income", CASH, 3)
 	income.Position = UDim2.fromScale(0, 0.75)
 	income.Size = UDim2.fromScale(1, 0.21)
+
+	-- The server medal (👑 #1, #2, #3), over the picture's top right; CompetitionService fills it in.
+	local rank = label(gui, "Rank", WHITE, 3)
+	rank.AnchorPoint = Vector2.new(0, 0.5)
+	rank.Position = UDim2.fromScale(0.68, 0.06)
+	rank.Size = UDim2.fromScale(0.32, 0.18)
+	rank.Visible = false
 end
 
 -- Shows a player's plate on their base, or hides it when the base is free (player nil).

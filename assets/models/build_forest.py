@@ -24,7 +24,10 @@ HERE = Path(__file__).resolve().parent if "__file__" in globals() else Path("/Us
 RENDERS = HERE.parent.parent / "design" / "world" / "models"
 
 STUDS_PER_UNIT = 2  # how many times the stud image repeats per stud of model
-NO_STUDS = {"EyeWhite", "Pupil", "Highlight", "Mouth", "Tongue", "Teeth"}  # keeps faces clean
+# The old round-stud preview image in the materials. Maps from 10 on set it False: plain colours only, so the
+# one stud texture is Studio's shared "Studs" MaterialVariant (docs/MAP_RECIPE.md). The UVs are made either way.
+PREVIEW_STUDS = True
+NO_STUDS ={"EyeWhite", "Pupil", "Highlight", "Mouth", "Tongue", "Teeth"}  # keeps faces clean
 
 FACE_COLOURS = {
     "EyeWhite": "#ffffff",
@@ -204,7 +207,7 @@ def material(name, hex_colour, studs):
     rgb = nodes.new("ShaderNodeRGB")
     rgb.name = "Colour"
     rgb.outputs[0].default_value = (*srgb_to_linear(hex_colour), 1)
-    if studs:
+    if studs and PREVIEW_STUDS:
         if _stud is None:
             _stud = stud_image()
         tex = nodes.new("ShaderNodeTexImage")

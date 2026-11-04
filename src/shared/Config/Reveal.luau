@@ -100,9 +100,7 @@ return {
 	walk = {
 		cutDelay = 0.2, -- after the luck panel starts fading out...
 		cutIn = 0.1, -- ...a quick cut to black...
-		blackHold = 0.15, -- ...held a moment...
-		fadeIn = 0.15, -- ...then it opens on the walk, already under way.
-		cutOut = 0.12, -- the quick cut to black at the end
+		blackHold = 0.15, -- ...held a moment, then the eyes blink open on the walk, already under way (eyes, below).
 		blackAfter = 0.12, -- black held before the close-up on the egg fades in
 		closeUpFadeIn = 0.2,
 
@@ -174,20 +172,41 @@ return {
 		-- Swimmers (models with a Swim bone, The Abyss on) glide instead: no footfalls, a slow smooth sway.
 		swimRate = 0.7, -- sway cycles per second at the first map's size, slower the bigger
 
-		-- The rings round the screen show the catch's colour mutation, in its colour (gold rings on a Gold catch,
-		-- as in the reference video). A catch with no colour mutation walks with a clear view.
-		glow = {
-			-- Built-in Roblox images, so nothing has to be uploaded. Either can be swapped for an uploaded image id.
-			ringImage = "rbxasset://textures/ui/Input/Ring_padded.png", -- a thin white ring, tinted
-			darkImage = "rbxasset://textures/loading/loadingvignette.png", -- black, clear in the middle
-			rings = 9,
-			innerSize = 0.78, -- the innermost ring's size against the screen; the clear middle is inside it...
-			outerSize = 1.58, -- ...and the outermost's
-			innerTransparency = 0.85, -- faint inside...
-			outerTransparency = 0.4, -- ...strong at the edges
-			darkTransparency = 0.1, -- how strongly the edges darken behind the rings
-			fadeTime = 0.3,
+		-- Seen through its eyes [Owner, 2026-11-04: the old rings looked weird and players didn't know what they were]
+		-- (Figma "Throw Eggs - Monster Tags & Walk Vision"). The walk opens with a blink: eyelids lift from black and
+		-- rest as thin curved lids at the top and bottom, then close for the cut to black at the end. Every catch
+		-- blinks. A catch with a colour mutation also gets a soft round glow in its colour at the screen's edges, with
+		-- sparkles twinkling in it. No text: the mutation is only named at the end of the reveal.
+		eyes = {
+			open = 0.35, -- seconds the lids take to open...
+			close = 0.18, -- ...and to close at the end
+			rest = 0.06, -- share of the screen's height each lid covers in the middle while walking
+			curve = 3, -- each lid is the edge of a circle this many screen widths across: bigger is flatter
+			color = Color3.fromRGB(10, 6, 2),
 		},
+		glow = {
+			-- Built-in Roblox image, so nothing has to be uploaded.
+			darkImage = "rbxasset://textures/loading/loadingvignette.png", -- black, clear in the middle
+			darkSize = 1.15, -- the dark edge's size against the screen's diagonal, kept square so it stays round
+			darkTransparency = 0.35,
+			-- The colour glow: soft bands of colour from a clear middle out to the corners, kept round on any screen.
+			-- Sizes are diameters against the screen's diagonal (1 reaches the corners).
+			bands = 16,
+			innerSize = 0.62, -- the clear middle...
+			outerSize = 1.02, -- ...to just past the corners
+			innerTransparency = 0.94, -- faint inside...
+			outerTransparency = 0.2, -- ...strong at the edges
+			fadeTime = 0.3,
+			-- Sparkles twinkling in the glow, in its colour lifted towards white.
+			sparkles = 10,
+			sparkleSize = 26, -- pixels across, before scaling for small screens
+			sparkleLift = 0.6,
+			sparkleFrom = 0.3, -- how far from the middle they sit, as a share of the screen's diagonal...
+			sparkleTo = 0.48,
+			twinkle = 1.6, -- twinkles per second
+			drift = 0.015, -- how far they drift, as a share of the screen's width
+		},
+		markerRing = "rbxasset://textures/ui/Input/Ring_padded.png", -- the faint ring round the far-egg dot
 	},
 
 	-- After the walk: a close-up of the egg on the ground with the monster's feet already standing behind it, then the
@@ -306,6 +325,16 @@ return {
 			sparkles = 240,
 			sticker = { label = "GODLY LUCK!!!", colors = { "#f4ffe6", "#beff78" } },
 			panel = { "#ff8f8f", "#ffd36b", "#b4ff7a", "#6fe3ff", "#c58bff" },
+		},
+		-- Above a billion: what a x500 lucky throw's banger reaches (Config/LuckyOutcomes).
+		{
+			minOneIn = 1000000000,
+			label = "IMPOSSIBLE!",
+			color = Color3.fromRGB(255, 90, 220),
+			glow = 0.8,
+			sparkles = 400,
+			sticker = { label = "IMPOSSIBLE LUCK!!!!", colors = { "#ffe6fb", "#ff5adc" } },
+			panel = { "#ff5adc", "#ff8f8f", "#ffd36b", "#b4ff7a", "#6fe3ff", "#c58bff" },
 		},
 	},
 }

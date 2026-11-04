@@ -378,10 +378,17 @@ function PlotController.start()
 	end
 	hud.list:GetPropertyChangedSignal("CanvasPosition"):Connect(showVisibleTiles)
 
+	-- The cash counter rolls up to its new value instead of jumping, so money visibly pours in.
+	local shownCash = player:GetAttribute("Cash") or 0
 	local function renderCash()
-		hud.cash.Text = Format.cash(player:GetAttribute("Cash") or 0)
 		hud.income.Text = `+{Format.cash(player:GetAttribute("Income") or 0)}/s`
 	end
+	RunService.Heartbeat:Connect(function(dt)
+		local target = player:GetAttribute("Cash") or 0
+		local gap = target - shownCash
+		shownCash = if math.abs(gap) <= math.max(1, math.abs(target) * 1e-4) then target else shownCash + gap * math.min(dt * 6, 1)
+		hud.cash.Text = Format.cash(shownCash)
+	end)
 
 	hud.open.Activated:Connect(function()
 		UiKit.togglePanel(hud.panel)

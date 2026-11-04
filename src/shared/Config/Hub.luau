@@ -18,8 +18,10 @@ local Hub = {
 		padColor = Color3.fromRGB(70, 220, 230),
 	},
 	sellStall = {
-		position = Vector3.new(96, 0, 44), -- front left of the arena, seen from the platform
-		facing = Vector3.new(0, 0, -1), -- towards the platform
+		-- Front left of the arena seen from the platform, out in the open ground, its counter and pad facing the
+		-- bases, where players come from (it used to face the front wall, showing them its back).
+		position = Vector3.new(96, 0, 40),
+		facing = Vector3.new(0, 0, 1),
 		title = "SELL",
 		stripes = { Color3.fromRGB(220, 50, 50), Color3.fromRGB(240, 240, 240) },
 		padColor = Color3.fromRGB(230, 60, 60),

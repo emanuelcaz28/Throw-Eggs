@@ -164,12 +164,13 @@ function TrainingController.start()
 		hud.power.Text = Format.commas(power)
 		hud.bar.Visible = isTraining
 		hud.stop.Visible = isTraining
-		hud.level.Text = `Level {level}`
+		hud.level.Text = `+{Format.short(player:GetAttribute("PowerPerBar") or 0)} ⚡ per bar`
 		hud.xp.Text = `{Format.short(xp)} / {Format.short(needed)}`
 		hud.fill:TweenSize(UDim2.fromScale(math.clamp(xp / needed, 0, 1), 1), "Out", "Quad", 0.2, true)
 
+		-- A full bar happens every few seconds early on, so it floats instead of shouting.
 		if lastLevel and level > lastLevel and lastPower then
-			PopText.shout("LEVEL UP!", `Throw Power +{power - lastPower}`)
+			PopText.float(`+{Format.short(power - lastPower)} ⚡ POWER`, Pop.colors.good, PopText.above(hud.bar))
 		elseif isTraining and lastXp and level == lastLevel and xp > lastXp then
 			PopText.float(`+{Format.short(xp - lastXp)} XP`, Pop.colors.xp, PopText.above(hud.bar))
 		end
@@ -222,13 +223,15 @@ function TrainingController.start()
 		placeSign()
 		local function renderPad()
 			local cost = player:GetAttribute("XpUpgradePrice")
-			local nextXp = player:GetAttribute("NextXpPerRep")
-			if not cost or not nextXp then
+			local left = player:GetAttribute("UpgradesToNextTier")
+			local nextPower = player:GetAttribute("NextPowerPerBar")
+			if not cost or not left or not nextPower then
 				return
 			end
 			price.Text = Format.cash(cost)
 			price.TextColor3 = if (player:GetAttribute("Cash") or 0) >= cost then AFFORD else TOO_PRICEY
-			reward.Text = `+{Format.short(nextXp)} XP / rep`
+			-- Upgrades raise the power each full bar gives, a tier at a time (Config/Training).
+			reward.Text = if left == 1 then `{Format.short(nextPower)} ⚡ per bar!` else `{left} more: {Format.short(nextPower)} ⚡ per bar`
 		end
 		player.AttributeChanged:Connect(renderPad)
 		renderPad()

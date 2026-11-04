@@ -37,6 +37,7 @@ glow, must differ from its neighbours'. Taken so far:
 | 7 | The Abyss | deep blue sand | abyssal blue | sea green | cyan, pink | dim blue, thick haze |
 | 8 | Starfall Crater | midnight blue | navy | pale moon dust | cyan, gold, magenta | night (ClockTime 0) |
 | 9 | Eclipse Temple | red laterite | dark plum stone | jungle green | jade green, lantern gold | night before dawn, jade mist |
+| 10 | Forbidden Library | deep violet carpet | dark walnut | parchment | violet ink, candle amber | night (ClockTime 2), indigo haze |
 | 11 | Midnight Carnival | deep teal | crimson | gold straw | warm bulbs, pink neon, ghost white | midnight (ClockTime 0), plum haze |
 
 The exact colours are in `Config/Map` `biomeColors` and `Config/Lighting` `worlds`.
@@ -67,7 +68,8 @@ files and Studio folders alike.
 
 ## 3. Build the props in Blender
 
-Copy `assets/models/build_eclipse_temple.py` to `build_<map>.py` and replace: the docstring, `RENDERS`,
+Copy `assets/models/build_forbidden_library.py` (map 10, the newest, with the plain-colour setting and helpers for
+books, candles, turned boxes and magic circles) or `build_eclipse_temple.py` to `build_<map>.py` and replace: the docstring, `RENDERS`,
 `GLOW_ROLES`, the colours, `CORRIDOR` and `SKY` (preview only), `MOTION`, the prop functions and `ALL`, `DECOR`,
 the light function, and the `big` dict in `main` (which props get their own spot in the renders).
 
@@ -87,6 +89,9 @@ the light function, and the `big` dict in `main` (which props get their own spot
 
 **Rules that matter in the game:**
 
+- **No stud texture in Blender** (owner, 2026-11-04). Keep `kit.PREVIEW_STUDS = False` near the top of the script
+  (map 10's has it): every material is a plain colour, with none of the old round-stud preview image the maps
+  before 10 have. The studs come only from Studio's shared "Studs" material (step 8). The UVs are still made.
 - **One mesh per colour role.** A role is one colour and becomes one part in Studio. Its name is the part's last
   word (`prop_Orrery_RingA` → `RingA`), so no underscores, CamelCase.
 - **Roles are shared by the whole game.** `shared/Roles.luau` `glowing` makes a role Neon on every model, so a new
@@ -265,4 +270,8 @@ once they're imported and tidied (step 8), list them in `Config/Dinos` (ids neve
 - **`beam` picks its own width direction**, which lays horizontal rays and feathers on their edge. Use `plate`.
 - **Parts that move together but turn round different centres** come apart. See step 4.
 - **Floating bits:** something placed on a tier or ledge you didn't check the size of. Look at each still.
+- **Flicker (z-fighting):** two faces in exactly the same place shimmer as the camera moves (a brace ending flush
+  with a leg's face, a stripe overlapping the next one, a ring of a ball exactly on a cap's top). Run
+  `Blender -b --python assets/models/check_flicker.py -- build_<map>` and nudge what it lists. The preview corridor
+  in `map_kit.py` had it too (its hanging grass lay flush on the wall; fixed 2026-11-04, map 11).
 - **Two accounts, one folder:** shared files change under you. Re-read before editing; commit only your own hunks.

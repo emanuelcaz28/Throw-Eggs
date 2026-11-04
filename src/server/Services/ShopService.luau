@@ -1,4 +1,4 @@
--- The Robux shop: Game Passes, Server Luck, cash and Throw Power packs and the free starter dino. Roblox retries a
+-- The Robux shop: Game Passes, Server Luck, lucky throws, cash and Throw Power packs and the free starter dino. Roblox retries a
 -- purchase until told it was granted, so each receipt is saved with the player's data
 -- before saying so. That way a purchase is never lost or given twice.
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -8,6 +8,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local IndexService = require(script.Parent.IndexService)
+local LuckBoosts = require(ReplicatedStorage.Shared.LuckBoosts)
+local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
 local PlayerData = require(script.Parent.PlayerData)
 local PlotService = require(script.Parent.PlotService)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
@@ -16,6 +18,7 @@ local TrainingService = require(script.Parent.TrainingService)
 local ShopService = {}
 
 local LUCK_ATTRIBUTE = "ServerLuckEndsAt" -- set on ReplicatedStorage so every client can show the timer
+local DEAL_ATTRIBUTE = "LuckDealBought" -- set on the player once the one-time Luck x100 deal is used
 
 local remotes: { [string]: RemoteEvent } = {}
 
@@ -39,10 +42,41 @@ function ShopService.serverLuckMultiplier(): number
 	return if serverLuckActive() then Shop.serverLuck.multiplier else 1
 end
 
+-- Timed boosts multiplying this player's luck (Server Luck). Lucky throws are separate.
+function ShopService.luckMultiplier(player: Player): number
+	return LuckBoosts.multiplier(player, workspace:GetServerTimeNow())
+end
+
 local function grantServerLuck()
 	local now = workspace:GetServerTimeNow()
 	local start = math.max(ReplicatedStorage:GetAttribute(LUCK_ATTRIBUTE) or 0, now)
 	ReplicatedStorage:SetAttribute(LUCK_ATTRIBUTE, start + Shop.serverLuck.seconds)
+end
+
+-- Lucky throws (LuckyThrows): counts live in the save by multiplier, mirrored to player attributes.
+local function publishLuckyThrows(player: Player, data)
+	for _, multiplier in LuckyThrows.tiers do
+		player:SetAttribute(LuckyThrows.attribute(multiplier), data.luckyThrows[tostring(multiplier)] or 0)
+	end
+end
+
+function ShopService.addLuckyThrows(player: Player, data, multiplier: number, amount: number)
+	local key = tostring(multiplier)
+	data.luckyThrows[key] = (data.luckyThrows[key] or 0) + amount
+	publishLuckyThrows(player, data)
+end
+
+-- Uses up the biggest lucky throw owned and returns its multiplier, or 1 with none.
+function ShopService.takeLuckyThrow(player: Player, data): number
+	for _, multiplier in LuckyThrows.tiers do
+		local key = tostring(multiplier)
+		if (data.luckyThrows[key] or 0) > 0 then
+			data.luckyThrows[key] -= 1
+			publishLuckyThrows(player, data)
+			return multiplier
+		end
+	end
+	return 1
 end
 
 -- What each Developer Product gives, by product id.
@@ -52,6 +86,21 @@ local function grantFor(productId: number): ((Player, any) -> ())?
 	end
 	if productId == Shop.serverLuck.productId then
 		return grantServerLuck
+	end
+	for _, item in Shop.luckyThrows do
+		if productId == item.productId then
+			return function(player, data)
+				ShopService.addLuckyThrows(player, data, item.multiplier, 1)
+			end
+		end
+		if productId == item.dealProductId then
+			-- Granted even if somehow bought twice: they paid. The shop only offers it once.
+			return function(player, data)
+				data.luckDealBought = true
+				player:SetAttribute(DEAL_ATTRIBUTE, true)
+				ShopService.addLuckyThrows(player, data, item.multiplier, 1)
+			end
+		end
 	end
 	for _, pack in Shop.cashPacks do
 		if productId == pack.productId then
@@ -99,10 +148,13 @@ local function setPassAttribute(player: Player, passId: number)
 	if passId == Shop.doubleTraining.passId then
 		player:SetAttribute("HasDoubleTraining", true)
 	end
+	if passId == Shop.doublePower.passId then
+		player:SetAttribute("HasDoublePower", true)
+	end
 end
 
 local function checkOwnedPasses(player: Player)
-	for _, pass in { Shop.doubleCash, Shop.doubleTraining } do
+	for _, pass in { Shop.doubleCash, Shop.doubleTraining, Shop.doublePower } do
 		if pass.passId ~= 0 then
 			local ok, owns = pcall(function()
 				return MarketplaceService:UserOwnsGamePassAsync(player.UserId, pass.passId)
@@ -136,6 +188,8 @@ end
 
 local function onLoaded(player: Player, data)
 	remotes.StarterClaimed:FireClient(player, data.starterClaimed)
+	publishLuckyThrows(player, data)
+	player:SetAttribute(DEAL_ATTRIBUTE, data.luckDealBought)
 	checkOwnedPasses(player)
 end
 

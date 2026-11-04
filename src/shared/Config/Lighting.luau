@@ -88,6 +88,20 @@ return {
 			atmosphere = { Color = Color3.fromRGB(90, 150, 125), Decay = Color3.fromRGB(30, 70, 60), Density = 0.42, Haze = 2.2 },
 			colorCorrection = { TintColor = Color3.fromRGB(226, 248, 232), Saturation = 0.18 },
 		},
+		-- The library at night: a dusty indigo haze, so the candles and the violet ink glow. ClockTime 2 sits between
+		-- Eclipse Temple's 5.6 and Midnight Carnival's 0, so blending either way stays in the night.
+		ForbiddenLibrary = {
+			lighting = { ClockTime = 2, Brightness = 1.2, OutdoorAmbient = Color3.fromRGB(130, 118, 170), ExposureCompensation = 0.25 },
+			atmosphere = { Color = Color3.fromRGB(104, 92, 150), Decay = Color3.fromRGB(38, 28, 74), Density = 0.38, Haze = 1.8 },
+			colorCorrection = { TintColor = Color3.fromRGB(240, 232, 255), Saturation = 0.16 },
+		},
+		-- The carnival at midnight: a plum-violet haze, thinner than the jungle's, so the bulbs, the neon and the
+		-- ghosts glow. ClockTime 0, like Starfall: night with stars.
+		MidnightCarnival = {
+			lighting = { ClockTime = 0, Brightness = 1.3, OutdoorAmbient = Color3.fromRGB(150, 120, 165), ExposureCompensation = 0.25 },
+			atmosphere = { Color = Color3.fromRGB(120, 84, 140), Decay = Color3.fromRGB(56, 26, 72), Density = 0.34, Haze = 1.4 },
+			colorCorrection = { TintColor = Color3.fromRGB(255, 232, 238), Saturation = 0.22 },
+		},
 	},
 
 	-- Chunky block clouds drifting around the island, built on each player's screen only.

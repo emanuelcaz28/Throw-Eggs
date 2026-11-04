@@ -10,10 +10,10 @@ local Throw = {
 		origin = Vector3.new(0, 0, 0), -- the throw line at arena level; biome distances are measured from here
 		direction = Vector3.new(0, 0, -1), -- eggs fly along this axis
 		floorY = -12, -- the corridor floor, where eggs land (Config/Map corridor.floorY)
-		width = 72, -- the corridor's width (Config/Map platform.width)
+		width = 88, -- the corridor's width (Config/Map platform.width)
 		markerSpacing = 100, -- studs between distance markers
 		zoneCenter = Vector3.new(0, 0.5, 8), -- the platform's top, middle
-		zoneSize = Vector2.new(72, 16), -- across, along the lane
+		zoneSize = Vector2.new(88, 16), -- across, along the lane
 		zoneHeight = 8, -- how far above the platform still counts
 	},
 

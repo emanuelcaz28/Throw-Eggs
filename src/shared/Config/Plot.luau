@@ -5,7 +5,7 @@ local Plot = {
 	upgradeSlots = 2, -- each upgrade at the plot's sign adds this many
 	maxSlots = 20,
 	upgradeBasePrice = 1000, -- the first upgrade; each one after costs upgradePriceGrowth times more
-	upgradePriceGrowth = 6,
+	upgradePriceGrowth = 10,
 	backpackSize = 100, -- dinos held off the plot; a catch with no room is sold automatically
 	sellSeconds = 60, -- a dino sells for this many seconds of its own income
 	offlineRate = 0.5, -- share of the plot's $/s paid for time away (events don't count)
@@ -44,6 +44,29 @@ local Plot = {
 		height = 26,
 		size = Vector2.new(18, 15),
 		maxDistance = 1000,
+	},
+
+	-- Tags floating over the monsters on the bases (MonsterTagController, Figma "Throw Eggs - Monster Tags &
+	-- Walk Vision"): its mutations (only when it has some), its name, its $/s. Only the few monsters nearest to you
+	-- show one, so a full base doesn't pile its tags into a heap.
+	tags = {
+		nearest = 3, -- this many tags at most, on the monsters closest to you...
+		maxDistance = 120, -- ...no further than this many studs from you (measured to the monster's edge)
+		ceiling = 18, -- studs over the monster's feet a tag stops at, so a giant's tag stays readable from its base
+		headGap = 1.5, -- studs between the top of the head and the tag
+		size = Vector2.new(420, 150), -- the tag's box in pixels, the same on screen for every monster size
+		farScale = 0.7, -- how big a tag is at maxDistance, against up close
+		mutationText = 26, -- pixel heights of the three lines
+		nameText = 42,
+		incomeText = 38,
+		outline = 5, -- the dark outline round the letters, in pixels
+		sizeWord = { "#FFFFFF", "#AEB8C8" }, -- size mutations are silver, top to bottom
+		income = { "#B6FF8A", "#2FD24A" },
+		-- A colour mutation's word runs from its colour lifted towards white (by this much) down to its colour.
+		colourLift = 0.6,
+		-- Mutations too dark to read on the dark outline get a light outline instead.
+		darkOutline = Color3.fromRGB(233, 226, 255),
+		darkBelow = 0.25, -- a colour this dark or darker (0 black, 1 white)
 	},
 }
 

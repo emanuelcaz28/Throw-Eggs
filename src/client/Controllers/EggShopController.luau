@@ -18,6 +18,7 @@ local EggShopController = {}
 
 local CARD_SIZE = Vector2.new(176, 380)
 local CARD_GAP = 16
+local VISIBLE_CARDS = 5
 -- Card colours and rarity words by tier; later tiers reuse the last one.
 local TIERS = {
 	{ "Common", { "#f6ead2", "#d9bf91" } },
@@ -35,12 +36,19 @@ local function buildGui()
 	gui.DisplayOrder = 2 -- above the My Dinos panel
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	local width = #Eggs * CARD_SIZE.X + (#Eggs - 1) * CARD_GAP + 60
-	local panel = UiKit.panel(gui, { name = "ShopPanel", width = math.max(width, 600), height = 540, header = "sky", title = "Egg Shop", icon = "🥚", iconKey = "egg" })
-	local row = Instance.new("Frame")
+	-- Five cards show at once; with more eggs (one per map) the row scrolls sideways.
+	local shown = math.min(#Eggs, VISIBLE_CARDS)
+	local width = shown * CARD_SIZE.X + (shown - 1) * CARD_GAP + 60
+	local panel = UiKit.panel(gui, { name = "ShopPanel", width = math.max(width, 600), height = 560, header = "sky", title = "Egg Shop", icon = "🥚", iconKey = "egg" })
+	local row = Instance.new("ScrollingFrame")
 	row.BackgroundTransparency = 1
+	row.BorderSizePixel = 0
 	row.Position = UDim2.fromOffset(30, 20)
-	row.Size = UDim2.new(1, -60, 0, CARD_SIZE.Y)
+	row.Size = UDim2.new(1, -60, 0, CARD_SIZE.Y + 16)
+	row.CanvasSize = UDim2.new()
+	row.AutomaticCanvasSize = Enum.AutomaticSize.X
+	row.ScrollingDirection = Enum.ScrollingDirection.X
+	row.ScrollBarThickness = 8
 	row.Parent = panel.body
 	local layout = Instance.new("UIListLayout")
 	layout.FillDirection = Enum.FillDirection.Horizontal

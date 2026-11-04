@@ -131,8 +131,10 @@ local function decorateBiome(parent: Instance, biome, rules)
 	end
 
 	-- Things spanning the corridor overhead, resting on both rims (turned across it, if they say which way is front).
+	-- They were modelled for a narrower corridor, so they grow with it to keep their feet on the rims.
+	local overheadStretch = Map.platform.width / Map.corridor.overheadBuiltFor
 	for _, spot in rules.overhead or {} do
-		place(parent, folder, spot.name, Vector3.new(0, Map.walls.rimY, -(biome.startDist + spot.distance)), spot.yaw, spot.scale, false, ALONG)
+		place(parent, folder, spot.name, Vector3.new(0, Map.walls.rimY, -(biome.startDist + spot.distance)), spot.yaw, spot.scale * overheadStretch, false, ALONG)
 	end
 
 	-- Things on a corridor wall's top edge, facing the middle: lava pouring down into the corridor.

@@ -21,7 +21,7 @@ TEXTURES = HERE.parent / "textures"
 RENDERS = HERE.parent.parent / "design" / "world" / "models"
 
 SECTION = 64  # a whole number of checker repeats, so sections line up
-LANE_WIDTH = 72
+LANE_WIDTH = 88  # the corridor and platform; widened from 72 at the owner's request (2026-11-04). 11 checker squares
 WALL_HEIGHT = 44  # corridor floor to rim
 RIM_WIDTH = 72
 PLATFORM_DEPTH = 16

@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
+local Format = require(ReplicatedStorage.Shared.Format)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
@@ -232,7 +233,8 @@ function ThrowCinematic.buildLuckPanel(gui: ScreenGui)
 
 	-- Without a biome only the number changes.
 	function luckPanel.set(luck: number, biome)
-		number.Text = string.format("%.2fX", luck)
+		-- Two decimals while it's small, then 1.5K, 2.5M, 10B as it climbs.
+		number.Text = if luck < 1000 then string.format("%.2fX", luck) else `{Format.short(luck)}X`
 		if biome == nil or biome == current then
 			return
 		end

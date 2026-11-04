@@ -14,8 +14,9 @@ return {
 
 	-- A new player's save. New fields added here are filled in for existing players on load.
 	defaults = {
-		trainingLevel = 1,
+		trainingLevel = 1, -- the bar being filled (Config/Training)
 		trainingXp = 0,
+		trainedPower = -1, -- Throw Power from full bars; -1 = a save from before bars, worked out on load
 		xpUpgrades = 0, -- bought at the orange pad beside the squat rack
 		bonusPower = 0, -- Throw Power bought in Shop packs, on top of what the training level gives
 		bestIncome = 0, -- $/s of the best dino ever caught
@@ -33,7 +34,14 @@ return {
 		totalCaught = 0, -- dinos caught by throwing, ever
 		totalEarned = 0, -- cash earned from income and sales, ever
 		rarestOneIn = 0, -- the "1 in X" of the rarest catch ever
+		peakIncome = 0, -- the highest $/s ever (events counted)
+		farthestThrow = 0, -- studs, the farthest egg ever
 		statsStarted = false, -- set once the stats above have been filled in for this save
 		receipts = {}, -- Robux purchases already granted, by purchase id
+		throwsSinceRare = 0, -- throws in a row without a rare monster, for pity (Config/Hooks)
+		luckyThrows = {}, -- lucky throws owned, count by multiplier as text ("100" = 2); LuckyThrows
+		luckDealBought = false, -- the one-time R$ 3 Luck x100 deal has been used
+		dailyStreak = 0, -- the last daily reward day claimed, 1 to 7 (Config/Daily)
+		dailyLastDay = -1, -- the UTC day number (os.time() // 86400) of the last daily claim
 	},
 }

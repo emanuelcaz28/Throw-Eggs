@@ -96,13 +96,19 @@ local function passMultiplier(player: Player): number
 	return if player:GetAttribute("HasDoubleTraining") then Shop.doubleTraining.multiplier else 1
 end
 
+-- Power each full bar gives: the rack's tier, doubled by the x2 Power pass.
+local function powerPerBar(player: Player, data): number
+	local pass = if player:GetAttribute("HasDoublePower") then Shop.doublePower.multiplier else 1
+	return Training.powerPerBar(data.xpUpgrades) * pass
+end
+
 local function xpPerRep(player: Player, data): number
 	return Training.xpPerRepFor(data.xpUpgrades) * passMultiplier(player)
 end
 
--- What the training level gives, plus power bought in Shop packs.
+-- The starting power, plus what full bars gave, plus power bought in Shop packs.
 local function throwPower(data): number
-	return Training.powerForLevel(data.trainingLevel) + data.bonusPower
+	return Training.startPower + data.trainedPower + data.bonusPower
 end
 
 local function publish(player: Player, data: { [string]: any })
@@ -113,13 +119,19 @@ local function publish(player: Player, data: { [string]: any })
 	player:SetAttribute("XpPerRep", xpPerRep(player, data))
 	player:SetAttribute("NextXpPerRep", Training.xpPerRepFor(data.xpUpgrades + 1) * passMultiplier(player))
 	player:SetAttribute("XpUpgradePrice", Training.xpUpgradePrice(data.xpUpgrades))
+	local upgradesLeft, nextPower = Training.nextTier(data.xpUpgrades)
+	player:SetAttribute("PowerPerBar", powerPerBar(player, data))
+	player:SetAttribute("NextPowerPerBar", nextPower * (powerPerBar(player, data) / Training.powerPerBar(data.xpUpgrades)))
+	player:SetAttribute("UpgradesToNextTier", upgradesLeft)
 end
 
-local function addXp(data, amount: number)
+-- Each full bar gives the rack's power per bar.
+local function addXp(player: Player, data, amount: number)
 	data.trainingXp += amount
 	while data.trainingXp >= Training.xpToNextLevel(data.trainingLevel) do
 		data.trainingXp -= Training.xpToNextLevel(data.trainingLevel)
 		data.trainingLevel += 1
+		data.trainedPower += powerPerBar(player, data)
 	end
 end
 
@@ -181,14 +193,21 @@ end
 local function tryBuyXpUpgrade(player: Player, data)
 	local price = Training.xpUpgradePrice(data.xpUpgrades)
 	if data.cash < price then
-		PlotService.notify(player, `You need {Format.cash(price)} for more XP per rep`, true)
+		PlotService.notify(player, `You need {Format.cash(price)} for this upgrade`, true)
 		return
 	end
+	local before = powerPerBar(player, data)
 	data.cash -= price
 	data.xpUpgrades += 1
 	player:SetAttribute("Cash", data.cash)
 	publish(player, data)
-	PlotService.notify(player, `Upgraded! Every rep now gives {Format.short(xpPerRep(player, data))} XP`)
+	local now = powerPerBar(player, data)
+	if now > before then
+		PlotService.notify(player, `Upgraded! Every full bar now gives {Format.short(now)} power`)
+	else
+		local left, nextPower = Training.nextTier(data.xpUpgrades)
+		PlotService.notify(player, `Upgraded! {left} more for {Format.short(nextPower)} power per bar`)
+	end
 end
 
 local function step(dt: number)
@@ -219,7 +238,7 @@ local function step(dt: number)
 				local reps = math.floor(progress / Training.repInterval)
 				repProgress[player] = progress - reps * Training.repInterval
 				if reps > 0 then
-					addXp(data, xpPerRep(player, data) * reps)
+					addXp(player, data, xpPerRep(player, data) * reps)
 					publish(player, data)
 				end
 
@@ -245,7 +264,7 @@ local function onTapBubble(player: Player, id: any)
 	end
 	activeBubble[player] = nil
 	scheduleBubble(player)
-	addXp(data, xpPerRep(player, data) * Training.bubble.multiplier)
+	addXp(player, data, xpPerRep(player, data) * Training.bubble.multiplier)
 	publish(player, data)
 	remotes.Boosted:FireAllClients(player)
 end
@@ -262,10 +281,27 @@ function TrainingService.addBonusPower(player: Player, data, amount: number)
 	publish(player, data)
 end
 
+-- Saves from before bars kept their power as levels: 20 a level.
+local function onLoaded(player: Player, data)
+	if data.trainedPower < 0 then
+		data.trainedPower = 20 * (data.trainingLevel - 1)
+	end
+	publish(player, data)
+end
+
 function TrainingService.start()
 	makeRemotes()
 	buildRacks()
-	PlayerData.onLoaded(publish)
+	PlayerData.onLoaded(onLoaded)
+	-- The x2 Power pass can arrive after loading (bought, or checked late): refresh power per bar.
+	Players.PlayerAdded:Connect(function(player)
+		player:GetAttributeChangedSignal("HasDoublePower"):Connect(function()
+			local data = PlayerData.get(player)
+			if data then
+				publish(player, data)
+			end
+		end)
+	end)
 	remotes.StopTraining.OnServerEvent:Connect(function(player)
 		stopTraining(player, true)
 	end)

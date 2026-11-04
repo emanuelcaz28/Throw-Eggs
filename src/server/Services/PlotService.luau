@@ -24,7 +24,6 @@ local World = require(ReplicatedStorage.Shared.World)
 local PlotService = {}
 
 local INCOME_TICK = 1 -- seconds
-local STATUE_LABEL_DISTANCE = 90
 local OUT = Vector3.new(0, 0, -1) -- out of every base, through its gate
 local SPOT_TRIES = 40
 local HELD_SCALE = 0.35
@@ -302,8 +301,11 @@ local function rebuildStatues(player: Player, data)
 		if stats then
 			local position = spotPosition(plotIndex, entry.x, entry.z)
 			local statue = DinoModel.build(entry.id, entry.mutation, position, DinoModel.statueScale(entry.id, entry.size))
-			local head = statue.Head
-			World.makeSign(head, `{stats.name}\n{Format.cash(stats.income)}/s`, 5, STATUE_LABEL_DISTANCE, 170)
+			-- What its floating tag shows (MonsterTagController draws it, on the few monsters nearest each player).
+			statue:SetAttribute("TagName", stats.name)
+			statue:SetAttribute("TagIncome", stats.income)
+			statue:SetAttribute("TagMutation", entry.mutation)
+			statue:SetAttribute("TagSize", entry.size)
 			statue.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 			statue:SetAttribute("PlotIndex", plotIndex)
 			CollectionService:AddTag(statue, DinoLife.tag)
@@ -581,6 +583,7 @@ local function payIncome()
 			local income = totalIncome(player, data)
 			-- $/s first: the client tells this tick from other cash by comparing the two.
 			player:SetAttribute("Income", income)
+			data.peakIncome = math.max(data.peakIncome, income) -- the HIGHEST $/S leaderboard
 			earn(player, data, income * INCOME_TICK)
 			data.lastSeen = os.time()
 			player:SetAttribute("BaseIncome", baseIncome(player, data))

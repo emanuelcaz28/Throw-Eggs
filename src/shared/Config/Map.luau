@@ -25,7 +25,7 @@ local Map = {
 	},
 
 	platform = {
-		width = 72, -- the corridor is this wide too
+		width = 88, -- the corridor is this wide too (72 until the owner asked for a wider corridor, 2026-11-04)
 		depth = 16, -- from the throw line (Z = 0) to the arena (Z = depth)
 		top = 0.5, -- a step up from the arena floor
 	},
@@ -36,6 +36,9 @@ local Map = {
 		wallStartZ = -40, -- the arena's front wall ends here; the corridor walls carry on from it
 		extra = 36, -- corridor beyond the farthest biome, so the last eggs land well inside it
 		barrierHeight = 40, -- invisible wall at the throw line, so nobody walks off the platform
+		-- The corridor width the props spanning it (bridges, arches) were modelled for. MapDecor scales them
+		-- up by platform.width / this, so they still rest on both rims.
+		overheadBuiltFor = 72,
 	},
 
 	-- The kit's corridor pieces are Forest's colours. Other biomes recolour them; a role
@@ -80,6 +83,16 @@ local Map = {
 			Floor = Color3.fromRGB(128, 70, 66), -- red laterite flagstones, warm after Starfall's blue, so the jade glow stands out
 			Dirt = Color3.fromRGB(74, 46, 58), -- dark carved temple walls
 			Grass = Color3.fromRGB(58, 128, 74), -- jungle on the rims and hanging over the walls
+		},
+		ForbiddenLibrary = {
+			Floor = Color3.fromRGB(72, 56, 116), -- a deep violet carpet, so the cream pages and the glowing ink stand out on it
+			Dirt = Color3.fromRGB(86, 57, 42), -- dark walnut walls, like the backs of bookcases
+			Grass = Color3.fromRGB(213, 193, 147), -- parchment on the rims, hanging over the walls like loose pages
+		},
+		MidnightCarnival = {
+			Floor = Color3.fromRGB(43, 108, 114), -- a deep teal midway, cold under the warm crimson and gold
+			Dirt = Color3.fromRGB(122, 35, 53), -- crimson walls, like the curtain of a big top
+			Grass = Color3.fromRGB(190, 138, 42), -- gold straw on the rims, hanging over the walls like a curtain's fringe
 		},
 	},
 

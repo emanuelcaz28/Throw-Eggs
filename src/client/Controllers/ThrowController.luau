@@ -12,7 +12,8 @@ local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local PopText = require(ReplicatedStorage.Shared.PopText)
-local Shop = require(ReplicatedStorage.Shared.Config.Shop)
+local LuckBoosts = require(ReplicatedStorage.Shared.LuckBoosts)
+local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
@@ -317,15 +318,15 @@ local function windUp(thrower: Player, egg: BasePart, isMine: boolean, hud, spot
 	return egg.Position, if isMine then camera.CFrame else nil
 end
 
-local function serverLuck(): number
-	local active = (ReplicatedStorage:GetAttribute("ServerLuckEndsAt") or 0) > workspace:GetServerTimeNow()
-	return if active then Shop.serverLuck.multiplier else 1
+-- Server Luck, as the server works it out.
+local function boughtLuck(): number
+	return LuckBoosts.multiplier(player, workspace:GetServerTimeNow())
 end
 
 -- The reveal has the screen to itself. While aiming and flying, only Throw Power stays
 -- (keepPower), so the meter and the luck number aren't crowded.
 local function setHudsEnabled(enabled: boolean, keepPower: boolean?)
-	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud", "ShopHud", "EventHud" } do
+	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud", "ShopHud", "EventHud", "DailyHud", "GoalHud", "RankingHud" } do
 		if keepPower and name == "TrainingHud" then
 			continue
 		end
@@ -492,6 +493,8 @@ function ThrowController.start()
 		local duration = Throw.flightTime(distance)
 		local arc = math.min(distance * flight.arcPerStud, flight.maxArc)
 		local eggConfig = DinoStats.findOption(Eggs, eggId) or Eggs[1]
+		-- The lucky throw the server will use up when this egg lands (the biggest owned).
+		local luckyThrow = if isMine then LuckyThrows.nextOf(player) or 1 else 1
 		local egg = if isMine and heldEgg then heldEgg else makeEgg(eggConfig.color)
 		egg.Color = eggConfig.color
 		if isMine then
@@ -547,7 +550,7 @@ function ThrowController.start()
 			egg.CFrame = CFrame.new(position) * tumble * heldTurn
 			if isMine and cameraFrom then
 				camera.CFrame = ThrowCinematic.flightCamera(cameraFrom, position, elapsed, duration)
-				local luck = Luck.at(travelled) * eggConfig.luckBonus * (player:GetAttribute("IndexLuck") or 1) * serverLuck()
+				local luck = Luck.at(travelled) * eggConfig.luckBonus * (player:GetAttribute("IndexLuck") or 1) * boughtLuck() * luckyThrow
 				hud.luckPanel.set(luck, Luck.biomeAt(travelled))
 			end
 			if t >= 1 then

@@ -35,6 +35,16 @@ local function completedCount(data): number
 	return count
 end
 
+-- Whether the player has ever caught anything from this biome (the new-map gift, Config/Hooks).
+function IndexService.hasCaughtIn(data, biomeId: string): boolean
+	for _, dino in Dinos[biomeId] or {} do
+		if data.discovered[dino.id] then
+			return true
+		end
+	end
+	return false
+end
+
 function IndexService.cashMultiplier(data): number
 	return 1 + completedCount(data) * Index.cashBonusPerBiome
 end

@@ -4,7 +4,7 @@
 -- close-up. No monster and no text show: it's the camera doing the walking.
 -- How it looks depends on the catch: rarer catches start further from the egg, bigger monsters see from higher up
 -- (their real eye height at their real size) and take slower, heavier steps, swimmers glide, and a colour mutation
--- rings the screen in its colour. Display only: the server has already rolled the catch.
+-- glows round the screen's edges in its colour. It opens and ends with a blink. Display only: the server has already rolled the catch.
 -- Numbers live in Config/Reveal walk. RevealController plays it.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -172,55 +172,212 @@ function RevealWalk.cameraAt(plan: Plan, share: number, steps: number, sinceFoot
 	return CFrame.new(position) * CFrame.Angles(0, heading, 0) * CFrame.Angles(-pitch, 0, 0) * CFrame.Angles(0, 0, roll)
 end
 
--- The rings round the screen for a colour mutation: a dark edge, then rings in its colour, faint inside and strong
--- at the edges, clear in the middle. Hidden until shown.
+-- What the screen looks like through the monster's eyes: eyelids at the top and bottom that blink open at the
+-- start and shut at the end, and for a colour mutation a soft round glow in its colour at the edges with sparkles
+-- twinkling in it. Hidden until shown.
+local sparkleLoop: RBXScriptConnection? = nil
+
+local function sparkle(parent: Instance): Frame
+	local holder = Instance.new("Frame")
+	holder.Name = "Sparkle"
+	holder.AnchorPoint = Vector2.new(0.5, 0.5)
+	holder.BackgroundTransparency = 1
+	holder.Parent = parent
+	Instance.new("UIScale").Parent = holder
+	-- Two thin bars crossing, fading out towards their tips: a four-pointed twinkle.
+	for _, wide in { true, false } do
+		local bar = Instance.new("Frame")
+		bar.AnchorPoint = Vector2.new(0.5, 0.5)
+		bar.Position = UDim2.fromScale(0.5, 0.5)
+		bar.Size = if wide then UDim2.fromScale(1, 0.16) else UDim2.fromScale(0.16, 1)
+		bar.BorderSizePixel = 0
+		bar.Parent = holder
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0.5, 0)
+		corner.Parent = bar
+		local fade = Instance.new("UIGradient")
+		fade.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.5, 0),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		fade.Rotation = if wide then 0 else 90
+		fade.Parent = bar
+	end
+	return holder
+end
+
 function RevealWalk.buildGlow(parent: Instance): Frame
 	local glow = settings.glow
+	local eyes = settings.eyes
 	local holder = Instance.new("Frame")
-	holder.Name = "WalkGlow"
+	holder.Name = "WalkEyes"
 	holder.Size = UDim2.fromScale(1, 1)
 	holder.BackgroundTransparency = 1
 	holder.Visible = false
 	holder.ZIndex = 1
 	holder.Parent = parent
 
-	local function layer(name: string, image: string, size: number, transparency: number)
-		local label = Instance.new("ImageLabel")
-		label.Name = name
-		label.AnchorPoint = Vector2.new(0.5, 0.5)
-		label.Position = UDim2.fromScale(0.5, 0.5)
-		label.Size = UDim2.fromScale(size, size)
-		label.BackgroundTransparency = 1
-		label.Image = image
-		label.ImageTransparency = 1
-		label:SetAttribute("Shown", transparency)
-		label.Parent = holder
-		return label
+	-- The colour glow, kept round on any screen: sized against the screen's width only.
+	local colour = Instance.new("Frame")
+	colour.Name = "Glow"
+	colour.Size = UDim2.fromScale(1, 1)
+	colour.BackgroundTransparency = 1
+	colour.ZIndex = 1
+	colour.Parent = holder
+	local dark = Instance.new("ImageLabel")
+	dark.Name = "Dark"
+	dark.AnchorPoint = Vector2.new(0.5, 0.5)
+	dark.Position = UDim2.fromScale(0.5, 0.5)
+	dark.BackgroundTransparency = 1
+	dark.Image = glow.darkImage
+	dark.ImageTransparency = 1
+	dark.Parent = colour
+	for index = 1, glow.bands do
+		local u = (index - 1) / glow.bands
+		local band = Instance.new("Frame")
+		band.Name = `Band{index}`
+		band.AnchorPoint = Vector2.new(0.5, 0.5)
+		band.Position = UDim2.fromScale(0.5, 0.5)
+		band:SetAttribute("Size", lerp(glow.innerSize, glow.outerSize, u))
+		band.BackgroundTransparency = 1
+		band.Parent = colour
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0.5, 0)
+		corner.Parent = band
+		local stroke = Instance.new("UIStroke")
+		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		stroke.Transparency = 1
+		stroke:SetAttribute("Shown", lerp(glow.innerTransparency, glow.outerTransparency, u ^ 1.5))
+		stroke.Parent = band
 	end
-	layer("Dark", glow.darkImage, 1, glow.darkTransparency)
-	for index = 1, glow.rings do
-		local u = (index - 1) / math.max(glow.rings - 1, 1)
-		local ring = layer(`Ring{index}`, glow.ringImage, lerp(glow.innerSize, glow.outerSize, u), lerp(glow.innerTransparency, glow.outerTransparency, u))
-		ring:SetAttribute("Tinted", true)
+	for index = 1, glow.sparkles do
+		sparkle(colour).Name = `Sparkle{index}`
+	end
+
+	-- The eyelids: the edges of two huge dark circles above and below, shut to start with (sized when shown).
+	for _, top in { true, false } do
+		local lid = Instance.new("Frame")
+		lid.Name = if top then "LidTop" else "LidBottom"
+		lid.AnchorPoint = Vector2.new(0.5, if top then 1 else 0)
+		lid.BackgroundColor3 = eyes.color
+		lid.BorderSizePixel = 0
+		lid.ZIndex = 2
+		lid.Parent = holder
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0.5, 0)
+		corner.Parent = lid
 	end
 	return holder
 end
 
-function RevealWalk.showGlow(holder: Frame, color: Color3)
+-- Where the lids sit to cover `cover` of the screen's height each in the middle; shut, they reach past the middle
+-- by as much as their edges curve up at the corners, so no gap shows.
+local function lidsAt(holder: Frame, cover: number?): ({ [Instance]: UDim2 })
+	local viewport = workspace.CurrentCamera.ViewportSize
+	local radius = settings.eyes.curve * viewport.X / 2
+	local lift = radius - math.sqrt(radius ^ 2 - (viewport.X / 2) ^ 2)
+	local reach = if cover then cover * viewport.Y else viewport.Y / 2 + lift + 4
+	return {
+		[holder.LidTop] = UDim2.new(0.5, 0, 0, reach),
+		[holder.LidBottom] = UDim2.new(0.5, 0, 1, -reach),
+	}
+end
+
+local function moveLids(holder: Frame, cover: number?, time: number): Tween
+	local last = nil
+	for lid, position in lidsAt(holder, cover) do
+		last = TweenService:Create(lid, TweenInfo.new(time, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), { Position = position })
+		last:Play()
+	end
+	return last
+end
+
+-- Shows the eyes shut, and the glow in `color` if the catch has a colour mutation.
+function RevealWalk.showGlow(holder: Frame, color: Color3?)
+	local glow = settings.glow
 	holder.Visible = true
-	for _, label in holder:GetChildren() do
-		if label:IsA("ImageLabel") then
-			if label:GetAttribute("Tinted") then
-				label.ImageColor3 = color
+	local viewport = workspace.CurrentCamera.ViewportSize
+	local diameter = settings.eyes.curve * viewport.X
+	for lid, position in lidsAt(holder, nil) do
+		lid.Size = UDim2.fromOffset(diameter, diameter)
+		lid.Position = position
+	end
+	local colour = holder.Glow
+	colour.Visible = color ~= nil
+	if not color then
+		return
+	end
+	-- Sized from the screen's diagonal in pixels, so the glow is round and reaches the corners on any screen.
+	local diagonal = viewport.Magnitude
+	-- Each band's ring runs out from its edge to the next band's, so together they make one soft glow.
+	local thickness = math.max((glow.outerSize - glow.innerSize) * diagonal / (2 * glow.bands), 1)
+	colour.Dark.Size = UDim2.fromOffset(glow.darkSize * diagonal, glow.darkSize * diagonal)
+	colour.Dark.ImageTransparency = 1
+	tween(colour.Dark, glow.fadeTime, { ImageTransparency = glow.darkTransparency })
+	local spots = {}
+	for _, child in colour:GetChildren() do
+		local stroke = child:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			local size = child:GetAttribute("Size") * diagonal
+			child.Size = UDim2.fromOffset(size, size)
+			stroke.Color = color
+			stroke.Thickness = thickness
+			stroke.Transparency = 1
+			tween(stroke, glow.fadeTime, { Transparency = stroke:GetAttribute("Shown") })
+		elseif child.Name:match("^Sparkle") then
+			local size = glow.sparkleSize * math.clamp(viewport.Y / 1000, 0.6, 1.5)
+			local angle = math.random() * 2 * math.pi
+			local reach = lerp(glow.sparkleFrom, glow.sparkleTo, math.random()) * diagonal
+			local x = math.clamp(0.5 * viewport.X + math.cos(angle) * reach, size, viewport.X - size)
+			local y = math.clamp(0.5 * viewport.Y + math.sin(angle) * reach, size, viewport.Y - size)
+			child.Size = UDim2.fromOffset(size, size)
+			child.Position = UDim2.fromOffset(x, y)
+			for _, bar in child:GetChildren() do
+				if bar:IsA("Frame") then
+					bar.BackgroundColor3 = color:Lerp(Color3.new(1, 1, 1), glow.sparkleLift)
+				end
 			end
-			label.ImageTransparency = 1
-			tween(label, settings.glow.fadeTime, { ImageTransparency = label:GetAttribute("Shown") })
+			table.insert(spots, { sparkle = child, x = x, y = y, phase = math.random() * 2 * math.pi, turn = math.random() * 2 * math.pi })
 		end
 	end
+	-- Twinkle: each sparkle grows and shrinks to nothing, turning a little and drifting, at its own phase.
+	if sparkleLoop then
+		sparkleLoop:Disconnect()
+	end
+	local started = os.clock()
+	sparkleLoop = RunService.RenderStepped:Connect(function()
+		if not colour.Parent then -- its screen was removed without hiding it first
+			RevealWalk.hideGlow(holder)
+			return
+		end
+		local t = os.clock() - started
+		local drift = glow.drift * viewport.X
+		for _, spot in spots do
+			local wave = math.sin(t * glow.twinkle * 2 * math.pi + spot.phase)
+			spot.sparkle.UIScale.Scale = math.max(wave, 0) * math.min(t / glow.fadeTime, 1)
+			spot.sparkle.Rotation = math.deg(0.3 * math.sin(t + spot.turn))
+			spot.sparkle.Position = UDim2.fromOffset(spot.x + drift * math.sin(0.7 * t + spot.turn), spot.y + drift * math.cos(0.5 * t + spot.phase))
+		end
+	end)
+end
+
+-- The blink open, to thin lids resting at the top and bottom.
+function RevealWalk.openEyes(holder: Frame): Tween
+	return moveLids(holder, settings.eyes.rest, settings.eyes.open)
+end
+
+-- The eyes shutting: the cut to black at the end of the walk.
+function RevealWalk.closeEyes(holder: Frame): Tween
+	return moveLids(holder, nil, settings.eyes.close)
 end
 
 function RevealWalk.hideGlow(holder: Frame)
 	holder.Visible = false
+	if sparkleLoop then
+		sparkleLoop:Disconnect()
+		sparkleLoop = nil
+	end
 end
 
 -- The dot that marks a far-off egg: always the same size on screen.
@@ -233,7 +390,7 @@ local function buildMarker(egg: BasePart): BillboardGui
 	marker.Enabled = false
 	marker.Adornee = egg
 	marker.Parent = egg
-	for _, part in { { 1, 0.75, settings.glow.ringImage }, { 0.5, 0.05, settings.markerImage } } do
+	for _, part in { { 1, 0.75, settings.markerRing }, { 0.5, 0.05, settings.markerImage } } do
 		local label = Instance.new("ImageLabel")
 		label.AnchorPoint = Vector2.new(0.5, 0.5)
 		label.Position = UDim2.fromScale(0.5, 0.5)
@@ -260,11 +417,11 @@ function RevealWalk.play(plan: Plan, egg: BasePart, black: Frame, glow: Frame, s
 	camera.FieldOfView = settings.fieldOfView
 	local steps = 0.5 -- mid-stride, so the first footfall comes soon
 	camera.CFrame = RevealWalk.cameraAt(plan, 0, steps, math.huge)
-	if plan.color then
-		RevealWalk.showGlow(glow, plan.color)
-	end
+	RevealWalk.showGlow(glow, plan.color)
 	task.wait(settings.blackHold)
-	tween(black, settings.fadeIn, { BackgroundTransparency = 1 })
+	-- The shut eyelids take over from the black, then blink open.
+	black.BackgroundTransparency = 1
+	RevealWalk.openEyes(glow)
 
 	local marker = buildMarker(egg)
 	local eggHeight = egg.Size.Y
@@ -305,7 +462,9 @@ function RevealWalk.play(plan: Plan, egg: BasePart, black: Frame, glow: Frame, s
 		RunService.RenderStepped:Wait()
 	end
 
-	tween(black, settings.cutOut, { BackgroundTransparency = 0 }).Completed:Wait()
+	-- The eyes shut, then the black takes over again.
+	RevealWalk.closeEyes(glow).Completed:Wait()
+	black.BackgroundTransparency = 0
 	marker:Destroy()
 	RevealWalk.hideGlow(glow)
 	task.wait(settings.blackAfter)

@@ -121,9 +121,19 @@ function MapService.start()
 	if baseplate then
 		baseplate:Destroy()
 	end
+	-- Players still appear at the spawn, but its pad is hidden: nothing marks the spot in the open ground.
 	local spawn = workspace:FindFirstChildOfClass("SpawnLocation")
 	if spawn then
 		spawn.CFrame = CFrame.lookAt(Map.spawn + Vector3.new(0, spawn.Size.Y / 2, 0), Map.spawn + Vector3.new(0, spawn.Size.Y / 2, 1))
+		spawn.Transparency = 1
+		spawn.CanCollide = false
+		spawn.CanQuery = false
+		spawn.CastShadow = false
+		for _, decoration in spawn:GetChildren() do
+			if decoration:IsA("Decal") or decoration:IsA("Texture") then
+				decoration:Destroy()
+			end
+		end
 	end
 
 	local folder = Instance.new("Folder")

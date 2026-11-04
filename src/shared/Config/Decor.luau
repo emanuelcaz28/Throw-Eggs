@@ -18,7 +18,7 @@ return {
 			floor = {
 				firstDistance = 24,
 				gap = { 12, 24 }, -- studs to the next one
-				side = { 20, 27 },
+				side = { 24, 34 },
 				props = {
 					{ name = "prop_BlockTree", weight = 22, scale = { 1.2, 1.6 } },
 					{ name = "prop_CycadTree", weight = 18, scale = { 1.4, 1.8 } },
@@ -47,7 +47,7 @@ return {
 				firstDistance = 4,
 				gap = { 18, 30 },
 				chance = 0.85, -- per side, per step
-				side = { 56, 94 }, -- the wall's inner edge is 36, the island's edge 108
+				side = { 64, 102 }, -- the wall's inner edge is 44, the island's edge 116
 				props = {
 					{ name = "prop_BlockTree", weight = 5, scale = { 1.8, 2.4 } },
 					{ name = "prop_CycadTree", weight = 3, scale = { 2, 2.6 } },
@@ -64,7 +64,7 @@ return {
 			floor = {
 				firstDistance = 12,
 				gap = { 16, 30 },
-				side = { 20, 27 },
+				side = { 24, 34 },
 				props = {
 					{ name = "prop_Saguaro", weight = 22, scale = { 1.2, 1.6 } },
 					{ name = "prop_BarrelCactus", weight = 14, scale = { 1.2, 1.6 } },
@@ -91,7 +91,7 @@ return {
 				firstDistance = 8,
 				gap = { 20, 34 },
 				chance = 0.8,
-				side = { 56, 94 },
+				side = { 64, 102 },
 				props = {
 					{ name = "prop_Mesa", weight = 5, scale = { 1.8, 2.6 } },
 					{ name = "prop_Saguaro", weight = 4, scale = { 2, 2.6 } },
@@ -110,7 +110,7 @@ return {
 			floor = {
 				firstDistance = 10,
 				gap = { 12, 24 },
-				side = { 20, 27 },
+				side = { 24, 34 },
 				props = {
 					{ name = "prop_SwampTree", weight = 18, scale = { 1.4, 1.8 } },
 					{ name = "prop_Cattails", weight = 16, scale = { 1.3, 1.8 } },
@@ -137,7 +137,7 @@ return {
 				firstDistance = 6,
 				gap = { 18, 30 },
 				chance = 0.85,
-				side = { 56, 94 },
+				side = { 64, 102 },
 				props = {
 					{ name = "prop_SwampTree", weight = 5, scale = { 2, 2.6 } },
 					{ name = "prop_Willow", weight = 4, scale = { 2, 2.5 } },
@@ -165,7 +165,7 @@ return {
 			floor = {
 				firstDistance = 12,
 				gap = { 14, 26 },
-				side = { 20, 27 },
+				side = { 24, 34 },
 				props = {
 					{ name = "prop_LavaPool", weight = 16, scale = { 1.2, 1.6 } },
 					{ name = "prop_ObsidianSpire", weight = 14, scale = { 1.2, 1.6 } },
@@ -190,7 +190,7 @@ return {
 				firstDistance = 10,
 				gap = { 22, 34 },
 				chance = 0.8,
-				side = { 56, 94 },
+				side = { 64, 102 },
 				props = {
 					{ name = "prop_ObsidianSpire", weight = 4, scale = { 2, 2.8 } },
 					{ name = "prop_CharredTree", weight = 4, scale = { 2, 2.6 } },
@@ -218,9 +218,9 @@ return {
 			-- Set pieces at fixed spots. x: studs from the corridor's middle; on: "rim" (up top) or "floor".
 			-- The cracks are flat, so they can lie in the middle where the eggs land.
 			spots = {
-				{ name = "prop_Volcano", distance = 60, x = 74, on = "rim", yaw = 20, scale = 1.7 },
-				{ name = "prop_Volcano", distance = 290, x = -76, on = "rim", yaw = 200, scale = 1.9 },
-				{ name = "prop_Volcano", distance = 470, x = 72, on = "rim", yaw = 110, scale = 1.6 },
+				{ name = "prop_Volcano", distance = 60, x = 82, on = "rim", yaw = 20, scale = 1.7 },
+				{ name = "prop_Volcano", distance = 290, x = -84, on = "rim", yaw = 200, scale = 1.9 },
+				{ name = "prop_Volcano", distance = 470, x = 80, on = "rim", yaw = 110, scale = 1.6 },
 				{ name = "prop_LavaCracks", distance = 40, x = -4, on = "floor", yaw = 15, scale = 1.3 },
 				{ name = "prop_LavaCracks", distance = 140, x = 6, on = "floor", yaw = 160, scale = 1.2 },
 				{ name = "prop_LavaCracks", distance = 260, x = -2, on = "floor", yaw = 80, scale = 1.4 },
@@ -240,7 +240,7 @@ return {
 			floor = {
 				firstDistance = 12,
 				gap = { 14, 26 },
-				side = { 20, 27 },
+				side = { 24, 34 },
 				props = {
 					{ name = "prop_SnowPine", weight = 20, scale = { 1.3, 1.7 } },
 					{ name = "prop_IceSpikes", weight = 14, scale = { 1.2, 1.6 } },
@@ -265,7 +265,7 @@ return {
 				firstDistance = 8,
 				gap = { 18, 30 },
 				chance = 0.85,
-				side = { 56, 94 },
+				side = { 64, 102 },
 				props = {
 					{ name = "prop_SnowPine", weight = 6, scale = { 2, 2.6 } },
 					{ name = "prop_IceSpikes", weight = 3, scale = { 2, 2.6 } },
@@ -288,10 +288,10 @@ return {
 			},
 
 			spots = {
-				{ name = "prop_Glacier", distance = 90, x = 72, on = "rim", yaw = 10, scale = 1.3 },
-				{ name = "prop_GiantTusks", distance = 300, x = -70, on = "rim", yaw = 80, scale = 1.6 },
-				{ name = "prop_Glacier", distance = 450, x = -73, on = "rim", yaw = 190, scale = 1.4 },
-				{ name = "prop_GiantTusks", distance = 680, x = 70, on = "rim", yaw = 100, scale = 1.7 },
+				{ name = "prop_Glacier", distance = 90, x = 80, on = "rim", yaw = 10, scale = 1.3 },
+				{ name = "prop_GiantTusks", distance = 300, x = -78, on = "rim", yaw = 80, scale = 1.6 },
+				{ name = "prop_Glacier", distance = 450, x = -81, on = "rim", yaw = 190, scale = 1.4 },
+				{ name = "prop_GiantTusks", distance = 680, x = 78, on = "rim", yaw = 100, scale = 1.7 },
 				{ name = "prop_FrozenPond", distance = 40, x = -3, on = "floor", yaw = 20, scale = 1.2 },
 				{ name = "prop_FrozenPond", distance = 160, x = 5, on = "floor", yaw = 140, scale = 1.3 },
 				{ name = "prop_FrozenPond", distance = 300, x = -4, on = "floor", yaw = 70, scale = 1.2 },
@@ -311,7 +311,7 @@ return {
 			floor = {
 				firstDistance = 12,
 				gap = { 14, 26 },
-				side = { 20, 27 },
+				side = { 24, 34 },
 				props = {
 					{ name = "prop_GloomTree", weight = 18, scale = { 1.3, 1.7 } },
 					{ name = "prop_ThornBush", weight = 14, scale = { 1.3, 1.7 } },
@@ -337,7 +337,7 @@ return {
 				firstDistance = 8,
 				gap = { 18, 30 },
 				chance = 0.85,
-				side = { 56, 94 },
+				side = { 64, 102 },
 				props = {
 					{ name = "prop_GloomTree", weight = 6, scale = { 2, 2.6 } },
 					{ name = "prop_HollowStump", weight = 2, scale = { 1.6, 2 } },
@@ -362,9 +362,9 @@ return {
 
 			-- The tar pits are flat, so they can lie in the middle where the eggs land.
 			spots = {
-				{ name = "prop_SunkenSkeleton", distance = 110, x = 74, on = "rim", yaw = 200, scale = 1.5 },
-				{ name = "prop_SunkenSkeleton", distance = 380, x = -72, on = "rim", yaw = 20, scale = 1.4 },
-				{ name = "prop_SunkenSkeleton", distance = 700, x = 73, on = "rim", yaw = 160, scale = 1.6 },
+				{ name = "prop_SunkenSkeleton", distance = 110, x = 82, on = "rim", yaw = 200, scale = 1.5 },
+				{ name = "prop_SunkenSkeleton", distance = 380, x = -80, on = "rim", yaw = 20, scale = 1.4 },
+				{ name = "prop_SunkenSkeleton", distance = 700, x = 81, on = "rim", yaw = 160, scale = 1.6 },
 				{ name = "prop_TarPit", distance = 50, x = -3, on = "floor", yaw = 20, scale = 1.2 },
 				{ name = "prop_TarPit", distance = 170, x = 5, on = "floor", yaw = 140, scale = 1.3 },
 				{ name = "prop_TarPit", distance = 300, x = -4, on = "floor", yaw = 70, scale = 1.2 },
@@ -386,7 +386,7 @@ return {
 			floor = {
 				firstDistance = 10,
 				gap = { 10, 20 },
-				side = { 19, 27 },
+				side = { 23, 34 },
 				props = {
 					{ name = "prop_BranchCoral", weight = 16, scale = { 1.3, 1.7 } },
 					{ name = "prop_Kelp", weight = 14, scale = { 1.2, 1.6 } },
@@ -417,7 +417,7 @@ return {
 				firstDistance = 6,
 				gap = { 14, 24 },
 				chance = 0.9,
-				side = { 54, 96 },
+				side = { 62, 104 },
 				props = {
 					{ name = "prop_Kelp", weight = 5, scale = { 2, 2.6 } },
 					{ name = "prop_BranchCoral", weight = 5, scale = { 2, 2.6 } },
@@ -446,10 +446,10 @@ return {
 
 			-- The shell patches are flat, so they can lie in the middle where the eggs land.
 			spots = {
-				{ name = "prop_Shipwreck", distance = 140, x = -74, on = "rim", yaw = 20, scale = 1.3 },
-				{ name = "prop_Ammonite", distance = 400, x = 72, on = "rim", yaw = 90, scale = 1.6 },
-				{ name = "prop_Shipwreck", distance = 640, x = 75, on = "rim", yaw = 200, scale = 1.3 },
-				{ name = "prop_Ammonite", distance = 820, x = -72, on = "rim", yaw = 250, scale = 1.7 },
+				{ name = "prop_Shipwreck", distance = 140, x = -82, on = "rim", yaw = 20, scale = 1.3 },
+				{ name = "prop_Ammonite", distance = 400, x = 80, on = "rim", yaw = 90, scale = 1.6 },
+				{ name = "prop_Shipwreck", distance = 640, x = 83, on = "rim", yaw = 200, scale = 1.3 },
+				{ name = "prop_Ammonite", distance = 820, x = -80, on = "rim", yaw = 250, scale = 1.7 },
 				{ name = "prop_ShellPatch", distance = 40, x = -3, on = "floor", yaw = 20, scale = 1.2 },
 				{ name = "prop_ShellPatch", distance = 160, x = 5, on = "floor", yaw = 140, scale = 1.3 },
 				{ name = "prop_ShellPatch", distance = 280, x = -4, on = "floor", yaw = 70, scale = 1.2 },
@@ -474,7 +474,7 @@ return {
 			floor = {
 				firstDistance = 12,
 				gap = { 13, 24 },
-				side = { 20, 27 },
+				side = { 24, 34 },
 				props = {
 					{ name = "prop_StarCrystals", weight = 16, scale = { 1.2, 1.6 } },
 					{ name = "prop_StarBloom", weight = 14, scale = { 1.2, 1.6 } },
@@ -498,7 +498,7 @@ return {
 				firstDistance = 8,
 				gap = { 16, 28 },
 				chance = 0.85,
-				side = { 56, 94 },
+				side = { 64, 102 },
 				props = {
 					{ name = "prop_StarCrystals", weight = 6, scale = { 2, 2.6 } },
 					{ name = "prop_FloatingRocks", weight = 4, scale = { 2, 2.6 } },
@@ -526,14 +526,14 @@ return {
 			-- Planets and comets hang high in the sky beyond the rims (their models start well above the ground).
 			-- The craters are flat, so they can lie in the middle where the eggs land.
 			spots = {
-				{ name = "prop_FallenStar", distance = 140, x = 78, on = "rim", yaw = 200, scale = 1.6 },
-				{ name = "prop_FallenStar", distance = 620, x = -76, on = "rim", yaw = 30, scale = 1.5 },
-				{ name = "prop_FallenStar", distance = 1040, x = 80, on = "rim", yaw = 160, scale = 1.8 },
-				{ name = "prop_CrystalSpire", distance = 60, x = -72, on = "rim", yaw = 20, scale = 1.6 },
-				{ name = "prop_CrystalSpire", distance = 420, x = 74, on = "rim", yaw = 140, scale = 1.5 },
-				{ name = "prop_CrystalSpire", distance = 860, x = -74, on = "rim", yaw = 260, scale = 1.7 },
-				{ name = "prop_Observatory", distance = 260, x = -82, on = "rim", yaw = 300, scale = 1.5 },
-				{ name = "prop_Observatory", distance = 960, x = 84, on = "rim", yaw = 120, scale = 1.4 },
+				{ name = "prop_FallenStar", distance = 140, x = 86, on = "rim", yaw = 200, scale = 1.6 },
+				{ name = "prop_FallenStar", distance = 620, x = -84, on = "rim", yaw = 30, scale = 1.5 },
+				{ name = "prop_FallenStar", distance = 1040, x = 88, on = "rim", yaw = 160, scale = 1.8 },
+				{ name = "prop_CrystalSpire", distance = 60, x = -80, on = "rim", yaw = 20, scale = 1.6 },
+				{ name = "prop_CrystalSpire", distance = 420, x = 82, on = "rim", yaw = 140, scale = 1.5 },
+				{ name = "prop_CrystalSpire", distance = 860, x = -82, on = "rim", yaw = 260, scale = 1.7 },
+				{ name = "prop_Observatory", distance = 260, x = -90, on = "rim", yaw = 300, scale = 1.5 },
+				{ name = "prop_Observatory", distance = 960, x = 92, on = "rim", yaw = 120, scale = 1.4 },
 				{ name = "prop_RingedPlanet", distance = 200, x = -130, on = "rim", yaw = 15, scale = 2.4 },
 				{ name = "prop_RingedPlanet", distance = 700, x = 140, on = "rim", yaw = 200, scale = 2.8 },
 				{ name = "prop_Comet", distance = 100, x = 120, on = "rim", yaw = 120, scale = 2 },
@@ -641,6 +641,202 @@ return {
 				{ name = "prop_RuneCircle", distance = 850, x = 2, on = "floor", yaw = 250, scale = 1.2 },
 				{ name = "prop_RuneCircle", distance = 960, x = -4, on = "floor", yaw = 330, scale = 1.2 },
 				{ name = "prop_RuneCircle", distance = 1090, x = 3, on = "floor", yaw = 80, scale = 1.2 },
+			},
+		},
+
+		-- A library so old it became a world of its own, locked up because its books are alive: open tomes on
+		-- lecterns turning their own pages (the signature), towers of books with candles, double-sided bookcases with
+		-- eyes peering out, candelabras, floating candles, inkwells with a nodding quill, hourglasses of glowing sand
+		-- and now and then a mimic book, scrolls as filler; page trees with moths, stacked bookcases dropping pages and
+		-- chained tomes on the rims, with landmarks among them (clock towers, pop-up books with a paper castle, spiral
+		-- stairs to a glowing door, huge books flapping in the sky), ink pouring down the walls from tipped inkwells,
+		-- book arches with a chandelier over the corridor and spell pages across the floor. Props from
+		-- assets/models/build_forbidden_library.py (DECOR there is the same list, for its renders); what moves is in
+		-- Config/PropMotion. The map is 1300 long.
+		ForbiddenLibrary = {
+			seed = 101,
+
+			floor = {
+				firstDistance = 12,
+				gap = { 12, 22 },
+				side = { 24, 34 },
+				props = {
+					{ name = "prop_OpenTome", weight = 14, scale = { 1.4, 1.8 } },
+					{ name = "prop_BookStack", weight = 12, scale = { 1.2, 1.6 } },
+					{ name = "prop_Bookcase", weight = 10, scale = { 1.1, 1.4 } },
+					{ name = "prop_Candelabra", weight = 9, scale = { 1.2, 1.5 } },
+					{ name = "prop_InkWell", weight = 8, scale = { 1.2, 1.5 } },
+					{ name = "prop_FloatingCandles", weight = 8, scale = { 1.2, 1.5 } },
+					{ name = "prop_Hourglass", weight = 6, scale = { 1.2, 1.4 } },
+					{ name = "prop_MimicBook", weight = 4, scale = { 1.2, 1.4 } },
+				},
+				extras = {
+					chance = 0.7,
+					spread = 8,
+					props = {
+						{ name = "prop_ScrollPile", weight = 5, scale = { 0.9, 1.2 } },
+						{ name = "prop_BookStack", weight = 2, scale = { 0.6, 0.8 } },
+						{ name = "prop_FloatingCandles", weight = 2, scale = { 0.7, 0.9 } },
+					},
+				},
+			},
+
+			rim = {
+				firstDistance = 6,
+				gap = { 14, 24 },
+				chance = 0.9,
+				side = { 64, 102 },
+				props = {
+					{ name = "prop_PageTree", weight = 6, scale = { 1.9, 2.5 } },
+					{ name = "prop_BookStack", weight = 3, scale = { 2.2, 2.8 } },
+					{ name = "prop_LeaningShelves", weight = 3, scale = { 1.6, 2 } },
+					{ name = "prop_ChainedTome", weight = 3, scale = { 1.8, 2.2 } },
+					{ name = "prop_FloatingCandles", weight = 2, scale = { 2, 2.4 } },
+					{ name = "prop_ScrollPile", weight = 2, scale = { 2.2, 2.8 } },
+				},
+			},
+
+			overhead = {
+				{ name = "prop_BookArch", distance = 250, yaw = 0, scale = 1 },
+				{ name = "prop_BookArch", distance = 760, yaw = 0, scale = 1.05 },
+				{ name = "prop_BookArch", distance = 1180, yaw = 0, scale = 1 },
+			},
+
+			walls = {
+				{ name = "prop_InkFall", distance = 80, side = 1 },
+				{ name = "prop_InkFall", distance = 240, side = -1 },
+				{ name = "prop_InkFall", distance = 420, side = 1 },
+				{ name = "prop_InkFall", distance = 600, side = -1 },
+				{ name = "prop_InkFall", distance = 780, side = 1 },
+				{ name = "prop_InkFall", distance = 960, side = -1 },
+				{ name = "prop_InkFall", distance = 1140, side = 1 },
+				{ name = "prop_InkFall", distance = 1270, side = -1 },
+			},
+
+			-- Clock towers, pop-up books and spiral stairs turn to face the corridor, the flying books face down it (face,
+			-- using their Front marker); the books fly 46 studs up at size 1. The spell pages are flat, so they can lie in
+			-- the middle where the eggs land.
+			spots = {
+				{ name = "prop_ClockTower", distance = 90, x = -86, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_ClockTower", distance = 560, x = 86, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_ClockTower", distance = 1040, x = -86, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_PopupBook", distance = 200, x = 84, on = "rim", yaw = 0, scale = 1.3, face = "middle" },
+				{ name = "prop_PopupBook", distance = 690, x = -84, on = "rim", yaw = 0, scale = 1.35, face = "middle" },
+				{ name = "prop_PopupBook", distance = 1180, x = 84, on = "rim", yaw = 0, scale = 1.3, face = "middle" },
+				{ name = "prop_SpiralStair", distance = 370, x = -84, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_SpiralStair", distance = 860, x = 84, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_SpiralStair", distance = 1280, x = -84, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_SkyTome", distance = 310, x = -165, on = "rim", yaw = 0, scale = 2.2, face = "along" },
+				{ name = "prop_SkyTome", distance = 970, x = 175, on = "rim", yaw = 0, scale = 2.4, face = "along" },
+				{ name = "prop_SpellPage", distance = 40, x = -3, on = "floor", yaw = 20, scale = 1.2 },
+				{ name = "prop_SpellPage", distance = 150, x = 4, on = "floor", yaw = 140, scale = 1.2 },
+				{ name = "prop_SpellPage", distance = 270, x = -4, on = "floor", yaw = 70, scale = 1.2 },
+				{ name = "prop_SpellPage", distance = 380, x = 3, on = "floor", yaw = 200, scale = 1.2 },
+				{ name = "prop_SpellPage", distance = 500, x = -2, on = "floor", yaw = 300, scale = 1.2 },
+				{ name = "prop_SpellPage", distance = 610, x = 4, on = "floor", yaw = 40, scale = 1.2 },
+				{ name = "prop_SpellPage", distance = 740, x = -3, on = "floor", yaw = 110, scale = 1.2 },
+				{ name = "prop_SpellPage", distance = 850, x = 2, on = "floor", yaw = 250, scale = 1.2 },
+				{ name = "prop_SpellPage", distance = 960, x = -4, on = "floor", yaw = 330, scale = 1.2 },
+				{ name = "prop_SpellPage", distance = 1090, x = 3, on = "floor", yaw = 80, scale = 1.2 },
+				{ name = "prop_SpellPage", distance = 1210, x = -2, on = "floor", yaw = 160, scale = 1.2 },
+			},
+		},
+
+		-- A travelling fair at midnight that never left: striped tents (the signature), jack-in-the-boxes,
+		-- popcorn carts, fortune tellers, strength testers, balloon carts, lamp posts with a crow, now and then a
+		-- carousel, crates as filler; big tents, swing rides, hot-air balloons and helter-skelters on the rims, with
+		-- landmarks among them (big tops with searchlights, Ferris wheels, clown-faced fun houses, sleeping moons in
+		-- the sky), popcorn pouring down the walls, roller-coaster loops over the corridor and circus rings across
+		-- the floor. Props from assets/models/build_midnight_carnival.py (DECOR there is the same list, for its
+		-- renders); what moves is in Config/PropMotion. The map is 1400 long.
+		MidnightCarnival = {
+			seed = 111,
+
+			floor = {
+				firstDistance = 12,
+				gap = { 12, 22 },
+				side = { 24, 34 },
+				props = {
+					{ name = "prop_StripedTent", weight = 14, scale = { 1.2, 1.6 } },
+					{ name = "prop_JackBox", weight = 10, scale = { 1.2, 1.5 } },
+					{ name = "prop_PopcornCart", weight = 9, scale = { 1.2, 1.5 } },
+					{ name = "prop_BalloonCart", weight = 9, scale = { 1.3, 1.6 } },
+					{ name = "prop_FortuneBooth", weight = 8, scale = { 1.2, 1.4 } },
+					{ name = "prop_HighStriker", weight = 8, scale = { 1.2, 1.4 } },
+					{ name = "prop_BulbPost", weight = 8, scale = { 1.2, 1.5 } },
+					{ name = "prop_Carousel", weight = 4, scale = { 1, 1.2 } },
+				},
+				extras = {
+					chance = 0.7,
+					spread = 8,
+					props = {
+						{ name = "prop_CrateStack", weight = 5, scale = { 0.8, 1.1 } },
+						{ name = "prop_BulbPost", weight = 2, scale = { 0.8, 1 } },
+						{ name = "prop_BalloonCart", weight = 2, scale = { 0.8, 1 } },
+					},
+				},
+			},
+
+			rim = {
+				firstDistance = 6,
+				gap = { 14, 24 },
+				chance = 0.9,
+				side = { 64, 102 },
+				props = {
+					{ name = "prop_StripedTent", weight = 6, scale = { 2, 2.6 } },
+					{ name = "prop_SwingRide", weight = 3, scale = { 1.6, 2 } },
+					{ name = "prop_HotAirBalloon", weight = 3, scale = { 1.6, 2 } },
+					{ name = "prop_HelterSkelter", weight = 2, scale = { 1.6, 2 } },
+					{ name = "prop_CrateStack", weight = 2, scale = { 2, 2.6 } },
+					{ name = "prop_JackBox", weight = 2, scale = { 2, 2.4 } },
+					{ name = "prop_BulbPost", weight = 2, scale = { 1.8, 2.2 } },
+				},
+			},
+
+			overhead = {
+				{ name = "prop_CoasterLoop", distance = 240, yaw = 0, scale = 1 },
+				{ name = "prop_CoasterLoop", distance = 720, yaw = 0, scale = 1.05 },
+				{ name = "prop_CoasterLoop", distance = 1180, yaw = 0, scale = 1 },
+			},
+
+			walls = {
+				{ name = "prop_PopcornFall", distance = 80, side = 1 },
+				{ name = "prop_PopcornFall", distance = 250, side = -1 },
+				{ name = "prop_PopcornFall", distance = 440, side = 1 },
+				{ name = "prop_PopcornFall", distance = 620, side = -1 },
+				{ name = "prop_PopcornFall", distance = 800, side = 1 },
+				{ name = "prop_PopcornFall", distance = 980, side = -1 },
+				{ name = "prop_PopcornFall", distance = 1160, side = 1 },
+				{ name = "prop_PopcornFall", distance = 1340, side = -1 },
+			},
+
+			-- Big tops, Ferris wheels and fun houses turn to face the corridor, the moons face down it (face, using
+			-- their Front marker). The moons hang high in the sky beyond the island (the crescent is 42 studs up at
+			-- size 1, its rope goes up to 110). The circus rings are flat, so they can lie in the middle where the eggs land.
+			spots = {
+				{ name = "prop_BigTop", distance = 90, x = -88, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_BigTop", distance = 560, x = 88, on = "rim", yaw = 0, scale = 1.6, face = "middle" },
+				{ name = "prop_BigTop", distance = 1040, x = -88, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_FerrisWheel", distance = 180, x = 84, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_FerrisWheel", distance = 700, x = -84, on = "rim", yaw = 0, scale = 1.6, face = "middle" },
+				{ name = "prop_FerrisWheel", distance = 1220, x = 84, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_FunHouse", distance = 380, x = -84, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_FunHouse", distance = 860, x = 84, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_FunHouse", distance = 1300, x = -84, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_StageMoon", distance = 320, x = 180, on = "rim", yaw = 0, scale = 2.4, face = "along" },
+				{ name = "prop_StageMoon", distance = 1000, x = -170, on = "rim", yaw = 0, scale = 2.6, face = "along" },
+				{ name = "prop_CircusRing", distance = 40, x = -3, on = "floor", yaw = 20, scale = 1.2 },
+				{ name = "prop_CircusRing", distance = 150, x = 4, on = "floor", yaw = 140, scale = 1.2 },
+				{ name = "prop_CircusRing", distance = 270, x = -4, on = "floor", yaw = 70, scale = 1.2 },
+				{ name = "prop_CircusRing", distance = 380, x = 3, on = "floor", yaw = 200, scale = 1.2 },
+				{ name = "prop_CircusRing", distance = 500, x = -2, on = "floor", yaw = 300, scale = 1.2 },
+				{ name = "prop_CircusRing", distance = 610, x = 4, on = "floor", yaw = 40, scale = 1.2 },
+				{ name = "prop_CircusRing", distance = 740, x = -3, on = "floor", yaw = 110, scale = 1.2 },
+				{ name = "prop_CircusRing", distance = 850, x = 2, on = "floor", yaw = 250, scale = 1.2 },
+				{ name = "prop_CircusRing", distance = 960, x = -4, on = "floor", yaw = 330, scale = 1.2 },
+				{ name = "prop_CircusRing", distance = 1090, x = 3, on = "floor", yaw = 80, scale = 1.2 },
+				{ name = "prop_CircusRing", distance = 1210, x = -2, on = "floor", yaw = 160, scale = 1.2 },
+				{ name = "prop_CircusRing", distance = 1330, x = 4, on = "floor", yaw = 10, scale = 1.2 },
 			},
 		},
 	},

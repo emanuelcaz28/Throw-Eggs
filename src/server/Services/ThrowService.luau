@@ -4,10 +4,13 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
+local Hooks = require(ReplicatedStorage.Shared.Config.Hooks)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local DinoRoll = require(script.Parent.DinoRoll)
+local CompetitionService = require(script.Parent.CompetitionService)
 local EggService = require(script.Parent.EggService)
 local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
@@ -117,10 +120,39 @@ local function onTap(player: Player, height: any)
 		end
 		local data = PlayerData.get(player)
 		local indexLuck = if data then IndexService.luckMultiplier(data) else 1
-		local luck = Luck.at(distance) * egg.luckBonus * indexLuck * ShopService.serverLuckMultiplier()
+		local boosts = egg.luckBonus * indexLuck * ShopService.luckMultiplier(player)
 		local biome = Luck.biomeAt(distance)
-		local catch = DinoRoll.rollCatch(biome.id, luck, 1, 1)
-		catch.luck = luck
+
+		-- Guarantees (Config/Hooks): the first catch in a new biome, or too many throws without a rare one.
+		local guarantee, reason = nil, nil
+		if data and not IndexService.hasCaughtIn(data, biome.id) then
+			guarantee, reason = { minRank = Hooks.newMapGift.minRank }, "newMap"
+		elseif data and data.throwsSinceRare + 1 >= Hooks.pity.throws then
+			guarantee, reason = { minRank = Hooks.pity.minRank }, "pity"
+		end
+		-- A lucky throw (bought or from the daily reward) is used up here, when the egg lands. Its x number
+		-- only multiplies the luck shown; what it hatches is Config/LuckyOutcomes, and it wins over the above.
+		local luckyThrow = if data then ShopService.takeLuckyThrow(player, data) else 1
+		local lucky = if luckyThrow > 1 then DinoRoll.luckyGuarantee(luckyThrow) else nil
+		if lucky then
+			guarantee, reason = lucky, "luckyThrow"
+		end
+
+		-- The big number is what players see; the roll counts luck from the biome's start.
+		local catch = DinoRoll.rollCatch(biome.id, Luck.inBiome(distance) * boosts, 1, 1, guarantee)
+		catch.luck = Luck.at(distance) * boosts * luckyThrow
+		catch.guarantee = reason
+		if data then
+			data.throwsSinceRare = if catch.rank >= Hooks.pity.minRank then 0 else data.throwsSinceRare + 1
+			data.farthestThrow = math.max(data.farthestThrow, math.floor(distance))
+		end
+		CompetitionService.landedIn(player, biome)
+
+		-- Just short of the next biome: the client shows how close it was.
+		local nextBiome = Biomes[table.find(Biomes, biome) + 1]
+		if nextBiome and nextBiome.startDist - distance <= Hooks.almostThere.studs and distance < Throw.maxDistance() then
+			catch.almostThere = { name = nextBiome.name, studs = math.max(math.ceil(nextBiome.startDist - distance), 1) }
+		end
 		catch.newBest = data ~= nil and catch.income > data.bestIncome
 		if catch.newBest then
 			data.bestIncome = catch.income

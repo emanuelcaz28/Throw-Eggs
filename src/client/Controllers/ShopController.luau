@@ -1,5 +1,5 @@
--- The Robux shop panel and the Server Luck timer. Display and prompts only: Roblox handles
--- the payment, and the server decides what it grants. Sections: Boosts (Server Luck), Packs
+-- The Robux shop panel and the luck timer. Display and prompts only: Roblox handles
+-- the payment, and the server decides what it grants. Sections: Boosts (lucky throws, Server Luck), Packs
 -- (cash, Throw Power), Passes (x2 Cash, x2 Training) and Free (the starter dino).
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -8,6 +8,8 @@ local RunService = game:GetService("RunService")
 
 local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
+local LuckBoosts = require(ReplicatedStorage.Shared.LuckBoosts)
+local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
@@ -18,6 +20,7 @@ local ShopController = {}
 local PANEL_SIZE = Vector2.new(980, 672)
 local LIST_WIDTH = 932
 local PACK_GAP = 14
+local TIMER_LINE = 46 -- the luck timer grows a line for Server Luck and one for lucky throws
 
 local function card(parent: Instance, width: number, height: number, colours, order: number): Frame
 	local frame = Instance.new("Frame")
@@ -78,6 +81,22 @@ local function packRow(list: Instance, packs, colours, amountColour: Color3?, or
 	return result
 end
 
+-- A boost card: clover art, name, description, a big gold line, a small state line and a buy button.
+local function boostCard(list: Instance, name: string, description: string, big: string, colours, order: number)
+	local frame = card(list, LIST_WIDTH, 170, colours, order)
+	-- Flat art faces the camera instead of spinning, so it never turns edge-on.
+	UiKit.art(frame, "clover", "clover", { yaw = math.rad(72), position = UDim2.fromOffset(30, 6), size = UDim2.fromOffset(170, 160) })
+	at(UiKit.text(frame, name, 36, nil, Enum.TextXAlignment.Left), 230, 18, 440, 44)
+	at(UiKit.text(frame, description, 19, nil, Enum.TextXAlignment.Left), 230, 62, 460, 24)
+	at(UiKit.text(frame, big, 46, UiKit.GOLD, Enum.TextXAlignment.Left), 230, 96, 300, 56)
+	local state = UiKit.text(frame, "", 22, nil, Enum.TextXAlignment.Left)
+	at(state, 450, 112, 220, 30)
+	local button = UiKit.button(frame, "SOON", "grey", 170, 64, 30)
+	button.AnchorPoint = Vector2.new(1, 0.5)
+	button.Position = UDim2.new(1, -24, 0.5, 0)
+	return state, button, frame
+end
+
 local function buildGui()
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "ShopHud"
@@ -95,7 +114,12 @@ local function buildGui()
 	timer.Name = "ServerLuckTimer"
 	timer.AnchorPoint = Vector2.new(1, 0)
 	timer.Position = UDim2.new(1, -16, 0, 16)
-	timer.Size = UDim2.fromOffset(260, 46)
+	timer.Size = UDim2.fromOffset(0, TIMER_LINE)
+	timer.AutomaticSize = Enum.AutomaticSize.X
+	local timerPad = Instance.new("UIPadding")
+	timerPad.PaddingLeft = UDim.new(0, 16)
+	timerPad.PaddingRight = UDim.new(0, 16)
+	timerPad.Parent = timer
 	timer.BackgroundColor3 = UiKit.PANEL
 	timer.BackgroundTransparency = 0.05
 	timer.Visible = false
@@ -105,39 +129,45 @@ local function buildGui()
 	local panel = UiKit.panel(gui, { name = "ShopPanel", width = PANEL_SIZE.X, height = PANEL_SIZE.Y, header = "sun", title = "Shop", icon = "🛍️", iconKey = "shop" })
 	local list = UiKit.scrollList(panel.body, UDim2.fromOffset(16, 4), UDim2.new(1, -24, 1, -16), 14)
 
-	-- Boosts: Server Luck.
+	-- Boosts: lucky throws (yours, one throw each), then Server Luck (everyone's, for a while).
+	-- Cards take LayoutOrder 2, 3...; Server Luck goes after them.
 	UiKit.divider(list, "Boosts", LIST_WIDTH).LayoutOrder = 1
-	local luck = card(list, LIST_WIDTH, 170, { "#9cf28f", "#2fbf5a" }, 2)
-	-- Flat art faces the camera instead of spinning, so it never turns edge-on.
-	UiKit.art(luck, "clover", "clover", { yaw = math.rad(72), position = UDim2.fromOffset(30, 6), size = UDim2.fromOffset(170, 160) })
-	at(UiKit.text(luck, Shop.serverLuck.name, 36, nil, Enum.TextXAlignment.Left), 230, 18, 440, 44)
-	at(UiKit.text(luck, Shop.serverLuck.description, 19, nil, Enum.TextXAlignment.Left), 230, 62, 460, 24)
-	local multiplier = UiKit.text(luck, `x1 > x{Shop.serverLuck.multiplier}`, 46, UiKit.GOLD, Enum.TextXAlignment.Left)
-	at(multiplier, 230, 96, 300, 56)
-	local luckState = UiKit.text(luck, `+{Shop.serverLuck.seconds // 60} min`, 22, nil, Enum.TextXAlignment.Left)
-	at(luckState, 450, 112, 220, 30)
-	local luckButton = UiKit.button(luck, "SOON", "grey", 170, 64, 30)
-	luckButton.AnchorPoint = Vector2.new(1, 0.5)
-	luckButton.Position = UDim2.new(1, -24, 0.5, 0)
+	local luckyCards = {}
+	for index, item in Shop.luckyThrows do
+		local state, button, frame = boostCard(list, `Luck x{item.multiplier}`, item.description, `x{item.multiplier} LUCK`, item.colours, 1 + index)
+		local dealTag = nil
+		if item.dealProductId then
+			-- The one-time deal's sticker, shown until it's used.
+			dealTag = UiKit.tag(frame, item.dealTag, "tagGold", 22)
+			dealTag.AnchorPoint = Vector2.new(1, 0.5)
+			dealTag.Position = UDim2.new(1, -30, 0, 0)
+			dealTag.ZIndex = 2
+		end
+		luckyCards[index] = { item = item, state = state, button = button, dealTag = dealTag }
+	end
+	local after = 2 + #Shop.luckyThrows
+	local serverLuck = Shop.serverLuck
+	local luckState, luckButton = boostCard(list, serverLuck.name, serverLuck.description, `x1 > x{serverLuck.multiplier}`, { "#9cf28f", "#2fbf5a" }, after)
 
 	-- Packs: a row of cash packs, then a row of Throw Power packs.
-	UiKit.divider(list, "Packs", LIST_WIDTH).LayoutOrder = 3
-	local cashPacks = packRow(list, Shop.cashPacks, { "#a6f08f", "#3fbf5a" }, UiKit.CASH, 4)
-	local powerPacks = packRow(list, Shop.powerPacks, { "#ffe066", "#ff8a1f" }, nil, 5)
+	UiKit.divider(list, "Packs", LIST_WIDTH).LayoutOrder = after + 1
+	local cashPacks = packRow(list, Shop.cashPacks, { "#a6f08f", "#3fbf5a" }, UiKit.CASH, after + 2)
+	local powerPacks = packRow(list, Shop.powerPacks, { "#ffe066", "#ff8a1f" }, nil, after + 3)
 	for index, pack in Shop.powerPacks do
 		powerPacks.amounts[index].Text = `⚡ +{Format.commas(pack.amount)}`
 	end
 
 	-- Passes: x2 Cash and x2 Training, side by side.
-	UiKit.divider(list, "Passes", LIST_WIDTH).LayoutOrder = 6
+	UiKit.divider(list, "Passes", LIST_WIDTH).LayoutOrder = after + 4
 	local passes = Instance.new("Frame")
 	passes.BackgroundTransparency = 1
-	passes.LayoutOrder = 7
-	passes.Size = UDim2.fromOffset(LIST_WIDTH, 210)
+	passes.LayoutOrder = after + 5
+	-- Two pass cards a row; a third (x2 Power) starts a second row.
+	passes.Size = UDim2.fromOffset(LIST_WIDTH, 210 * 2 + 16)
 	passes.Parent = list
-	local row = Instance.new("UIListLayout")
-	row.FillDirection = Enum.FillDirection.Horizontal
-	row.Padding = UDim.new(0, 16)
+	local row = Instance.new("UIGridLayout")
+	row.CellSize = UDim2.fromOffset((LIST_WIDTH - 16) / 2, 204)
+	row.CellPadding = UDim2.fromOffset(16, 16)
 	row.SortOrder = Enum.SortOrder.LayoutOrder
 	row.Parent = passes
 	local function passCard(item, colours, key, art, order)
@@ -155,10 +185,11 @@ local function buildGui()
 	end
 	local cashButton = passCard(Shop.doubleCash, { "#7fd4ff", "#2f7fe6" }, "pass_cash", "cash_L", 1)
 	local trainingButton = passCard(Shop.doubleTraining, { "#d3a3ff", "#7b4dff" }, "pass_training", "bolts_M", 2)
+	local powerButton = passCard(Shop.doublePower, { "#ffe066", "#ff8a1f" }, "bolts_XL", "bolts_XL", 3)
 
 	-- Free: the starter dino.
-	UiKit.divider(list, "Free", LIST_WIDTH).LayoutOrder = 8
-	local free = card(list, 680, 170, { "#7fe7ff", "#3f8cff" }, 9)
+	UiKit.divider(list, "Free", LIST_WIDTH).LayoutOrder = after + 6
+	local free = card(list, 680, 170, { "#7fe7ff", "#3f8cff" }, after + 7)
 	local tile = UiKit.dinoTile(free, Shop.starterDino.id, "", 150, 134, { found = true })
 	tile.Position = UDim2.fromOffset(16, 14)
 	at(UiKit.text(free, "Free Dino!", 34, nil, Enum.TextXAlignment.Left), 190, 18, 300, 42)
@@ -173,10 +204,12 @@ local function buildGui()
 		panel = panel,
 		luckButton = luckButton,
 		luckState = luckState,
+		luckyCards = luckyCards,
 		cashPacks = cashPacks,
 		powerPacks = powerPacks,
 		cashButton = cashButton,
 		trainingButton = trainingButton,
+		powerButton = powerButton,
 		starterButton = starterButton,
 	}
 end
@@ -213,11 +246,43 @@ function ShopController.start()
 			MarketplaceService:PromptGamePassPurchase(player, Shop.doubleCash.passId)
 		end
 	end)
+	hud.powerButton.Activated:Connect(function()
+		if Shop.doublePower.passId ~= 0 and not player:GetAttribute("HasDoublePower") then
+			MarketplaceService:PromptGamePassPurchase(player, Shop.doublePower.passId)
+		end
+	end)
 	hud.trainingButton.Activated:Connect(function()
 		if Shop.doubleTraining.passId ~= 0 and not player:GetAttribute("HasDoubleTraining") then
 			MarketplaceService:PromptGamePassPurchase(player, Shop.doubleTraining.passId)
 		end
 	end)
+	-- Lucky throws: a card with a deal sells the deal until it's used, then the regular product.
+	-- Each card says how many of that throw you own.
+	for _, card in hud.luckyCards do
+		local item = card.item
+		local function product(): number
+			return if item.dealProductId and not player:GetAttribute("LuckDealBought") then item.dealProductId else item.productId
+		end
+		local function renderDeal()
+			if card.dealTag then
+				card.dealTag.Visible = not player:GetAttribute("LuckDealBought")
+			end
+			showPrice(card.button, product(), Enum.InfoType.Product)
+		end
+		local function renderOwned()
+			local owned = LuckyThrows.count(player, item.multiplier)
+			card.state.Text = if owned > 0 then `You have {owned}` else "1 throw"
+		end
+		card.button.Activated:Connect(function()
+			if product() ~= 0 then
+				MarketplaceService:PromptProductPurchase(player, product())
+			end
+		end)
+		player:GetAttributeChangedSignal("LuckDealBought"):Connect(renderDeal)
+		player:GetAttributeChangedSignal(LuckyThrows.attribute(item.multiplier)):Connect(renderOwned)
+		renderDeal()
+		renderOwned()
+	end
 	hud.luckButton.Activated:Connect(function()
 		if Shop.serverLuck.productId ~= 0 then
 			MarketplaceService:PromptProductPurchase(player, Shop.serverLuck.productId)
@@ -242,6 +307,7 @@ function ShopController.start()
 	end
 	player:GetAttributeChangedSignal("BaseIncome"):Connect(renderCashPacks)
 	renderCashPacks()
+
 	hud.starterButton.Activated:Connect(function()
 		if not claimed then
 			remotes.ClaimStarter:FireServer()
@@ -266,22 +332,37 @@ function ShopController.start()
 	end)
 	renderPass(hud.cashButton, "HasDoubleCash")
 	renderPass(hud.trainingButton, "HasDoubleTraining")
+	showPrice(hud.powerButton, Shop.doublePower.passId, Enum.InfoType.GamePass)
+	player:GetAttributeChangedSignal("HasDoublePower"):Connect(function()
+		renderPass(hud.powerButton, "HasDoublePower")
+	end)
+	renderPass(hud.powerButton, "HasDoublePower")
 
 	hud.open.Activated:Connect(function()
 		UiKit.togglePanel(hud.panel)
 	end)
 
+	-- The panel in the top right: a line while Server Luck runs, and one for the lucky throw the next
+	-- throw will use (and how many are owned in all).
+	local function clock(seconds: number): string
+		return string.format("%d:%02d", seconds // 60, seconds % 60)
+	end
 	RunService.Heartbeat:Connect(function()
-		local remaining = (ReplicatedStorage:GetAttribute("ServerLuckEndsAt") or 0) - workspace:GetServerTimeNow()
-		local active = remaining > 0
-		hud.timer.Visible = active
-		if active then
-			local clock = string.format("%d:%02d", remaining // 60, remaining % 60)
-			hud.timer.Text = `🍀 LUCK x{Shop.serverLuck.multiplier}  {clock}`
-			hud.luckState.Text = `Active · {clock} left`
-		else
-			hud.luckState.Text = `+{Shop.serverLuck.seconds // 60} min`
+		local now = workspace:GetServerTimeNow()
+		local remaining = (ReplicatedStorage:GetAttribute("ServerLuckEndsAt") or 0) - now
+		hud.luckState.Text = if remaining > 0 then `Active · {clock(remaining)} left` else `+{Shop.serverLuck.seconds // 60} min`
+		local lines = {}
+		for _, boost in LuckBoosts.active(player, now) do
+			table.insert(lines, `🍀 SERVER LUCK x{boost.multiplier}  {clock(boost.endsAt - now)}`)
 		end
+		local nextThrow = LuckyThrows.nextOf(player)
+		if nextThrow then
+			local total = LuckyThrows.total(player)
+			table.insert(lines, `🍀 NEXT THROW x{nextThrow}` .. (if total > 1 then `  ({total} lucky throws)` else ""))
+		end
+		hud.timer.Visible = #lines > 0
+		hud.timer.Text = table.concat(lines, "\n")
+		hud.timer.Size = UDim2.fromOffset(0, TIMER_LINE * math.max(#lines, 1))
 	end)
 end
 

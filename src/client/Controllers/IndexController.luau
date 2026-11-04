@@ -34,6 +34,8 @@ local CARD_COLOURS = {
 	Abyss = { "#7ff0ff", "#1f6fb8" },
 	StarfallCrater = { "#ffe27a", "#2e3a8c" },
 	EclipseTemple = { "#7dffb8", "#7a3a3a" },
+	ForbiddenLibrary = { "#c3a8ff", "#56392a" },
+	MidnightCarnival = { "#ffd36b", "#b3263a" },
 }
 
 local function buildGui()

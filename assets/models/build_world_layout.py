@@ -44,7 +44,7 @@ FENCE_HEIGHT = 4
 FENCE_POST_SPACING = 8
 
 # Platform and corridor.
-LANE_WIDTH = 72
+LANE_WIDTH = 88  # as build_world_kit.py (was 72; this blockout was rendered at 72)
 PLATFORM_HEIGHT = 0.5
 CORRIDOR_Y = -12  # the corridor floor sits this far below the arena
 CORRIDOR_RIM_WIDTH = 72

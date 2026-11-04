@@ -58,6 +58,35 @@ Roles.glowing = {
 	Corona = true,
 	EclipseRing = true,
 	BellGlow = true,
+	-- Midnight Carnival (assets/models/build_midnight_carnival.py): carnival bulbs, pink neon, the fortune teller's
+	-- crystal ball and eyes, the moon, the ghost riders and the big top's searchlights. Lamp, Window, Flame, Gaze
+	-- and LampStar are above.
+	Bulb = true,
+	Neon = true,
+	Seer = true,
+	Trance = true,
+	Crescent = true,
+	Ghost = true,
+	Searchbeam = true,
+	-- Forbidden Library (assets/models/build_forbidden_library.py): living violet ink, spell circles and sigils,
+	-- candle flames, glowing sand, eyes in the bookcases, moths, the clock face and the door to nowhere. Flame,
+	-- FlameCore, Gaze, Lamp, Window, Orb, Crescent, Stream and Falling are above.
+	InkGlow = true,
+	Spell = true,
+	SpellRing = true,
+	Letters = true,
+	FlipGlow = true,
+	FlameA = true,
+	FlameB = true,
+	TimeSand = true,
+	Grain = true,
+	Peeper = true,
+	Moths = true,
+	TomeGlow = true,
+	ClockGlow = true,
+	DoorGlow = true,
+	InkL = true,
+	InkR = true,
 }
 
 function Roles.of(part: Instance): string
