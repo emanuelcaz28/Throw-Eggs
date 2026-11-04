@@ -246,7 +246,7 @@ reveal; your own catch appears once you've tapped through it. Limit and timings 
   world's name in a dark strip under it, and pops each time the egg crosses into a new world. The floating distance
   numbers and world names that stood in the corridor are gone, as in the reference.
 - **[Built]** Landing: a white ring flashes out on the ground and a puff of dust rises (`Config/Throw` `landing`).
-  The walking view and the reveal after it are the next job.
+  The walking view after it is built (below); the close-up and pull back after the walk are the next job.
 
 ### Landing and arrival: the animal walks to the egg
 **[Owner]** Pay special attention to this part. The animal walking towards what you threw is the key moment, then its
@@ -284,7 +284,32 @@ name shows up slowly.
 - **[Built]** The text follows mock-ups 15 to 16b: white dashes that fill with letters at the bottom centre, then the
   rarity colour wash with two rings and sparkles, and the final text with no panel (size and mutation, name in its
   rarity colour, NEW! on a first catch, $/s, the "1 in X" and the tier sticker on lucky catches, tap to continue),
-  then white for half a second. The camera walk is still the old egg orbit and hatch, a separate job.
+  then white for half a second. After the walk the camera still opens on the old egg orbit and hatch, a separate job.
+- **[Owner]** The walk depends on the catch: a very rare monster starts far from the egg, and a very big one starts way
+  above the map. It simulates the POV of each monster. Made in-game, not in Blender: it changes with every catch's
+  rarity and size and with where the egg landed, so a camera script works it out on the spot.
+- **[Owner]** The golden rings in the reference video are there because that animal had a **Gold** mutation.
+- **[Built]** The walk (`RevealWalk`, numbers in `Config/Reveal` `walk`). After the landing: a quick cut to black, then
+  the view opens already walking up the corridor towards the egg, from the thrower's side (or from the far side when
+  the egg landed too close to the platform), a few random degrees off the middle. Then a quick cut to black and the
+  close-up fades in. Tapping cuts the walk short. No monster and no text show. Previews in `design/reveal/walk/`.
+  - **Eyes:** the camera sits at the monster's real eye height (the middle of its model's pupils) times its real size
+    (its map's standard size × its size mutation). A first-map Compy sees from under 3 studs; a Unit of Doom Star
+    Sovereign on Starfall Crater sees from about 400 studs up, with the whole map a strip far below.
+  - **Start and end:** set by how far below its eyes it sees the egg. The commonest catch starts with the egg 8° down
+    (19 studs away for a Compy); the rarest (1 in 10 million and rarer) 1.8° down (about 85 studs for a Compy). Bigger
+    monsters look down by up to 22° more, so a giant starts high up looking down at a tiny egg (about 900 studs away for
+    that Star Sovereign). It stops with the egg 22° down (52° for the biggest), where the cut to black comes.
+  - **Time:** 2.6 seconds for the commonest up to 4.6 for the rarest, plus up to 0.8 for the biggest. It slows a little
+    as it nears the egg.
+  - **Steps:** each footfall dips the view, swings it side to side, tilts the horizon (3° each way, 6° for the biggest)
+    and turns the head a little. A step covers about one eye height, so big monsters take slow steps (down to about one
+    every two seconds) and each lands with a jolt that grows with size. Swimmers from The Abyss glide instead, with a
+    slow smooth sway and no footfalls.
+  - **Rings:** a catch with a colour mutation walks with rings round the screen in that colour (gold on a Gold catch,
+    red on Ruby...), dark on the inside, strongest at the edges, clear in the middle. A catch with no colour mutation
+    walks with a clear view. The rings use two images built into Roblox, so nothing had to be uploaded.
+  - **Far eggs:** when the egg is a speck (under 10 pixels tall), a small glowing dot marks it so it can still be found.
 
 ### Earn
 - **[Built]** Dinos on your base earn $/s. Spare ones go in the backpack.
@@ -692,7 +717,7 @@ and biome completion rewards (built, in section 12). Announcements are confirmed
 | No announcements | A server-wide banner for lucky catches (section 6) | Owner |
 | Auto-placement keeps dinos apart | Overlap is fine | Seen |
 | Plain coloured parts with little or no stud texture | Checker and studs on everything | Owner |
-| After landing, the camera circles the egg right away | Cut to black, then the amber walking view (the ring and dust are built) | Owner + Seen |
+| ~~After landing, the camera circles the egg right away~~ | Cut to black, then the walking view. **Built** (section 7) | Owner + Seen |
 | The egg wobbles and bursts at 40%, and the dino pops up from nothing and spins | Close-up, then pull back to the dino already standing still over the egg | Owner + Seen |
 | Yellow letter tiles at the top | White outlined letters with blanks at the bottom centre | Seen |
 | Final result in a panel with chips | Plain text at the bottom, a NEW! sticker, a rarity-coloured wash | Seen |
@@ -715,7 +740,9 @@ new base when they load (the best dinos stay, the rest go to the backpack).
 6. Is the sky changing a normal day/night cycle or part of the Halloween event?
 7. How do you get back from a throw if you walk down into the corridor? Can players walk down there at all?
 8. Our item is an egg. Should the dino just stand over it like the reference, or should the egg also crack at the end?
-9. Does the amber glow in the walking view change colour with rarity? One video isn't enough to tell. A second throw with a different catch would show it.
+9. ~~Does the amber glow in the walking view change colour with rarity?~~ Answered: the rings show the catch's colour
+   mutation (the video's animal was Gold). Still unknown: whether the reference darkens the edges on a catch with no
+   colour mutation. Ours walks with a clear view then.
 10. Does the "1 in X" counter appear during the walking view or after it on rare catches? A video of a rare catch would show it.
 
 ---

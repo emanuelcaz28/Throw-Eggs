@@ -35,6 +35,101 @@ return {
 		maxQueue = 5, -- a busy server drops the most common waiting catches past this
 	},
 
+	-- The monster's walk to the egg, seen through its own eyes (RevealWalk, docs/GAME_SPEC.md section 7). It plays
+	-- between the landing and the close-up on the egg. Angles are in degrees, times in seconds.
+	walk = {
+		cutDelay = 0.2, -- after the luck panel starts fading out...
+		cutIn = 0.1, -- ...a quick cut to black...
+		blackHold = 0.15, -- ...held a moment...
+		fadeIn = 0.15, -- ...then it opens on the walk, already under way.
+		cutOut = 0.12, -- the quick cut to black at the end
+		blackAfter = 0.12, -- black held before the close-up on the egg fades in
+		closeUpFadeIn = 0.2,
+
+		-- How rare the catch is, from its "1 in X": 0 at commonOneIn or commoner, 1 at rarestOneIn or rarer, evenly
+		-- on a log scale (1 in 100 is about 0.25, 1 in 10,000 about 0.55, 1 in a million about 0.85).
+		commonOneIn = 2,
+		rarestOneIn = 10000000,
+		-- How big the monster is: its map's standard size times its size mutation (DinoModel.statueScale). 0 at the
+		-- first map's standard size, 1 at bigScale (a Unit of Doom on the last map is 50x), evenly on a log scale.
+		bigScale = 50,
+
+		-- Where the walk starts, as how far below its eyes the monster sees the egg: a shallow angle is far away.
+		-- The commonest catches start at nearAngle and the rarest at farAngle, then bigger monsters look down by up
+		-- to bigAngle more, so huge ones start way above the map looking down at a tiny egg. The eyes are the
+		-- model's real eye height (its Pupil parts) at its real size, so the distance follows from the angle.
+		nearAngle = 8,
+		farAngle = 1.8,
+		bigAngle = 22,
+		maxStartDistance = 1500, -- studs, a cap for the very biggest and rarest
+		-- Where it stops: the egg this far below its eyes, from endAngle for the smallest to bigEndAngle for the
+		-- biggest, never closer than minEndDistance studs. The cut to black comes there.
+		endAngle = 22,
+		bigEndAngle = 52,
+		minEndDistance = 4,
+		minWalkShare = 0.3, -- it always walks at least this share of where it stops, so a walk never stands still
+
+		-- How long the walk lasts: minTime for the commonest, maxTime for the rarest, plus up to bigExtraTime for
+		-- the biggest (their steps are slow). The pace eases off as it nears the egg, by slowDown (0 = steady).
+		minTime = 2.6,
+		maxTime = 4.6,
+		bigExtraTime = 0.8,
+		slowDown = 0.5,
+
+		-- It comes along the corridor from the thrower's side, a random few degrees off the middle, and from the
+		-- far side when there's no room behind the egg. It stays sideMargin studs inside the corridor's walls.
+		approachAngle = 10,
+		backMargin = 12, -- studs kept clear of the throw line behind the egg
+		sideMargin = 8,
+
+		-- The camera keeps the egg below the middle of the screen: by aimBelow of the angle down to it, but never
+		-- more than maxAimBelow degrees. fieldOfView is the camera's while walking.
+		aimBelow = 0.35,
+		maxAimBelow = 14,
+		fieldOfView = 74,
+		-- From far away or high up the egg is a speck, so a small glowing dot marks it while it's under markerFrom
+		-- pixels tall on screen, fully shown at markerFull pixels and below. markerSize is the dot's own size in
+		-- pixels, with a faint ring round it.
+		markerFrom = 10,
+		markerFull = 4,
+		markerSize = 14,
+		markerImage = "rbxasset://textures/whiteCircle.png",
+		markerColor = Color3.fromRGB(255, 250, 225),
+
+		-- Footsteps. A step covers strideEyes of the monster's eye height, so its pace follows how fast it goes;
+		-- steps per second stay between minStepRate and maxStepRate (big monsters hit the slow end).
+		strideEyes = 1.1,
+		minStepRate = 0.55,
+		maxStepRate = 3.2,
+		bob = 0.05, -- how far the eyes dip at each footfall, as a share of eye height
+		sway = 0.1, -- how far they swing side to side, as a share of eye height
+		tilt = 3, -- degrees the horizon tilts each way for the smallest...
+		bigTilt = 6, -- ...and for the biggest
+		turn = 1.5, -- degrees the head turns each way with the sway
+		-- Heavy footfalls: the view jolts down and shakes, more the bigger the monster.
+		thudAngle = 0.6, -- degrees for the smallest...
+		bigThudAngle = 4, -- ...and the biggest
+		thudDrop = 0.02, -- share of eye height the view drops on a big footfall (times bigness)
+		thudTime = 0.35, -- how quickly a jolt dies away
+		-- Swimmers (models with a Swim bone, The Abyss on) glide instead: no footfalls, a slow smooth sway.
+		swimRate = 0.7, -- sway cycles per second at the first map's size, slower the bigger
+
+		-- The rings round the screen show the catch's colour mutation, in its colour (gold rings on a Gold catch,
+		-- as in the reference video). A catch with no colour mutation walks with a clear view.
+		glow = {
+			-- Built-in Roblox images, so nothing has to be uploaded. Either can be swapped for an uploaded image id.
+			ringImage = "rbxasset://textures/ui/Input/Ring_padded.png", -- a thin white ring, tinted
+			darkImage = "rbxasset://textures/loading/loadingvignette.png", -- black, clear in the middle
+			rings = 9,
+			innerSize = 0.78, -- the innermost ring's size against the screen; the clear middle is inside it...
+			outerSize = 1.58, -- ...and the outermost's
+			innerTransparency = 0.85, -- faint inside...
+			outerTransparency = 0.4, -- ...strong at the edges
+			darkTransparency = 0.1, -- how strongly the edges darken behind the rings
+			fadeTime = 0.3,
+		},
+	},
+
 	-- The camera starts close on the egg, then pulls back to the dino view when it hatches.
 	camera = {
 		eggRadius = 9,

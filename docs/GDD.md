@@ -143,7 +143,8 @@ Exact formulas aren't visible in the recordings, so numbers are readings from th
 ### Reveal
 Our step 4 target. In order:
 1. Camera orbits the landed item. "tap to skip" shows on catches without a counter. (Corrected in
-   `GAME_SPEC.md`: that "orbit" is the animal's walking view, and the full timing is there.)
+   `GAME_SPEC.md`: that "orbit" is the animal's walking view, and the full timing is there. Ours is built:
+   `RevealWalk`, numbers in `Config/Reveal` `walk`, described in `GAME_SPEC.md` section 7.)
 2. Blank letters appear and fill in out of order, with the model sweeping past in close-up.
 3. The "1 in X" counter starts at 1 and rises about 25% every 1/8 second, with a short hold before
    the letters start. It isn't shown on every catch (a Whale and a Gold Winged Imp had none).

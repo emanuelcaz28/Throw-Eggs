@@ -1,0 +1,314 @@
+-- The monster's walk to the egg, seen through its own eyes (docs/GAME_SPEC.md section 7, "The walk"). After the
+-- landing the screen cuts to black and opens on the view from the caught monster's eyes, already walking up the
+-- corridor to the egg, each step swaying the view and tilting the horizon; then it cuts to black again for the
+-- close-up. No monster and no text show: it's the camera doing the walking.
+-- How it looks depends on the catch: rarer catches start further from the egg, bigger monsters see from higher up
+-- (their real eye height at their real size) and take slower, heavier steps, swimmers glide, and a colour mutation
+-- rings the screen in its colour. Display only: the server has already rolled the catch.
+-- Numbers live in Config/Reveal walk. RevealController plays it.
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
+local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
+local Map = require(ReplicatedStorage.Shared.Config.Map)
+local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
+local Roles = require(ReplicatedStorage.Shared.Roles)
+local Throw = require(ReplicatedStorage.Shared.Config.Throw)
+
+local RevealWalk = {}
+
+local settings = Reveal.walk
+local EGG_MIDDLE = 1.5 -- studs above the ground the camera aims at, the egg's middle
+local FALLBACK_EYE_SHARE = 0.85 -- of its height, for a model with no Pupil parts
+local SWIM_PACE = 0.5 -- swimmers sway at this share of a walker's step rate
+local MARKER_LIFT = 0.3 -- share of the way from the egg to the eyes the far-egg dot hangs
+
+local function lerp(a: number, b: number, u: number): number
+	return a + (b - a) * u
+end
+
+-- Where value sits between low (0) and high (1), evenly on a log scale.
+local function logShare(value: number, low: number, high: number): number
+	return math.clamp(math.log(math.max(value, low) / low) / math.log(high / low), 0, 1)
+end
+
+local function tween(instance: Instance, time: number, goal)
+	local created = TweenService:Create(instance, TweenInfo.new(time, Enum.EasingStyle.Sine), goal)
+	created:Play()
+	return created
+end
+
+-- Each monster's eye height at its model's own size (the middle of its Pupil parts, above its feet) and whether
+-- it swims (a Swim bone), measured once from its model.
+local bodies = {}
+local function bodyOf(dinoId: string)
+	local body = bodies[dinoId]
+	if body then
+		return body
+	end
+	local model = DinoModel.build(dinoId, nil, Vector3.zero, 1)
+	local total, count, swims = 0, 0, false
+	for _, item in model:GetDescendants() do
+		if item:IsA("BasePart") and Roles.of(item) == "Pupil" then
+			total += item.Position.Y
+			count += 1
+		elseif item:IsA("Bone") and item.Name == "Swim" then
+			swims = true
+		end
+	end
+	local eye = total / math.max(count, 1)
+	if count == 0 then
+		local box, size = model:GetBoundingBox()
+		eye = (box.Position.Y + size.Y / 2) * FALLBACK_EYE_SHARE
+	end
+	model:Destroy()
+	body = { eye = math.max(eye, 0.5), swims = swims }
+	bodies[dinoId] = body
+	return body
+end
+
+export type Plan = {
+	eye: number, -- studs above the ground
+	ground: Vector3, -- under the egg
+	start: Vector3, -- on the ground, under the eyes at the start
+	finish: Vector3, -- on the ground, under the eyes at the end
+	approach: Vector3, -- the way it walks, flat
+	duration: number,
+	bigness: number, -- 0 for the first map's standard size, 1 at Config bigScale
+	rarity: number, -- 0 for the commonest catch, 1 for the rarest
+	swims: boolean,
+	color: Color3?, -- the colour mutation's, for the rings round the screen
+}
+
+-- Works out the walk for a catch whose egg lies on the ground at `ground`. `color` is its colour mutation's colour.
+function RevealWalk.plan(catch, ground: Vector3, color: Color3?, random: Random?): Plan
+	random = random or Random.new()
+	local body = bodyOf(catch.id)
+	local scale = DinoModel.statueScale(catch.id, catch.size)
+	local eye = body.eye * scale
+	local rarity = logShare(catch.oneIn, settings.commonOneIn, settings.rarestOneIn)
+	local bigness = logShare(scale, 1, settings.bigScale)
+
+	-- How far away it starts and stops, from how far below its eyes it sees the egg.
+	local startAngle = math.rad(lerp(settings.nearAngle, settings.farAngle, rarity) + settings.bigAngle * bigness)
+	local endAngle = math.rad(lerp(settings.endAngle, settings.bigEndAngle, bigness))
+	local endDistance = math.max(eye / math.tan(endAngle), settings.minEndDistance)
+	local shortest = endDistance * (1 + settings.minWalkShare)
+	local startDistance = math.max(math.min(eye / math.tan(startAngle), settings.maxStartDistance), shortest)
+
+	-- Along the corridor from the thrower's side, or from the far side when there's no room behind the egg. Eyes
+	-- above the walls see over everything, so only lower ones have to stay inside the corridor.
+	local lane = Throw.lane
+	local forward = Vector3.new(lane.direction.X, 0, lane.direction.Z).Unit
+	local along = (ground - lane.origin):Dot(forward)
+	local roomBehind = along - settings.backMargin
+	local roomAhead = Biomes[#Biomes].endDist + Map.corridor.extra - along - settings.backMargin
+	local overWalls = ground.Y + eye > Map.walls.rimY
+	local fromBehind = startDistance <= roomBehind or roomBehind >= roomAhead
+	if not overWalls then
+		startDistance = math.max(math.min(startDistance, if fromBehind then roomBehind else roomAhead), shortest)
+	end
+	local heading = if fromBehind then forward else -forward
+	local yaw = math.rad((random:NextNumber() * 2 - 1) * settings.approachAngle)
+	local start = ground - CFrame.Angles(0, yaw, 0):VectorToWorldSpace(heading) * startDistance
+	if not overWalls then
+		local across = forward:Cross(Vector3.yAxis)
+		local side = (start - lane.origin):Dot(across)
+		local limit = lane.width / 2 - settings.sideMargin
+		start -= across * (side - math.clamp(side, -limit, limit))
+	end
+	local flat = Vector3.new(ground.X - start.X, 0, ground.Z - start.Z)
+	local approach = flat.Unit
+
+	return {
+		eye = eye,
+		ground = ground,
+		start = Vector3.new(start.X, ground.Y, start.Z),
+		finish = ground - approach * endDistance,
+		approach = approach,
+		duration = lerp(settings.minTime, settings.maxTime, rarity) + settings.bigExtraTime * bigness,
+		bigness = bigness,
+		rarity = rarity,
+		swims = body.swims,
+		color = color,
+	}
+end
+
+-- The share of the way walked at u (0 to 1 of the walk's time), easing off near the egg, and how fast that share
+-- grows per unit of u.
+local function walked(u: number): (number, number)
+	u = math.clamp(u, 0, 1)
+	local s = settings.slowDown
+	return lerp(u, math.sin(u * math.pi / 2), s), (1 - s) + s * math.pi / 2 * math.cos(u * math.pi / 2)
+end
+
+-- The eyes at a moment of the walk: `share` of the way walked, `steps` taken so far (a footfall at each whole
+-- number) and `sinceFootfall` seconds since the last one.
+function RevealWalk.cameraAt(plan: Plan, share: number, steps: number, sinceFootfall: number): CFrame
+	local eye = plan.eye
+	local swing = math.sin(math.pi * steps) -- one way on one step, the other way on the next
+	local lift = if plan.swims then 0.5 * math.sin(2 * math.pi * steps) else math.abs(swing) - 0.5 -- lowest at a footfall
+	-- A footfall jolts the view down, then it shakes and settles.
+	local jolt = 0
+	if not plan.swims and sinceFootfall < settings.thudTime * 2 then
+		jolt = math.exp(-4 * sinceFootfall / settings.thudTime) * math.cos(sinceFootfall * 45)
+	end
+
+	local across = plan.approach:Cross(Vector3.yAxis)
+	local height = eye + lift * settings.bob * eye - math.max(jolt, 0) * settings.thudDrop * plan.bigness * eye
+	local position = plan.start:Lerp(plan.finish, share) + across * (swing * settings.sway * eye) + Vector3.new(0, height, 0)
+
+	-- Looks at the egg, keeping it a little below the middle of the screen.
+	local toEgg = plan.ground + Vector3.new(0, EGG_MIDDLE, 0) - position
+	local flatDistance = Vector3.new(toEgg.X, 0, toEgg.Z).Magnitude
+	local heading = math.atan2(-toEgg.X, -toEgg.Z)
+	local down = math.atan2(-toEgg.Y, flatDistance)
+	local pitch = down - math.min(down * settings.aimBelow, math.rad(settings.maxAimBelow))
+	pitch += jolt * math.rad(lerp(settings.thudAngle, settings.bigThudAngle, plan.bigness))
+	heading += math.rad(settings.turn) * math.sin(math.pi * steps - 0.6)
+	local roll = math.rad(lerp(settings.tilt, settings.bigTilt, plan.bigness)) * swing
+	return CFrame.new(position) * CFrame.Angles(0, heading, 0) * CFrame.Angles(-pitch, 0, 0) * CFrame.Angles(0, 0, roll)
+end
+
+-- The rings round the screen for a colour mutation: a dark edge, then rings in its colour, faint inside and strong
+-- at the edges, clear in the middle. Hidden until shown.
+function RevealWalk.buildGlow(parent: Instance): Frame
+	local glow = settings.glow
+	local holder = Instance.new("Frame")
+	holder.Name = "WalkGlow"
+	holder.Size = UDim2.fromScale(1, 1)
+	holder.BackgroundTransparency = 1
+	holder.Visible = false
+	holder.ZIndex = 1
+	holder.Parent = parent
+
+	local function layer(name: string, image: string, size: number, transparency: number)
+		local label = Instance.new("ImageLabel")
+		label.Name = name
+		label.AnchorPoint = Vector2.new(0.5, 0.5)
+		label.Position = UDim2.fromScale(0.5, 0.5)
+		label.Size = UDim2.fromScale(size, size)
+		label.BackgroundTransparency = 1
+		label.Image = image
+		label.ImageTransparency = 1
+		label:SetAttribute("Shown", transparency)
+		label.Parent = holder
+		return label
+	end
+	layer("Dark", glow.darkImage, 1, glow.darkTransparency)
+	for index = 1, glow.rings do
+		local u = (index - 1) / math.max(glow.rings - 1, 1)
+		local ring = layer(`Ring{index}`, glow.ringImage, lerp(glow.innerSize, glow.outerSize, u), lerp(glow.innerTransparency, glow.outerTransparency, u))
+		ring:SetAttribute("Tinted", true)
+	end
+	return holder
+end
+
+function RevealWalk.showGlow(holder: Frame, color: Color3)
+	holder.Visible = true
+	for _, label in holder:GetChildren() do
+		if label:IsA("ImageLabel") then
+			if label:GetAttribute("Tinted") then
+				label.ImageColor3 = color
+			end
+			label.ImageTransparency = 1
+			tween(label, settings.glow.fadeTime, { ImageTransparency = label:GetAttribute("Shown") })
+		end
+	end
+end
+
+function RevealWalk.hideGlow(holder: Frame)
+	holder.Visible = false
+end
+
+-- The dot that marks a far-off egg: always the same size on screen.
+local function buildMarker(egg: BasePart): BillboardGui
+	local size = settings.markerSize
+	local marker = Instance.new("BillboardGui")
+	marker.Name = "WalkMarker"
+	marker.Size = UDim2.fromOffset(size * 2, size * 2)
+	marker.LightInfluence = 0
+	marker.Enabled = false
+	marker.Adornee = egg
+	marker.Parent = egg
+	for _, part in { { 1, 0.75, settings.glow.ringImage }, { 0.5, 0.05, settings.markerImage } } do
+		local label = Instance.new("ImageLabel")
+		label.AnchorPoint = Vector2.new(0.5, 0.5)
+		label.Position = UDim2.fromScale(0.5, 0.5)
+		label.Size = UDim2.fromScale(part[1], part[1])
+		label.BackgroundTransparency = 1
+		label.Image = part[3]
+		label.ImageColor3 = settings.markerColor
+		label.ImageTransparency = 1
+		label:SetAttribute("Shown", part[2])
+		label.Parent = marker
+	end
+	return marker
+end
+
+-- Plays the walk: a cut to black, the walk, a cut to black. It returns with the screen black, for the close-up on
+-- the egg to fade in on. Once skipped() says yes, it cuts to black straight away.
+function RevealWalk.play(plan: Plan, egg: BasePart, black: Frame, glow: Frame, skipped: () -> boolean)
+	local camera = workspace.CurrentCamera
+	task.wait(settings.cutDelay)
+	tween(black, settings.cutIn, { BackgroundTransparency = 0 }).Completed:Wait()
+
+	egg.CFrame = CFrame.new(egg.Position) -- upright, whatever way it tumbled in flight
+	camera.CameraType = Enum.CameraType.Scriptable
+	camera.FieldOfView = settings.fieldOfView
+	local steps = 0.5 -- mid-stride, so the first footfall comes soon
+	camera.CFrame = RevealWalk.cameraAt(plan, 0, steps, math.huge)
+	if plan.color then
+		RevealWalk.showGlow(glow, plan.color)
+	end
+	task.wait(settings.blackHold)
+	tween(black, settings.fadeIn, { BackgroundTransparency = 1 })
+
+	local marker = buildMarker(egg)
+	local eggHeight = egg.Size.Y
+
+	local distance = (plan.finish - plan.start).Magnitude
+	local stride = plan.eye * settings.strideEyes
+	local startedAt = os.clock()
+	local last, lastFootfall = startedAt, -math.huge
+	while not skipped() do
+		local now = os.clock()
+		local u = (now - startedAt) / plan.duration
+		if u >= 1 then
+			break
+		end
+		-- Steps keep pace with how fast it goes, so a big stride is a slow step.
+		local share, pace = walked(u)
+		local speed = distance / plan.duration * pace
+		local rate = math.clamp(speed / stride, settings.minStepRate, settings.maxStepRate) * (if plan.swims then SWIM_PACE else 1)
+		local before = steps
+		steps += rate * (now - last)
+		last = now
+		if math.floor(steps) > math.floor(before) then
+			lastFootfall = now
+		end
+		camera.CameraType = Enum.CameraType.Scriptable -- in case anything else took the camera back
+		camera.CFrame = RevealWalk.cameraAt(plan, share, steps, now - lastFootfall)
+		-- How tall the egg looks on screen, in pixels.
+		local eggDistance = (egg.Position - camera.CFrame.Position).Magnitude
+		local pixels = eggHeight / eggDistance / math.tan(math.rad(camera.FieldOfView) / 2) * camera.ViewportSize.Y / 2
+		local hidden = math.clamp((pixels - settings.markerFull) / (settings.markerFrom - settings.markerFull), 0, 1)
+		marker.Enabled = hidden < 1
+		-- Far off, the dot covers a lot of ground, so it hangs part way towards the eyes where the floor can't
+		-- cut through it. It stays the same size and in the same place on screen.
+		marker.StudsOffset = Vector3.new(0, 0, eggDistance * MARKER_LIFT)
+		for _, label in marker:GetChildren() do
+			label.ImageTransparency = lerp(label:GetAttribute("Shown"), 1, hidden)
+		end
+		RunService.RenderStepped:Wait()
+	end
+
+	tween(black, settings.cutOut, { BackgroundTransparency = 0 }).Completed:Wait()
+	marker:Destroy()
+	RevealWalk.hideGlow(glow)
+	task.wait(settings.blackAfter)
+end
+
+return RevealWalk

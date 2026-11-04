@@ -1,4 +1,5 @@
--- The hatch reveal: the egg shakes while the name fills in out of order over blank dashes and the
+-- The reveal after the landing. First the caught monster walks up to the egg, seen through its eyes
+-- (RevealWalk). Then the hatch: the egg shakes while the name fills in out of order over blank dashes and the
 -- "1 in X" counter climbs, the dino bursts out, then the screen washes in the rarity's colour and
 -- the catch is written straight on the screen. Display only: the server has already rolled the
 -- catch, and all of this is suspense leading up to that result.
@@ -18,6 +19,7 @@ local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
+local RevealWalk = require(script.Parent.RevealWalk)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local player = Players.LocalPlayer
@@ -400,7 +402,20 @@ local function buildGui()
 	flash.ZIndex = 10
 	flash.Parent = gui
 
+	-- The walk to the egg: its rings round the screen, and the cuts to black before and after it.
+	local walkGlow = RevealWalk.buildGlow(gui)
+	local black = Instance.new("Frame")
+	black.Name = "Black"
+	black.Size = UDim2.fromScale(1, 1)
+	black.BackgroundColor3 = Color3.new(0, 0, 0)
+	black.BackgroundTransparency = 1
+	black.BorderSizePixel = 0
+	black.ZIndex = 11
+	black.Parent = gui
+
 	return {
+		walkGlow = walkGlow,
+		black = black,
 		scale = scale,
 		inset = inset,
 		glows = glows,
@@ -685,6 +700,9 @@ local function play(catch, egg: BasePart)
 	local cardShownAt = 0
 	local rarity = UiKit.rarityOf(catch.id)
 	local done = Instance.new("BindableEvent")
+	-- First the monster walks up to the egg, seen through its eyes (RevealWalk); a tap cuts it short.
+	local walking = true
+	local walkSkipped = false
 
 	for _, glow in hud.glows do
 		glow.BackgroundTransparency = 1
@@ -694,8 +712,8 @@ local function play(catch, egg: BasePart)
 	hud.pillEdge.Color = UiKit.PANEL_EDGE
 	hud.pill.Visible = showCounter
 	hud.counter.Text = "1"
-	hud.top.Visible = true
-	hud.letters.Visible = true
+	hud.top.Visible = false -- both show once the walk is over
+	hud.letters.Visible = false
 	hud.final.Visible = false
 	clearColourMoment()
 
@@ -769,6 +787,10 @@ local function play(catch, egg: BasePart)
 		if now - startedAt < Reveal.skipDelay then
 			return
 		end
+		if walking then
+			walkSkipped = true
+			return
+		end
 		if not cardShown then
 			showCard()
 		elseif now - cardShownAt >= Reveal.skipDelay and not finished then
@@ -794,6 +816,26 @@ local function play(catch, egg: BasePart)
 		end
 		return Enum.ContextActionResult.Sink
 	end, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
+
+	-- Whatever goes wrong in the walk, the reveal still plays and the screen comes back from black.
+	local fieldOfView = camera.FieldOfView
+	local walkOk, walkError = pcall(function()
+		local walkPlan = RevealWalk.plan(catch, ground, mutation and mutation.color)
+		RevealWalk.play(walkPlan, egg, hud.black, hud.walkGlow, function()
+			return walkSkipped
+		end)
+	end)
+	if not walkOk then
+		warn(`[RevealController] Walk failed: {walkError}`)
+		RevealWalk.hideGlow(hud.walkGlow)
+	end
+	camera.FieldOfView = fieldOfView
+	walking = false
+	-- The close-up on the egg fades in, and the reveal's own timing starts here.
+	startedAt = os.clock()
+	hud.top.Visible = true
+	hud.letters.Visible = true
+	tween(hud.black, Reveal.walk.closeUpFadeIn, { BackgroundTransparency = 1 })
 
 	camera.CameraType = Enum.CameraType.Scriptable
 	local stepConnection = RunService.RenderStepped:Connect(function()
