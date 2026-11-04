@@ -852,7 +852,7 @@ local function play(catch, egg: BasePart)
 	dino = stage.model
 	fitSparkles(anchor, sparkles, stage.box, stage.size)
 	camera.CameraType = Enum.CameraType.Scriptable
-	camera.CFrame = RevealCloseUp.cameraAt(stage, 0, 0)
+	camera.CFrame = RevealCloseUp.cameraAt(stage, 0)
 	walking = false
 
 	-- The close-up on the egg fades in, and the reveal's own timing starts here.
@@ -871,7 +871,7 @@ local function play(catch, egg: BasePart)
 		hud.luck.Rotation = LABEL_WIGGLE * math.sin(elapsed * 4)
 
 		camera.CameraType = Enum.CameraType.Scriptable -- in case anything else took the camera back
-		camera.CFrame = RevealCloseUp.cameraAt(stage, pulled(now), math.max(now - pullAt - pullLength, 0))
+		camera.CFrame = RevealCloseUp.cameraAt(stage, pulled(now))
 
 		if cardShown then
 			return

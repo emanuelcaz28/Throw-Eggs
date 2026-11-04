@@ -169,10 +169,7 @@ return {
 		depthShare = 0.3,
 		endElevation = 10,
 		minPullBack = 1.5,
-		-- Once the pull back is over, the camera circles round the monster this many degrees a second (very slowly),
-		-- easing up to that speed over circleRamp seconds.
-		circleSpeed = 5,
-		circleRamp = 1,
+		-- Once the pull back is over the camera holds still, with no circling (the owner's wish, 2026-11-04).
 		-- Below the corridor's rim the camera keeps wallMargin studs inside its walls; each stud above the rim lets it
 		-- go overWalls studs further out, so it rises clear of them smoothly.
 		wallMargin = 4,

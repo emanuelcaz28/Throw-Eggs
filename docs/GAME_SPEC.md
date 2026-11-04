@@ -264,13 +264,16 @@ name shows up slowly.
 | 4.1 | Quick cut to black. |
 | 4.2 | Fades in on a close-up of the item on the ground, with the animal's feet already standing behind it. |
 | 4.4 | Blank name appears, bottom centre: `______ _____`. Holds for a moment. |
-| 5.0 to 6.4 | **The camera pulls back and up** past the animal's legs, and it's revealed standing over the item. Then the camera keeps circling very slowly. |
+| 5.0 to 6.4 | **The camera pulls back and up** past the animal's legs, and it's revealed standing over the item. Then the camera keeps circling very slowly (ours doesn't: the owner wants it to hold still, see below). |
 | 5.2 to 7.0 | Letters fill in **out of order**, about one every 0.2 seconds: `E`, `RE`, `IRE`, `S_IRE`, then `S`, `SI`… in big white outlined text. |
 | 7.2 | **The final moment:** the screen washes in the rarity's colour (purple here) with a big ring around the animal, fading in about a second, with sparkles on the model. |
 
 - **[Seen]** The animal never appears to walk on screen. It's the camera doing the walking, then the animal is simply
   there. So this needs no walking animations on our block dinos. It's one more reason it works so well.
 - **[Seen]** The item stays lying on the ground between the animal's feet throughout.
+- **[Owner, 2026-11-04]** No circling: once the pull back ends, the camera holds still. And it must not zoom out too
+  far: the monster fills a good part of the screen, framed from its own size (said about the old hatch's camera,
+  which ended 30 studs × the monster's size away and spun round it).
 - **[Seen]** Final text sits directly on the screen at the bottom with **no panel behind it**, stacked as: mutation
   ("GOLD") small and gold, the name big in its rarity colour, a tilted orange "NEW!" sticker beside it, $/s in green,
   then a small "tap to continue".
@@ -325,7 +328,7 @@ name shows up slowly.
     blank name, and on rare catches the counter, show at once. It holds for 30% of the name's time (0.4 to 2.5 s).
   - **Pull back:** the camera pulls back and up past the legs until the monster and the egg fill the screen, in 1.4
     seconds (2.4 for the biggest, whose camera ends hundreds of studs away), ending with the name. Down in the
-    corridor the camera keeps between the walls. Then it circles very slowly, 5° a second. Tapping during the climb
+    corridor the camera keeps between the walls. Then it holds still, with no circling. Tapping during the climb
     brings up the final text and finishes the pull back in half a second.
   - **Loading:** the monster's model loads during the walk, so it stands there from the close-up's first frame.
   - The letters, the counter, the colour wash, the final text and the tap timing are as before. The sparkles spread

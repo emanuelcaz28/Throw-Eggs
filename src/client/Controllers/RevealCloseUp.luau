@@ -1,8 +1,8 @@
 -- The close-up and pull back after the walk (docs/GAME_SPEC.md section 7). The caught monster is simply there,
 -- standing still at its real size where its walk ended, facing the way it walked, with the egg on the ground between
 -- its front feet (or just in front of them when it's too low to stand over it). The camera opens on a close-up of the
--- egg with the feet behind it, then pulls back and up until the whole monster stands framed over the egg, circling
--- very slowly all the while. The monster doesn't pop out of the egg: it walked up to it. Display only.
+-- egg with the feet behind it, then pulls back and up until the whole monster stands framed over the egg, and holds
+-- still there. The monster doesn't pop out of the egg: it walked up to it. Display only.
 -- Numbers live in Config/Reveal closeUp. RevealController plays it.
 local ContentProvider = game:GetService("ContentProvider")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -157,7 +157,7 @@ export type Stage = {
 	size: Vector3, -- ...and its size: across, up, along
 	hold: number, -- seconds the close-up holds
 	pullTime: number, -- seconds the pull back takes
-	turn: number, -- 1 or -1: which way the camera circles
+	turn: number, -- 1 or -1: which side of the monster's front the camera looks from
 	focus: { Vector3 }, -- what the camera looks at: the egg's middle in the close-up, the box's middle at the end
 	distance: { number }, -- how far the camera is from it, at the start and the end
 	elevation: { number }, -- radians it looks down from, at the start and the end
@@ -280,17 +280,15 @@ local function insideWalls(position: Vector3): Vector3
 	return position - across * (side - math.clamp(side, -limit, limit))
 end
 
--- The camera `pulled` of the way through the pull back (0 to 1, eased) and `circling` seconds after it ended. The
--- distance grows evenly on a log scale, so a giant's long pull back feels as steady as a small one's, and the camera
--- lifts its eyes from the egg to the monster as it goes. Then it circles, easing into it.
-function RevealCloseUp.cameraAt(stage: Stage, pulled: number, circling: number): CFrame
+-- The camera `pulled` of the way through the pull back (0 to 1, eased). The distance grows evenly on a log scale, so
+-- a giant's long pull back feels as steady as a small one's, and the camera lifts its eyes from the egg to the
+-- monster as it goes. Once pulled back it holds still: the owner doesn't want it circling.
+function RevealCloseUp.cameraAt(stage: Stage, pulled: number): CFrame
 	local near, far = stage.distance[1], stage.distance[2]
 	local distance = near * (far / near) ^ pulled
 	local focus = stage.focus[1]:Lerp(stage.focus[2], (distance - near) / (far - near))
 	local elevation = lerp(stage.elevation[1], stage.elevation[2], pulled)
-	local ramp = settings.circleRamp
-	local circled = if circling < ramp then circling * circling / (2 * ramp) else circling - ramp / 2
-	local yaw = stage.turn * math.rad(settings.yaw + settings.circleSpeed * circled)
+	local yaw = stage.turn * math.rad(settings.yaw)
 	local around = CFrame.Angles(0, yaw, 0):VectorToWorldSpace(stage.forward)
 	local position = focus + (around * math.cos(elevation) + Vector3.yAxis * math.sin(elevation)) * distance
 	return CFrame.lookAt(insideWalls(position), focus)
