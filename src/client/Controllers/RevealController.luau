@@ -1,8 +1,9 @@
 -- The reveal after the landing. First the caught monster walks up to the egg, seen through its eyes
--- (RevealWalk). Then the hatch: the egg shakes while the name fills in out of order over blank dashes and the
--- "1 in X" counter climbs, the dino bursts out, then the screen washes in the rarity's colour and
--- the catch is written straight on the screen. Display only: the server has already rolled the
--- catch, and all of this is suspense leading up to that result.
+-- (RevealWalk). Then a close-up of the egg with the monster's feet behind it, and the camera pulls back to the
+-- monster standing over the egg (RevealCloseUp), while the name fills in out of order over blank dashes and the
+-- "1 in X" counter climbs. Then the screen washes in the rarity's colour and the catch is written straight on the
+-- screen. Display only: the server has already rolled the catch, and all of this is suspense leading up to that
+-- result.
 -- The look is UI design v2 (mock-ups 09-10 for the counter, 15-16b for the letters and the final
 -- colour moment, in design/ui-mockups/build.py), built with UiKit.
 local ContextActionService = game:GetService("ContextActionService")
@@ -15,10 +16,10 @@ local UserInputService = game:GetService("UserInputService")
 
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
-local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
+local RevealCloseUp = require(script.Parent.RevealCloseUp)
 local RevealWalk = require(script.Parent.RevealWalk)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
@@ -28,10 +29,8 @@ local RevealController = {}
 
 local SKIP_ACTION = "RevealSkip"
 local WHITE = Color3.new(1, 1, 1)
-local SPIN_SPEED = 0.6
-local WOBBLE_SPEED = 18
-local MAX_WOBBLE = math.rad(22)
-local POP_TIME = 0.45
+local SPARKLE_SIZE = 0.8 -- studs, round a monster up to SPARKLE_HEIGHT tall; bigger ones get bigger sparkles
+local SPARKLE_HEIGHT = 10
 local LETTER_POP = 1.3 -- a letter lands this big and settles back to normal size
 local LETTER_SIZE = 64
 local LABEL_WIGGLE = 3 -- degrees the luck label rocks either way
@@ -468,18 +467,27 @@ local function makeSparkles(position: Vector3): (Part, ParticleEmitter)
 	emitter.Lifetime = NumberRange.new(0.8, 1.6)
 	emitter.Speed = NumberRange.new(10, 22)
 	emitter.SpreadAngle = Vector2.new(180, 180)
-	emitter.Size = NumberSequence.new(0.8)
+	emitter.Size = NumberSequence.new(SPARKLE_SIZE)
 	emitter.Parent = anchor
 	return anchor, emitter
 end
 
+-- Spreads the sparkles over the whole monster (`box` and `size` round it), bigger for bigger monsters.
+local function fitSparkles(anchor: BasePart, emitter: ParticleEmitter, box: CFrame, size: Vector3)
+	anchor.Size = size:Min(Vector3.one * 2048)
+	anchor.CFrame = box
+	local grow = math.max(size.Y / SPARKLE_HEIGHT, 1)
+	emitter.Size = NumberSequence.new(SPARKLE_SIZE * grow)
+	emitter.Speed = NumberRange.new(10 * grow, 22 * grow)
+end
+
 -- A glowing pillar of light rising from the dino's feet. It lives on the sparkles anchor and goes with it.
-local function addBeam(anchor: BasePart, ground: Vector3, width: number, color: Color3)
+local function addBeam(anchor: BasePart, ground: Vector3, width: number, height: number, color: Color3)
 	local bottom = Instance.new("Attachment")
-	bottom.Position = ground - anchor.Position
+	bottom.Position = anchor.CFrame:PointToObjectSpace(ground)
 	bottom.Parent = anchor
 	local topEnd = Instance.new("Attachment")
-	topEnd.Position = bottom.Position + Vector3.new(0, BEAM_HEIGHT, 0)
+	topEnd.Position = bottom.Position + anchor.CFrame:VectorToObjectSpace(Vector3.new(0, height, 0))
 	topEnd.Parent = anchor
 	-- A faint wide beam around a brighter narrow one, so the edges look soft.
 	for _, layer in { { width = 1, transparency = 0.75 }, { width = 0.45, transparency = 0.35 } } do
@@ -683,7 +691,6 @@ local function play(catch, egg: BasePart)
 	local showCounter = catch.oneIn >= Reveal.counterMinOneIn
 	local mutation = DinoStats.findOption(Catch.mutations, catch.mutation)
 	local size = DinoStats.findOption(Catch.sizes, catch.size)
-	local dinoScale = DinoModel.statueScale(catch.id, catch.size)
 	local upperName = catch.name:upper()
 	local letterOrder = shuffledLetterIndexes(upperName)
 	local tiles = buildLetterTiles(upperName)
@@ -691,8 +698,11 @@ local function play(catch, egg: BasePart)
 	local revealedCount = 0
 	local currentTier = nil
 	local dino = nil
-	local hatchedAt = nil
-	local baseEggCFrame = CFrame.new(landing) -- upright, whatever way it tumbled in flight
+	-- The close-up and pull back (RevealCloseUp), set up once the walk is over. The pull back runs from pullFrom
+	-- (0 to 1) at pullAt for pullLength seconds; a tap to skip restarts it from where it is, quicker.
+	local stage = nil
+	local pullFrom, pullAt, pullLength = 0, math.huge, 1
+	local pullStyle, pullDirection = Enum.EasingStyle.Sine, Enum.EasingDirection.InOut
 	local anchor, sparkles = makeSparkles(landing)
 	local startedAt = os.clock()
 	local finished = false
@@ -724,21 +734,20 @@ local function play(catch, egg: BasePart)
 		pulse(tier)
 	end
 
-	local function hatch()
-		egg:Destroy()
-		dino = DinoModel.build(catch.id, catch.mutation, ground, 0.01)
-		dino.Name = "RevealDino"
-		dino.Parent = workspace
-		sparkles:Emit(60)
+	local function pulled(now: number): number
+		local share = math.clamp((now - pullAt) / pullLength, 0, 1)
+		return pullFrom + (1 - pullFrom) * TweenService:GetValue(share, pullStyle, pullDirection)
 	end
 
-	local function showCard()
+	-- `skipped` when a tap cut the climb short: the pull back hurries to its end.
+	local function showCard(skipped: boolean)
 		cardShown = true
 		cardShownAt = os.clock()
-		if not dino then
-			hatch()
+		local soFar = pulled(cardShownAt)
+		if skipped and soFar < 1 then
+			pullFrom, pullAt, pullLength = soFar, cardShownAt, Reveal.closeUp.skipTime
+			pullStyle, pullDirection = Enum.EasingStyle.Quad, Enum.EasingDirection.Out
 		end
-		dino:ScaleTo(dinoScale)
 		if showCounter then
 			hud.counter.Text = Format.commas(catch.oneIn)
 		end
@@ -746,8 +755,9 @@ local function play(catch, egg: BasePart)
 			setTier(finalTier)
 		end
 		if finalTier then
-			local extents = dino:GetExtentsSize()
-			addBeam(anchor, ground, math.max(extents.X, extents.Z) * 0.8, finalTier.color)
+			local feet = stage.box.Position - Vector3.new(0, stage.size.Y / 2, 0)
+			local width = math.max(stage.size.X, stage.size.Z) * 0.8
+			addBeam(anchor, feet, width, math.max(BEAM_HEIGHT, stage.size.Y * 2), finalTier.color)
 		end
 
 		hud.top.Visible = false
@@ -792,7 +802,7 @@ local function play(catch, egg: BasePart)
 			return
 		end
 		if not cardShown then
-			showCard()
+			showCard(true)
 		elseif now - cardShownAt >= Reveal.skipDelay and not finished then
 			finished = true
 			done:Fire()
@@ -817,10 +827,14 @@ local function play(catch, egg: BasePart)
 		return Enum.ContextActionResult.Sink
 	end, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
 
+	-- The monster's meshes load during the walk, so it stands there from the close-up's first frame.
+	task.spawn(pcall, RevealCloseUp.preload, catch.id)
+
 	-- Whatever goes wrong in the walk, the reveal still plays and the screen comes back from black.
 	local fieldOfView = camera.FieldOfView
+	local walkPlan = nil
 	local walkOk, walkError = pcall(function()
-		local walkPlan = RevealWalk.plan(catch, ground, mutation and mutation.color)
+		walkPlan = RevealWalk.plan(catch, ground, mutation and mutation.color)
 		RevealWalk.play(walkPlan, egg, hud.black, hud.walkGlow, function()
 			return walkSkipped
 		end)
@@ -830,56 +844,37 @@ local function play(catch, egg: BasePart)
 		RevealWalk.hideGlow(hud.walkGlow)
 	end
 	camera.FieldOfView = fieldOfView
+
+	-- Behind the black, the monster is simply there, standing still over the egg where its walk ended. The egg
+	-- lies upright by its feet and stays put.
+	egg.CFrame = CFrame.new(egg.Position)
+	stage = RevealCloseUp.stage(catch, egg, walkPlan and walkPlan.approach, duration)
+	dino = stage.model
+	fitSparkles(anchor, sparkles, stage.box, stage.size)
+	camera.CameraType = Enum.CameraType.Scriptable
+	camera.CFrame = RevealCloseUp.cameraAt(stage, 0, 0)
 	walking = false
+
 	-- The close-up on the egg fades in, and the reveal's own timing starts here.
 	startedAt = os.clock()
+	pullAt = startedAt + stage.hold
+	pullLength = stage.pullTime
 	hud.top.Visible = true
 	hud.letters.Visible = true
 	tween(hud.black, Reveal.walk.closeUpFadeIn, { BackgroundTransparency = 1 })
 
-	camera.CameraType = Enum.CameraType.Scriptable
 	local stepConnection = RunService.RenderStepped:Connect(function()
-		local elapsed = os.clock() - startedAt
+		local now = os.clock()
+		local elapsed = now - startedAt
 		local progress = math.min(elapsed / duration, 1)
 
 		hud.luck.Rotation = LABEL_WIGGLE * math.sin(elapsed * 4)
 
-		local angle = elapsed * Reveal.camera.turnSpeed
-		local view = Reveal.camera
-		local pullBack = 0
-		if dino then
-			if not hatchedAt then
-				hatchedAt = os.clock()
-			end
-			pullBack = math.min((os.clock() - hatchedAt) / view.pullBackTime, 1)
-			pullBack = TweenService:GetValue(pullBack, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-		end
-		local radius = view.eggRadius + (view.radius * dinoScale - view.eggRadius) * pullBack
-		local height = view.eggHeight + (view.height * dinoScale - view.eggHeight) * pullBack
-		local focusHeight = view.eggFocusHeight + (view.focusHeight * dinoScale - view.eggFocusHeight) * pullBack
-		local focus = ground + Vector3.new(0, focusHeight, 0)
-		local cameraOffset = Vector3.new(math.sin(angle) * radius, height, math.cos(angle) * radius)
-		camera.CFrame = CFrame.lookAt(focus + cameraOffset, focus)
-
-		if dino then
-			local popProgress = math.min((elapsed - duration * Reveal.hatchAt) / POP_TIME, 1)
-			local pop = TweenService:GetValue(math.max(popProgress, 0), Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-			if cardShown then
-				pop = 1
-			end
-			dino:ScaleTo(math.max(dinoScale * pop, 0.01))
-			dino:PivotTo(CFrame.new(ground) * CFrame.Angles(0, elapsed * SPIN_SPEED, 0))
-		elseif egg.Parent then
-			local wobble = math.sin(elapsed * WOBBLE_SPEED) * MAX_WOBBLE * math.min(progress / Reveal.hatchAt, 1)
-			egg.CFrame = baseEggCFrame * CFrame.Angles(0, 0, wobble)
-		end
+		camera.CameraType = Enum.CameraType.Scriptable -- in case anything else took the camera back
+		camera.CFrame = RevealCloseUp.cameraAt(stage, pulled(now), math.max(now - pullAt - pullLength, 0))
 
 		if cardShown then
 			return
-		end
-
-		if progress >= Reveal.hatchAt and not dino then
-			hatch()
 		end
 
 		if showCounter then
@@ -898,7 +893,7 @@ local function play(catch, egg: BasePart)
 		end
 
 		if progress >= 1 then
-			showCard()
+			showCard(false)
 		end
 	end)
 
@@ -953,6 +948,13 @@ function RevealController.play(catch, egg: BasePart)
 	local ok, err = pcall(play, catch, egg)
 	playing = false
 	if not ok then
+		-- Never leave the screen black or the monster standing in the corridor.
+		hud.black.BackgroundTransparency = 1
+		ContextActionService:UnbindAction(SKIP_ACTION)
+		local leftover = workspace:FindFirstChild("RevealDino")
+		if leftover then
+			leftover:Destroy()
+		end
 		error(err, 0)
 	end
 	finishedEvent:Fire(catch)

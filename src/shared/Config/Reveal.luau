@@ -1,4 +1,4 @@
--- The hatch reveal after an egg lands. Times are in seconds.
+-- The reveal after an egg lands. Times are in seconds.
 -- Placeholder numbers; tune during playtesting.
 return {
 	landingHold = 0.8, -- time to read the distance before the reveal starts
@@ -7,7 +7,6 @@ return {
 	minClimbTime = 1.5, -- shortest time before the final card, even for common catches
 	maxClimbTime = 9,
 	counterMinOneIn = 10, -- catches more common than this show no counter
-	hatchAt = 0.4, -- share of the climb when the egg bursts and the dino appears
 	skipDelay = 0.4, -- ignore taps this soon, so the throw tap can't skip the reveal
 
 	-- The server frees the player for the next throw once they finish the reveal,
@@ -130,16 +129,54 @@ return {
 		},
 	},
 
-	-- The camera starts close on the egg, then pulls back to the dino view when it hatches.
-	camera = {
-		eggRadius = 9,
-		eggHeight = 3,
-		eggFocusHeight = 1.5,
-		radius = 30,
-		height = 12,
-		focusHeight = 6,
-		turnSpeed = 0.35,
-		pullBackTime = 0.6,
+	-- After the walk: a close-up of the egg on the ground with the monster's feet already standing behind it, then the
+	-- camera pulls back and up until the whole monster stands over the egg (RevealCloseUp, docs/GAME_SPEC.md
+	-- section 7). Angles are in degrees, times in seconds.
+	closeUp = {
+		-- The close-up: the camera this many egg heights from the egg's middle (as close as nearest for a monster
+		-- hardly bigger than the egg), looking down at it from elevation for the smallest monsters and bigElevation
+		-- for the biggest (low, so their legs tower up behind the egg, over the corridor's walls), this far round
+		-- from straight in front of the monster (to one side or the other, at random).
+		distance = 2.4,
+		nearest = 1.2,
+		elevation = 20,
+		bigElevation = 4,
+		yaw = 12,
+		-- Where the egg lies: between the monster's front feet, far enough ahead of them for both feet to stand in
+		-- the close-up (at least feetBehind times their distance to the side, behind the camera), and further ahead
+		-- when the monster is too low there to stand over it. A monster under besideBelow egg heights tall would
+		-- hide behind the egg, so the egg lies beside its front feet instead (a first-map Compy is about 1.2).
+		-- eggGap studs are kept clear round the egg.
+		feetBehind = 1.5,
+		besideBelow = 2.5,
+		eggGap = 0.3,
+		-- How long the close-up holds: holdShare of the climb (the name filling in and the counter climbing), but
+		-- between minHold and maxHold.
+		holdShare = 0.3,
+		minHold = 0.4,
+		maxHold = 2.5,
+		-- The pull back takes pullTime for the first map's standard size, up to bigPullTime for the biggest (at
+		-- walk.bigScale), which have much further to go. It's cut short to end with the climb, but never to under
+		-- minPullShare of its time. A tap to skip finishes it in skipTime.
+		pullTime = 1.4,
+		bigPullTime = 2.4,
+		minPullShare = 0.6,
+		skipTime = 0.5,
+		-- Where it ends: the monster and the egg fill the screen with margin to spare, from far enough back that
+		-- depthShare of their length is in front of the camera too, looking down from endElevation. It always ends
+		-- at least minPullBack times further back than the close-up, so tiny monsters still pull back.
+		margin = 1.3,
+		depthShare = 0.3,
+		endElevation = 10,
+		minPullBack = 1.5,
+		-- Once the pull back is over, the camera circles round the monster this many degrees a second (very slowly),
+		-- easing up to that speed over circleRamp seconds.
+		circleSpeed = 5,
+		circleRamp = 1,
+		-- Below the corridor's rim the camera keeps wallMargin studs inside its walls; each stud above the rim lets it
+		-- go overWalls studs further out, so it rises clear of them smoothly.
+		wallMargin = 4,
+		overWalls = 2,
 	},
 
 	-- Each label appears when the counter passes minOneIn. Lowest first. glow is how strongly the

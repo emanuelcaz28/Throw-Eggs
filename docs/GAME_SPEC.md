@@ -246,7 +246,7 @@ reveal; your own catch appears once you've tapped through it. Limit and timings 
   world's name in a dark strip under it, and pops each time the egg crosses into a new world. The floating distance
   numbers and world names that stood in the corridor are gone, as in the reference.
 - **[Built]** Landing: a white ring flashes out on the ground and a puff of dust rises (`Config/Throw` `landing`).
-  The walking view after it is built (below); the close-up and pull back after the walk are the next job.
+  The walking view after it, then the close-up and pull back, are built (below).
 
 ### Landing and arrival: the animal walks to the egg
 **[Owner]** Pay special attention to this part. The animal walking towards what you threw is the key moment, then its
@@ -284,7 +284,7 @@ name shows up slowly.
 - **[Built]** The text follows mock-ups 15 to 16b: white dashes that fill with letters at the bottom centre, then the
   rarity colour wash with two rings and sparkles, and the final text with no panel (size and mutation, name in its
   rarity colour, NEW! on a first catch, $/s, the "1 in X" and the tier sticker on lucky catches, tap to continue),
-  then white for half a second. After the walk the camera still opens on the old egg orbit and hatch, a separate job.
+  then white for half a second.
 - **[Owner]** The walk depends on the catch: a very rare monster starts far from the egg, and a very big one starts way
   above the map. It simulates the POV of each monster. Made in-game, not in Blender: it changes with every catch's
   rarity and size and with where the egg landed, so a camera script works it out on the spot.
@@ -310,6 +310,26 @@ name shows up slowly.
     red on Ruby...), dark on the inside, strongest at the edges, clear in the middle. A catch with no colour mutation
     walks with a clear view. The rings use two images built into Roblox, so nothing had to be uploaded.
   - **Far eggs:** when the egg is a speck (under 10 pixels tall), a small glowing dot marks it so it can still be found.
+- **[Built]** The close-up and pull back after the walk (`RevealCloseUp`, numbers in `Config/Reveal` `closeUp`).
+  Previews in `design/reveal/closeup/`.
+  - **The monster is simply there:** behind the black after the walk, the caught monster stands still where its walk
+    ended, at its real size (its map's standard size × its size mutation), facing the way it walked. It never pops out
+    of the egg or spins. The egg lies upright on the ground and never moves.
+  - **Where the egg lies:** between the monster's front feet. With a giant, the egg lies far enough ahead of its feet
+    for both feet to show in the close-up (a Unit of Doom's feet stand on the corridor's rims, either side of it).
+    Where the monster's body is too low to stand over the egg, the egg lies just in front of its feet, worked out from
+    the model's real shape. A monster under 2.5 egg heights tall (the first map's, like the Compy) would hide behind
+    the egg, so the egg lies beside its front feet instead.
+  - **Close-up:** fades in on the egg with the feet behind it, the camera low and close, a little to one side, looking
+    down at it by 20° (only 4° for the biggest, so their legs tower up behind the egg over the corridor walls). The
+    blank name, and on rare catches the counter, show at once. It holds for 30% of the name's time (0.4 to 2.5 s).
+  - **Pull back:** the camera pulls back and up past the legs until the monster and the egg fill the screen, in 1.4
+    seconds (2.4 for the biggest, whose camera ends hundreds of studs away), ending with the name. Down in the
+    corridor the camera keeps between the walls. Then it circles very slowly, 5° a second. Tapping during the climb
+    brings up the final text and finishes the pull back in half a second.
+  - **Loading:** the monster's model loads during the walk, so it stands there from the close-up's first frame.
+  - The letters, the counter, the colour wash, the final text and the tap timing are as before. The sparkles spread
+    over the whole monster and the light beam rises above it, so both grow with its size.
 
 ### Earn
 - **[Built]** Dinos on your base earn $/s. Spare ones go in the backpack.
@@ -718,7 +738,7 @@ and biome completion rewards (built, in section 12). Announcements are confirmed
 | Auto-placement keeps dinos apart | Overlap is fine | Seen |
 | Plain coloured parts with little or no stud texture | Checker and studs on everything | Owner |
 | ~~After landing, the camera circles the egg right away~~ | Cut to black, then the walking view. **Built** (section 7) | Owner + Seen |
-| The egg wobbles and bursts at 40%, and the dino pops up from nothing and spins | Close-up, then pull back to the dino already standing still over the egg | Owner + Seen |
+| ~~The egg wobbles and bursts at 40%, and the dino pops up from nothing and spins~~ | Close-up, then pull back to the dino already standing still over the egg. **Built** (section 7) | Owner + Seen |
 | Yellow letter tiles at the top | White outlined letters with blanks at the bottom centre | Seen |
 | Final result in a panel with chips | Plain text at the bottom, a NEW! sticker, a rarity-coloured wash | Seen |
 | Luck grows evenly with distance | Fast at first, slowing right down (ours is evenly spaced inside each world) | Seen |
