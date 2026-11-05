@@ -4,11 +4,13 @@
 -- have a Jaw bone copy build_volcano.py. Monsters with a Swim bone swim and hover instead (SWIM and HOVER,
 -- copying build_abyss_monsters.py). Dinos without bones still walk, stiffly.
 local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = ReplicatedStorage.Shared.Config
 local DinoLife = require(Config.DinoLife)
+local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local Plot = require(Config.Plot)
 
 local DinoLifeController = {}
@@ -254,8 +256,12 @@ local function idleTime(): number
 end
 
 local function add(model: Model)
+	-- A monster with Stay set (the server's best catch on its pedestal) idles where it is and never walks. One with
+	-- Carried set rides on a player's head (PlotService): it walks while they move and idles while they stand.
+	local carried = model:GetAttribute("Carried") == true
+	local stays = model:GetAttribute("Stay") == true or carried
 	local plotIndex = model:GetAttribute("PlotIndex")
-	local position = plotIndex and Plot.positions[plotIndex]
+	local position = if stays then model:GetPivot().Position else plotIndex and Plot.positions[plotIndex]
 	if not position then
 		return
 	end
@@ -265,25 +271,16 @@ local function add(model: Model)
 	local legHeight = nil
 	local roars = false
 	local swims = false
-	local front, back = nil, nil
 	for _, bone in model:GetDescendants() do
 		if bone:IsA("Bone") then
 			roars = roars or bone.Name == "Jaw"
 			swims = swims or bone.Name == "Swim"
-			if bone.Name == "Jaw" or (bone.Name == "Head" and not front) then
-				front = bone
-			end
-			if bone.Name == "Tail1" or ((bone.Name == "Spine" or bone.Name == "Swim") and not back) then
-				back = bone
-			end
 		end
 	end
-	-- Which way the model faces from its pivot, from where its head is against its tail. Most imported models
-	-- face the pivot's +Z (the importer turns them round) and a few its -Z, so the poses take the model's own
-	-- right and forward, and it moves head first whichever it is.
-	local turned = front ~= nil
-		and back ~= nil
-		and pivot:PointToObjectSpace(front.WorldPosition).Z > pivot:PointToObjectSpace(back.WorldPosition).Z
+	-- Which way the model faces from its pivot. Most imported models face the pivot's +Z (the importer turns them
+	-- round) and a few its -Z, so the poses take the model's own right and forward, and it moves head first whichever
+	-- it is.
+	local turned = DinoModel.facesBack(model)
 	local right = if turned then -Vector3.xAxis else Vector3.xAxis
 	local ahead = if turned then Vector3.zAxis else -Vector3.zAxis
 	for _, bone in model:GetDescendants() do
@@ -326,13 +323,42 @@ local function add(model: Model)
 		speed = if swims then DinoLife.swim.speed * scale else strideLength / DinoLife.strideSeconds,
 		strideSeconds = if swims then DinoLife.swim.strideSeconds else DinoLife.strideSeconds,
 		target = nil,
-		idleLeft = math.random() * DinoLife.idleSeconds, -- so a plot's dinos don't all set off together
+		idleLeft = if stays then math.huge else math.random() * DinoLife.idleSeconds, -- so a plot's dinos don't all set off together
 		blend = 0,
 		stride = math.random() * TAU,
 		idleClock = math.random() * TAU,
 		frame = math.random(0, DinoLife.farFrameSkip),
 		pending = 0,
+		carrier = if carried then (model.Parent and model.Parent:FindFirstChild("HumanoidRootPart")) :: BasePart? else nil,
+		mine = carried and model.Parent == Players.LocalPlayer.Character,
+		walking = false,
+		hidden = false,
+		looks = {}, -- each part's own Transparency, for showing it again after hiding it
 	}
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") then
+			dinos[model].looks[part] = part.Transparency
+		end
+	end
+end
+
+-- A carried monster walks while its carrier moves and idles while they stand. On the carrier's own screen it hides
+-- while the camera is scripted (aiming, the throw, the reveal) and while training, where the rack's bar would run
+-- through it.
+local function ride(state)
+	local velocity = state.carrier.AssemblyLinearVelocity
+	state.walking = Vector3.new(velocity.X, 0, velocity.Z).Magnitude > DinoLife.carry.walkSpeed
+	if not state.mine then
+		return
+	end
+	local hidden = workspace.CurrentCamera.CameraType == Enum.CameraType.Scriptable
+		or Players.LocalPlayer:GetAttribute("IsTraining") == true
+	if hidden ~= state.hidden then
+		state.hidden = hidden
+		for part, transparency in state.looks do
+			part.Transparency = if hidden then 1 else transparency
+		end
+	end
 end
 
 local function moveAlong(state, dt: number)
@@ -364,7 +390,7 @@ local function moveAlong(state, dt: number)
 end
 
 local function pose(state, dt: number)
-	local goal = if state.target then 1 else 0
+	local goal = if state.target or state.walking then 1 else 0
 	local step = dt / DinoLife.blendTime
 	state.blend += math.clamp(goal - state.blend, -step, step)
 	local w = state.blend
@@ -395,7 +421,8 @@ local function step(dt: number)
 	for _, state in dinos do
 		state.pending += dt
 		state.frame += 1
-		local distance = (state.position - cameraPosition).Magnitude
+		local carrier = state.carrier
+		local distance = ((if carrier then carrier.Position else state.position) - cameraPosition).Magnitude
 		local skip = if distance > DinoLife.farDistance
 			then DinoLife.farFrameSkip
 			elseif distance > DinoLife.nearDistance then DinoLife.midFrameSkip
@@ -403,7 +430,11 @@ local function step(dt: number)
 		if state.frame % skip == 0 then
 			local elapsed = state.pending
 			state.pending = 0
-			moveAlong(state, elapsed)
+			if carrier then
+				ride(state)
+			else
+				moveAlong(state, elapsed)
+			end
 			pose(state, elapsed)
 		end
 	end

@@ -134,6 +134,68 @@ local function settle(model: Model, scale: number): Model
 	return model
 end
 
+-- Whether a monster's head points along its pivot's +Z rather than -Z, judged from where its head (or jaw) bone is
+-- against its tail (or spine) bone. Most imported models face +Z (the importer turns them round); models without
+-- those bones face -Z.
+function DinoModel.facesBack(model: Model): boolean
+	local front, back = nil, nil
+	for _, bone in model:GetDescendants() do
+		if bone:IsA("Bone") then
+			if bone.Name == "Jaw" or (bone.Name == "Head" and not front) then
+				front = bone
+			end
+			if bone.Name == "Tail1" or ((bone.Name == "Spine" or bone.Name == "Swim") and not back) then
+				back = bone
+			end
+		end
+	end
+	if not front or not back then
+		return false
+	end
+	local pivot = model:GetPivot()
+	return pivot:PointToObjectSpace(front.WorldPosition).Z > pivot:PointToObjectSpace(back.WorldPosition).Z
+end
+
+local CORNERS = {
+	Vector3.new(-1, -1, -1),
+	Vector3.new(-1, -1, 1),
+	Vector3.new(-1, 1, -1),
+	Vector3.new(-1, 1, 1),
+	Vector3.new(1, -1, -1),
+	Vector3.new(1, -1, 1),
+	Vector3.new(1, 1, -1),
+	Vector3.new(1, 1, 1),
+}
+
+-- The box round the parts you can see (leaving out the invisible bone holder and the Head marker), as its centre
+-- and size in the model's pivot space.
+function DinoModel.visibleBox(model: Model): (Vector3, Vector3)
+	local pivot = model:GetPivot()
+	local low, high = Vector3.one * math.huge, -Vector3.one * math.huge
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") and part.Transparency < 1 then
+			local half = part.Size / 2
+			for _, corner in CORNERS do
+				local point = pivot:PointToObjectSpace(part.CFrame:PointToWorldSpace(half * corner))
+				low, high = low:Min(point), high:Max(point)
+			end
+		end
+	end
+	if low.X > high.X then
+		return Vector3.zero, Vector3.zero
+	end
+	return (low + high) / 2, high - low
+end
+
+-- How high its hips are above its feet (its LegL or FrontL bone), or nil for monsters without legs (swimmers).
+function DinoModel.legHeight(model: Model): number?
+	local bone = model:FindFirstChild("LegL", true) or model:FindFirstChild("FrontL", true)
+	if bone and bone:IsA("Bone") then
+		return bone.WorldPosition.Y - model:GetPivot().Y
+	end
+	return nil
+end
+
 -- Builds the dino with its feet at origin. Scaling and spinning happen around the feet.
 -- Not parented: the caller decides where it goes. The "Head" part is the top of the model.
 function DinoModel.build(dinoId: string, mutationId: string?, origin: Vector3, scale: number): Model

@@ -10,6 +10,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local BlockModel = require(script.Parent.BlockModel)
+local DinoModel = require(script.Parent.DinoModel)
 local Dinos = require(script.Parent.Config.Dinos)
 local Icons = require(script.Parent.Config.Icons)
 
@@ -46,21 +47,24 @@ UiKit.GRADIENTS = {
 	unseen = { "#d9dce3", "#9aa1ae" },
 }
 
-UiKit.RARITY_ORDER = { "common", "uncommon", "rare", "epic", "legendary" }
+-- One tier per monster of a map, most common first; the map's boss is mythic (Figma "Throw Eggs - Index & Inventory").
+UiKit.RARITY_ORDER = { "common", "uncommon", "rare", "epic", "legendary", "mythic" }
 UiKit.RARITY = {
 	common = { "#e6e9ef", "#a9b1bf" },
 	uncommon = { "#b4f59c", "#52c43f" },
 	rare = { "#9ad9ff", "#2f8fe6" },
 	epic = { "#dcb0ff", "#9150e8" },
 	legendary = { "#ffe58a", "#ff9a1f" },
+	mythic = { "#ff9ec4", "#e8265a" },
 }
--- A dino's name written in its rarity (reveal, lucky catch banner).
+-- A dino's name written in its rarity (reveal, lucky catch banner, My Dinos).
 UiKit.RARITY_TEXT = {
 	common = "#ffffff",
 	uncommon = "#8dff5a",
 	rare = "#6fd0ff",
 	epic = "#d4a6ff",
 	legendary = "#ffcf3f",
+	mythic = "#ff7aa8",
 }
 
 local DESIGN = Vector2.new(1280, 720)
@@ -324,8 +328,7 @@ function UiKit.art(parent: Instance, key: string, modelName: string, options): G
 	return UiKit.iconImage(parent, key, { position = options.position, size = options.size }) or UiKit.viewport(parent, modelName, options)
 end
 
-function UiKit.viewport(parent: Instance, modelName: string, options): ViewportFrame
-	options = options or {}
+local function newViewport(parent: Instance, options): ViewportFrame
 	local frame = Instance.new("ViewportFrame")
 	frame.BackgroundTransparency = 1
 	frame.Size = options.size or UDim2.fromScale(1, 1)
@@ -333,32 +336,82 @@ function UiKit.viewport(parent: Instance, modelName: string, options): ViewportF
 	frame.Ambient = Color3.fromRGB(150, 150, 172)
 	frame.LightColor = Color3.new(1, 1, 1)
 	frame.LightDirection = Vector3.new(-0.5, -1, -0.7)
-	frame.Parent = parent
-	local model = BlockModel.build(modelName, Vector3.zero, options.tint, options.tintAmount)
-	if not model then
-		return frame
-	end
-	model.Parent = frame
-	local camera = Instance.new("Camera")
-	camera.FieldOfView = VIEW_FOV
-	camera.Parent = frame
-	frame.CurrentCamera = camera
 	if options.silhouette then
 		frame.ImageColor3 = Color3.fromRGB(21, 16, 42)
 		frame.Ambient = Color3.new(0, 0, 0)
 		frame.LightColor = Color3.new(0, 0, 0)
 	end
-	local e = BlockModel.extents(modelName)
-	local radius = math.max(math.sqrt(e.X * e.X + e.Z * e.Z) / 2, e.Y / 2)
+	frame.Parent = parent
+	return frame
+end
+
+-- Points a viewport's camera at target from yaw (round the upright, 0 looking along -Z), a little from above, far
+-- enough back to fit a ball of this radius. spin turns it round slowly, starting from yaw.
+local function aim(frame: ViewportFrame, target: Vector3, radius: number, yaw: number, options)
+	local camera = Instance.new("Camera")
+	camera.FieldOfView = VIEW_FOV
+	camera.Parent = frame
+	frame.CurrentCamera = camera
 	local distance = radius * (options.zoom or 1.12) / math.tan(math.rad(VIEW_FOV / 2))
-	local data = { camera = camera, target = Vector3.new(0, e.Y / 2, 0), distance = distance, yaw = options.yaw or math.rad(120) } -- front three-quarter view
+	local data = { camera = camera, target = target, distance = distance, yaw = yaw }
 	-- Placed once even if it spins, so it looks right on the first frame.
-	local offset = Vector3.new(math.sin(data.yaw), 0, math.cos(data.yaw)) * math.cos(VIEW_PITCH) + Vector3.new(0, math.sin(VIEW_PITCH), 0)
-	camera.CFrame = CFrame.lookAt(data.target + offset * distance, data.target)
+	local offset = Vector3.new(math.sin(yaw), 0, math.cos(yaw)) * math.cos(VIEW_PITCH) + Vector3.new(0, math.sin(VIEW_PITCH), 0)
+	camera.CFrame = CFrame.lookAt(target + offset * distance, target)
 	if options.spin then
-		data.yaw += math.random() * 2 * math.pi
 		track("spin", frame, data)
 	end
+end
+
+function UiKit.viewport(parent: Instance, modelName: string, options): ViewportFrame
+	options = options or {}
+	local frame = newViewport(parent, options)
+	local model = BlockModel.build(modelName, Vector3.zero, options.tint, options.tintAmount)
+	if not model then
+		return frame
+	end
+	model.Parent = frame
+	local e = BlockModel.extents(modelName)
+	local radius = math.max(math.sqrt(e.X * e.X + e.Z * e.Z) / 2, e.Y / 2)
+	local yaw = (options.yaw or math.rad(120)) + (if options.spin then math.random() * 2 * math.pi else 0) -- front three-quarter view
+	aim(frame, Vector3.new(0, e.Y / 2, 0), radius, yaw, options)
+	return frame
+end
+
+local MONSTER_TURN = math.rad(40) -- how far round from straight in front a monster is seen, towards its right
+local MONSTER_MARGIN = 1.04 -- room left round a monster in its view
+
+-- How far back the camera stands for a box of this size, seen from yaw, to just fit a view this many times wider
+-- than tall. A turning view fits the box from every side.
+local function fitDistance(size: Vector3, yaw: number, aspect: number, spin: boolean?): number
+	local tanTall = math.tan(math.rad(VIEW_FOV / 2))
+	local across, deep
+	if spin then
+		across = math.sqrt(size.X * size.X + size.Z * size.Z)
+		deep = across
+	else
+		local s, c = math.abs(math.sin(yaw)), math.abs(math.cos(yaw))
+		across = size.X * c + size.Z * s
+		deep = size.X * s + size.Z * c
+	end
+	local tall = size.Y * math.cos(VIEW_PITCH) + deep * math.sin(VIEW_PITCH)
+	-- Its near side is closer to the camera than its centre, so it looks a little bigger: step back a bit for that.
+	return math.max(tall / 2 / tanTall, across / 2 / (tanTall * aspect)) + deep / 4
+end
+
+-- A monster's real model shown live in the UI, the same one that stands on the bases (DinoModel: its imported
+-- Blender model, else its block model), seen from the front three-quarters and filling its view. options:
+-- position, size, aspect (the view's width over its height, 1 if left out), zoom, spin, silhouette, and mutation
+-- (a colour mutation's id, which recolours its skin as on a base).
+function UiKit.monster(parent: Instance, dinoId: string, options): ViewportFrame
+	options = options or {}
+	local frame = newViewport(parent, options)
+	local model = DinoModel.build(dinoId, options.mutation, Vector3.zero, 1)
+	model.Parent = frame
+	local centre, size = DinoModel.visibleBox(model)
+	local yaw = (if DinoModel.facesBack(model) then 0 else math.pi) - MONSTER_TURN
+	local distance = fitDistance(size, yaw, options.aspect or 1, options.spin) * MONSTER_MARGIN * (options.zoom or 1)
+	-- aim takes a radius; this one stands the camera at exactly that distance.
+	aim(frame, centre, distance * math.tan(math.rad(VIEW_FOV / 2)), yaw, { zoom = 1, spin = options.spin })
 	return frame
 end
 
@@ -375,7 +428,7 @@ function UiKit.rarityOf(dinoId: string): string
 end
 
 -- A rarity-coloured tile with a spinning dino, its name on top and optional text at the bottom.
--- found = false shows a black silhouette and "???".
+-- found = false shows a black silhouette and "???". mutation (an id) recolours it.
 function UiKit.dinoTile(parent: Instance, dinoId: string, name: string, width: number, height: number, options)
 	options = options or {}
 	local found = options.found ~= false
@@ -385,10 +438,10 @@ function UiKit.dinoTile(parent: Instance, dinoId: string, name: string, width: n
 	UiKit.gradient(tile, if found then (options.rarity or UiKit.rarityOf(dinoId)) else "unseen")
 	UiKit.corner(tile, math.min(20, height // 5))
 	UiKit.stroke(tile, 4)
-	local view = UiKit.viewport(tile, `dino_{dinoId}`, {
+	local view = UiKit.monster(tile, dinoId, {
 		spin = found and options.spin ~= false,
 		silhouette = not found,
-		tint = options.tint,
+		mutation = options.mutation,
 		position = UDim2.fromOffset(4, options.nameSize and options.nameSize - 2 or 0),
 		size = UDim2.new(1, -8, 1, -(options.nameSize or 0) - (options.bottom and 14 or 0)),
 	})

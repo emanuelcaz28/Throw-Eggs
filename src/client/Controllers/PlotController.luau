@@ -1,6 +1,7 @@
 -- The cash display, the My Dinos panel, the hotbar of backpack dinos and placing an equipped
 -- dino on the plot. Display and requests only: the server decides what actually happens to a
--- dino, checks every spot and works out what it's worth.
+-- dino, checks every spot and works out what it's worth. The panel and hotbar follow Figma
+-- "Throw Eggs - Index & Inventory" and show each monster's real model, in its mutation's colours.
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,9 +27,11 @@ local PlotController = {}
 local TEXT = Color3.new(1, 1, 1)
 local CASH = Color3.fromRGB(120, 235, 120)
 local PANEL_SIZE = Vector2.new(470, 692)
-local ROW_WIDTH, ROW_HEIGHT = 428, 98
-local SLOT_SIZE = Vector2.new(64, 76)
-local MUTATION_TINT = 0.55 -- matches the plot statues
+local ROW_WIDTH, ROW_HEIGHT = 428, 100
+local SLOT_SIZE = Vector2.new(72, 72)
+local SLOT_GAP = 8
+local HELD_RAISE = 1.14 -- the carried monster's hotbar slot stands this much bigger
+local SIZE_WORD = Color3.fromRGB(217, 222, 232) -- size mutations are silver
 local CASH_HEIGHT = 56 -- height of the cash number, before scaling for small screens
 local INCOME_HEIGHT = 22
 local SELL_CONFIRM_TIME = 3 -- seconds the "SURE?" button waits for a second tap
@@ -122,7 +125,7 @@ local function buildGui()
 	hotbar.Name = "Hotbar"
 	hotbar.AnchorPoint = Vector2.new(0.5, 1)
 	hotbar.Position = UDim2.new(0.5, 0, 1, -10)
-	hotbar.Size = UDim2.fromOffset(#HOTBAR_KEYS * (SLOT_SIZE.X + 6), SLOT_SIZE.Y + 20)
+	hotbar.Size = UDim2.fromOffset(#HOTBAR_KEYS * (SLOT_SIZE.X + SLOT_GAP), SLOT_SIZE.Y * HELD_RAISE + 24)
 	hotbar.BackgroundTransparency = 1
 	hotbar.Parent = gui
 	local hotbarScale = Instance.new("UIScale")
@@ -133,7 +136,7 @@ local function buildGui()
 	hotbarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	hotbarLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
 	hotbarLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	hotbarLayout.Padding = UDim.new(0, 6)
+	hotbarLayout.Padding = UDim.new(0, SLOT_GAP)
 	hotbarLayout.Parent = hotbar
 
 	local slots = {}
@@ -146,18 +149,26 @@ local function buildGui()
 		slot.Text = ""
 		slot.Parent = hotbar
 		local gradient = UiKit.gradient(slot, "common")
-		UiKit.corner(slot, 15)
+		UiKit.corner(slot, 16)
 		local edge = UiKit.stroke(slot, 4)
 		local raise = Instance.new("UIScale")
 		raise.Parent = slot
-		local income = UiKit.text(slot, "", 15, UiKit.CASH)
-		income.Position = UDim2.fromOffset(-8, -16)
-		income.Size = UDim2.new(1, 16, 0, 18)
+		local income = UiKit.text(slot, "", 14, UiKit.CASH)
+		income.Position = UDim2.fromOffset(-12, -20)
+		income.Size = UDim2.new(1, 24, 0, 18)
 		income.ZIndex = 3
-		local number = UiKit.text(slot, tostring(index % 10), 17, nil, Enum.TextXAlignment.Left)
-		number.AnchorPoint = Vector2.new(0, 1)
-		number.Position = UDim2.new(0, 5, 1, 0)
-		number.Size = UDim2.fromOffset(20, 20)
+		-- The key that equips it, in a dark disc on its bottom-left corner.
+		local key = Instance.new("Frame")
+		key.Name = "Key"
+		key.Position = UDim2.fromOffset(-4, SLOT_SIZE.Y - 18)
+		key.Size = UDim2.fromOffset(22, 22)
+		key.BackgroundColor3 = UiKit.INK
+		key.BackgroundTransparency = 0.2
+		key.ZIndex = 3
+		key.Parent = slot
+		UiKit.corner(key, 11)
+		local number = UiKit.text(key, tostring(index % 10), 13)
+		number.Size = UDim2.fromScale(1, 1)
 		number.ZIndex = 3
 		slots[index] = { button = slot, gradient = gradient, edge = edge, raise = raise, income = income, key = nil, view = nil }
 	end
@@ -232,8 +243,7 @@ function PlotController.start()
 				local pair = UiKit.RARITY[if dino then UiKit.rarityOf(dino.id) else "common"]
 				slot.gradient.Color = ColorSequence.new(UiKit.color(pair[1]), UiKit.color(pair[2]))
 				if dino then
-					local mutation = DinoStats.findOption(Catch.mutations, dino.mutation)
-					slot.view = UiKit.viewport(slot.button, `dino_{dino.id}`, { position = UDim2.fromOffset(2, 6), size = UDim2.new(1, -4, 1, -10), tint = mutation and mutation.color, tintAmount = MUTATION_TINT })
+					slot.view = UiKit.monster(slot.button, dino.id, { mutation = dino.mutation, position = UDim2.fromOffset(4, 5), size = UDim2.new(1, -8, 1, -10) })
 				end
 			end
 			slot.income.Text = if dino then `{Format.cash(dino.income)}/s` else ""
@@ -242,7 +252,7 @@ function PlotController.start()
 			slot.button.BackgroundColor3 = if dino then Color3.new(1, 1, 1) else UiKit.DEEP
 			local held = dino ~= nil and dino.key == heldKey
 			slot.edge.Color = if held then Color3.new(1, 1, 1) else UiKit.INK
-			slot.raise.Scale = if held then 1.12 else 1
+			slot.raise.Scale = if held then HELD_RAISE else 1
 		end
 	end
 
@@ -262,14 +272,17 @@ function PlotController.start()
 			if tile and not tile:FindFirstChildOfClass("ViewportFrame") then
 				local y = row.AbsolutePosition.Y
 				if y < bottom + ROW_HEIGHT and y + ROW_HEIGHT > top - ROW_HEIGHT then
-					local mutation = DinoStats.findOption(Catch.mutations, row:GetAttribute("Mutation"))
-					UiKit.viewport(tile, `dino_{row:GetAttribute("DinoId")}`, { position = UDim2.fromOffset(2, 4), size = UDim2.new(1, -4, 1, -8), tint = mutation and mutation.color, tintAmount = MUTATION_TINT })
+					UiKit.monster(tile, row:GetAttribute("DinoId"), { mutation = row:GetAttribute("Mutation"), position = UDim2.fromOffset(3, 3), size = UDim2.new(1, -6, 1, -10) })
 				end
 			end
 		end
 	end
 
+	-- One monster's row: its real model on a rarity tile with its colour mutation in a chip under it, its rarity, its
+	-- name, its size mutation in silver and its $/s, then EQUIP (or HOLDING, or PICK UP) and SELL.
 	local function makeRow(dino, order: number)
+		local holding = dino.key == player:GetAttribute("HeldDino")
+		local rarity = UiKit.rarityOf(dino.id)
 		local row = Instance.new("Frame")
 		row.Name = "Row"
 		row.LayoutOrder = order
@@ -279,36 +292,76 @@ function PlotController.start()
 		row:SetAttribute("Mutation", dino.mutation)
 		row.Parent = hud.list
 		UiKit.corner(row, 20)
-		UiKit.stroke(row, 4)
+		UiKit.stroke(row, 4, if holding then Color3.new(1, 1, 1) else nil)
 
 		local tile = Instance.new("Frame")
 		tile.Name = "Tile"
-		tile.Position = UDim2.fromOffset(10, 9)
-		tile.Size = UDim2.fromOffset(80, 80)
+		tile.Position = UDim2.fromOffset(8, 8)
+		tile.Size = UDim2.fromOffset(84, 84)
 		tile.Parent = row
-		UiKit.gradient(tile, UiKit.rarityOf(dino.id))
+		UiKit.gradient(tile, rarity)
 		UiKit.corner(tile, 16)
 		UiKit.stroke(tile, 4)
 
 		local mutation = DinoStats.findOption(Catch.mutations, dino.mutation)
+		if mutation then
+			local chip = Instance.new("Frame")
+			chip.Name = "Mutation"
+			chip.Position = UDim2.fromOffset(14, 78)
+			chip.AutomaticSize = Enum.AutomaticSize.X
+			chip.Size = UDim2.fromOffset(0, 20)
+			chip.BackgroundColor3 = mutation.color
+			chip.ZIndex = 3
+			chip.Parent = row
+			UiKit.corner(chip, 8)
+			UiKit.stroke(chip, 3)
+			local chipPad = Instance.new("UIPadding")
+			chipPad.PaddingLeft = UDim.new(0, 7)
+			chipPad.PaddingRight = UDim.new(0, 7)
+			chipPad.Parent = chip
+			local chipLabel = UiKit.text(chip, mutation.name, 13)
+			chipLabel.AutomaticSize = Enum.AutomaticSize.X
+			chipLabel.Size = UDim2.fromScale(0, 1)
+			chipLabel.ZIndex = 3
+		end
+
 		local size = DinoStats.findOption(Catch.sizes, dino.size)
-		local tag = UiKit.text(row, if mutation then mutation.name else "", 16, if mutation then mutation.color else UiKit.MUTED, Enum.TextXAlignment.Left)
-		tag.Position = UDim2.fromOffset(102, 8)
-		tag.Size = UDim2.fromOffset(180, 20)
+		local tier = UiKit.text(row, string.upper(rarity), 14, Color3.fromHex(UiKit.RARITY_TEXT[rarity]), Enum.TextXAlignment.Left)
+		tier.Position = UDim2.fromOffset(104, 8)
+		tier.Size = UDim2.fromOffset(176, 18)
 		local name = UiKit.text(row, dino.name, 24, nil, Enum.TextXAlignment.Left)
 		name.Name = "DinoName"
-		name.Position = UDim2.fromOffset(102, 28)
+		name.Position = UDim2.fromOffset(104, 28)
 		name.Size = UDim2.fromOffset(176, 30)
 		name.TextScaled = true
-		local income = UiKit.text(row, `{if size then size.name .. "  " else ""}{Format.cash(dino.income)}/s`, 20, UiKit.CASH, Enum.TextXAlignment.Left)
-		income.Position = UDim2.fromOffset(102, 62)
-		income.Size = UDim2.fromOffset(186, 24)
+		local limit = Instance.new("UITextSizeConstraint")
+		limit.MaxTextSize = 24
+		limit.Parent = name
+		local stats = Instance.new("Frame")
+		stats.BackgroundTransparency = 1
+		stats.Position = UDim2.fromOffset(104, 64)
+		stats.Size = UDim2.fromOffset(184, 24)
+		stats.Parent = row
+		local statsLayout = Instance.new("UIListLayout")
+		statsLayout.FillDirection = Enum.FillDirection.Horizontal
+		statsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+		statsLayout.Padding = UDim.new(0, 8)
+		statsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		statsLayout.Parent = stats
+		if size then
+			local sizeWord = UiKit.text(stats, size.name, 15, SIZE_WORD)
+			sizeWord.AutomaticSize = Enum.AutomaticSize.X
+			sizeWord.Size = UDim2.fromScale(0, 1)
+		end
+		local income = UiKit.text(stats, `{Format.cash(dino.income)}/s`, 18, UiKit.CASH)
+		income.LayoutOrder = 2
+		income.AutomaticSize = Enum.AutomaticSize.X
+		income.Size = UDim2.fromScale(0, 1)
 
-		local holding = dino.key == player:GetAttribute("HeldDino")
-		local move = UiKit.button(row, if dino.onPlot then "PICK UP" elseif holding then "HOLDING" else "EQUIP", "blue", 136, 40, 20)
+		local move = UiKit.button(row, if dino.onPlot then "PICK UP" elseif holding then "HOLDING" else "EQUIP", if holding then "green" else "blue", 124, 38, 19)
 		move.Name = "Move"
 		move.AnchorPoint = Vector2.new(1, 0)
-		move.Position = UDim2.new(1, -10, 0, 9)
+		move.Position = UDim2.new(1, -12, 0, 10)
 		move.Activated:Connect(function()
 			if dino.onPlot then
 				send("pickUp", dino.key)
@@ -319,10 +372,10 @@ function PlotController.start()
 			end
 		end)
 
-		local sell = UiKit.button(row, if confirmKey == dino.key then "SURE?" else `SELL {Format.cash(dino.sellPrice)}`, "red", 136, 40, 18)
+		local sell = UiKit.button(row, if confirmKey == dino.key then "SURE?" else `SELL {Format.cash(dino.sellPrice)}`, "red", 124, 38, 17)
 		sell.Name = "Sell"
 		sell.AnchorPoint = Vector2.new(1, 0)
-		sell.Position = UDim2.new(1, -10, 0, 52)
+		sell.Position = UDim2.new(1, -12, 0, 52)
 		sell.Activated:Connect(function()
 			if confirmKey == dino.key then
 				confirmKey = nil
@@ -424,10 +477,13 @@ function PlotController.start()
 		PopText.notice(text, not bad)
 	end)
 	-- Training fills the bottom of the screen, so the hotbar steps aside.
+	-- The open My Dinos panel stands where the hotbar's right end is, and lists the same monsters, so the hotbar
+	-- steps aside for it too.
 	local function renderHotbarVisible()
-		hud.hotbar.Visible = player:GetAttribute("IsTraining") ~= true
+		hud.hotbar.Visible = player:GetAttribute("IsTraining") ~= true and not hud.panel.frame.Visible
 	end
 	player:GetAttributeChangedSignal("IsTraining"):Connect(renderHotbarVisible)
+	hud.panel.frame:GetPropertyChangedSignal("Visible"):Connect(renderHotbarVisible)
 	renderHotbarVisible()
 	player:GetAttributeChangedSignal("HeldDino"):Connect(function()
 		renderList()

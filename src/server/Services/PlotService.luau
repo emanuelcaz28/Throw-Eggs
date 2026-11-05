@@ -1,6 +1,6 @@
 -- Owns the dinos players have caught: keeps them on the plot or in the backpack, pays
 -- their $/s, and shows them as statues wherever they were placed. A backpack dino can be
--- equipped (carried beside the character) and then placed anywhere on the plot. The client
+-- equipped (carried on the character's head) and then placed anywhere on the plot. The client
 -- can only ask for changes through DinoAction; every request is checked here against the
 -- player's saved data.
 local CollectionService = game:GetService("CollectionService")
@@ -26,8 +26,6 @@ local PlotService = {}
 local INCOME_TICK = 1 -- seconds
 local OUT = Vector3.new(0, 0, -1) -- out of every base, through its gate
 local SPOT_TRIES = 40
-local HELD_SCALE = 0.35
-local HELD_SIDE = 3.5 -- studs to the character's right
 
 local remotes: { [string]: RemoteEvent } = {}
 local plotModels: { Model } = {}
@@ -241,30 +239,38 @@ local function dropHeldModel(player: Player)
 	end
 end
 
--- A small copy of the carried dino walks beside the character, welded to it so everyone sees it.
+-- The carried monster sits on top of the character's head at its real size (its map's standard size times its size
+-- mutation), facing the way the character faces, welded on so everyone sees it. Its body is centred over the head
+-- and its belly rests on it (Config/DinoLife carry); DinoLifeController makes it walk and idle.
 local function attachHeldModel(player: Player, entry)
 	dropHeldModel(player)
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	local stats = DinoStats.describe(entry)
-	if not root or not humanoid or not stats then
+	local head = character and character:FindFirstChild("Head") :: BasePart?
+	if not root or not head or not DinoStats.describe(entry) then
 		return
 	end
-	local feet = root.CFrame * CFrame.new(HELD_SIDE, -(humanoid.HipHeight + root.Size.Y / 2), 0)
-	local model = DinoModel.build(entry.id, entry.mutation, Vector3.zero, HELD_SCALE)
+	local model = DinoModel.build(entry.id, entry.mutation, Vector3.zero, DinoModel.statueScale(entry.id, entry.size))
 	model.Name = "HeldDino"
-	model:PivotTo(feet)
+	local centre = DinoModel.visibleBox(model)
+	local sink = math.min((DinoModel.legHeight(model) or 0) * DinoLife.carry.sink, DinoLife.carry.maxSink)
+	local facing = if DinoModel.facesBack(model) then CFrame.Angles(0, math.pi, 0) else CFrame.identity
+	local headTop = root.CFrame:PointToObjectSpace(head.Position + Vector3.new(0, head.Size.Y / 2, 0))
+	model:PivotTo(root.CFrame * CFrame.new(0, headTop.Y - sink, 0) * facing * CFrame.new(-centre.X, 0, -centre.Z))
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
 			part.Anchored = false
 			part.Massless = true
+			part.CanQuery = false
 			local weld = Instance.new("WeldConstraint")
 			weld.Part0 = root
 			weld.Part1 = part
 			weld.Parent = part
 		end
 	end
+	model:SetAttribute("Carried", true)
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+	CollectionService:AddTag(model, DinoLife.tag)
 	model.Parent = character
 	heldModels[player] = model
 end
@@ -445,9 +451,11 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 			changed(player, data)
 		end
 	elseif action == "pickUp" then
+		-- Picked up off the base, it goes to the backpack and onto the player's head, ready to put down elsewhere.
 		if entry.onPlot and backpackCount(data) < Plot.backpackSize then
 			entry.onPlot = false
 			changed(player, data)
+			setHeld(player, data, entry.key)
 		end
 	elseif action == "sell" then
 		earn(player, data, sellPrice(entry))
@@ -528,6 +536,7 @@ local function onLoaded(player: Player, data)
 	-- A new character drops the carried copy, so give it back.
 	player.CharacterAdded:Connect(function(character)
 		character:WaitForChild("HumanoidRootPart", 5)
+		character:WaitForChild("Head", 5)
 		if held[player] then
 			setHeld(player, data, held[player])
 		end

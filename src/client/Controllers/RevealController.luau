@@ -744,8 +744,7 @@ local function showCaughtBanner(catch, fullName: string)
 	for _, child in hud.bannerTile:GetChildren() do
 		child:Destroy()
 	end
-	local mutation = DinoStats.findOption(Catch.mutations, catch.mutation)
-	UiKit.dinoTile(hud.bannerTile, catch.id, catch.name, 100, 100, { tint = mutation and mutation.color })
+	UiKit.dinoTile(hud.bannerTile, catch.id, catch.name, 100, 100, { mutation = catch.mutation })
 	hud.bannerName.Text = fullName
 	hud.bannerOdds.Text = `1 in {Format.commas(catch.oneIn)}`
 

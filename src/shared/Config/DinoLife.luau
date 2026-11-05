@@ -9,6 +9,11 @@ return {
 	-- speed studs a second at the first map's size.
 	swim = { strideSeconds = 1.2, speed = 2.2 },
 	idleLoopSeconds = 8,
+	-- An equipped monster rides on its player's head at its real size (PlotService), sitting: its feet sink below
+	-- the top of the head by this share of its hip height, but never more than maxSink studs, so a small one's legs
+	-- hang round the head and a big one perches on top instead of standing over the player. It walks while its
+	-- player moves faster than walkSpeed (studs a second) and idles, roar and all, while they stand.
+	carry = { sink = 0.7, maxSink = 1, walkSpeed = 2 },
 	turnSpeed = 2.5, -- radians per second
 	blendTime = 0.35, -- seconds to ease between idle and walk
 	arriveDistance = 1, -- studs, at the first map's size

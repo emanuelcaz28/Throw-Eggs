@@ -399,6 +399,21 @@ name shows up slowly.
 - **[Built]** Hotbar of carried dinos on keys 1 to 0, best first. Holding one shows a see-through preview over your
   base (green = OK, red = not); clicking places it.
 - **[Built]** Equip Best, Pick Up and Sell in the My Dinos panel.
+- **[Owner, 2026-11-05] The carried monster sits on your head at its real size and plays its animation.** **[Built]**
+  Equipping a monster (hotbar key, slot or EQUIP) or picking one up off the base (PICK UP, which also puts it in the
+  backpack) sits it on top of the player's head at the size it has on a base: its map's standard size times its size
+  mutation, in its mutation's colours, facing the way the player faces, welded on so everyone sees it. A small one's
+  legs hang round the head; a big one perches on top (its feet sink at most 1 stud, `Config/DinoLife` `carry`). It
+  walks while the player moves and idles (roar and all) while they stand (`DinoLifeController`). On the carrier's
+  own screen it hides while aiming, throwing, in the reveal and while training. A big size mutation blocks some of
+  the view ahead: that's the joke of the game, and `carry` is where to change it.
+- **[Owner, 2026-11-05]** Players walk a bit faster: walk speed 32 (`Config/Movement`, was 28).
+- **[Built], [Owner, 2026-11-05] Inventory with real monster icons** (Figma "Throw Eggs - Index & Inventory",
+  https://www.figma.com/design/dJTVmNiMckziDaSNCniPU5): the hotbar and My Dinos show each monster's real model
+  (`UiKit.monster`), not the old block stand-ins. Hotbar slots are rarity tiles with the key in a dark disc, $/s
+  above, and the carried one raised with a white edge. My Dinos rows: the model on its rarity tile with its colour
+  mutation in a chip, its rarity word in the rarity's colour, the name, the size mutation in silver and $/s in green,
+  then EQUIP (green HOLDING when carried, PICK UP on the base) and SELL. The hotbar steps aside while My Dinos is open.
 - **[Built]** While away, the base earns 50% of its $/s for up to 8 hours, collected with a CLAIM button.
 
 ---
@@ -1017,7 +1032,14 @@ pattern: each 100 studs longer than the last, incomes ×100, one egg each):
 - **Robux Shop [Built]:** x2 Cash, x2 Training, x2 Power, lucky throws x100 (R$ 3 once, then R$ 9) and x500 (one throw each), Server Luck x2 (15 min), 4 cash packs, 4 Throw Power packs, free starter dino.
   Product ids still have to be created on the Creator Dashboard.
 - **Not built yet:** dinos priced as a % of your best dino, Prism Egg, GIFT button.
-- **Index [Built]:** every dino by world. Completing a world gives +10% $/s and +5% luck for good.
+- **Index [Built]:** every dino by world. **[Owner, 2026-11-05]** Redesigned (Figma "Throw Eggs - Index &
+  Inventory"): a tab per map down the left (its colours, number, "4/6 found", a tick when complete; maps whose
+  monsters aren't made yet say COMING SOON), and the chosen map's banner and its 6 monsters on the right, **sorted by
+  rarity** from COMMON to the map's boss, a new 6th tier **MYTHIC** (pink; it also colours that monster's reveal and
+  lucky banner): COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, MYTHIC. Each tile shows the real model turning, its rarity,
+  its "1 in X" and its name; unseen ones are black silhouettes named "???" with their rarity and odds still shown.
+  The total found sits in the header, the map's reward under its monsters. It opens on the farthest map you've
+  found anything in. Completing a world gives +10% $/s and +5% luck for good.
 - **Timed events [Built], accepted by the owner:** Meteor Shower (2x mutations), Growth Spurt (2x sizes), Gold Rush
   (2x cash). 10 minutes each with a 20 minute break.
 - **No rebirth [Owner].** The reference game has none.
