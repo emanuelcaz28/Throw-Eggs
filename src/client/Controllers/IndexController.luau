@@ -36,6 +36,7 @@ local CARD_COLOURS = {
 	EclipseTemple = { "#7dffb8", "#7a3a3a" },
 	ForbiddenLibrary = { "#c3a8ff", "#56392a" },
 	MidnightCarnival = { "#ffd36b", "#b3263a" },
+	ClockworkCitadel = { "#f0b85a", "#343844" },
 }
 
 local function buildGui()

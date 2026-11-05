@@ -511,7 +511,8 @@ Each map's standard size is about 1.05x the previous map's, reaching 2x at map 1
 | 9 | Eclipse Temple | 1.49x | Idol Ollie, Mossy Mo, Lantern Larry, Jade Jaguar, Plumed Wyrm, Eclipse Devourer |
 | 10 | Forbidden Library | 1.56x | Not made yet (its world is built) |
 | 11 | Midnight Carnival | 1.64x | Not made yet (its world is built) |
-| 12 to 15 | Not chosen yet | 1.72x to 2x | Mysterious, dark maps |
+| 12 | Clockwork Citadel | 1.72x | Wind-Up Wally, Sprocket, Kettle Belly, Gearjaw, Drillhorn, Chrono Rex |
+| 13 to 15 | Not chosen yet | 1.81x to 2x | Mysterious, dark maps |
 
 ### The style as you advance
 **[Owner]** Keep the same chunky stud style, but as the maps go on, add absurd, funny models and names alongside
@@ -554,6 +555,23 @@ good-looking, aggressive dinos.
   Devourer, the boss: a four-armed obsidian god-beast that swallowed the sun, with a black sun and its corona
   behind a pale skull of a head under a gold mask, the eaten sun glowing in its chest, a black sun in each raised
   hand, great horns, a third eye and jade fire in its throat. The rarer ones stand bigger.
+
+- **[Owner] Map 12, Clockwork Citadel (2026-11-05):** monsters that suit the biome, animated as well, and nice.
+  **[Built]** `build_clockwork_citadel_monsters.py`: the citadel's machines built in the shape of beasts and wound up,
+  silly at the common end, fierce at the rare end, then a boss. They share the **lens eye**: a riveted brass bezel
+  round a glass lens with a glowing iris (white glass and an electric-blue iris on the silly ones, dark glass and a
+  furnace-orange glare under brows slanting to the nose on the fierce ones), and every one has a **wind-up key** in
+  its back that never stops turning: Wind-Up Wally (a tin toy rex, mismatched googly lenses, chattering tin teeth),
+  Sprocket (a copper clockwork pup, flying goggles pushed up, flapping ears, tongue out, coil-spring tail), Kettle
+  Belly (a grumpy walking boiler, glowing furnace belly, chest gauge, chimney hat, wrench claws), Gearjaw (a steel
+  raptor with a buzz saw spinning along its skull and a furnace in its throat), Drillhorn (an iron triceratops with
+  a gear frill and a drill for a nose horn that never stops boring) and Chrono Rex, the boss (an iron tyrant with a
+  giant brass gear turning on its back like a sail, smokestacks, a furnace heart behind a riveted porthole, a crest
+  of gear teeth and fire in its throat). The parts that turn for ever ride their own bones (`Key`, `Drill`, `Cog`),
+  which `DinoLifeController` turns at a steady speed on top of the walk and idle (its `SPIN` table, the same as the
+  script's). Plain colours in Blender. Renders and `clockwork_citadel_animation_preview.mp4` in
+  `design/world/monsters_clockwork_citadel/`, FBX in `fbx/12_ClockworkCitadel/Animals/`; imported into `Assets.Dinos`
+  and in `Config/Dinos` (2026-11-05).
 
 ### How animal models are made
 - **Simple shapes:** chunky blocks and tapered blocks, no fine detail. The silhouette should read from far away.
@@ -632,6 +650,7 @@ Desert, Swamp, Volcano, FrozenPeaks, ShadowBog, Abyss, StarfallCrater); no save 
 maps; the owner can rename it (only `name` in `Config/Biomes` changes).
 **[Built]** Map 10 is **Forbidden Library** (`ForbiddenLibrary`), our name too; the owner can rename it.
 **[Built]** Map 11 is **Midnight Carnival** (`MidnightCarnival`), our name too, built before map 10.
+**[Built]** Map 12 is **Clockwork Citadel** (`ClockworkCitadel`), our name too; the owner can rename it.
 
 **[Owner, 2026-11-04]** Luck reaches the billions, about 4-5x more per map (section 8b):
 
@@ -648,7 +667,8 @@ maps; the owner can rename it (only `name` in `Config/Biomes` changes).
 | 9 | Eclipse Temple | 1M |
 | 10 | Forbidden Library | 5M |
 | 11 | Midnight Carnival | 25M |
-| 12 to 15 | Not built yet | 100M, 500M, 2.5B, 10B |
+| 12 | Clockwork Citadel | 100M |
+| 13 to 15 | Not built yet | 500M, 2.5B, 10B |
 
 **[Seen]** Far worlds change colour and props completely: sand with cactus and skulls, dark rock with lava and
 black spires, neon purple with crystals. The reference's thumbnail shows worlds stepping **down** one after another (see section 15).
@@ -875,6 +895,33 @@ Done one at a time, each in its own step:
      `carnival_flight.mp4`) in `design/world/models_midnight_carnival/`. Planned as world 11 (8,500 to 9,900 studs,
      25M luck, 1.64x size); `Config/Map`, `Lighting`, `Decor`, `PropMotion`, `Roles` and the Index card colours are
      in, and since map 10 exists it's in `Config/Biomes` too (added 2026-11-04 with Forbidden Library).
+   - **Clockwork Citadel** *(map 12's world made 2026-11-05, in Blender; imported into `Assets.Maps.ClockworkCitadel.Props` and play-tested the same day: 332 props placed, no console errors; monsters later)*:
+     **[Owner]** map 12, nice, made in Blender, with animated objects, no animals yet; maps 12 to 15 mysterious and
+     dark. **[Built]** A citadel that is one enormous machine, so old its gears grew as big as houses. Whoever built it
+     is long gone, but it never stopped: it winds itself in the dark, every gear turning, pistons pounding, steam
+     hissing and blue lightning crackling, as if it's still building something nobody has seen. A floor of bronze
+     plates, soot-black iron walls, copper on the rims hanging over the walls like old copper roofing (`Config/Map`),
+     and the night before dawn behind a thick steel-blue smog (`Config/Lighting`, ClockTime 4). Its own light is
+     electric blue and furnace orange. 19 props in `build_clockwork_citadel.py`, all with moving parts: gear works (the
+     signature), a big brass gear meshing with a small iron one that turns the other way twice as fast, steam puffing
+     beside them; steam hammers pounding a glowing ingot while a flywheel spins; boilers with a glowing furnace door,
+     a smoking chimney and a twitching gauge needle; bundles of copper pipes with turning valve wheels; giant
+     metronomes ticking; music boxes whose drum and key turn while a brass bird goes round on top; spark coils with
+     lightning flickering out of a blue orb and a ring of sparks racing round it; now and then a giant pocket watch
+     lying open, its hands going round; scrap piles as filler; on the rims smokestacks rolling out smoke, brass trees
+     crowned with a turning gear, and wind-pump fan towers; landmarks: cog spires ringed with four gears turning
+     opposite ways under a crackling orb, lightning towers arcing down to three little coils, and brick engine houses
+     with a huge flywheel turning and a governor whirling on the roof; airships hanging in the smog beyond the island,
+     bobbing, their propellers turning; crucibles tipped over the wall tops pouring glowing molten brass down into
+     the corridor (`walls`), iron arches over the corridor with three gears turning and a lamp swinging (`overhead`),
+     and flat floor plates with two gears meshing in them across the middle. Meshing gears have even teeth and turn
+     at the inverse ratio of their teeth, so they stay in mesh in the game too (spins have no phase). Plain colours in
+     Blender (no stud image), like map 10. Renders and two videos (`clockwork_motion.mp4`, `clockwork_flight.mp4`) in
+     `design/world/models_clockwork_citadel/`. World 12 (9,900 to 11,400 studs, 100M luck, 1.72x size);
+     `Config/Biomes`, `Map`, `Lighting`, `Decor`, `PropMotion`, `Roles` and the Index card colours are in. Eggs can't
+     land in it until it has monsters. Its 6 monsters (section 8a) are made (2026-11-05,
+     `build_clockwork_citadel_monsters.py`, FBX in `fbx/12_ClockworkCitadel/Animals/`), imported and in `Config/Dinos`
+     (chances 2, 4, 12, 60, 400, 3000; income 100x Midnight Carnival's: 1e22 to 5e24), so throws reach it (11,400).
    - **Joining**: whether the floor steps down at each world (question 5 in section 15) is still open.
 
 The walking reveal and the flight camera are a separate job, after the world. The throw wind-up is built (section 7).

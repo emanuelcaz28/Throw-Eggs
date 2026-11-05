@@ -39,6 +39,7 @@ glow, must differ from its neighbours'. Taken so far:
 | 9 | Eclipse Temple | red laterite | dark plum stone | jungle green | jade green, lantern gold | night before dawn, jade mist |
 | 10 | Forbidden Library | deep violet carpet | dark walnut | parchment | violet ink, candle amber | night (ClockTime 2), indigo haze |
 | 11 | Midnight Carnival | deep teal | crimson | gold straw | warm bulbs, pink neon, ghost white | midnight (ClockTime 0), plum haze |
+| 12 | Clockwork Citadel | bronze plates | soot iron | copper | electric blue, furnace orange | before dawn (ClockTime 4), steel-blue smog |
 
 The exact colours are in `Config/Map` `biomeColors` and `Config/Lighting` `worlds`.
 
@@ -69,7 +70,8 @@ files and Studio folders alike.
 ## 3. Build the props in Blender
 
 Copy `assets/models/build_forbidden_library.py` (map 10, the newest, with the plain-colour setting and helpers for
-books, candles, turned boxes and magic circles) or `build_eclipse_temple.py` to `build_<map>.py` and replace: the docstring, `RENDERS`,
+books, candles, turned boxes and magic circles), `build_clockwork_citadel.py` (map 12: gears that mesh, flywheels,
+steam and smoke puffs that rise for ever, lightning arcs, gauges, valve wheels) or `build_eclipse_temple.py` to `build_<map>.py` and replace: the docstring, `RENDERS`,
 `GLOW_ROLES`, the colours, `CORRIDOR` and `SKY` (preview only), `MOTION`, the prop functions and `ALL`, `DECOR`,
 the light function, and the `big` dict in `main` (which props get their own spot in the renders).
 
@@ -237,6 +239,7 @@ bigger: build them bigger, or `grow(m, 1.3)` at the end. Commons are about 3 to 
 | `Neck`, `Head` | `m.use("Neck", ...)`, then `m.head_joint(yc, d, zc, h)` |
 | `Jaw` | `classic_mouth(...)`, called on the Head bone: it snaps as it walks and opens wide in the roar |
 | `Swim` | swimmers only (The Abyss): they hover and swim instead of walking |
+| `Key`, `Drill`, `Cog` | parts that turn for ever, whatever the monster does: round the upright, its forward axis, its sideways axis (`DinoLifeController` `SPIN`; `build_clockwork_citadel_monsters.py` has the preview). Build the part centred on its bone, along that axis |
 
 Blocks go on whichever bone `m.bone` names when they're added; `m.stretch(role, bone)` right after a neck or tail
 piece keeps its back end on the bone before it. Set `m.head_centre` (for the face renders).
@@ -275,3 +278,11 @@ once they're imported and tidied (step 8), list them in `Config/Dinos` (ids neve
   `Blender -b --python assets/models/check_flicker.py -- build_<map>` and nudge what it lists. The preview corridor
   in `map_kit.py` had it too (its hanging grass lay flush on the wall; fixed 2026-11-04, map 11).
 - **Two accounts, one folder:** shared files change under you. Re-read before editing; commit only your own hunks.
+- **Drift wins over every other move.** In the game a prop with `"*": drift` moves all its parts itself, so its
+  spins, swings and bobs never show (the Blender video still plays them). A sky piece that has to turn something
+  (propellers) bobs in place instead (map 12's airships).
+- **Don't tie a turn to a bob** (a beam engine's rocking beam and its piston). Importers can flip X or Y, which
+  reverses every turn but never a bob, so the two would come apart. Turns that only depend on each other are fine:
+  meshing gears both reverse and stay in mesh.
+- **`about = "self"` turns round the bounding box's middle.** Give a gear or a wheel an even number of teeth and
+  spokes so that middle is its axle, or it wobbles.

@@ -218,6 +218,16 @@ for n = 1, 8 do
 	end
 end
 
+-- Clockwork monsters (Clockwork Citadel on) have parts that turn for ever on their own bone, whatever the monster is
+-- doing: the wind-up key in their back (Key, round the upright), Drillhorn's nose drill (Drill, round its forward
+-- axis), Gearjaw's saw and Chrono Rex's gear sail (Cog, round the sideways axis). Radians a second, on top of the walk
+-- and idle; the same as SPIN in assets/models/build_clockwork_citadel_monsters.py, whose preview turns them alike.
+local SPIN = {
+	Key = { speed = math.pi, axis = "yaw" },
+	Drill = { speed = 4 * math.pi, axis = "roll" },
+	Cog = { speed = math.pi, axis = "pitch" },
+}
+
 local function zero()
 	return 0, 0, 0, 0, 0
 end
@@ -294,6 +304,8 @@ local function add(model: Model)
 				pitch = axis(right),
 				roll = axis(ahead),
 				yaw = axis(Vector3.yAxis),
+				spin = SPIN[bone.Name],
+				angle = math.random() * TAU, -- so a plot's keys don't all turn in step
 			})
 			if bone.Name == "LegL" or bone.Name == "FrontL" then
 				legHeight = bone.WorldPosition.Y - pivot.Y
@@ -365,10 +377,16 @@ local function pose(state, dt: number)
 		local ix, iy, iz, ib, is = entry.idle(t)
 		local rise = (ib + (wb - ib) * eased) * state.scale
 		local surge = ((is or 0) + ((ws or 0) - (is or 0)) * eased) * state.scale
-		entry.bone.Transform = CFrame.new(entry.yaw * rise + entry.roll * surge)
+		local transform = CFrame.new(entry.yaw * rise + entry.roll * surge)
 			* CFrame.fromAxisAngle(entry.pitch, ix + (wx - ix) * eased)
 			* CFrame.fromAxisAngle(entry.roll, iy + (wy - iy) * eased)
 			* CFrame.fromAxisAngle(entry.yaw, iz + (wz - iz) * eased)
+		local spin = entry.spin
+		if spin then
+			entry.angle = (entry.angle + spin.speed * dt) % TAU
+			transform *= CFrame.fromAxisAngle(entry[spin.axis], entry.angle)
+		end
+		entry.bone.Transform = transform
 	end
 end
 

@@ -13,7 +13,7 @@ import bpy
 OUT = Path(bpy.data.filepath).parent / "fbx"
 # One folder per map, in throw order (GAME_SPEC section 8a), so the owner imports map by map.
 MAPS = ("01_Forest", "02_Desert", "03_Swamp", "04_Volcano", "05_FrozenPeaks", "06_ShadowBog", "07_Abyss", "08_StarfallCrater", "09_EclipseTemple",
-        "10_ForbiddenLibrary", "11_MidnightCarnival")
+        "10_ForbiddenLibrary", "11_MidnightCarnival", "12_ClockworkCitadel")
 # Which map each .blend belongs to. A new map's .blend gets a line here.
 MAP_OF_FILE = {"forest_models": "01_Forest", "world_kit": "01_Forest", "desert_models": "02_Desert", "base_kit": "01_Forest", "leaderboards": "01_Forest", "swamp_models": "03_Swamp",
                "volcano_models": "04_Volcano",
@@ -24,9 +24,10 @@ MAP_OF_FILE = {"forest_models": "01_Forest", "world_kit": "01_Forest", "desert_m
                "eclipse_temple_models": "09_EclipseTemple",
                "forbidden_library_models": "10_ForbiddenLibrary",
                "midnight_carnival_models": "11_MidnightCarnival",
+               "clockwork_citadel_models": "12_ClockworkCitadel",
                "swamp_monsters": "03_Swamp", "frozen_peaks_monsters": "05_FrozenPeaks", "shadow_bog_monsters": "06_ShadowBog",
                "abyss_monsters": "07_Abyss", "starfall_crater_monsters": "08_StarfallCrater",
-               "eclipse_temple_monsters": "09_EclipseTemple"}
+               "eclipse_temple_monsters": "09_EclipseTemple", "clockwork_citadel_monsters": "12_ClockworkCitadel"}
 # Blender collection -> folder inside the map's folder.
 EXPORT_COLLECTIONS = {"Animals": "Animals", "Props": "Props", "Kit": "Corridor", "Arena": "Arena", "Base": "Base"}
 

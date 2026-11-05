@@ -102,6 +102,13 @@ return {
 			atmosphere = { Color = Color3.fromRGB(120, 84, 140), Decay = Color3.fromRGB(56, 26, 72), Density = 0.34, Haze = 1.4 },
 			colorCorrection = { TintColor = Color3.fromRGB(255, 232, 238), Saturation = 0.22 },
 		},
+		-- The citadel before dawn: a thick steel-blue smog, cold against the warm metal, so the furnaces and the blue
+		-- sparks glow through it. ClockTime 4 stays in the night, coming from Midnight Carnival's 0.
+		ClockworkCitadel = {
+			lighting = { ClockTime = 4, Brightness = 1.3, OutdoorAmbient = Color3.fromRGB(140, 136, 140), ExposureCompensation = 0.2 },
+			atmosphere = { Color = Color3.fromRGB(108, 118, 138), Decay = Color3.fromRGB(40, 44, 60), Density = 0.4, Haze = 2 },
+			colorCorrection = { TintColor = Color3.fromRGB(255, 242, 228), Saturation = 0.16 },
+		},
 	},
 
 	-- Chunky block clouds drifting around the island, built on each player's screen only.

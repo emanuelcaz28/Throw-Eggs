@@ -87,6 +87,14 @@ Roles.glowing = {
 	DoorGlow = true,
 	InkL = true,
 	InkR = true,
+	-- Clockwork Citadel (assets/models/build_clockwork_citadel.py): electric blue lamps and orbs, lightning arcs,
+	-- racing sparks, molten brass, gauge and watch faces. Furnace, Ember, Lamp, Window and Falling are above.
+	Volt = true,
+	Arc = true,
+	Spark = true,
+	Charge = true,
+	Molten = true,
+	Dial = true,
 }
 
 function Roles.of(part: Instance): string

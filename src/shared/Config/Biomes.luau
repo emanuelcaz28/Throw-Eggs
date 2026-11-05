@@ -15,4 +15,5 @@ return {
 	{ id = "EclipseTemple", name = "Eclipse Temple", startDist = 6000, endDist = 7200, luck = 1000000, standardScale = 1.49, color = Color3.fromRGB(80, 230, 150) },
 	{ id = "ForbiddenLibrary", name = "Forbidden Library", startDist = 7200, endDist = 8500, luck = 5000000, standardScale = 1.56, color = Color3.fromRGB(170, 130, 255) },
 	{ id = "MidnightCarnival", name = "Midnight Carnival", startDist = 8500, endDist = 9900, luck = 25000000, standardScale = 1.64, color = Color3.fromRGB(255, 120, 150) },
+	{ id = "ClockworkCitadel", name = "Clockwork Citadel", startDist = 9900, endDist = 11400, luck = 100000000, standardScale = 1.72, color = Color3.fromRGB(236, 164, 72) },
 }

@@ -94,6 +94,11 @@ local Map = {
 			Dirt = Color3.fromRGB(122, 35, 53), -- crimson walls, like the curtain of a big top
 			Grass = Color3.fromRGB(190, 138, 42), -- gold straw on the rims, hanging over the walls like a curtain's fringe
 		},
+		ClockworkCitadel = {
+			Floor = Color3.fromRGB(138, 100, 54), -- bronze plates, warm under the cold smog, so the blue sparks stand out on it
+			Dirt = Color3.fromRGB(52, 56, 68), -- soot-black iron walls
+			Grass = Color3.fromRGB(186, 104, 60), -- copper on the rims, hanging over the walls like old copper roofing
+		},
 	},
 
 	-- The arena, built from plain parts with the same see-through checker and studs as the kit.

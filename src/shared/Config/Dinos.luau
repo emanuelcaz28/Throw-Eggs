@@ -83,4 +83,14 @@ return {
 		{ id = "PlumedWyrm",      name = "Plumed Wyrm",      chance = 400,  income = 2e18 },
 		{ id = "EclipseDevourer", name = "Eclipse Devourer", chance = 3000, income = 5e18 },
 	},
+	-- Models from assets/models/build_clockwork_citadel_monsters.py (their keys, saw, drill and gear sail turn
+	-- on Key, Drill and Cog bones: DinoLifeController SPIN).
+	ClockworkCitadel = {
+		{ id = "WindUpWally", name = "Wind-Up Wally", chance = 2,    income = 1e22 },
+		{ id = "Sprocket",    name = "Sprocket",      chance = 4,    income = 3e22 },
+		{ id = "KettleBelly", name = "Kettle Belly",  chance = 12,   income = 1e23 },
+		{ id = "Gearjaw",     name = "Gearjaw",       chance = 60,   income = 4e23 },
+		{ id = "Drillhorn",   name = "Drillhorn",     chance = 400,  income = 2e24 },
+		{ id = "ChronoRex",   name = "Chrono Rex",    chance = 3000, income = 5e24 },
+	},
 }

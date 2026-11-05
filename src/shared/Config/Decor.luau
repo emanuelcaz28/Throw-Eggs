@@ -839,6 +839,96 @@ return {
 				{ name = "prop_CircusRing", distance = 1330, x = 4, on = "floor", yaw = 10, scale = 1.2 },
 			},
 		},
+		ClockworkCitadel = {
+			seed = 121,
+
+			floor = {
+				firstDistance = 12,
+				gap = { 12, 22 },
+				side = { 24, 34 },
+				props = {
+					{ name = "prop_GearWorks", weight = 14, scale = { 1.3, 1.7 } },
+					{ name = "prop_SteamHammer", weight = 10, scale = { 1.2, 1.5 } },
+					{ name = "prop_Boiler", weight = 9, scale = { 1.2, 1.5 } },
+					{ name = "prop_SteamPipes", weight = 9, scale = { 1.2, 1.5 } },
+					{ name = "prop_Metronome", weight = 8, scale = { 1.2, 1.5 } },
+					{ name = "prop_MusicBox", weight = 6, scale = { 1.1, 1.4 } },
+					{ name = "prop_SparkCoil", weight = 6, scale = { 1.2, 1.5 } },
+					{ name = "prop_PocketWatch", weight = 4, scale = { 1.2, 1.4 } },
+				},
+				extras = {
+					chance = 0.7,
+					spread = 8,
+					props = {
+						{ name = "prop_ScrapPile", weight = 5, scale = { 0.9, 1.2 } },
+						{ name = "prop_SteamPipes", weight = 2, scale = { 0.6, 0.8 } },
+						{ name = "prop_GearWorks", weight = 2, scale = { 0.6, 0.8 } },
+					},
+				},
+			},
+
+			rim = {
+				firstDistance = 6,
+				gap = { 14, 24 },
+				chance = 0.9,
+				side = { 64, 102 },
+				props = {
+					{ name = "prop_GearWorks", weight = 6, scale = { 2, 2.6 } },
+					{ name = "prop_Smokestack", weight = 4, scale = { 1.6, 2 } },
+					{ name = "prop_BrassTree", weight = 4, scale = { 1.8, 2.3 } },
+					{ name = "prop_FanTower", weight = 3, scale = { 1.5, 1.9 } },
+					{ name = "prop_SteamPipes", weight = 2, scale = { 2, 2.4 } },
+					{ name = "prop_ScrapPile", weight = 2, scale = { 2.2, 2.8 } },
+				},
+			},
+
+			overhead = {
+				{ name = "prop_GearArch", distance = 260, yaw = 0, scale = 1 },
+				{ name = "prop_GearArch", distance = 800, yaw = 0, scale = 1.05 },
+				{ name = "prop_GearArch", distance = 1320, yaw = 0, scale = 1 },
+			},
+
+			walls = {
+				{ name = "prop_BrassFall", distance = 80, side = 1 },
+				{ name = "prop_BrassFall", distance = 260, side = -1 },
+				{ name = "prop_BrassFall", distance = 450, side = 1 },
+				{ name = "prop_BrassFall", distance = 640, side = -1 },
+				{ name = "prop_BrassFall", distance = 820, side = 1 },
+				{ name = "prop_BrassFall", distance = 1000, side = -1 },
+				{ name = "prop_BrassFall", distance = 1180, side = 1 },
+				{ name = "prop_BrassFall", distance = 1370, side = -1 },
+			},
+
+			-- Cog spires, lightning towers and engine houses turn to face the corridor, the airships face down it (face, using
+			-- their Front marker). The airships hang high in the smog beyond the island (52 studs up at size 1). The floor
+			-- gears are flat, so they can lie in the middle where the eggs land.
+			spots = {
+				{ name = "prop_CogSpire", distance = 90, x = -86, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_CogSpire", distance = 620, x = 86, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_CogSpire", distance = 1150, x = -86, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_LightningTower", distance = 220, x = 86, on = "rim", yaw = 0, scale = 1.3, face = "middle" },
+				{ name = "prop_LightningTower", distance = 760, x = -86, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_LightningTower", distance = 1290, x = 86, on = "rim", yaw = 0, scale = 1.3, face = "middle" },
+				{ name = "prop_EngineHouse", distance = 400, x = -84, on = "rim", yaw = 0, scale = 1.3, face = "middle" },
+				{ name = "prop_EngineHouse", distance = 940, x = 84, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_EngineHouse", distance = 1440, x = -84, on = "rim", yaw = 0, scale = 1.3, face = "middle" },
+				{ name = "prop_Airship", distance = 330, x = -170, on = "rim", yaw = 0, scale = 2.2, face = "along" },
+				{ name = "prop_Airship", distance = 1060, x = 175, on = "rim", yaw = 0, scale = 2.4, face = "along" },
+				{ name = "prop_FloorGears", distance = 40, x = -3, on = "floor", yaw = 20, scale = 1.2 },
+				{ name = "prop_FloorGears", distance = 150, x = 4, on = "floor", yaw = 140, scale = 1.2 },
+				{ name = "prop_FloorGears", distance = 270, x = -4, on = "floor", yaw = 70, scale = 1.2 },
+				{ name = "prop_FloorGears", distance = 380, x = 3, on = "floor", yaw = 200, scale = 1.2 },
+				{ name = "prop_FloorGears", distance = 500, x = -2, on = "floor", yaw = 300, scale = 1.2 },
+				{ name = "prop_FloorGears", distance = 610, x = 4, on = "floor", yaw = 40, scale = 1.2 },
+				{ name = "prop_FloorGears", distance = 730, x = -3, on = "floor", yaw = 110, scale = 1.2 },
+				{ name = "prop_FloorGears", distance = 850, x = 2, on = "floor", yaw = 250, scale = 1.2 },
+				{ name = "prop_FloorGears", distance = 970, x = -4, on = "floor", yaw = 330, scale = 1.2 },
+				{ name = "prop_FloorGears", distance = 1090, x = 3, on = "floor", yaw = 80, scale = 1.2 },
+				{ name = "prop_FloorGears", distance = 1210, x = -2, on = "floor", yaw = 160, scale = 1.2 },
+				{ name = "prop_FloorGears", distance = 1330, x = 4, on = "floor", yaw = 10, scale = 1.2 },
+				{ name = "prop_FloorGears", distance = 1450, x = -3, on = "floor", yaw = 230, scale = 1.2 },
+			},
+		},
 	},
 
 	-- The arena's props, from the first biome's folder.
