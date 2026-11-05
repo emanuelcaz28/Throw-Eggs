@@ -105,6 +105,42 @@ Roles.glowing = {
 	Pane = true,
 	PaneB = true,
 	Lunar = true,
+	-- Spore Hollow (assets/models/build_spore_hollow.py): glowing gills and specks on the caps, spores, the lamp
+	-- mushrooms' bulbs, the morels' pits, mycelium veins, the heart, the wavecaps' bells, coral tips and the drifting
+	-- spores in the sky. Glow, Bulb, Moths, Motes, Window, Lamp, LampA, LampB and Falling are above.
+	GillGlow = true,
+	Speck = true,
+	Spore = true,
+	BulbB = true,
+	Pit = true,
+	Vein = true,
+	VeinB = true,
+	HeartGlow = true,
+	BellA = true,
+	BellB = true,
+	BellC = true,
+	TipGlow = true,
+	SporeCore = true,
+	Filament = true,
+	Drifter = true,
+	-- Spore Hollow's monsters (assets/models/build_spore_hollow_monsters.py): the lilac light in Gillotine's wings. Their
+	-- eyes, gills, spores and mycelium threads use EyeGlow, GillGlow, Spore, Speck, Glow, Vein, Pit and HeartGlow.
+	Lilac = true,
+	-- The Weeping Dark (assets/models/build_weeping_dark.py): tears and rings on the tear pools, the red of anything
+	-- looking at you, souls, the lighthouse's beam and the procession's lead lantern. Flame, FlameA, FlameB, Lamp, LampA,
+	-- Window, Stream, Beacon and Motes are above.
+	Tears = true,
+	Stare = true,
+	Soul = true,
+	Ripple = true,
+	RippleB = true,
+	Sweep = true,
+	Leader = true,
+}
+
+-- Glowing roles you can see through, by how far: a beam of light.
+Roles.sheer = {
+	Sweep = 0.72,
 }
 
 function Roles.of(part: Instance): string
@@ -115,6 +151,7 @@ function Roles.lightUp(model: Instance)
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") and Roles.glowing[Roles.of(part)] then
 			part.Material = Enum.Material.Neon
+			part.Transparency = Roles.sheer[Roles.of(part)] or part.Transparency
 			local studs = part:FindFirstChildOfClass("SurfaceAppearance")
 			if studs then
 				studs:Destroy()

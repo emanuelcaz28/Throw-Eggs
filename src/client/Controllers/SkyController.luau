@@ -66,7 +66,8 @@ end
 -- camera. The reveal can hand it a world of its own and a thinner haze, through two attributes on the camera:
 -- WorldFocusZ (the egg's spot: its world's look stays on even when the camera pulls back over the next world) and
 -- HazeScale (the atmosphere's density and haze are scaled by it, so a giant seen from far off isn't lost in the haze). Only properties some world changes are touched; a world without its own look (Fern
--- Valley) gets the main look's values for those.
+-- Valley) gets the main look's values for those. While WorldFocusZ is set a world's `reveal` values, if it has any, win
+-- over its own: a world too dark to see what you caught lifts its light for the reveal, whatever the monster's size.
 local function followWorlds()
 	local targets = {
 		lighting = Lighting,
@@ -74,16 +75,20 @@ local function followWorlds()
 		colorCorrection = Lighting:WaitForChild(LightingConfig.names.colorCorrection),
 	}
 	local looks = {}
-	local function lookFor(worldId: string?, hazeScale: number)
-		local key = `{worldId or ""}@{hazeScale}`
+	local function lookFor(worldId: string?, hazeScale: number, revealing: boolean)
+		local key = `{worldId or ""}@{hazeScale}@{revealing}`
 		if not looks[key] then
 			local own = LightingConfig.worlds[worldId or ""] or {}
+			local lifted = if revealing then own.reveal or {} else {}
 			local look = {}
 			for group in targets do
 				look[group] = {}
 				for _, other in LightingConfig.worlds do
 					for property in other[group] or {} do
-						local value = own[group] and own[group][property]
+						local value = lifted[group] and lifted[group][property]
+						if value == nil then
+							value = own[group] and own[group][property]
+						end
 						look[group][property] = if value ~= nil then value else LightingConfig[group][property]
 					end
 				end
@@ -100,6 +105,7 @@ local function followWorlds()
 	local info = TweenInfo.new(LightingConfig.worldBlendSeconds, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 	local current = false -- nothing applied yet; nil is the main look
 	local currentHaze = 1
+	local currentReveal = false
 	RunService.RenderStepped:Connect(function()
 		local camera = workspace.CurrentCamera
 		local focusZ = camera:GetAttribute("WorldFocusZ")
@@ -108,12 +114,13 @@ local function followWorlds()
 		if LightingConfig.worlds[world or ""] == nil then
 			world = nil
 		end
-		if world == current and hazeScale == currentHaze then
+		local revealing = typeof(focusZ) == "number"
+		if world == current and hazeScale == currentHaze and revealing == currentReveal then
 			return
 		end
-		current, currentHaze = world, hazeScale
+		current, currentHaze, currentReveal = world, hazeScale, revealing
 		-- A new tween on the same properties replaces the one still running.
-		for group, values in lookFor(world, hazeScale) do
+		for group, values in lookFor(world, hazeScale, revealing) do
 			TweenService:Create(targets[group], info, values):Play()
 		end
 	end)

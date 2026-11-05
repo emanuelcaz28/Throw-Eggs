@@ -116,6 +116,28 @@ return {
 			atmosphere = { Color = Color3.fromRGB(124, 112, 134), Decay = Color3.fromRGB(44, 34, 52), Density = 0.4, Haze = 2 },
 			colorCorrection = { TintColor = Color3.fromRGB(255, 236, 240), Saturation = 0.18 },
 		},
+		-- The hollow at night: a hazy olive-gold mist of spores, so the chartreuse gills glow through it and the cream
+		-- mycelium on the rims stays pale. ClockTime 2, between Thorn Kingdom's 3 and the night after it.
+		SporeHollow = {
+			lighting = { ClockTime = 2, Brightness = 1.3, OutdoorAmbient = Color3.fromRGB(140, 146, 118), ExposureCompensation = 0.25 },
+			atmosphere = { Color = Color3.fromRGB(128, 132, 96), Decay = Color3.fromRGB(46, 48, 30), Density = 0.4, Haze = 2.1 },
+			colorCorrection = { TintColor = Color3.fromRGB(246, 255, 232), Saturation = 0.2 },
+		},
+		-- The end of the world, and the darkest light in the game: hardly any moon and hardly any ambient, so what light there
+		-- is comes from the props (Decor propLights). The sky is a dim neutral grey with no stars, just lighter than the
+		-- Watchers standing in it. Measured in play: Roblox tints the night atmosphere blue, so the colour here is warm on
+		-- purpose, to come out grey (a grey Color gives a blue sky, more orange a brown one). Haze takes the grey up the sky
+		-- and hides the stars; Density is what hides things, so it's low. Colour stays on, for the red of the eyes.
+		WeepingDark = {
+			lighting = { ClockTime = 1, Brightness = 0.5, Ambient = Color3.fromRGB(30, 30, 38), OutdoorAmbient = Color3.fromRGB(58, 58, 68), ExposureCompensation = 0 },
+			atmosphere = { Color = Color3.fromRGB(158, 124, 97), Decay = Color3.fromRGB(158, 124, 97), Density = 0.24, Haze = 6 },
+			colorCorrection = { TintColor = Color3.fromRGB(242, 242, 242), Saturation = -0.1, Contrast = 0.16 },
+			-- In a reveal the dark lifts just enough to see what you caught, whatever its size and wherever it landed. In the
+			-- dark most of these monsters are only eyes and tears, which is the point until you need to see one.
+			reveal = {
+				lighting = { Brightness = 0.9, Ambient = Color3.fromRGB(110, 110, 120), OutdoorAmbient = Color3.fromRGB(165, 165, 176), ExposureCompensation = 0.3 },
+			},
+		},
 	},
 
 	-- Chunky block clouds drifting around the island, built on each player's screen only.

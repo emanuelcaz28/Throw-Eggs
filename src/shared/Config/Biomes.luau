@@ -17,4 +17,6 @@ return {
 	{ id = "MidnightCarnival", name = "Midnight Carnival", startDist = 8500, endDist = 9900, luck = 25000000, standardScale = 1.64, color = Color3.fromRGB(255, 120, 150) },
 	{ id = "ClockworkCitadel", name = "Clockwork Citadel", startDist = 9900, endDist = 11400, luck = 100000000, standardScale = 1.72, color = Color3.fromRGB(236, 164, 72) },
 	{ id = "ThornKingdom", name = "Thorn Kingdom", startDist = 11400, endDist = 13000, luck = 500000000, standardScale = 1.81, color = Color3.fromRGB(236, 72, 104) },
+	{ id = "SporeHollow", name = "Spore Hollow", startDist = 13000, endDist = 14700, luck = 2500000000, standardScale = 1.9, color = Color3.fromRGB(176, 236, 64) },
+	{ id = "WeepingDark", name = "The Weeping Dark", startDist = 14700, endDist = 16500, luck = 10000000000, standardScale = 2, color = Color3.fromRGB(216, 228, 244) },
 }

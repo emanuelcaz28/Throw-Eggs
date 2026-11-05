@@ -14,7 +14,7 @@ local PropMotionController = {}
 local TAU = 2 * math.pi
 
 type Motion = { [string]: any }
-type Mover = { part: BasePart, base: CFrame, motion: Motion, color: Color3 }
+type Mover = { part: BasePart, base: CFrame, motion: Motion, color: Color3, light: PointLight?, brightness: number }
 type Drift = { parts: { BasePart }, bases: { CFrame }, ahead: Vector3, motion: Motion, transparency: number }
 type Prop = { pivot: CFrame, scale: number, phase: number, movers: { Mover }, drift: Drift? }
 
@@ -43,7 +43,15 @@ local function add(model: Instance)
 			table.insert(parts, part)
 			local motion = rules[Roles.of(part)]
 			if motion then
-				table.insert(prop.movers, { part = part, base = part.CFrame, motion = motion, color = part.Color })
+				local light = part:FindFirstChildOfClass("PointLight")
+				table.insert(prop.movers, {
+					part = part,
+					base = part.CFrame,
+					motion = motion,
+					color = part.Color,
+					light = light,
+					brightness = if light then light.Brightness else 0,
+				})
 			end
 		end
 	end
@@ -153,6 +161,9 @@ function PropMotionController.start()
 					local share = motion.pulse + (1 - motion.pulse) * wave
 					local c = mover.color
 					mover.part.Color = Color3.new(c.R * share, c.G * share, c.B * share)
+					if mover.light then
+						mover.light.Brightness = mover.brightness * share
+					end
 				end
 			end
 			local drift = prop.drift

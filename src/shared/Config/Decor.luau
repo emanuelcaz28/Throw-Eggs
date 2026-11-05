@@ -1021,6 +1021,221 @@ return {
 				{ name = "prop_RoseWindow", distance = 1560, x = 2, on = "floor", yaw = 120, scale = 1.2 },
 			},
 		},
+		SporeHollow = {
+			seed = 141,
+
+			floor = {
+				firstDistance = 10,
+				gap = { 9, 16 },
+				side = { 23, 34 },
+				props = {
+					{ name = "prop_Glowcap", weight = 14, scale = { 1.5, 1.9 } },
+					{ name = "prop_Puffballs", weight = 10, scale = { 1.3, 1.6 } },
+					{ name = "prop_LampShroom", weight = 9, scale = { 1.4, 1.7 } },
+					{ name = "prop_Wavecaps", weight = 9, scale = { 1.4, 1.7 } },
+					{ name = "prop_ShelfStump", weight = 8, scale = { 1.4, 1.7 } },
+					{ name = "prop_CoralShroom", weight = 7, scale = { 1.4, 1.8 } },
+					{ name = "prop_MushroomHut", weight = 4, scale = { 1.3, 1.5 } },
+					{ name = "prop_MyceliumHeart", weight = 3, scale = { 1.3, 1.5 } },
+				},
+				extras = {
+					chance = 0.85,
+					spread = 8,
+					props = {
+						{ name = "prop_SporeTuft", weight = 5, scale = { 0.9, 1.3 } },
+						{ name = "prop_Puffballs", weight = 2, scale = { 0.5, 0.7 } },
+						{ name = "prop_CoralShroom", weight = 2, scale = { 0.6, 0.8 } },
+					},
+				},
+			},
+
+			rim = {
+				firstDistance = 6,
+				gap = { 10, 17 },
+				chance = 0.95,
+				side = { 60, 104 },
+				props = {
+					{ name = "prop_Parasol", weight = 6, scale = { 2, 2.6 } },
+					{ name = "prop_MorelSpire", weight = 4, scale = { 1.8, 2.3 } },
+					{ name = "prop_Glowcap", weight = 4, scale = { 2.2, 2.8 } },
+					{ name = "prop_CoralShroom", weight = 2, scale = { 2.2, 2.8 } },
+					{ name = "prop_SporeTuft", weight = 2, scale = { 2.2, 2.8 } },
+				},
+			},
+
+			overhead = {
+				{ name = "prop_CapGate", distance = 280, yaw = 0, scale = 1 },
+				{ name = "prop_CapGate", distance = 860, yaw = 0, scale = 1.05 },
+				{ name = "prop_CapGate", distance = 1440, yaw = 0, scale = 1 },
+			},
+
+			walls = {
+				{ name = "prop_ShelfFall", distance = 80, side = 1 },
+				{ name = "prop_ShelfFall", distance = 270, side = -1 },
+				{ name = "prop_ShelfFall", distance = 460, side = 1 },
+				{ name = "prop_ShelfFall", distance = 650, side = -1 },
+				{ name = "prop_ShelfFall", distance = 840, side = 1 },
+				{ name = "prop_ShelfFall", distance = 1030, side = -1 },
+				{ name = "prop_ShelfFall", distance = 1220, side = 1 },
+				{ name = "prop_ShelfFall", distance = 1410, side = -1 },
+				{ name = "prop_ShelfFall", distance = 1600, side = 1 },
+			},
+
+			-- Elder shrooms and shroom towers turn to face the corridor (face, using their Front marker); the spore geysers are
+			-- round, so they don't need to. The spore drifters glide across the sky beyond the island, high up (56 studs at
+			-- size 1), each its own way. The mycelium webs are flat, so they can lie in the middle where the eggs land.
+			spots = {
+				{ name = "prop_ElderShroom", distance = 110, x = -88, on = "rim", yaw = 0, scale = 1.3, face = "middle" },
+				{ name = "prop_ElderShroom", distance = 690, x = 88, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_ElderShroom", distance = 1270, x = -88, on = "rim", yaw = 0, scale = 1.3, face = "middle" },
+				{ name = "prop_ShroomTower", distance = 230, x = 86, on = "rim", yaw = 0, scale = 1.2, face = "middle" },
+				{ name = "prop_ShroomTower", distance = 810, x = -86, on = "rim", yaw = 0, scale = 1.3, face = "middle" },
+				{ name = "prop_ShroomTower", distance = 1390, x = 86, on = "rim", yaw = 0, scale = 1.2, face = "middle" },
+				{ name = "prop_SporeGeyser", distance = 430, x = -84, on = "rim", yaw = 0, scale = 1.2 },
+				{ name = "prop_SporeGeyser", distance = 1010, x = 84, on = "rim", yaw = 40, scale = 1.3 },
+				{ name = "prop_SporeGeyser", distance = 1590, x = -84, on = "rim", yaw = 80, scale = 1.2 },
+				{ name = "prop_SporeDrifter", distance = 360, x = -170, on = "rim", yaw = 100, scale = 2.2 },
+				{ name = "prop_SporeDrifter", distance = 1150, x = 175, on = "rim", yaw = 290, scale = 2.4 },
+				{ name = "prop_MyceliumWeb", distance = 40, x = -3, on = "floor", yaw = 20, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 155, x = 4, on = "floor", yaw = 140, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 270, x = -4, on = "floor", yaw = 70, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 385, x = 3, on = "floor", yaw = 200, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 500, x = -2, on = "floor", yaw = 300, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 615, x = 4, on = "floor", yaw = 40, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 735, x = -3, on = "floor", yaw = 110, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 850, x = 2, on = "floor", yaw = 250, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 965, x = -4, on = "floor", yaw = 330, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 1085, x = 3, on = "floor", yaw = 80, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 1205, x = -2, on = "floor", yaw = 160, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 1325, x = 4, on = "floor", yaw = 10, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 1445, x = -3, on = "floor", yaw = 230, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 1560, x = 2, on = "floor", yaw = 120, scale = 1.2 },
+				{ name = "prop_MyceliumWeb", distance = 1670, x = -4, on = "floor", yaw = 290, scale = 1.2 },
+			},
+		},
+		WeepingDark = {
+			seed = 151,
+
+			-- Sparser than any other map on purpose: the emptiness is the point.
+			floor = {
+				firstDistance = 10,
+				gap = { 13, 22 },
+				side = { 23, 34 },
+				props = {
+					{ name = "prop_Mourner", weight = 14, scale = { 1.4, 1.8 } },
+					{ name = "prop_BlackWillow", weight = 9, scale = { 1.2, 1.5 } },
+					{ name = "prop_DyingLamp", weight = 9, scale = { 1.3, 1.5 } },
+					{ name = "prop_Headstones", weight = 9, scale = { 1.2, 1.5 } },
+					{ name = "prop_EmptySwing", weight = 7, scale = { 1.3, 1.5 } },
+					{ name = "prop_RockingChair", weight = 6, scale = { 1.3, 1.6 } },
+					{ name = "prop_WaitingWindow", weight = 6, scale = { 1.2, 1.5 } },
+					{ name = "prop_Bearer", weight = 7, scale = { 1.1, 1.4 } },
+					{ name = "prop_Coffin", weight = 6, scale = { 1.2, 1.5 } },
+					{ name = "prop_ReachingHands", weight = 7, scale = { 1.2, 1.6 } },
+					{ name = "prop_LostBear", weight = 3, scale = { 1.3, 1.6 } },
+				},
+				extras = {
+					chance = 0.7,
+					spread = 8,
+					props = {
+						{ name = "prop_AshTuft", weight = 5, scale = { 0.9, 1.3 } },
+						{ name = "prop_CandleStubs", weight = 4, scale = { 0.9, 1.3 } },
+						{ name = "prop_ReachingHands", weight = 1, scale = { 0.5, 0.7 } },
+					},
+				},
+			},
+
+			rim = {
+				firstDistance = 6,
+				gap = { 11, 18 },
+				chance = 0.9,
+				side = { 60, 104 },
+				props = {
+					{ name = "prop_ClawTree", weight = 6, scale = { 2, 2.6 } },
+					{ name = "prop_BlackWillow", weight = 5, scale = { 1.8, 2.3 } },
+					{ name = "prop_HollowHouse", weight = 3, scale = { 1.3, 1.7 } },
+					{ name = "prop_Mourner", weight = 3, scale = { 2.2, 2.8 } },
+					{ name = "prop_Headstones", weight = 3, scale = { 1.8, 2.3 } },
+					{ name = "prop_DyingLamp", weight = 2, scale = { 1.8, 2.2 } },
+					{ name = "prop_AshTuft", weight = 2, scale = { 2.2, 2.8 } },
+				},
+			},
+
+			-- The Long Arm reaches from one rim and grips the other, from alternating sides.
+			overhead = {
+				{ name = "prop_LongArm", distance = 300, yaw = 0, scale = 1 },
+				{ name = "prop_LongArm", distance = 900, yaw = 180, scale = 1.05 },
+				{ name = "prop_LongArm", distance = 1500, yaw = 0, scale = 1 },
+			},
+
+			walls = {
+				{ name = "prop_WeepingWall", distance = 90, side = 1 },
+				{ name = "prop_WeepingWall", distance = 280, side = -1 },
+				{ name = "prop_WeepingWall", distance = 470, side = 1 },
+				{ name = "prop_WeepingWall", distance = 660, side = -1 },
+				{ name = "prop_WeepingWall", distance = 850, side = 1 },
+				{ name = "prop_WeepingWall", distance = 1040, side = -1 },
+				{ name = "prop_WeepingWall", distance = 1230, side = 1 },
+				{ name = "prop_WeepingWall", distance = 1420, side = -1 },
+				{ name = "prop_WeepingWall", distance = 1610, side = 1 },
+			},
+
+			-- Wailing heads, lighthouses and bell towers turn to face the corridor. The Watchers stand in the void beyond the
+			-- island, facing it: at size 3 and 266 out, their fingers rest on the rim's outer edge. The processions glide along
+			-- the path at the top of the wall, inside the rim props. The tear pools lie in the middle with their foreheads down
+			-- the corridor, so the faces are the right way up from the flight. The Last Door stands past the end of the map, on
+			-- the 36 studs of corridor before the end wall, facing back up it (its origin is 26 behind its face). If a map is
+			-- ever added after this one, the door goes with the new last map.
+			spots = {
+				{ name = "prop_WailingHead", distance = 110, x = -84, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_WailingHead", distance = 720, x = 84, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_WailingHead", distance = 1330, x = -84, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_LastLighthouse", distance = 240, x = 86, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_LastLighthouse", distance = 980, x = -86, on = "rim", yaw = 0, scale = 1.6, face = "middle" },
+				{ name = "prop_LastLighthouse", distance = 1640, x = 86, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_BellTower", distance = 420, x = -84, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_BellTower", distance = 1140, x = 84, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_Watcher", distance = 170, x = 266, on = "rim", yaw = 0, scale = 3, face = "middle" },
+				{ name = "prop_Watcher", distance = 520, x = -266, on = "rim", yaw = 0, scale = 3, face = "middle" },
+				{ name = "prop_Watcher", distance = 870, x = 266, on = "rim", yaw = 0, scale = 3, face = "middle" },
+				{ name = "prop_Watcher", distance = 1220, x = -266, on = "rim", yaw = 0, scale = 3, face = "middle" },
+				{ name = "prop_Watcher", distance = 1570, x = 266, on = "rim", yaw = 0, scale = 3, face = "middle" },
+				{ name = "prop_Procession", distance = 330, x = 52, on = "rim", yaw = 0, scale = 1.2, face = "along" },
+				{ name = "prop_Procession", distance = 1050, x = -52, on = "rim", yaw = 0, scale = 1.2, face = "along" },
+				{ name = "prop_LastDoor", distance = 1852, x = 0, on = "rim", yaw = 180, scale = 1, face = "along" },
+				{ name = "prop_TearPool", distance = 45, x = -3, on = "floor", yaw = 10, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 170, x = 4, on = "floor", yaw = 350, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 295, x = -4, on = "floor", yaw = 20, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 420, x = 3, on = "floor", yaw = 340, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 545, x = -2, on = "floor", yaw = 5, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 670, x = 4, on = "floor", yaw = 15, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 795, x = -3, on = "floor", yaw = 345, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 920, x = 2, on = "floor", yaw = 10, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 1045, x = -4, on = "floor", yaw = 355, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 1170, x = 3, on = "floor", yaw = 25, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 1295, x = -2, on = "floor", yaw = 335, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 1420, x = 4, on = "floor", yaw = 0, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 1545, x = -3, on = "floor", yaw = 20, scale = 1.3, face = "along" },
+				{ name = "prop_TearPool", distance = 1670, x = 2, on = "floor", yaw = 350, scale = 1.3, face = "along" },
+			},
+		},
+	},
+
+	-- Real light from a prop, for the worlds too dark for Neon alone, which lights nothing round it. By prop: the role it
+	-- shines from, its colour, range and brightness at size 1 (MapDecor adds a PointLight, PropMotionController dims it with
+	-- the role's pulse). Same as LIGHTS in the map's Blender script. Range stops at 60, Roblox's limit.
+	propLights = {
+		prop_Mourner = { role = "Ripple", color = Color3.fromRGB(230, 230, 230), range = 12, brightness = 0.6 },
+		prop_RockingChair = { role = "Flame", color = Color3.fromRGB(244, 236, 214), range = 20, brightness = 1.1 },
+		prop_WaitingWindow = { role = "Window", color = Color3.fromRGB(226, 220, 196), range = 22, brightness = 1.1 },
+		prop_Headstones = { role = "Flame", color = Color3.fromRGB(244, 236, 214), range = 18, brightness = 1 },
+		prop_Coffin = { role = "Flame", color = Color3.fromRGB(244, 236, 214), range = 18, brightness = 1 },
+		prop_DyingLamp = { role = "Lamp", color = Color3.fromRGB(223, 226, 216), range = 32, brightness = 1.5 },
+		prop_Bearer = { role = "Lamp", color = Color3.fromRGB(223, 226, 216), range = 22, brightness = 1.1 },
+		prop_CandleStubs = { role = "FlameA", color = Color3.fromRGB(244, 236, 214), range = 14, brightness = 0.9 },
+		prop_HollowHouse = { role = "Window", color = Color3.fromRGB(226, 220, 196), range = 18, brightness = 0.9 },
+		prop_LastLighthouse = { role = "Beacon", color = Color3.fromRGB(230, 230, 230), range = 40, brightness = 1.1 },
+		prop_LastDoor = { role = "Stare", color = Color3.fromRGB(255, 26, 26), range = 60, brightness = 2.4 },
 	},
 
 	-- The arena's props, from the first biome's folder.

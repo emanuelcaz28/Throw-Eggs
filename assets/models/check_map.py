@@ -48,7 +48,7 @@ for _, biome in biomes do table.insert(ids, biome.id) end
 print(serde.encode("json", {
 	motion = motion.props, decor = decor.corridor[world] or false, colors = map.biomeColors[world] or false,
 	light = lighting.worlds[world] or false, biomes = ids, glowing = glowing,
-	overheadBuiltFor = map.corridor.overheadBuiltFor,
+	overheadBuiltFor = map.corridor.overheadBuiltFor, lights = decor.propLights or {},
 }))
 """
 
@@ -124,6 +124,15 @@ def main():
         for role in model.parts:
             if role in game["glowing"] and role not in glow:
                 problem(f"{name}: role {role} glows in the game (Roles.glowing) but isn't in GLOW_ROLES; rename it if it shouldn't")
+
+    # Real light (Config/Decor propLights).
+    for prop, (role, colour, reach, brightness) in getattr(m, "LIGHTS", {}).items():
+        rgb = [int(colour[i:i + 2], 16) for i in (1, 3, 5)]
+        wanted = {"role": role, "color": rgb, "range": reach, "brightness": brightness}
+        if not same(wanted, game["lights"].get(prop)):
+            problem(f"LIGHTS and Config/Decor propLights differ for {prop}:\n    blender {wanted}\n    game    {game['lights'].get(prop)}")
+        if prop not in models or role not in models[prop].parts:
+            problem(f"LIGHTS: {prop} has no {role} role to shine from")
 
     # Placement.
     decor = getattr(m, "DECOR", None)

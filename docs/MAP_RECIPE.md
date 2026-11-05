@@ -41,6 +41,8 @@ glow, must differ from its neighbours'. Taken so far:
 | 11 | Midnight Carnival | deep teal | crimson | gold straw | warm bulbs, pink neon, ghost white | midnight (ClockTime 0), plum haze |
 | 12 | Clockwork Citadel | bronze plates | soot iron | copper | electric blue, furnace orange | before dawn (ClockTime 4), steel-blue smog |
 | 13 | Thorn Kingdom | dark moss | black-violet thorn bark | silver moss | crimson roses, firefly gold | night (ClockTime 3), silver-mauve mist |
+| 14 | Spore Hollow | dark umber loam | peat | pale cream mycelium | chartreuse gills, amber windows, lilac bells | night (ClockTime 2), olive-gold spore mist |
+| 15 | The Weeping Dark | ash black | black | grey ash | pale tear-light, candles; red only for eyes | night (ClockTime 1), the darkest, dim grey starless sky |
 
 The exact colours are in `Config/Map` `biomeColors` and `Config/Lighting` `worlds`.
 
@@ -70,7 +72,8 @@ files and Studio folders alike.
 
 ## 3. Build the props in Blender
 
-Copy `assets/models/build_forbidden_library.py` (map 10, the newest, with the plain-colour setting and helpers for
+Copy `assets/models/build_weeping_dark.py` (map 15: the newest, with hands, hooded figures, tears, candles, real light and
+preview fog), `build_forbidden_library.py` (map 10, with the plain-colour setting and helpers for
 books, candles, turned boxes and magic circles), `build_clockwork_citadel.py` (map 12: gears that mesh, flywheels,
 steam and smoke puffs that rise for ever, lightning arcs, gauges, valve wheels) or `build_eclipse_temple.py` to `build_<map>.py` and replace: the docstring, `RENDERS`,
 `GLOW_ROLES`, the colours, `CORRIDOR` and `SKY` (preview only), `MOTION`, the prop functions and `ALL`, `DECOR`,
@@ -150,6 +153,12 @@ player's screen, and the Blender videos play the same moves, so what you see in 
 | `pulse = 0.4, period = 3` | the glow dims to 40 % and back |
 | `fall = 4, period = 0.8` | drops 4 studs and starts again; space the drops exactly 4 apart and it loops seamlessly. Negative rises (sparks). |
 | `"*": drift = 420, period = 36, fade = 0.12, head = "Role"` | the whole prop glides head first and fades out and back (comets) |
+
+**Real light.** Neon lights nothing round it. A map too dark for that can give a prop real light: list it in the
+script's `LIGHTS` and `Config/Decor` `propLights` (the role it shines from, colour, range and brightness at size 1;
+`check_map.py` compares them). `MapDecor` adds a PointLight, and `PropMotionController` dims it with the role's pulse,
+so a flickering lamp really flickers. **See-through glow** (a beam): `Roles.sheer`. `build_weeping_dark.py` (map 15) has
+both, with preview fog and lights in its renders.
 
 Getting the centre right: parts that must turn together (a lantern's frame and its light, a head and its mask)
 must turn round the **same point**. `about = "self"` uses each part's own middle, so it only suits a part that is
@@ -243,6 +252,8 @@ bigger: build them bigger, or `grow(m, 1.3)` at the end. Commons are about 3 to 
 | `Key`, `Drill`, `Cog` | parts that turn for ever, whatever the monster does: round the upright, its forward axis, its sideways axis (`DinoLifeController` `SPIN`; `build_clockwork_citadel_monsters.py` has the preview). Build the part centred on its bone, along that axis |
 | `Lash<n>a`, `b`, `c` (n up to 8) | whips that never stop thrashing: `lash(m, n, points, ...)` in `build_thorn_kingdom_monsters.py`. A monster with these also twitches all over: head jerks, jaw gnashes, body shudders (`DinoLifeController` `THRASH`, `thrash_of` in the script). For aggressive, chaotic maps |
 | `Snap<n>` | a spare head's jaw, on the end of a lash: chatters for ever. It opens round the monster's sideways axis, so keep spare heads looking mostly forwards |
+| `Drip`, `DripB` | tears falling for ever: `weeping(m, spots, ground)` in `build_weeping_dark_monsters.py`, spaced 0.6 or 1.6 apart. A monster with either bone also **rages**: it lunges, bites, claws and charges (`DinoLifeController` `RAGE`, `rage_of` in the script). For the most aggressive maps. Built before a `grow(m, k)`, pass `grown=k` so the gap comes out right |
+| `PalmL`, `PalmR` | hands held to the face that pull away in the roar and the lunge (Endless Grief): turn on the upright, pivot behind the wrist |
 
 **Spare eyes** use the role `Slit` for their pupils, not `Pupil`: the reveal aims at the middle of the `Pupil` parts, so an eye on a stalk would drag it away from the face. **Jaw** must sit in front of `Tail1` (or the `Spine` if there's no tail): that's how the game reads which way a monster faces.
 
@@ -289,5 +300,24 @@ once they're imported and tidied (step 8), list them in `Config/Dinos` (ids neve
 - **Don't tie a turn to a bob** (a beam engine's rocking beam and its piston). Importers can flip X or Y, which
   reverses every turn but never a bob, so the two would come apart. Turns that only depend on each other are fine:
   meshing gears both reverse and stay in mesh.
+- **The far end:** the corridor stops at an end wall 36 studs past the last map's end (`Map.corridor.extra`), 8 thick.
+  Anything standing against it must clear it: map 15's eye first landed inside the wall, where nobody would ever see it.
+- **Something you read one way from the flight** (a face on the floor): a Front marker and `face = "along"`, as yaw alone
+  isn't safe, and remember the far end of the prop is the top of the screen.
+- **Blender's previews flatter a dark map, so test in play.** Things map 15 only showed in Studio:
+  - The sky at night is black with stars, whatever the preview's sky colour says, so a dark shape against it vanishes.
+    To get a dim sky: `Haze` carries the fog's colour up the sky (and hides the stars), `Density` is what hides objects,
+    so use high Haze and low Density (6 and 0.24).
+  - Roblox tints the night atmosphere blue, so a grey `Color` gives a blue sky. Warm it to cancel that: (158, 124, 97)
+    came out neutral grey; (170, 94, 47) was brown. Don't desaturate the screen instead, it kills the colour you kept.
+  - Neon turns any hint of a colour into that colour. For a truly grey glow use a pure grey, R = G = B.
+  - PointLights are much stronger on mid-grey parts than a Blender point light: start around brightness 1.
+  - Sky pieces look far smaller from the corridor than in a close render: check from the flight camera's height.
+  - A world this dark hides its own monsters from the reveal. A world's `reveal` table in `Config/Lighting` lifts its light
+    while a reveal is on, for a monster of any size.
+  - The Studio pane can be very wide and short. To check a dark map: anchor the player near the spot on the Server, hide
+    the GUI, and set a Scriptable camera on the Client (it resets when the script ends, but holds for the capture).
+- **The importer drops a bone with no mesh on it.** Endless Grief's empty marker bone vanished, and with it the thing that
+  turned its rage on. A bone the game looks for must carry something, and check the bones in Studio after an import.
 - **`about = "self"` turns round the bounding box's middle.** Give a gear or a wheel an even number of teeth and
   spokes so that middle is its axle, or it wobbles.

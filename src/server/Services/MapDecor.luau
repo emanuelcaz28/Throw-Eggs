@@ -40,6 +40,24 @@ local function frontOf(model: Model): Vector3?
 	return nil
 end
 
+-- A prop in Decor.propLights really lights what's round it, from the parts of its role. Neon alone lights nothing.
+local function addLight(model: Model, scale: number)
+	local light = Decor.propLights[model.Name]
+	if not light then
+		return
+	end
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") and Roles.of(part) == light.role then
+			local point = Instance.new("PointLight")
+			point.Color = light.color
+			point.Range = math.min(light.range * scale, 60)
+			point.Brightness = light.brightness
+			point.Shadows = false
+			point.Parent = part
+		end
+	end
+end
+
 -- A copy of a prop standing on `position`, turned `yaw` degrees and scaled. Props nobody can reach
 -- aren't solid, which also keeps them out of the physics. A missing prop is skipped with a warning.
 -- With `face`, a prop that has a Front marker is first turned so its front points that way.
@@ -61,6 +79,7 @@ local function place(parent: Instance, folder: Instance, name: string, position:
 	if scale ~= 1 then
 		model:ScaleTo(scale)
 	end
+	addLight(model, scale)
 	local turn = math.rad(yaw)
 	local front = frontOf(model)
 	if face and front then

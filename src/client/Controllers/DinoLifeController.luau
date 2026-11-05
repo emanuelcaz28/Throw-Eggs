@@ -3,7 +3,9 @@
 -- Walk and Idle loops in assets/models/build_forest.py, and the jaw and roar of the monsters that
 -- have a Jaw bone copy build_volcano.py. Monsters with a Swim bone swim and hover instead (SWIM and HOVER,
 -- copying build_abyss_monsters.py). Monsters with Lash bones thrash on top of it all (THRASH, copying
--- build_thorn_kingdom_monsters.py). Dinos without bones still walk, stiffly.
+-- build_thorn_kingdom_monsters.py), and ones with a Drip bone attack too, crying as they do (RAGE and DRIP, copying
+-- build_weeping_dark_monsters.py). Monsters with Vent bones pour spores and pounce (VENT and POUNCE, copying
+-- build_spore_hollow_monsters.py). Dinos without bones still walk, stiffly.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -119,6 +121,18 @@ end
 ROAR.Head = function(t)
 	local r = roar(t)
 	return 0.3 * r, 0, 0.08 * sin(14 * t) * r, 0
+end
+ROAR.PalmL = function(t) -- Endless Grief's hands pull away from its face
+	return 0, 0, 0.8 * roar(t), 0
+end
+ROAR.PalmR = function(t)
+	return 0, 0, -0.8 * roar(t), 0
+end
+ROAR.MandL = function(t) -- Spore Hollow's side jaws fling open
+	return 0, 0, 0.6 * roar(t), 0
+end
+ROAR.MandR = function(t)
+	return 0, 0, -0.6 * roar(t), 0
 end
 
 -- Monsters with a Swim bone (from The Abyss on) swim instead of walking: SWIM while they move and HOVER while
@@ -298,6 +312,168 @@ for i = 1, 3 do
 	end
 end
 
+-- The Weeping Dark's monsters (map 15) don't just thrash, they attack. A monster with a tear bone (DRIP) gets all of RAGE on
+-- top of the rest: every 4 seconds it loads up and lunges, heaving back, slamming forward, its head driving in, its jaw
+-- dropping and biting shut, its tail cracking; its arms claw one after the other, 2 seconds apart; it snaps at the air
+-- between lunges; and it pants and shakes all the time. Each takes seconds and returns pitch, roll, yaw, rise and surge.
+-- It also charges: a stride takes rageStrideSeconds (Config/DinoLife). The same as rage_of in
+-- assets/models/build_weeping_dark_monsters.py, whose preview moves them alike.
+local function smooth(t: number): number
+	return t * t * (3 - 2 * t)
+end
+
+local function strike(x: number): number -- 0 most of the time; once a turn of x, a slam to 1, held, then a slower recovery
+	local u = (x / TAU) % 1
+	if u < 0.05 then
+		return smooth(u / 0.05)
+	elseif u < 0.12 then
+		return 1
+	elseif u < 0.34 then
+		return 1 - smooth((u - 0.12) / 0.22)
+	end
+	return 0
+end
+
+local function windup(x: number): number -- the moment before strike: up to 1 at the end of the turn, gone as strike lands
+	local u = (x / TAU) % 1
+	if u > 0.9 then
+		return smooth((u - 0.9) / 0.1)
+	elseif u < 0.05 then
+		return 1 - smooth(u / 0.05)
+	end
+	return 0
+end
+
+local RAGE = {}
+RAGE.Spine = function(s: number)
+	local w = QUARTER * s
+	local hit, load = strike(w), windup(w)
+	return -0.1 * hit + 0.09 * load + 0.014 * sin(8 * w), 0, 0, 0.05 * sin(8 * w) - 0.1 * hit, 0.55 * hit - 0.3 * load
+end
+RAGE.Neck = function(s: number)
+	local w = QUARTER * s
+	return -0.2 * strike(w) + 0.14 * windup(w) - 0.08 * strike(2 * w + math.pi), 0, 0, 0, 0
+end
+RAGE.Head = function(s: number)
+	local w = QUARTER * s
+	local hit = strike(w)
+	return 0.16 * hit - 0.1 * windup(w) + 0.1 * strike(2 * w + math.pi), 0.03 * sin(20 * w) * (0.3 + hit), 0.1 * sin(14 * w) * hit, 0, 0
+end
+RAGE.Jaw = function(s: number)
+	local w = QUARTER * s
+	local nip = 2 * w + math.pi
+	return -0.5 * windup(w) + 0.2 * strike(w) - 0.3 * windup(nip) + 0.12 * strike(nip), 0, 0, 0, 0
+end
+for letter, offset in { L = 0, R = math.pi } do -- one claw, then the other
+	RAGE["Arm" .. letter] = function(s: number)
+		local x = QUARTER * s + offset
+		return 1.2 * windup(x) - 0.6 * strike(x), 0, 0, 0, 0
+	end
+end
+for letter, side in { L = 1, R = -1 } do
+	RAGE["Front" .. letter] = function(s: number)
+		local w = QUARTER * s
+		return 0.42 * strike(w) - 0.24 * windup(w), 0, 0, 0, 0
+	end
+	RAGE["Back" .. letter] = function(s: number)
+		local w = QUARTER * s
+		return -0.2 * strike(w) + 0.1 * windup(w), 0, 0, 0, 0
+	end
+	RAGE["Leg" .. letter] = function(s: number)
+		local w = QUARTER * s
+		return side * (0.3 * strike(w) - 0.1 * windup(w)), 0, 0, 0, 0
+	end
+	RAGE["Shin" .. letter] = function(s: number)
+		return (if letter == "L" then -0.2 else -0.5) * strike(QUARTER * s), 0, 0, 0, 0
+	end
+	RAGE["Palm" .. letter] = function(s: number) -- Endless Grief's hands, pulling away from its face
+		local w = QUARTER * s
+		return 0, 0, side * (0.5 * strike(w) + 0.24 * windup(w)), 0, 0
+	end
+end
+for i = 1, 3 do
+	RAGE["Tail" .. i] = function(s: number)
+		local crack_ = strike(QUARTER * s - 0.3 * i)
+		return 0.1 * crack_, 0, 0.42 * crack_, 0, 0
+	end
+end
+
+-- Tears that fall for ever on a bone, whatever the head is doing, like a prop's `fall`: they're `gap` studs apart (at
+-- the first map's size) and each takes `period` seconds to reach where the next began, so they loop seamlessly. Periods
+-- divide 4, the length of the thrash clock. The same as DRIP in build_weeping_dark_monsters.py.
+local DRIP = {
+	Drip = { gap = 0.6, period = 0.8 },
+	DripB = { gap = 1.6, period = 1 },
+}
+
+-- Spore Hollow's monsters (map 14) pour spores and pounce. A monster with Vent bones has a column of spore clouds over
+-- each vent in its hide, lifted one gap every period and dropped back, so the spores pour out for ever (each cloud only
+-- goes as far as where the one above it began; studs at the first map's size). It also gets all of POUNCE on top of the
+-- rest: every 4 seconds it rears back, front legs up and side jaws (MandL, MandR) spread wide, then lunges, neck down,
+-- jaw flung open, arms raking and side jaws slamming shut, and slowly draws back; the rest of the time its side jaws
+-- gnash. Each takes seconds and returns pitch, roll and yaw. The same as VENT_GAP, VENT_PERIOD and pounce_of in
+-- assets/models/build_spore_hollow_monsters.py, whose preview moves them alike.
+local VENT = { gap = 0.6, period = 0.8 }
+
+-- 0, easing up to 1 over `rise` seconds from `start`, held for `hold`, easing back over `fall`; once every 4 seconds.
+local function pounceCurve(s: number, start: number, rise: number, hold: number, fall: number): number
+	local function ease(u: number): number
+		return u * u * (3 - 2 * u)
+	end
+	local t = (s - start) % 4
+	if t < rise then
+		return ease(t / rise)
+	end
+	t -= rise
+	if t < hold then
+		return 1
+	end
+	t -= hold
+	if t < fall then
+		return 1 - ease(t / fall)
+	end
+	return 0
+end
+
+local function rearing(s: number): number -- rearing back, before the lunge
+	return pounceCurve(s, 0.15, 0.5, 0.15, 0.12)
+end
+
+local function lunging(s: number): number -- the lunge, and drawing slowly back
+	return pounceCurve(s, 0.8, 0.12, 0.22, 0.6)
+end
+
+local POUNCE = {}
+POUNCE.Spine = function(s: number)
+	return 0.06 * rearing(s) - 0.08 * lunging(s), 0, 0
+end
+POUNCE.Neck = function(s: number)
+	return 0.2 * rearing(s) - 0.4 * lunging(s), 0, 0
+end
+POUNCE.Head = function(s: number)
+	return 0.14 * rearing(s) + 0.2 * lunging(s), 0, 0
+end
+POUNCE.Jaw = function(s: number)
+	return -0.12 * rearing(s) - 0.7 * lunging(s), 0, 0
+end
+POUNCE.Tail1 = function(s: number)
+	return 0.14 * rearing(s) - 0.06 * lunging(s), 0, 0
+end
+for letter, side in { L = 1, R = -1 } do
+	POUNCE["Mand" .. letter] = function(s: number)
+		return 0, 0, side * ((0.1 + 0.08 * sin(8 * QUARTER * s)) * (1 - lunging(s)) + 0.5 * rearing(s))
+	end
+	POUNCE["Arm" .. letter] = function(s: number)
+		return -0.3 * rearing(s) + 0.9 * lunging(s), 0, 0
+	end
+	POUNCE["Front" .. letter] = function(s: number)
+		return 0.3 * rearing(s) - 0.06 * lunging(s), 0, 0
+	end
+	POUNCE["Wing" .. letter] = function(s: number)
+		return 0, side * 0.35 * rearing(s), 0
+	end
+end
+
 local function zero()
 	return 0, 0, 0, 0, 0
 end
@@ -340,11 +516,15 @@ local function add(model: Model)
 	local roars = false
 	local swims = false
 	local thrashes = false
+	local rages = false
+	local vents = false
 	for _, bone in model:GetDescendants() do
 		if bone:IsA("Bone") then
 			roars = roars or bone.Name == "Jaw"
 			swims = swims or bone.Name == "Swim"
 			thrashes = thrashes or string.sub(bone.Name, 1, 4) == "Lash"
+			rages = rages or DRIP[bone.Name] ~= nil
+			vents = vents or string.sub(bone.Name, 1, 4) == "Vent"
 		end
 	end
 	-- Which way the model faces from its pivot. Most imported models face the pivot's +Z (the importer turns them
@@ -374,6 +554,10 @@ local function add(model: Model)
 				spin = SPIN[bone.Name],
 				angle = math.random() * TAU, -- so a plot's keys don't all turn in step
 				thrash = if thrashes then THRASH[bone.Name] else nil,
+				rage = if rages then RAGE[bone.Name] else nil,
+				drip = DRIP[bone.Name],
+				pounce = if vents then POUNCE[bone.Name] else nil,
+				vent = string.sub(bone.Name, 1, 4) == "Vent",
 			})
 			if bone.Name == "LegL" or bone.Name == "FrontL" then
 				legHeight = bone.WorldPosition.Y - pivot.Y
@@ -383,6 +567,7 @@ local function add(model: Model)
 	-- Fast enough that the feet don't look like they slide: a stride covers about this much ground.
 	local isBiped = model:FindFirstChild("LegL", true) ~= nil
 	local strideLength = (legHeight or 1.5 * scale) * (if isBiped then 1.74 else 1.26)
+	local strideSeconds = if rages then DinoLife.rageStrideSeconds else DinoLife.strideSeconds
 	dinos[model] = {
 		model = model,
 		bones = bones,
@@ -391,8 +576,8 @@ local function add(model: Model)
 		position = pivot.Position,
 		facing = pivot:VectorToWorldSpace(ahead), -- where its head points
 		turned = turned,
-		speed = if swims then DinoLife.swim.speed * scale else strideLength / DinoLife.strideSeconds,
-		strideSeconds = if swims then DinoLife.swim.strideSeconds else DinoLife.strideSeconds,
+		speed = if swims then DinoLife.swim.speed * scale else strideLength / strideSeconds,
+		strideSeconds = if swims then DinoLife.swim.strideSeconds else strideSeconds,
 		target = nil,
 		idleLeft = if stays then math.huge else math.random() * DinoLife.idleSeconds, -- so a plot's dinos don't all set off together
 		blend = 0,
@@ -491,6 +676,29 @@ local function pose(state, dt: number)
 			transform *= CFrame.fromAxisAngle(entry.pitch, tx)
 				* CFrame.fromAxisAngle(entry.roll, ty)
 				* CFrame.fromAxisAngle(entry.yaw, tz)
+		end
+		local rage = entry.rage
+		if rage then
+			local rx, ry, rz, rrise, rsurge = rage(s)
+			transform = CFrame.new((entry.yaw * rrise + entry.roll * rsurge) * state.scale)
+				* transform
+				* CFrame.fromAxisAngle(entry.pitch, rx)
+				* CFrame.fromAxisAngle(entry.roll, ry)
+				* CFrame.fromAxisAngle(entry.yaw, rz)
+		end
+		local drip = entry.drip
+		if drip then
+			transform = CFrame.new(entry.yaw * (-drip.gap * ((s / drip.period) % 1) * state.scale)) * transform
+		end
+		local pounce = entry.pounce
+		if pounce then
+			local px, py, pz = pounce(s)
+			transform *= CFrame.fromAxisAngle(entry.pitch, px)
+				* CFrame.fromAxisAngle(entry.roll, py)
+				* CFrame.fromAxisAngle(entry.yaw, pz)
+		end
+		if entry.vent then
+			transform = CFrame.new(entry.yaw * (VENT.gap * ((s / VENT.period) % 1) * state.scale)) * transform
 		end
 		entry.bone.Transform = transform
 	end

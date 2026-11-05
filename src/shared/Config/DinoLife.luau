@@ -5,6 +5,7 @@ return {
 	idleSeconds = 10,
 	idleJitter = 2, -- idle lasts idleSeconds plus or minus this, so dinos don't move in step
 	strideSeconds = 1, -- one full walk cycle
+	rageStrideSeconds = 2 / 3, -- the Weeping Dark's monsters charge: a third faster (DinoLifeController RAGE). Keep 4 a whole number of these
 	-- Monsters with a Swim bone (The Abyss) swim instead: one tail beat takes strideSeconds, and they cruise at
 	-- speed studs a second at the first map's size.
 	swim = { strideSeconds = 1.2, speed = 2.2 },

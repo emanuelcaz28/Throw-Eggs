@@ -104,6 +104,16 @@ local Map = {
 			Dirt = Color3.fromRGB(52, 38, 48), -- black-violet thorn bark walls
 			Grass = Color3.fromRGB(124, 140, 116), -- silvery moss on the rims, hanging over the walls
 		},
+		SporeHollow = {
+			Floor = Color3.fromRGB(82, 60, 52), -- dark umber loam, so the chartreuse glow and the rust caps stand out on it
+			Dirt = Color3.fromRGB(60, 44, 40), -- peat walls
+			Grass = Color3.fromRGB(204, 196, 172), -- pale mycelium felt on the rims, hanging over the walls
+		},
+		WeepingDark = {
+			Floor = Color3.fromRGB(38, 38, 42), -- ash-black, but not so black that a pool of candlelight can't show on it
+			Dirt = Color3.fromRGB(24, 24, 28), -- black walls: the darkest in the game
+			Grass = Color3.fromRGB(74, 74, 80), -- grey ash on the rims, hanging over the walls. No colour anywhere
+		},
 	},
 
 	-- The arena, built from plain parts with the same see-through checker and studs as the kit.

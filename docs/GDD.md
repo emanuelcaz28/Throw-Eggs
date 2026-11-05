@@ -56,6 +56,8 @@ Loop: train → farther throws → more luck → rarer dinos → more cash → b
 | 11 | Midnight Carnival | 25M (world built; monsters later) |
 | 12 | Clockwork Citadel | 100M (world and monsters in the game) |
 | 13 | Thorn Kingdom | 500M (world and monsters in the game) |
+| 14 | Spore Hollow | 2.5B (world in the game; monsters later) |
+| 15 | The Weeping Dark | 10B (world in the game; monsters later) |
 
 MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Peaks (5) is built too, map and monsters, and so is Shadow Bog (6); The Abyss (7) and Starfall Crater (8) have their maps, their monsters come later (Starfall Crater's are in the game: `build_starfall_crater_monsters.py`, imported into `Assets.Dinos`, listed in `Config/Dinos`).
 

@@ -528,7 +528,8 @@ Each map's standard size is about 1.05x the previous map's, reaching 2x at map 1
 | 11 | Midnight Carnival | 1.64x | Not made yet (its world is built) |
 | 12 | Clockwork Citadel | 1.72x | Wind-Up Wally, Sprocket, Kettle Belly, Gearjaw, Drillhorn, Chrono Rex |
 | 13 | Thorn Kingdom | 1.81x | Bramble Brat, Grandma Gnash, Sir Skewer, Hart Attack, Hydrangry, Wrathorn |
-| 14 to 15 | Not chosen yet | 1.9x to 2x | Mysterious, dark maps |
+| 14 | Spore Hollow | 1.9x | Not made yet (only the world so far) |
+| 15 | The Weeping Dark | 2x | Teddy Wrecks, Good Boy, Casket Case, Wailing Widow, Death Knell, Endless Grief |
 
 ### The style as you advance
 **[Owner]** Keep the same chunky stud style, but as the maps go on, add absurd, funny models and names alongside
@@ -635,6 +636,37 @@ should feel huge.
   Luck x100, and the rarest goes from 1 in 725 to 1 in 527. Every catch gets visibly better, and the rarest stay rare.
 - **[Built] Lucky throws** (`Config/Shop` `luckyThrows`, `Config/LuckyOutcomes`, `LuckyThrows`). **[Owner, 2026-11-04]**
   A luck boost is for **one throw only**, and the shop sells several sizes: **x100** and **x500**. They're kept until
+- **[Owner] Map 15, The Weeping Dark (2026-11-05):** monsters that suit the map, "very aggressive, the most aggressive
+  out of all the animals we did", built in Blender and animated nicely. **[Built]** `build_weeping_dark_monsters.py`:
+  everybody here walked into the dark to look for the sun, and these are what came back, grief gone bad, each one
+  something from the map turned to rage. No silly ones at all, the commons included: the jokes are only in the names. They
+  keep the map's rule, no colour, red only ever for eyes, with a lot of pale in them, which also keeps them readable in the
+  map's very dark light. They share the **weeping glare** (burning eyes in black sockets under brows slanting hard to the
+  nose, crying as they rage, the tears really falling) and the **throat eye** (at the back of every mouth, another red eye
+  looks out): Teddy Wrecks (the Lost Bear, its whole face torn open into a mouth of nails, a button dangling by a thread,
+  stuffing bursting from its belly), Good Boy (the dog that waited too long: a gaunt hound, ribs showing, hackles up, its
+  collar still on and the chain it snapped lashing behind it), Casket Case (a coffin for a head, lid and box a snapping
+  jaw of nails, galloping on four long pale arms, two more reaching ahead, its shroud streaming), Wailing Widow (tall,
+  black and veiled, a bone mask, a jaw hanging to its chest in one long scream, veil strips lashing, pale arms as long as
+  it is tall), Death Knell (a hulking brute on its knuckles with a great black bell for a head: the bell is the mouth, its
+  rim a ring of teeth, and the clapper is a tongue on a chain with a red eye on the end) and Endless Grief, the boss and
+  what's behind the Last Door: the door's eye in a colossal hood, a mouth too wide for anything, huge pale hands clawing
+  at its own face, the door's shackles on its wrists, and the arms of everyone it took thrashing out of its back. **They
+  don't just thrash, they attack (`RAGE` in `DinoLifeController`, the same as `rage_of` in the script, compared number
+  by number):** every 4 seconds they load up and lunge, the body heaving back and slamming forward, the head driving in,
+  the jaw dropping and biting shut, the tail cracking; arms claw one after the other; they snap at the air between
+  lunges; and they pant and shake all the time. They charge, a stride taking 2/3 of a second (`Config/DinoLife`
+  `rageStrideSeconds`), and their tears fall for ever on `Drip` bones (`DRIP`). Endless Grief's hands pull away from its
+  face in the roar and the lunge (`Palm` bones). No gore: nothing bleeds, and stuffing and bones are all the insides
+  you see. Plain colours in Blender. Renders, `weeping_dark_animation_preview.mp4` and close-ups of each one attacking
+  (`weeping_dark_attacks.mp4`) in `design/world/monsters_weeping_dark/`, FBX in `fbx/15_WeepingDark/Animals/`, imported into `Assets.Dinos` (2026-11-05). Tested
+  in play at their real size: all six lunge, cry and walk head first at the charge. In the dark most of them are only eyes and
+  tears, so **a reveal lifts this world's light** (`Config/Lighting` `reveal`, applied by `SkyController` while the reveal's
+  `WorldFocusZ` is set), which works for a monster of any size. A real catch hasn't been seen yet. **Not in `Config/Dinos`
+  yet:** they go in only after map 14 has monsters, as eggs land up to the last world with monsters, so a monster-less map 14
+  would be a world eggs could land in with nothing to catch. Their line then: chances 2, 4, 12, 60, 400, 3000; income 1e28,
+  3e28, 1e29, 4e29, 2e30, 5e30 (100x map 14's, which is 100x Thorn Kingdom's).
+
   used (several can be owned), and the next throw uses the biggest one owned, when the egg lands. The panel at the top
   right shows "NEXT THROW x100" and how many are owned.
   **[Owner] The x number is for show:** it multiplies the luck number during the flight, not the roll. What each one
@@ -707,7 +739,8 @@ maps; the owner can rename it (only `name` in `Config/Biomes` changes).
 | 11 | Midnight Carnival | 25M |
 | 12 | Clockwork Citadel | 100M |
 | 13 | Thorn Kingdom | 500M |
-| 14 to 15 | Not built yet | 2.5B, 10B |
+| 14 | Spore Hollow | 2.5B |
+| 15 | The Weeping Dark | 10B |
 
 **[Seen]** Far worlds change colour and props completely: sand with cactus and skulls, dark rock with lava and
 black spires, neon purple with crystals. The reference's thumbnail shows worlds stepping **down** one after another (see section 15).
@@ -716,6 +749,7 @@ black spires, neon purple with crystals. The reference's thumbnail shows worlds 
 exactly. Worlds pass in under a second each at high power, so they're read from a distance:
 big shapes and strong colours matter more than detail. The sky, fog and light change per world too, from bright blue
 to dark green. Props are themed and include things overhead, such as power lines and bridges across the valley.
+**[Built]** Map 14 is **Spore Hollow** (`SporeHollow`), our name too; the owner can rename it.
 
 The reference's worlds, in order, for scale only (ours keep their own names): Forest, Savanna, Desert, Jungle, Ocean,
 Mountains, Taiga, Winter, Deep Waters, Ancient Ruins, Mythical Paradise, Shadow Realm, Harvest Fields, Phantom Harbor,
@@ -1012,6 +1046,75 @@ The walking reveal and the flight camera are a separate job, after the world. Th
 - **Bottom left:** ⚡ Throw Power in big blue outlined numbers, and cash in big green outlined numbers.
 - **Bottom:** 10-slot hotbar with each dino's $/s and key number.
 - **Panels:** Index, Robux Shop, My Dinos (ON PLOT / BACKPACK tabs), Egg Shop (opens only from its stall), Welcome Back.
+   - **Spore Hollow** *(map 14's world made 2026-11-05, in Blender; imported into `Assets.Maps.SporeHollow.Props` and play-tested the same day: 524 props placed; monsters later)*:
+     **[Owner]** map 14, made in Blender like the maps before it, nice, with animated objects, no animals yet; maps 12 to
+     15 mysterious and dark. **[Built]** A hollow at the bottom of the world where no sun ever reached, so the fungus grew
+     as big as castles instead. It makes its own light: chartreuse from under every cap, spores sifting down from the
+     gills and puffing up out of puffballs, moths circling the brightest caps, and a few windows lit warm amber where
+     somebody small moved into a mushroom. A floor of dark umber loam, peat walls, pale cream mycelium on the rims hanging
+     over the walls like felt (`Config/Map`), and night under a hazy olive-gold spore mist (`Config/Lighting`, ClockTime
+     2). Its chartreuse glow is a first; lilac wavecap bells are its one cool light. 18 props in `build_spore_hollow.py`,
+     all with moving parts: glowcaps (the signature), a giant rust-red mushroom on a ringed stalk, glowing specks on its
+     cap, its gills glowing and spores sifting down from them for ever; puffball clusters puffing spore clouds with
+     glowing spores in them; lamp mushrooms, a stalk curling over like a lamp post with a glowing bulb swinging from its
+     tip and moths round it; wavecaps, three tall stalks with lilac bells each swaying its own way; rotten stumps stepped
+     with glowing shelf fungi; orange coral fungus with glowing tips; now and then a mushroom hut (a door, lit windows, a
+     chimney smoking, a lantern swinging, its roof a chocolate cap freckled with glowing specks) or the mycelium heart, a
+     ribbed aubergine bulb beating in the ground with glowing veins running out from it; spore tufts as filler; on the
+     rims parasol mushrooms with glowing gills, spores falling and moths circling, and morel spires glowing amber through
+     their honeycomb with spores rising off their tips; landmarks: elder shrooms (a colossal mushroom with a door, lit
+     windows and a stair of shelf fungi winding up its stalk), shroom towers (three caps stacked into a house, lanterns
+     swinging under the two lower ones, smoke at the top) and spore geysers (a crater blowing a column of spore clouds
+     into the mist); giant spores drift across the sky beyond the island trailing threads of glowing beads (drift);
+     mycelium cords twist down the walls with shelf fungi dripping glowing drops into a pool (`walls`); two giant
+     mushrooms lean in from both rims until their caps almost touch over the middle, glowing bulbs swinging under them
+     (`overhead`); and glowing mycelium webs lie flat across the floor. Plain colours in Blender (no stud image). Renders
+     and two videos (`spore_motion.mp4`, `spore_flight.mp4`) in `design/world/models_spore_hollow/`, FBX in
+     `fbx/14_SporeHollow/Props/`. World 14 (13,000 to 14,700 studs, 2.5B luck, 1.9x size); `Config/Biomes`, `Map`,
+     `Lighting`, `Decor`, `PropMotion`, `Roles` and the Index card colours are in. Eggs can't land in it until it has
+     monsters.
+   - **The Weeping Dark** *(map 15's world made 2026-11-05, in Blender; imported into `Assets.Maps.WeepingDark.Props` and play-tested the same day: 447 props placed, 210 real lights; its monsters built and imported the same day, not catchable yet)*:
+     **[Owner]** the 15th map, made in Blender with animated objects, "special", "very dark and sad", "the darkest and
+     scariest map", nothing from any earlier map's idea, and only the map, not the monsters. Theme and name are ours.
+     **[Built]** The end of the corridor. There was a town here and a sun; the sun went out, everybody walked into the
+     dark to look for it, and nobody came back. What they left behind is still waiting. **It's the only map with no
+     colour:** black, ash and bone, lit by pale tear-light and candles (`Config/Map`: ash-black floor, black walls, grey
+     ash on the rims; `Config/Lighting`: ClockTime 1, the least light of any world, a dim neutral grey sky with no stars). **The one
+     colour left is red, and red is only ever eyes:** wherever you see red, something is looking at you. 24 props in
+     `build_weeping_dark.py`, all with moving parts: mourners (the signature), hooded stone figures kneeling with their
+     hands over their faces, shoulders heaving, tears running through their fingers, one red eye opening between them as
+     they sob; black willows dripping tears; empty swings, one still swinging high, a small pair of shoes under it;
+     rocking chairs rocking by themselves beside a candle; the last wall of a house, a candle in its window, its door
+     swinging; plots of plain headstones with souls rising; coffins whose lids lift by themselves, pale fingers round the
+     edge and red eyes in the gap; pale hands sliding up out of the ash; dying street lamps with moths; hooded bearers
+     with no feet, holding out a lantern; now and then a lost teddy bear on its suitcase, its head turning after you, an
+     empty socket glowing; ash reeds and candle stubs as filler; tear pools lying flat across the middle, a drowned face
+     under each looking up at the flight, the right way up from it; on the rims claw trees and hollow houses where a
+     shape rises in the lit window and sinks away; landmarks: the last lighthouse, its beam still sweeping (see-through,
+     `Roles.sheer`), the tolling bell tower, and colossal wailing heads whose stone eyelids lift on red eyes; a funeral
+     procession gliding along the top of the wall; heads pushing out of the walls, crying long lines of light, hands
+     pressed against the stone beside them (`walls`); and a Long Arm reaching from one rim right over the corridor to
+     grip the other (`overhead`). **The Watchers** fill the sky: colossal hooded shapes standing in the void beyond the
+     island, high elbows, long pale fingers resting on its edge, heads turning slowly after you, weeping, two red eyes
+     opening and closing. They're the size of the world and only just lighter than the fog. **The Last Door** ends the
+     corridor, and the game: where every map has only ever had a wall, a colossal black door from the floor to high above
+     the rims, chained, two great mourners carved in it crying down its face, and it isn't quite shut. Long fingers
+     hold its edge from the other side, an eye moves in the gap, and a sea of candles fills the floor before it. If a
+     map is ever added after this one, the door moves to the new end. **[Built, new]** This map is too dark for Neon
+     alone, which lights nothing round it, so its candles and lamps cast real light (`Config/Decor` `propLights`, a
+     PointLight added by `MapDecor`, flickering with the part's pulse in `PropMotionController`). Sparser than any other
+     map on purpose: the emptiness is the point. No pentagrams, hexagrams or crosses: headstones are plain and
+     round-topped, windows have upright bars only. Nothing shows how anyone died: the sadness is who's missing, the fear
+     is what's watching. Plain colours in Blender (no stud image). Renders and two videos (`weeping_motion.mp4`,
+     `weeping_flight.mp4`) in `design/world/models_weeping_dark/`, with the end of the world and a Watcher over the wall.
+     FBX in `fbx/15_WeepingDark/Props/`. World 15 (14,700 to 16,500 studs, 10B luck, 2x size); `Config/Biomes`, `Map`,
+     `Lighting`, `Decor`, `PropMotion`, `Roles` and the Index card colours are in. Until it has monsters eggs can't land in it.
+     Tuned in play (2026-11-05): the Watchers went from size 2 to 3 (266 out, fingers still on the island's edge) as they
+     looked small from the corridor; the real lights were halved, as they washed the stone out; and the sky was black with
+     stars, hiding the Watchers, so the atmosphere is now high Haze, low Density and a warm Color that comes out grey (see
+     `Config/Lighting`). In play, 21 of the 23 prop kinds in range moved (candle stubs and tear pools only glow) and all
+     151 lights in range flickered. Shots from the game: `ingame_*.jpg`. Not seen yet: a real throw through it, and how a
+     phone draws it. Its monsters must stay readable in the reveal, which keeps this world's light.
 - Everything shrinks to fit short screens.
 
 **[Seen]** The reference's gear icon sits next to Throw Power, and spending shows a red "-$X" floating up from cash.

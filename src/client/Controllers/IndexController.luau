@@ -40,6 +40,8 @@ local CARD_COLOURS = {
 	MidnightCarnival = { "#ffd36b", "#b3263a" },
 	ClockworkCitadel = { "#f0b85a", "#343844" },
 	ThornKingdom = { "#ff6b88", "#344e3c" },
+	SporeHollow = { "#c4ff48", "#523c34" },
+	WeepingDark = { "#d8e4f4", "#26262a" },
 }
 
 -- Text that shrinks to fit its box but never grows past its own size.
