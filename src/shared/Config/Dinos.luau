@@ -103,4 +103,14 @@ return {
 		{ id = "Hydrangry",    name = "Hydrangry",     chance = 400,  income = 2e26 },
 		{ id = "Wrathorn",     name = "Wrathorn",      chance = 3000, income = 5e26 },
 	},
+	-- Models from assets/models/build_spore_hollow_monsters.py (spores rise from Vent bones and they pounce:
+	-- DinoLifeController VENT and POUNCE, on top of THRASH).
+	SporeHollow = {
+		{ id = "ToadRage",      name = "Toad Rage",     chance = 2,    income = 1e26 },
+		{ id = "MorelPanic",    name = "Morel Panic",   chance = 4,    income = 3e26 },
+		{ id = "Antagonist",    name = "Antagonist",    chance = 12,   income = 1e27 },
+		{ id = "Sporantula",    name = "Sporantula",    chance = 60,   income = 4e27 },
+		{ id = "Gillotine",     name = "Gillotine",     chance = 400,  income = 2e28 },
+		{ id = "Shroomageddon", name = "Shroomageddon", chance = 3000, income = 5e28 },
+	},
 }

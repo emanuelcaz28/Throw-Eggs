@@ -254,6 +254,8 @@ bigger: build them bigger, or `grow(m, 1.3)` at the end. Commons are about 3 to 
 | `Snap<n>` | a spare head's jaw, on the end of a lash: chatters for ever. It opens round the monster's sideways axis, so keep spare heads looking mostly forwards |
 | `Drip`, `DripB` | tears falling for ever: `weeping(m, spots, ground)` in `build_weeping_dark_monsters.py`, spaced 0.6 or 1.6 apart. A monster with either bone also **rages**: it lunges, bites, claws and charges (`DinoLifeController` `RAGE`, `rage_of` in the script). For the most aggressive maps. Built before a `grow(m, k)`, pass `grown=k` so the gap comes out right |
 | `PalmL`, `PalmR` | hands held to the face that pull away in the roar and the lunge (Endless Grief): turn on the upright, pivot behind the wrist |
+| `Vent<n>` | spore clouds rising for ever out of a vent: `vent(m, n, base, parent, ...)` in `build_spore_hollow_monsters.py`, made by its `finish(m, k)` after the grow so the clouds stay 0.6 apart. A monster with these also **pounces** every 4 seconds: rears back, then lunges, jaw flung open, arms raking (`DinoLifeController` `POUNCE` and `VENT`, `pounce_of` in the script). A step below `RAGE` |
+| `MandL`, `MandR` | side jaws (mandibles, pincers, a mouth that opens four ways): `gill_maw(..., mandibles=dict(...))` in `build_spore_hollow_monsters.py`. They gnash, spread when the monster rears and fling open in the roar, turning on the upright |
 
 **Spare eyes** use the role `Slit` for their pupils, not `Pupil`: the reveal aims at the middle of the `Pupil` parts, so an eye on a stalk would drag it away from the face. **Jaw** must sit in front of `Tail1` (or the `Spine` if there's no tail): that's how the game reads which way a monster faces.
 

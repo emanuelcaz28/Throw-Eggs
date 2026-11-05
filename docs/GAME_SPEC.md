@@ -528,7 +528,7 @@ Each map's standard size is about 1.05x the previous map's, reaching 2x at map 1
 | 11 | Midnight Carnival | 1.64x | Not made yet (its world is built) |
 | 12 | Clockwork Citadel | 1.72x | Wind-Up Wally, Sprocket, Kettle Belly, Gearjaw, Drillhorn, Chrono Rex |
 | 13 | Thorn Kingdom | 1.81x | Bramble Brat, Grandma Gnash, Sir Skewer, Hart Attack, Hydrangry, Wrathorn |
-| 14 | Spore Hollow | 1.9x | Not made yet (only the world so far) |
+| 14 | Spore Hollow | 1.9x | Toad Rage, Morel Panic, Antagonist, Sporantula, Gillotine, Shroomageddon |
 | 15 | The Weeping Dark | 2x | Teddy Wrecks, Good Boy, Casket Case, Wailing Widow, Death Knell, Endless Grief |
 
 ### The style as you advance
@@ -636,6 +636,35 @@ should feel huge.
   Luck x100, and the rarest goes from 1 in 725 to 1 in 527. Every catch gets visibly better, and the rarest stay rare.
 - **[Built] Lucky throws** (`Config/Shop` `luckyThrows`, `Config/LuckyOutcomes`, `LuckyThrows`). **[Owner, 2026-11-04]**
   A luck boost is for **one throw only**, and the shop sells several sizes: **x100** and **x500**. They're kept until
+- **[Owner] Map 14, Spore Hollow (2026-11-05):** monsters that suit the map, "very aggressive and nice, more aggressive
+  than the 13th map", built in Blender and animated nicely. **[Built]** `build_spore_hollow_monsters.py`: down here the
+  fungus is the predator, grown through everything that lives in the hollow and made it worse. All six are hostile, the
+  commons too (the jokes are in the names and one thing each). They share the **infected eye** (a glowing chartreuse
+  iris with a black bar of a pupil, a goat's or a toad's, and glowing threads of mycelium creeping in over the white; on
+  the fierce ones no white at all, a glowing orb in a black socket, the threads spreading out over the face under a brow
+  sprouting little mushrooms) and the **gill maw** (the roof of the mouth is a mushroom's underside, gills glowing back
+  to a glowing throat, crooked teeth, glowing threads stretched between the jaws): Toad Rage (a furious toad with a
+  toadstool for a hat, brows slammed down, a mouth as wide as it is, a whipping tongue, warts torn open puffing spores),
+  Morel Panic (a gaunt ghoul whose head is a glowing morel with an eye in a dozen of its pits, each rolling its own way,
+  two rows of teeth, claws dragging), Antagonist (a giant ant the fungus got to: shear mandibles, glowing orb eyes,
+  pale stalks with glowing clubs bursting from its head and back), Sporantula (a spider whose back is a mushroom cap,
+  eight glossy black eyes glowing in the middle, fangs that never stop chattering, a puffball abdomen pouring spores),
+  Gillotine (a mantis under a chocolate cap, serrated blades held up, side jaws, wings stood up in a threat display
+  with a glowing eye on each and lilac light in their veins) and Shroomageddon, the boss (a titan on its knuckles that
+  is more fungus than beast: a forest of glowing mushrooms round a spore geyser on its back, the mycelium heart glowing
+  in its open chest behind ribs of bone, mycelium whips, a cap pulled down like a hood with a crown of glowing morels,
+  five eyes and a mouth that opens four ways). **On top of map 13's thrashing (`Lash`, `Snap`) they pounce and pour
+  spores (`POUNCE` and `VENT` in `DinoLifeController`, the same as `pounce_of` and `vent_rise` in the script, compared
+  number by number):** every 4 seconds they rear back, front legs up and side jaws spread, then lunge, neck down, jaw
+  flung open, arms raking and side jaws slamming shut; the side jaws (`MandL`, `MandR`) gnash the rest of the time and
+  fling open in the roar; and spore clouds rise for ever out of vents in their hides (`Vent` bones). A step below map
+  15's rage on purpose: no charge, and the body doesn't surge. Plain colours in Blender. Renders,
+  `spore_hollow_animation_preview.mp4` and close-ups of each one pouncing (`spore_hollow_pounce_preview.mp4`) in
+  `design/world/monsters_spore_hollow/`, FBX in `fbx/14_SporeHollow/Animals/`; imported into `Assets.Dinos` and in
+  `Config/Dinos` (2026-11-05): chances 2, 4, 12, 60, 400, 3000; income 1e26, 3e26, 1e27, 4e27, 2e28, 5e28 (100x
+  Thorn Kingdom's), so throws reach 14,700. In play at their real size every whip, fang, jaw, side jaw, arm, wing and
+  vent was measured moving, the spores rising 1.14 studs a cycle (0.6 x 1.9). That also lets map 15's go in.
+
 - **[Owner] Map 15, The Weeping Dark (2026-11-05):** monsters that suit the map, "very aggressive, the most aggressive
   out of all the animals we did", built in Blender and animated nicely. **[Built]** `build_weeping_dark_monsters.py`:
   everybody here walked into the dark to look for the sun, and these are what came back, grief gone bad, each one
@@ -1046,7 +1075,7 @@ The walking reveal and the flight camera are a separate job, after the world. Th
 - **Bottom left:** ⚡ Throw Power in big blue outlined numbers, and cash in big green outlined numbers.
 - **Bottom:** 10-slot hotbar with each dino's $/s and key number.
 - **Panels:** Index, Robux Shop, My Dinos (ON PLOT / BACKPACK tabs), Egg Shop (opens only from its stall), Welcome Back.
-   - **Spore Hollow** *(map 14's world made 2026-11-05, in Blender; imported into `Assets.Maps.SporeHollow.Props` and play-tested the same day: 524 props placed; monsters later)*:
+   - **Spore Hollow** *(map 14's world made 2026-11-05, in Blender; imported into `Assets.Maps.SporeHollow.Props` and play-tested the same day: 524 props placed; its monsters built, imported and play-tested the same day)*:
      **[Owner]** map 14, made in Blender like the maps before it, nice, with animated objects, no animals yet; maps 12 to
      15 mysterious and dark. **[Built]** A hollow at the bottom of the world where no sun ever reached, so the fungus grew
      as big as castles instead. It makes its own light: chartreuse from under every cap, spores sifting down from the
@@ -1071,8 +1100,9 @@ The walking reveal and the flight camera are a separate job, after the world. Th
      (`overhead`); and glowing mycelium webs lie flat across the floor. Plain colours in Blender (no stud image). Renders
      and two videos (`spore_motion.mp4`, `spore_flight.mp4`) in `design/world/models_spore_hollow/`, FBX in
      `fbx/14_SporeHollow/Props/`. World 14 (13,000 to 14,700 studs, 2.5B luck, 1.9x size); `Config/Biomes`, `Map`,
-     `Lighting`, `Decor`, `PropMotion`, `Roles` and the Index card colours are in. Eggs can't land in it until it has
-     monsters.
+     `Lighting`, `Decor`, `PropMotion`, `Roles` and the Index card colours are in. Its 6 monsters (section 8a) are made
+     (2026-11-05, `build_spore_hollow_monsters.py`, FBX in `fbx/14_SporeHollow/Animals/`), imported and in `Config/Dinos`,
+     so throws reach it (14,700).
    - **The Weeping Dark** *(map 15's world made 2026-11-05, in Blender; imported into `Assets.Maps.WeepingDark.Props` and play-tested the same day: 447 props placed, 210 real lights; its monsters built and imported the same day, not catchable yet)*:
      **[Owner]** the 15th map, made in Blender with animated objects, "special", "very dark and sad", "the darkest and
      scariest map", nothing from any earlier map's idea, and only the map, not the monsters. Theme and name are ours.
