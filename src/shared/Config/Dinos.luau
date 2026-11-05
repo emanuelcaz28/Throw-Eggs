@@ -93,4 +93,14 @@ return {
 		{ id = "Drillhorn",   name = "Drillhorn",     chance = 400,  income = 2e24 },
 		{ id = "ChronoRex",   name = "Chrono Rex",    chance = 3000, income = 5e24 },
 	},
+	-- Models from assets/models/build_thorn_kingdom_monsters.py (their briar whips thrash on Lash bones:
+	-- DinoLifeController THRASH).
+	ThornKingdom = {
+		{ id = "BrambleBrat",  name = "Bramble Brat",  chance = 2,    income = 1e24 },
+		{ id = "GrandmaGnash", name = "Grandma Gnash", chance = 4,    income = 3e24 },
+		{ id = "SirSkewer",    name = "Sir Skewer",    chance = 12,   income = 1e25 },
+		{ id = "HartAttack",   name = "Hart Attack",   chance = 60,   income = 4e25 },
+		{ id = "Hydrangry",    name = "Hydrangry",     chance = 400,  income = 2e26 },
+		{ id = "Wrathorn",     name = "Wrathorn",      chance = 3000, income = 5e26 },
+	},
 }

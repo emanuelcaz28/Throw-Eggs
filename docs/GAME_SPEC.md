@@ -527,7 +527,7 @@ Each map's standard size is about 1.05x the previous map's, reaching 2x at map 1
 | 10 | Forbidden Library | 1.56x | Not made yet (its world is built) |
 | 11 | Midnight Carnival | 1.64x | Not made yet (its world is built) |
 | 12 | Clockwork Citadel | 1.72x | Wind-Up Wally, Sprocket, Kettle Belly, Gearjaw, Drillhorn, Chrono Rex |
-| 13 | Thorn Kingdom | 1.81x | Not made yet (its world is built) |
+| 13 | Thorn Kingdom | 1.81x | Bramble Brat, Grandma Gnash, Sir Skewer, Hart Attack, Hydrangry, Wrathorn |
 | 14 to 15 | Not chosen yet | 1.9x to 2x | Mysterious, dark maps |
 
 ### The style as you advance
@@ -588,6 +588,27 @@ good-looking, aggressive dinos.
   script's). Plain colours in Blender. Renders and `clockwork_citadel_animation_preview.mp4` in
   `design/world/monsters_clockwork_citadel/`, FBX in `fbx/12_ClockworkCitadel/Animals/`; imported into `Assets.Dinos`
   and in `Config/Dinos` (2026-11-05).
+
+- **[Owner] Map 13, Thorn Kingdom (2026-11-05):** monsters that fit the biome, animated, aggressive and chaotic looking,
+  built in Blender. **[Built]** `build_thorn_kingdom_monsters.py`: the kingdom slept for a thousand years and these are
+  the things that tore themselves awake, furious, the briars still growing through them. All six are hostile, the
+  common ones too, so the silliness lives in their names and one joke each. Nothing is mirror symmetric or stands
+  straight. They share the **sleepless eye** (wide open, a crimson iris and a pinprick slit, never the same size
+  twice; white and bloodshot on the feral ones, in a black socket under a slab of brow on the fierce ones) and the
+  **rose maw** (a jaw hanging open at rest, crooked teeth of every length, a rose glowing in the throat): Bramble Brat
+  (a ball of briars that is nearly all mouth, one huge eye, one tiny, a third on a stalk, a long whipping tongue),
+  Grandma Gnash (the wolf that ate her and kept the clothes: nightcap, shawl and bent spectacles), Sir Skewer (armour
+  with nobody in it but briars bursting from a hole in its chest round a glowing rose, a hound-snout visor, a giant
+  spindle for a lance and a spinning wheel ringed with thorns for a shield), Hart Attack (a stag with a bare skull for a
+  face, open ribs with a rose burning inside, vast crooked briar antlers with spare eyes, snapped arrows in its flank),
+  Hydrangry (a heap of violet roots and crimson blooms with five snapping heads on writhing necks) and Wrathorn, the
+  boss (the sleeping king turned dragon: wings of crimson blades, rose fire veining its hide, a rusted crown jammed on
+  crooked horns, five eyes, a mace of thorns on its tail, and in its chest a second mouth, a ring of teeth grinding
+  for ever round a burning rose). They thrash: briar whips on `Lash` bones never stop, and `DinoLifeController`'s
+  `THRASH` table adds head jerks, gnashing and shudders on top of the walk and idle, the same as the script's. The
+  wheel, the chest maw and the crown's ring of petals turn on the `SPIN` bones. Plain colours in Blender. Renders and
+  `thorn_kingdom_animation_preview.mp4` in `design/world/monsters_thorn_kingdom/`, FBX in
+  `fbx/13_ThornKingdom/Animals/`; imported into `Assets.Dinos` and in `Config/Dinos` (2026-11-05).
 
 ### How animal models are made
 - **Simple shapes:** chunky blocks and tapered blocks, no fine detail. The silhouette should read from far away.
@@ -940,7 +961,7 @@ Done one at a time, each in its own step:
      land in it until it has monsters. Its 6 monsters (section 8a) are made (2026-11-05,
      `build_clockwork_citadel_monsters.py`, FBX in `fbx/12_ClockworkCitadel/Animals/`), imported and in `Config/Dinos`
      (chances 2, 4, 12, 60, 400, 3000; income 100x Midnight Carnival's: 1e22 to 5e24), so throws reach it (11,400).
-   - **Thorn Kingdom** *(map 13's world made 2026-11-05, in Blender; imported into `Assets.Maps.ThornKingdom.Props` and play-tested the same day: 339 props placed, no console errors; monsters later)*:
+   - **Thorn Kingdom** *(map 13's world made 2026-11-05, in Blender; imported into `Assets.Maps.ThornKingdom.Props` and play-tested the same day: 339 props placed, no console errors; its monsters built, imported and play-tested the same day)*:
      **[Owner]** map 13, made in Blender like the maps before it, only the world for now; maps 13 to 15 mysterious and
      dark. **[Built]** A fairy-tale kingdom put to sleep by a curse a thousand years ago and swallowed by briars as big
      as trees; only the roses are still alive, glowing crimson in the dark, and the fireflies keep watch. A floor of
@@ -960,8 +981,10 @@ Done one at a time, each in its own step:
      glass lie flat across the floor. No five- or six-pointed stars or crosses (the rose windows are twelve petals).
      Plain colours in Blender (no stud image). Renders and two videos (`thorn_motion.mp4`, `thorn_flight.mp4`) in
      `design/world/models_thorn_kingdom/`. World 13 (11,400 to 13,000 studs, 500M luck, 1.81x size); `Config/Biomes`,
-     `Map`, `Lighting`, `Decor`, `PropMotion`, `Roles` and the Index card colours are in. Eggs can't land in it until
-     it has monsters.
+     `Map`, `Lighting`, `Decor`, `PropMotion`, `Roles` and the Index card colours are in. Its 6 monsters (section 8a)
+     are made (2026-11-05, `build_thorn_kingdom_monsters.py`, FBX in `fbx/13_ThornKingdom/Animals/`), imported and in
+     `Config/Dinos` (chances 2, 4, 12, 60, 400, 3000; income 100x Clockwork Citadel's: 1e24 to 5e26), so throws reach it
+     (13,000).
    - **Joining**: whether the floor steps down at each world (question 5 in section 15) is still open.
 
 The walking reveal and the flight camera are a separate job, after the world. The throw wind-up is built (section 7).

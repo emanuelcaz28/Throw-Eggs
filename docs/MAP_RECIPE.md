@@ -241,6 +241,10 @@ bigger: build them bigger, or `grow(m, 1.3)` at the end. Commons are about 3 to 
 | `Jaw` | `classic_mouth(...)`, called on the Head bone: it snaps as it walks and opens wide in the roar |
 | `Swim` | swimmers only (The Abyss): they hover and swim instead of walking |
 | `Key`, `Drill`, `Cog` | parts that turn for ever, whatever the monster does: round the upright, its forward axis, its sideways axis (`DinoLifeController` `SPIN`; `build_clockwork_citadel_monsters.py` has the preview). Build the part centred on its bone, along that axis |
+| `Lash<n>a`, `b`, `c` (n up to 8) | whips that never stop thrashing: `lash(m, n, points, ...)` in `build_thorn_kingdom_monsters.py`. A monster with these also twitches all over: head jerks, jaw gnashes, body shudders (`DinoLifeController` `THRASH`, `thrash_of` in the script). For aggressive, chaotic maps |
+| `Snap<n>` | a spare head's jaw, on the end of a lash: chatters for ever. It opens round the monster's sideways axis, so keep spare heads looking mostly forwards |
+
+**Spare eyes** use the role `Slit` for their pupils, not `Pupil`: the reveal aims at the middle of the `Pupil` parts, so an eye on a stalk would drag it away from the face. **Jaw** must sit in front of `Tail1` (or the `Spine` if there's no tail): that's how the game reads which way a monster faces.
 
 Blocks go on whichever bone `m.bone` names when they're added; `m.stretch(role, bone)` right after a neck or tail
 piece keeps its back end on the bone before it. Set `m.head_centre` (for the face renders).

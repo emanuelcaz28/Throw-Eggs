@@ -1,7 +1,7 @@
 # How the maps and monsters are built
 
-How the models and their animations were made for **map 12, Clockwork Citadel** (its world and its 6 monsters) and
-**map 13, Thorn Kingdom** (its world). It explains what was done and why. The step-by-step checklist for the next map
+How the models and their animations were made for **map 12, Clockwork Citadel** and **map 13, Thorn Kingdom** (each
+with its world and its 6 monsters). It explains what was done and why. The step-by-step checklist for the next map
 is `docs/MAP_RECIPE.md`; what the owner wants is `docs/GAME_SPEC.md`, which wins over both.
 
 ## 1. The idea in one paragraph
@@ -159,6 +159,51 @@ steady speed on top of whatever pose the monster is in:
   the Blender preview, because a key or gear turned half way round looks the same.
 - **Safe for older maps:** no earlier monster has bones with these names. I checked before adding them.
 
+### Map 13: the monsters that woke up
+
+The owner asked for Thorn Kingdom's monsters to be "aggressive and chaotic looking", so `build_thorn_kingdom_monsters.py`
+drops the silly-to-fierce rule of the earlier maps: all six are hostile, and the jokes live in the names and one silly
+thing each (Grandma Gnash's nightcap). The idea: the kingdom was cursed to sleep for a thousand years, and these are
+the things that tore themselves awake, furious, with the briars still growing through them.
+
+**How chaotic is built.** Nothing is mirror symmetric: eyes never match in size, shoulders and antlers differ, heads and
+torsos are built in a turned frame so they stand crooked. Thorns go on with a seeded random, so every thorn has its own
+length and lean but the model comes out the same each run. Two shared ideas tie the six together:
+- **The sleepless eye:** wide open, a crimson iris and a pinprick slit. White, bulging and bloodshot on the feral ones
+  (`wild_eye`), sunk in a black socket under a slab of brow on the fierce ones (`glare`).
+- **The rose maw:** `maw()` hangs the lower jaw open at rest (the earlier mouths close), with crooked teeth of every
+  length, a rose glowing in the throat and strands of sinew stretched between the jaws.
+
+**The snout hides the eyes.** The first renders had brows and no eyes: an eye on the head's front face sits behind the
+snout unless the mouth is built low on the head. So the mouth goes low and the eyes go above the snout's top.
+
+**Thorns cost triangles.** A monster has hundreds of thorns and teeth, and the first build came out at twice the
+triangles of any earlier monster. So spikes use `point` (a four-sided point, 6 triangles, where a beam tapering to
+nothing is 12) and petals and wing blades use `blade` (a flat diamond, 8 triangles against 24). They look the same.
+From the most common to the boss: 3,742, 3,548, 4,048, 5,560, 7,826 and 5,910 triangles; the heaviest earlier monster is
+about 4,300. `QUICK=1` prints each monster's triangles, bones and size.
+
+**New for map 13: thrashing.** A separate `THRASH` table in `DinoLifeController`, on top of the walk and idle like `SPIN`:
+
+| Bones | What they do |
+|---|---|
+| `Lash<n>a`, `b`, `c` | three bones down a whip: a fast wave running along it, swelling and dying down, with a crack every 4 seconds. Each bends further than the one before |
+| `Snap<n>` | the jaws of Hydrangry's spare heads, chattering for ever |
+| `Head` | sudden snaps round, and a tilt of the head |
+| `Jaw`, `Neck`, `Spine` | gnashing in bursts; a shudder that comes and goes |
+| `ArmL/R`, `Tail1`-`3` | twitches and lashes |
+
+- **Only monsters with a Lash bone get it,** so no older monster changes.
+- **Sums of sines at different speeds** never look like a loop, though all the speeds are whole multiples of a quarter
+  turn a second, so the pattern repeats every 4 seconds and the preview loops. The Blender walk is 4 strides for that reason.
+- **Each monster starts at a random point** of the pattern, so a plot's monsters don't thrash in step.
+- **Whips carry things:** Bramble Brat's tongue and eye stalk, the tassel of Grandma Gnash's cap, Sir Skewer's cape
+  (`flat=` makes a strip of cloth) and Hydrangry's four spare heads are all lashes.
+- **`SPIN` is reused:** `Cog` turns Sir Skewer's wheel, `Drill` Wrathorn's chest maw, `Key` the petals round its crown.
+- The game's numbers and the script's were compared by running both: they match.
+- In play, every whip, jaw, head and spinning bone of all six was measured moving. A test monster spawned far from the
+  player can sit still: with streaming on, its bones arrive after the game registers it. Spawn test monsters near the player.
+
 ## 7. How everything is checked
 
 - **Looking:** every prop and monster gets its own still, plus contact sheets (several stills in one picture), corridor
@@ -186,12 +231,12 @@ steady speed on top of whatever pose the monster is in:
 | What | Map 12, Clockwork Citadel | Map 13, Thorn Kingdom |
 |---|---|---|
 | World script | `assets/models/build_clockwork_citadel.py` | `assets/models/build_thorn_kingdom.py` |
-| Monster script | `assets/models/build_clockwork_citadel_monsters.py` | not made yet |
-| Blender files | `clockwork_citadel_models.blend`, `clockwork_citadel_monsters.blend` | `thorn_kingdom_models.blend` |
-| FBX files | `assets/models/fbx/12_ClockworkCitadel/Props`, `Animals` | `assets/models/fbx/13_ThornKingdom/Props` |
-| Renders and videos | `design/world/models_clockwork_citadel/`, `monsters_clockwork_citadel/` | `design/world/models_thorn_kingdom/` |
-| Game configs | `Config/Biomes`, `Map`, `Lighting`, `Decor`, `PropMotion`, `Dinos`; `shared/Roles.luau`; `IndexController` card colours | the same, without `Dinos` |
-| Monster motion | `DinoLifeController` `SPIN` | |
+| Monster script | `assets/models/build_clockwork_citadel_monsters.py` | `assets/models/build_thorn_kingdom_monsters.py` |
+| Blender files | `clockwork_citadel_models.blend`, `clockwork_citadel_monsters.blend` | `thorn_kingdom_models.blend`, `thorn_kingdom_monsters.blend` |
+| FBX files | `assets/models/fbx/12_ClockworkCitadel/Props`, `Animals` | `assets/models/fbx/13_ThornKingdom/Props`, `Animals` |
+| Renders and videos | `design/world/models_clockwork_citadel/`, `monsters_clockwork_citadel/` | `design/world/models_thorn_kingdom/`, `monsters_thorn_kingdom/` |
+| Game configs | `Config/Biomes`, `Map`, `Lighting`, `Decor`, `PropMotion`, `Dinos`; `shared/Roles.luau`; `IndexController` card colours | the same |
+| Monster motion | `DinoLifeController` `SPIN` | `DinoLifeController` `THRASH` and `SPIN` |
 
 ## 9. What the next map should keep
 

@@ -2,7 +2,8 @@
 -- skeleton as it goes. Runs on each client only; the server just places the dino. The poses copy the
 -- Walk and Idle loops in assets/models/build_forest.py, and the jaw and roar of the monsters that
 -- have a Jaw bone copy build_volcano.py. Monsters with a Swim bone swim and hover instead (SWIM and HOVER,
--- copying build_abyss_monsters.py). Dinos without bones still walk, stiffly.
+-- copying build_abyss_monsters.py). Monsters with Lash bones thrash on top of it all (THRASH, copying
+-- build_thorn_kingdom_monsters.py). Dinos without bones still walk, stiffly.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -230,6 +231,73 @@ local SPIN = {
 	Cog = { speed = math.pi, axis = "pitch" },
 }
 
+-- Thorn Kingdom monsters (from map 13 on) never settle, whatever they're doing. A monster with Lash bones gets all of
+-- THRASH on top of its walk and idle: its briar whips (Lash<n>a, b, c, three bones down each) thrash with a rhythm of
+-- their own, swelling, dying down and cracking every 4 seconds; its head snaps round in sudden jerks, its jaw gnashes
+-- in bursts, its body shudders, its arms and tail twitch. Snap<n> bones are the jaws of Hydrangry's spare heads. Each
+-- takes seconds and returns pitch, roll and yaw; the same as thrash_of in
+-- assets/models/build_thorn_kingdom_monsters.py, whose preview moves them alike.
+local QUARTER = math.pi / 2 -- everything thrashes at whole multiples of this, so the pattern repeats every 4 seconds
+
+local function crack(x: number): number -- 0 nearly all the time, jolting up to 1 and back once a turn of x
+	return ((1 + cos(x)) / 2) ^ 14
+end
+
+local function burst(x: number): number -- quiet about half the time, then swelling to 1 and dying away
+	return ((1 + sin(x)) / 2) ^ 3
+end
+
+local THRASH = {}
+for n = 1, 8 do
+	for k, letter in { "a", "b", "c" } do
+		local phase = 1.9 * n - 0.85 * (k - 1)
+		local reach = 0.3 + 0.16 * (k - 1) -- each bone bends further than the one before it
+		local snap = 0.5 + 0.3 * (k - 1)
+		THRASH["Lash" .. n .. letter] = function(s: number)
+			local w = QUARTER * s
+			local size = reach * (0.55 + 0.45 * sin(w + 2.1 * n))
+			local cracked = snap * crack(w + 2.4 * n - 0.5 * (k - 1))
+			return size * (sin(6 * w + phase) + 0.4 * sin(11 * w + 1.3 * phase)) + cracked,
+				size * sin(5 * w + 2 * phase),
+				size * (sin(7 * w + 0.7 * phase) + 0.4 * sin(13 * w + phase)) - 0.6 * cracked
+		end
+	end
+	THRASH["Snap" .. n] = function(s: number)
+		local w = QUARTER * s
+		return -0.14 - 0.14 * sin(10 * w + 1.7 * n) - 0.3 * crack(2 * w + 1.3 * n), 0, 0
+	end
+end
+THRASH.Head = function(s: number)
+	local w = QUARTER * s
+	local a, b = crack(2 * w + 0.7), crack(3 * w + 2.2)
+	return 0.16 * b - 0.12 * a, 0.2 * a * cos(w), 0.34 * a * sin(w + 1) - 0.26 * b * cos(w)
+end
+THRASH.Neck = function(s: number)
+	local w = QUARTER * s
+	local shiver = 0.05 * sin(16 * w) * burst(w + 2)
+	return shiver, 0, shiver
+end
+THRASH.Jaw = function(s: number)
+	local w = QUARTER * s
+	return -0.2 * (0.5 + 0.5 * sin(12 * w)) * burst(2 * w), 0, 0
+end
+THRASH.Spine = function(s: number)
+	local w = QUARTER * s
+	local b = burst(w + 4)
+	return 0.02 * sin(16 * w) * b, 0.03 * sin(12 * w) * b, 0
+end
+for letter, offset in { L = 0, R = 2.5 } do
+	THRASH["Arm" .. letter] = function(s: number)
+		return -0.35 * crack(3 * QUARTER * s + offset), 0, 0
+	end
+end
+for i = 1, 3 do
+	THRASH["Tail" .. i] = function(s: number)
+		local w = QUARTER * s
+		return 0, 0, 0.22 * sin(6 * w - 0.9 * i) * burst(w + i)
+	end
+end
+
 local function zero()
 	return 0, 0, 0, 0, 0
 end
@@ -271,10 +339,12 @@ local function add(model: Model)
 	local legHeight = nil
 	local roars = false
 	local swims = false
+	local thrashes = false
 	for _, bone in model:GetDescendants() do
 		if bone:IsA("Bone") then
 			roars = roars or bone.Name == "Jaw"
 			swims = swims or bone.Name == "Swim"
+			thrashes = thrashes or string.sub(bone.Name, 1, 4) == "Lash"
 		end
 	end
 	-- Which way the model faces from its pivot. Most imported models face the pivot's +Z (the importer turns them
@@ -303,6 +373,7 @@ local function add(model: Model)
 				yaw = axis(Vector3.yAxis),
 				spin = SPIN[bone.Name],
 				angle = math.random() * TAU, -- so a plot's keys don't all turn in step
+				thrash = if thrashes then THRASH[bone.Name] else nil,
 			})
 			if bone.Name == "LegL" or bone.Name == "FrontL" then
 				legHeight = bone.WorldPosition.Y - pivot.Y
@@ -327,6 +398,7 @@ local function add(model: Model)
 		blend = 0,
 		stride = math.random() * TAU,
 		idleClock = math.random() * TAU,
+		thrashClock = math.random() * 4, -- seconds; the pattern is 4 long, so a plot's monsters don't thrash in step
 		frame = math.random(0, DinoLife.farFrameSkip),
 		pending = 0,
 		carrier = if carried then (model.Parent and model.Parent:FindFirstChild("HumanoidRootPart")) :: BasePart? else nil,
@@ -397,7 +469,8 @@ local function pose(state, dt: number)
 	local eased = w * w * (3 - 2 * w)
 	state.stride = (state.stride + dt / state.strideSeconds * TAU) % TAU
 	state.idleClock = (state.idleClock + dt / DinoLife.idleLoopSeconds * TAU) % TAU
-	local p, t = state.stride, state.idleClock
+	state.thrashClock = (state.thrashClock + dt) % 4
+	local p, t, s = state.stride, state.idleClock, state.thrashClock
 	for _, entry in state.bones do
 		local wx, wy, wz, wb, ws = entry.walk(p)
 		local ix, iy, iz, ib, is = entry.idle(t)
@@ -411,6 +484,13 @@ local function pose(state, dt: number)
 		if spin then
 			entry.angle = (entry.angle + spin.speed * dt) % TAU
 			transform *= CFrame.fromAxisAngle(entry[spin.axis], entry.angle)
+		end
+		local thrash = entry.thrash
+		if thrash then
+			local tx, ty, tz = thrash(s)
+			transform *= CFrame.fromAxisAngle(entry.pitch, tx)
+				* CFrame.fromAxisAngle(entry.roll, ty)
+				* CFrame.fromAxisAngle(entry.yaw, tz)
 		end
 		entry.bone.Transform = transform
 	end

@@ -28,7 +28,8 @@ MAP_OF_FILE = {"forest_models": "01_Forest", "world_kit": "01_Forest", "desert_m
                "thorn_kingdom_models": "13_ThornKingdom",
                "swamp_monsters": "03_Swamp", "frozen_peaks_monsters": "05_FrozenPeaks", "shadow_bog_monsters": "06_ShadowBog",
                "abyss_monsters": "07_Abyss", "starfall_crater_monsters": "08_StarfallCrater",
-               "eclipse_temple_monsters": "09_EclipseTemple", "clockwork_citadel_monsters": "12_ClockworkCitadel"}
+               "eclipse_temple_monsters": "09_EclipseTemple", "clockwork_citadel_monsters": "12_ClockworkCitadel",
+               "thorn_kingdom_monsters": "13_ThornKingdom"}
 # Blender collection -> folder inside the map's folder.
 EXPORT_COLLECTIONS = {"Animals": "Animals", "Props": "Props", "Kit": "Corridor", "Arena": "Arena", "Base": "Base"}
 
