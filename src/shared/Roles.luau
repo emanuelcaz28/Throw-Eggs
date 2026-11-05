@@ -95,6 +95,16 @@ Roles.glowing = {
 	Charge = true,
 	Molten = true,
 	Dial = true,
+	-- Thorn Kingdom (assets/models/build_thorn_kingdom.py): glowing roses and falling petals, gold thread, the magic
+	-- mirror, crown gems, stained glass and the moon. Bud, Motes, Glow, Lamp, Window, Stream, Falling and Gaze are above.
+	RoseGlow = true,
+	PetalGlow = true,
+	Thread = true,
+	MirrorGlow = true,
+	CrownGem = true,
+	Pane = true,
+	PaneB = true,
+	Lunar = true,
 }
 
 function Roles.of(part: Instance): string

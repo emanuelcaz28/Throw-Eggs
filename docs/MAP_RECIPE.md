@@ -40,6 +40,7 @@ glow, must differ from its neighbours'. Taken so far:
 | 10 | Forbidden Library | deep violet carpet | dark walnut | parchment | violet ink, candle amber | night (ClockTime 2), indigo haze |
 | 11 | Midnight Carnival | deep teal | crimson | gold straw | warm bulbs, pink neon, ghost white | midnight (ClockTime 0), plum haze |
 | 12 | Clockwork Citadel | bronze plates | soot iron | copper | electric blue, furnace orange | before dawn (ClockTime 4), steel-blue smog |
+| 13 | Thorn Kingdom | dark moss | black-violet thorn bark | silver moss | crimson roses, firefly gold | night (ClockTime 3), silver-mauve mist |
 
 The exact colours are in `Config/Map` `biomeColors` and `Config/Lighting` `worlds`.
 

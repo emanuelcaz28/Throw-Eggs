@@ -99,6 +99,11 @@ local Map = {
 			Dirt = Color3.fromRGB(52, 56, 68), -- soot-black iron walls
 			Grass = Color3.fromRGB(186, 104, 60), -- copper on the rims, hanging over the walls like old copper roofing
 		},
+		ThornKingdom = {
+			Floor = Color3.fromRGB(52, 78, 60), -- dark moss, so the crimson roses and gold fireflies stand out on it
+			Dirt = Color3.fromRGB(52, 38, 48), -- black-violet thorn bark walls
+			Grass = Color3.fromRGB(124, 140, 116), -- silvery moss on the rims, hanging over the walls
+		},
 	},
 
 	-- The arena, built from plain parts with the same see-through checker and studs as the kit.

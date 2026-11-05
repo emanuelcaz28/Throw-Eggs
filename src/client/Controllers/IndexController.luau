@@ -39,6 +39,7 @@ local CARD_COLOURS = {
 	ForbiddenLibrary = { "#c3a8ff", "#56392a" },
 	MidnightCarnival = { "#ffd36b", "#b3263a" },
 	ClockworkCitadel = { "#f0b85a", "#343844" },
+	ThornKingdom = { "#ff6b88", "#344e3c" },
 }
 
 -- Text that shrinks to fit its box but never grows past its own size.

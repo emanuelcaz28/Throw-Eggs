@@ -16,4 +16,5 @@ return {
 	{ id = "ForbiddenLibrary", name = "Forbidden Library", startDist = 7200, endDist = 8500, luck = 5000000, standardScale = 1.56, color = Color3.fromRGB(170, 130, 255) },
 	{ id = "MidnightCarnival", name = "Midnight Carnival", startDist = 8500, endDist = 9900, luck = 25000000, standardScale = 1.64, color = Color3.fromRGB(255, 120, 150) },
 	{ id = "ClockworkCitadel", name = "Clockwork Citadel", startDist = 9900, endDist = 11400, luck = 100000000, standardScale = 1.72, color = Color3.fromRGB(236, 164, 72) },
+	{ id = "ThornKingdom", name = "Thorn Kingdom", startDist = 11400, endDist = 13000, luck = 500000000, standardScale = 1.81, color = Color3.fromRGB(236, 72, 104) },
 }

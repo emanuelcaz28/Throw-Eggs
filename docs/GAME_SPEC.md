@@ -527,7 +527,8 @@ Each map's standard size is about 1.05x the previous map's, reaching 2x at map 1
 | 10 | Forbidden Library | 1.56x | Not made yet (its world is built) |
 | 11 | Midnight Carnival | 1.64x | Not made yet (its world is built) |
 | 12 | Clockwork Citadel | 1.72x | Wind-Up Wally, Sprocket, Kettle Belly, Gearjaw, Drillhorn, Chrono Rex |
-| 13 to 15 | Not chosen yet | 1.81x to 2x | Mysterious, dark maps |
+| 13 | Thorn Kingdom | 1.81x | Not made yet (its world is built) |
+| 14 to 15 | Not chosen yet | 1.9x to 2x | Mysterious, dark maps |
 
 ### The style as you advance
 **[Owner]** Keep the same chunky stud style, but as the maps go on, add absurd, funny models and names alongside
@@ -666,6 +667,7 @@ maps; the owner can rename it (only `name` in `Config/Biomes` changes).
 **[Built]** Map 10 is **Forbidden Library** (`ForbiddenLibrary`), our name too; the owner can rename it.
 **[Built]** Map 11 is **Midnight Carnival** (`MidnightCarnival`), our name too, built before map 10.
 **[Built]** Map 12 is **Clockwork Citadel** (`ClockworkCitadel`), our name too; the owner can rename it.
+**[Built]** Map 13 is **Thorn Kingdom** (`ThornKingdom`), our name too; the owner can rename it.
 
 **[Owner, 2026-11-04]** Luck reaches the billions, about 4-5x more per map (section 8b):
 
@@ -683,7 +685,8 @@ maps; the owner can rename it (only `name` in `Config/Biomes` changes).
 | 10 | Forbidden Library | 5M |
 | 11 | Midnight Carnival | 25M |
 | 12 | Clockwork Citadel | 100M |
-| 13 to 15 | Not built yet | 500M, 2.5B, 10B |
+| 13 | Thorn Kingdom | 500M |
+| 14 to 15 | Not built yet | 2.5B, 10B |
 
 **[Seen]** Far worlds change colour and props completely: sand with cactus and skulls, dark rock with lava and
 black spires, neon purple with crystals. The reference's thumbnail shows worlds stepping **down** one after another (see section 15).
@@ -937,6 +940,28 @@ Done one at a time, each in its own step:
      land in it until it has monsters. Its 6 monsters (section 8a) are made (2026-11-05,
      `build_clockwork_citadel_monsters.py`, FBX in `fbx/12_ClockworkCitadel/Animals/`), imported and in `Config/Dinos`
      (chances 2, 4, 12, 60, 400, 3000; income 100x Midnight Carnival's: 1e22 to 5e24), so throws reach it (11,400).
+   - **Thorn Kingdom** *(map 13's world made 2026-11-05, in Blender; imported into `Assets.Maps.ThornKingdom.Props` and play-tested the same day: 339 props placed, no console errors; monsters later)*:
+     **[Owner]** map 13, made in Blender like the maps before it, only the world for now; maps 13 to 15 mysterious and
+     dark. **[Built]** A fairy-tale kingdom put to sleep by a curse a thousand years ago and swallowed by briars as big
+     as trees; only the roses are still alive, glowing crimson in the dark, and the fireflies keep watch. A floor of
+     dark moss, black-violet thorn-bark walls, silvery moss on the rims hanging over the walls (`Config/Map`), and night
+     under a pale silver-mauve mist (`Config/Lighting`, ClockTime 3). Its own light is crimson rose-glow and the warm
+     gold of fireflies and lit windows; its crimson glow is a first. 19 props in `build_thorn_kingdom.py`, all with
+     moving parts: briar roses (the signature), a giant rose on a thorny stem, its heart glowing and petals falling off
+     it for ever; thorn thickets with fireflies; kneeling stone knights with a glowing visor holding out a swinging
+     lantern; spinning wheels still turning, glowing gold thread on the spindle; briar-strangled lamp posts with a
+     lantern swinging; fairy rings of glowing toadstools; enchanted fountains dripping glowing water; now and then a
+     magic mirror whose eyes open and close or the kingdom's crown floating and turning over its cushion; briar tufts
+     as filler; on the rims black thorn trees dropping glowing petals and turrets with a banner waving; landmarks:
+     sleeping castles with banners and lit windows, rose towers crowned by a colossal glowing rose with petals circling
+     it, and crooked cottages smoking with a weather vane turning; a huge moon wound with briars hangs beyond the
+     island, ravens circling it; briars spill over the wall tops dropping glowing petals down into the corridor
+     (`walls`), stone bridges span it with banners swinging along it (`overhead`), and fallen rose windows of glowing
+     glass lie flat across the floor. No five- or six-pointed stars or crosses (the rose windows are twelve petals).
+     Plain colours in Blender (no stud image). Renders and two videos (`thorn_motion.mp4`, `thorn_flight.mp4`) in
+     `design/world/models_thorn_kingdom/`. World 13 (11,400 to 13,000 studs, 500M luck, 1.81x size); `Config/Biomes`,
+     `Map`, `Lighting`, `Decor`, `PropMotion`, `Roles` and the Index card colours are in. Eggs can't land in it until
+     it has monsters.
    - **Joining**: whether the floor steps down at each world (question 5 in section 15) is still open.
 
 The walking reveal and the flight camera are a separate job, after the world. The throw wind-up is built (section 7).

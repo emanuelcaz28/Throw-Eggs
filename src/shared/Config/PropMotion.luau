@@ -533,5 +533,109 @@ return {
 			LampCage = { swing = 8, period = 3.2, axis = "across", height = 29.7 },
 			Lamp = { swing = 8, period = 3.2, axis = "across", height = 29.7, pulse = 0.7 },
 		},
+		-- Thorn Kingdom (assets/models/build_thorn_kingdom.py).
+		prop_BriarRose = {
+			PetalGlow = { fall = 3, period = 2.6 },
+			RoseGlow = { pulse = 0.6, period = 3.2 },
+			Bud = { pulse = 0.4, period = 2.2 },
+		},
+		prop_ThornThicket = {
+			Motes = { spin = 18, bob = 0.4, period = 3.5 },
+			RoseGlow = { pulse = 0.55, period = 2.8 },
+		},
+		prop_StoneKnight = {
+			Chain = { swing = 12, period = 2.4, axis = "across", height = 5.25 },
+			Lantern = { swing = 12, period = 2.4, axis = "across", height = 5.25 },
+			Lamp = { swing = 12, period = 2.4, axis = "across", height = 5.25, pulse = 0.7 },
+			Gaze = { pulse = 0.3, period = 4 },
+			RoseGlow = { pulse = 0.6, period = 3.2 },
+		},
+		prop_SpinningWheel = {
+			Wheel = { spin = 40, axis = "ahead", about = "self" },
+			Thread = { pulse = 0.6, period = 2.6 },
+		},
+		prop_BriarLantern = {
+			Chain = { swing = 10, period = 2.8, axis = "across", height = 8.1 },
+			Lantern = { swing = 10, period = 2.8, axis = "across", height = 8.1 },
+			Lamp = { swing = 10, period = 2.8, axis = "across", height = 8.1, pulse = 0.7 },
+			Motes = { spin = 20, bob = 0.5, period = 4 },
+			RoseGlow = { pulse = 0.6, period = 3.2 },
+		},
+		prop_Toadstools = {
+			Glow = { pulse = 0.5, period = 3 },
+			Motes = { spin = 24, bob = 0.4, period = 3 },
+			Window = { pulse = 0.8, period = 2.5 },
+		},
+		prop_RoseFountain = {
+			Falling = { fall = 1.2, period = 0.5 },
+			Stream = { pulse = 0.75, period = 3 },
+		},
+		prop_MagicMirror = {
+			MirrorGlow = { pulse = 0.55, period = 3.6 },
+			Gaze = { pulse = 0.05, period = 5 },
+			Motes = { spin = 30, bob = 0.3, period = 3 },
+			CrownGem = { pulse = 0.5, period = 2 },
+		},
+		prop_FloatingCrown = {
+			Crown = { spin = 20, bob = 0.3, period = 3 },
+			CrownGem = { spin = 20, bob = 0.3, period = 3 },
+			Motes = { spin = -20, bob = 0.3, period = 3 },
+		},
+		prop_BriarTuft = {
+			Bud = { pulse = 0.4, period = 2.4 },
+		},
+		prop_RoseWindow = {
+			Pane = { pulse = 0.55, period = 3.4 },
+			PaneB = { pulse = 0.6, period = 4.4 },
+		},
+		prop_ThornTree = {
+			PetalGlow = { fall = 3, period = 2.8 },
+			RoseGlow = { pulse = 0.6, period = 3.2 },
+			Motes = { spin = 14, bob = 0.5, period = 4 },
+		},
+		prop_Turret = {
+			Banner = { swing = 25, period = 3 },
+			Window = { pulse = 0.8, period = 3.2 },
+			RoseGlow = { pulse = 0.6, period = 3.2 },
+		},
+		prop_SleepingCastle = {
+			BannerA = { swing = 10, period = 3, about = "self" },
+			BannerB = { swing = 10, period = 3.4, about = "self" },
+			BannerC = { swing = 10, period = 2.7, about = "self" },
+			Window = { pulse = 0.8, period = 3.5 },
+			RoseGlow = { pulse = 0.6, period = 3.2 },
+		},
+		prop_RoseTower = {
+			PetalOrbit = { spin = 10, bob = 0.6, period = 5 },
+			RoseGlow = { pulse = 0.65, period = 3.6 },
+			Bud = { pulse = 0.4, period = 2.4 },
+			Window = { pulse = 0.8, period = 3 },
+		},
+		prop_CrookedCottage = {
+			Smoke = { fall = -1.6, period = 1.6 },
+			SmokeLight = { fall = -1.6, period = 1.6 },
+			Vane = { swing = 35, period = 7 },
+			Window = { pulse = 0.8, period = 2.6 },
+			RoseGlow = { pulse = 0.6, period = 3.2 },
+		},
+		prop_ThornMoon = {
+			Lunar = { bob = 1, period = 9 },
+			Crater = { bob = 1, period = 9 },
+			Bark = { bob = 1, period = 9 },
+			Leaf = { bob = 1, period = 9 },
+			Petal = { bob = 1, period = 9 },
+			PetalDark = { bob = 1, period = 9 },
+			RoseGlow = { bob = 1, period = 9 },
+			Raven = { spin = 12, bob = 1, period = 9 },
+		},
+		prop_BriarCurtain = {
+			PetalGlow = { fall = 4, period = 1.4 },
+			RoseGlow = { pulse = 0.6, period = 3 },
+		},
+		prop_StoneBridge = {
+			Banner = { swing = 7, period = 3.2, axis = "across", height = 17 },
+			Lamp = { pulse = 0.7, period = 2.6 },
+			Window = { pulse = 0.8, period = 3.4 },
+		},
 	},
 }

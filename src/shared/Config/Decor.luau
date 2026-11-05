@@ -929,6 +929,98 @@ return {
 				{ name = "prop_FloorGears", distance = 1450, x = -3, on = "floor", yaw = 230, scale = 1.2 },
 			},
 		},
+		ThornKingdom = {
+			seed = 131,
+
+			floor = {
+				firstDistance = 12,
+				gap = { 12, 22 },
+				side = { 24, 34 },
+				props = {
+					{ name = "prop_BriarRose", weight = 14, scale = { 1.3, 1.7 } },
+					{ name = "prop_ThornThicket", weight = 10, scale = { 1.1, 1.4 } },
+					{ name = "prop_BriarLantern", weight = 9, scale = { 1.2, 1.5 } },
+					{ name = "prop_Toadstools", weight = 9, scale = { 1.2, 1.6 } },
+					{ name = "prop_StoneKnight", weight = 8, scale = { 1.2, 1.5 } },
+					{ name = "prop_SpinningWheel", weight = 7, scale = { 1.2, 1.5 } },
+					{ name = "prop_RoseFountain", weight = 7, scale = { 1.1, 1.4 } },
+					{ name = "prop_FloatingCrown", weight = 5, scale = { 1.2, 1.4 } },
+					{ name = "prop_MagicMirror", weight = 4, scale = { 1.2, 1.4 } },
+				},
+				extras = {
+					chance = 0.7,
+					spread = 8,
+					props = {
+						{ name = "prop_BriarTuft", weight = 5, scale = { 0.9, 1.3 } },
+						{ name = "prop_Toadstools", weight = 2, scale = { 0.6, 0.8 } },
+						{ name = "prop_ThornThicket", weight = 2, scale = { 0.5, 0.7 } },
+					},
+				},
+			},
+
+			rim = {
+				firstDistance = 6,
+				gap = { 14, 24 },
+				chance = 0.9,
+				side = { 64, 102 },
+				props = {
+					{ name = "prop_ThornTree", weight = 6, scale = { 1.8, 2.4 } },
+					{ name = "prop_Turret", weight = 3, scale = { 1.6, 2 } },
+					{ name = "prop_BriarRose", weight = 4, scale = { 2, 2.6 } },
+					{ name = "prop_ThornThicket", weight = 3, scale = { 2, 2.5 } },
+					{ name = "prop_BriarTuft", weight = 2, scale = { 2.2, 2.8 } },
+				},
+			},
+
+			overhead = {
+				{ name = "prop_StoneBridge", distance = 270, yaw = 0, scale = 1 },
+				{ name = "prop_StoneBridge", distance = 830, yaw = 0, scale = 1.05 },
+				{ name = "prop_StoneBridge", distance = 1390, yaw = 0, scale = 1 },
+			},
+
+			walls = {
+				{ name = "prop_BriarCurtain", distance = 80, side = 1 },
+				{ name = "prop_BriarCurtain", distance = 260, side = -1 },
+				{ name = "prop_BriarCurtain", distance = 450, side = 1 },
+				{ name = "prop_BriarCurtain", distance = 640, side = -1 },
+				{ name = "prop_BriarCurtain", distance = 820, side = 1 },
+				{ name = "prop_BriarCurtain", distance = 1000, side = -1 },
+				{ name = "prop_BriarCurtain", distance = 1180, side = 1 },
+				{ name = "prop_BriarCurtain", distance = 1370, side = -1 },
+				{ name = "prop_BriarCurtain", distance = 1540, side = 1 },
+			},
+
+			-- Castles, rose towers and cottages turn to face the corridor, the thorn moons face down it (face, using their
+			-- Front marker). The moons hang high in the mist beyond the island (52 studs up at size 1). The rose windows
+			-- are flat, so they can lie in the middle where the eggs land.
+			spots = {
+				{ name = "prop_SleepingCastle", distance = 100, x = -88, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_SleepingCastle", distance = 660, x = 88, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_SleepingCastle", distance = 1220, x = -88, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_RoseTower", distance = 230, x = 86, on = "rim", yaw = 0, scale = 1.3, face = "middle" },
+				{ name = "prop_RoseTower", distance = 790, x = -86, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_RoseTower", distance = 1350, x = 86, on = "rim", yaw = 0, scale = 1.3, face = "middle" },
+				{ name = "prop_CrookedCottage", distance = 420, x = -84, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_CrookedCottage", distance = 960, x = 84, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_CrookedCottage", distance = 1520, x = -84, on = "rim", yaw = 0, scale = 1.4, face = "middle" },
+				{ name = "prop_ThornMoon", distance = 340, x = -180, on = "rim", yaw = 0, scale = 2.2, face = "along" },
+				{ name = "prop_ThornMoon", distance = 1100, x = 185, on = "rim", yaw = 0, scale = 2.4, face = "along" },
+				{ name = "prop_RoseWindow", distance = 40, x = -3, on = "floor", yaw = 20, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 155, x = 4, on = "floor", yaw = 140, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 270, x = -4, on = "floor", yaw = 70, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 385, x = 3, on = "floor", yaw = 200, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 500, x = -2, on = "floor", yaw = 300, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 615, x = 4, on = "floor", yaw = 40, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 735, x = -3, on = "floor", yaw = 110, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 850, x = 2, on = "floor", yaw = 250, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 965, x = -4, on = "floor", yaw = 330, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 1085, x = 3, on = "floor", yaw = 80, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 1205, x = -2, on = "floor", yaw = 160, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 1325, x = 4, on = "floor", yaw = 10, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 1445, x = -3, on = "floor", yaw = 230, scale = 1.2 },
+				{ name = "prop_RoseWindow", distance = 1560, x = 2, on = "floor", yaw = 120, scale = 1.2 },
+			},
+		},
 	},
 
 	-- The arena's props, from the first biome's folder.

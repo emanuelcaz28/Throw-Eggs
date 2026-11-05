@@ -109,6 +109,13 @@ return {
 			atmosphere = { Color = Color3.fromRGB(108, 118, 138), Decay = Color3.fromRGB(40, 44, 60), Density = 0.4, Haze = 2 },
 			colorCorrection = { TintColor = Color3.fromRGB(255, 242, 228), Saturation = 0.16 },
 		},
+		-- The sleeping kingdom at night: a pale silver-mauve mist under a big moon, so the roses glow crimson and the
+		-- fireflies gold. ClockTime 3, between Clockwork Citadel's 4 and the night before it, so blending stays dark.
+		ThornKingdom = {
+			lighting = { ClockTime = 3, Brightness = 1.3, OutdoorAmbient = Color3.fromRGB(140, 130, 152), ExposureCompensation = 0.25 },
+			atmosphere = { Color = Color3.fromRGB(124, 112, 134), Decay = Color3.fromRGB(44, 34, 52), Density = 0.4, Haze = 2 },
+			colorCorrection = { TintColor = Color3.fromRGB(255, 236, 240), Saturation = 0.18 },
+		},
 	},
 
 	-- Chunky block clouds drifting around the island, built on each player's screen only.
