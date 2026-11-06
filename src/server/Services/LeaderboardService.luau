@@ -138,7 +138,7 @@ local function surfaceGui(sheet: BasePart): SurfaceGui
 	local gui = Instance.new("SurfaceGui")
 	gui.Face = Enum.NormalId.Front
 	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-	gui.PixelsPerStud = PIXELS_PER_STUD
+	gui.PixelsPerStud = PIXELS_PER_STUD / Leaderboards.scale -- smaller boards keep the same layout
 	gui.LightInfluence = 0 -- lit from inside, like a screen, so it reads in the shade too
 	gui.MaxDistance = 260
 	gui.Parent = sheet
@@ -180,6 +180,7 @@ local function buildBody(parent: Instance, board, position: Vector3, facing: Vec
 	local template = folder and folder:FindFirstChild(`board_{board.id}`)
 	if template then
 		local model = template:Clone() :: Model
+		model:ScaleTo(Leaderboards.scale)
 		model.Name = board.id
 		for _, part in model:GetDescendants() do
 			if part:IsA("BasePart") then
@@ -199,7 +200,7 @@ local function buildBody(parent: Instance, board, position: Vector3, facing: Vec
 		warn(`[LeaderboardService] board_{board.id} has no Screen or Header part`)
 		model:Destroy()
 	end
-	local size = Leaderboards.size
+	local size = Leaderboards.size * Leaderboards.scale
 	local model = Instance.new("Model")
 	model.Name = board.id
 	model.Parent = parent
@@ -389,7 +390,20 @@ local function refresh()
 end
 
 -- Saves from before the leaderboards get their stats estimated from what they own, once.
-local function onLoaded(_player: Player, data)
+local function onLoaded(player: Player, data)
+	-- A reset save (Config/Save resets) comes off the boards; its new scores go back on as they're earned.
+	if player:GetAttribute("SaveWasReset") then
+		task.spawn(function()
+			for _, board in Leaderboards.boards do
+				local ok, err = pcall(function()
+					storeFor(board):RemoveAsync(tostring(player.UserId))
+				end)
+				if not ok then
+					warn(`[LeaderboardService] Couldn't clear {board.id} for {player.Name}: {err}`)
+				end
+			end
+		end)
+	end
 	if data.statsStarted then
 		return
 	end

@@ -12,6 +12,12 @@ return {
 	saveAttempts = 4,
 	saveRetryDelay = 2, -- seconds; doubles after each failed attempt
 
+	-- Saves the owner wiped back to a new player's, on that player's next join, once per id. What was bought stays:
+	-- receipts (so nothing is given twice), giftedPasses and luckDealBought. Keep old ids: reusing one resets nobody.
+	resets = {
+		{ id = "RESET_2026-11-06", userIds = { 234533860, 1404164940, 11729966071, 159677990 } },
+	},
+
 	-- A new player's save. New fields added here are filled in for existing players on load.
 	defaults = {
 		trainingLevel = 1, -- the bar being filled (Config/Training)
@@ -39,8 +45,14 @@ return {
 		statsStarted = false, -- set once the stats above have been filled in for this save
 		receipts = {}, -- Robux purchases already granted, by purchase id
 		throwsSinceRare = 0, -- throws in a row without a rare monster, for pity (Config/Hooks)
+		throwsSinceRarest = 0, -- throws in a row without a map's rarest monster, for the jackpot pity (Config/Hooks)
+		recentCatches = {}, -- ids of the last 2 monsters caught by throwing, newest first; less likely to come again (Config/Catch pick)
+		xpBoostEndsAt = 0, -- os.time() when the x2 XP from completing a world in the Index runs out (Config/Index)
 		luckyThrows = {}, -- lucky throws owned, count by multiplier as text ("100" = 2); LuckyThrows
 		luckDealBought = false, -- the one-time R$ 3 Luck x100 deal has been used
+		specialsGiven = {}, -- special monsters already given for their Game Pass, by id (Config/Specials)
+		giftedPasses = {}, -- Game Passes another player gifted, by Config/Shop key ("doubleCash" = true)
+		serverLuckLeft = 0, -- seconds of bought Server Luck not used yet; they come back on the next join
 		dailyStreak = 0, -- the last daily reward day claimed, 1 to 7 (Config/Daily)
 		dailyLastDay = -1, -- the UTC day number (os.time() // 86400) of the last daily claim
 	},

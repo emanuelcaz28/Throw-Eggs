@@ -163,15 +163,15 @@ export type Stage = {
 	elevation: { number }, -- radians it looks down from, at the start and the end
 	aim: number, -- studs the camera aims above the end's focus (below when negative), to frame them above the text
 	floor: number, -- the camera never goes below this height
-	slow: boolean?, -- the slow reveal of lucky catches: across to the monster early, then up its body, feet to head
-	feet: Vector3, -- the middle of the monster's feet, on the ground
+	push: number, -- lucky catches: how much further back than the final framing the pull back ends (0 for others)
 }
 
 -- Builds the caught monster standing over the egg, at its real size, facing `approach` (the way it walked; the
 -- throw's way if unknown), and works out the camera's moves. `climb` is how long the name and counter take. `band` is
 -- the part of the screen to frame them in at the end, as shares of its height from the top: {top, bottom for the
--- smallest monsters, bottom for the biggest}. The final text covers the rest. The whole screen when left out. `slow`
--- (lucky catches): the close-up holds only a moment, and the pull back takes the whole rest of the climb.
+-- smallest monsters, bottom for the biggest}. The final text covers the rest. The whole screen when left out. `lucky`
+-- (catches with the counter): the close-up holds only a moment and the pull back ends further back (closeUp push),
+-- so the whole monster is in view early; the camera then creeps in over the rest of the climb (cameraAt's `back`).
 function RevealCloseUp.stage(
 	catch,
 	egg: BasePart,
@@ -179,7 +179,7 @@ function RevealCloseUp.stage(
 	climb: number,
 	random: Random?,
 	band: { number }?,
-	slow: boolean?
+	lucky: boolean?
 ): Stage
 	random = random or Random.new()
 	local eggSize = egg.Size
@@ -240,9 +240,6 @@ function RevealCloseUp.stage(
 	spot += gapWay * math.min(length * settings.aheadShare, eggSize.Y * settings.maxAhead)
 	-- The egg stays where it landed, so the monster steps back to put that spot on it.
 	model:PivotTo(model:GetPivot() + (ground - spot))
-	-- Where its front feet now stand: the slow reveal's view starts there and climbs the body.
-	local frontLeft, frontRight = frontFeet(model)
-	local feet = if frontLeft and frontRight then (frontLeft + frontRight) / 2 else model:GetBoundingBox().Position
 
 	-- The box round the monster and the egg, in the monster's own directions.
 	local frame = CFrame.lookAt(ground, ground + forward)
@@ -281,9 +278,8 @@ function RevealCloseUp.stage(
 	local hold = math.clamp(climb * settings.holdShare, settings.minHold, settings.maxHold)
 	local pullTime = lerp(settings.pullTime, settings.bigPullTime, bigness)
 	pullTime = math.max(math.min(pullTime, climb - hold), pullTime * settings.minPullShare)
-	if slow then
-		hold = settings.slowHold
-		pullTime = math.max(climb - hold, pullTime)
+	if lucky then
+		hold = settings.luckyHold
 	end
 
 	return {
@@ -297,10 +293,9 @@ function RevealCloseUp.stage(
 		focus = { ground + Vector3.new(0, eggSize.Y / 2, 0), box.Position },
 		aim = lift,
 		floor = ground.Y + eggSize.Y,
-		slow = slow,
-		feet = Vector3.new(feet.X, ground.Y + eggSize.Y / 2, feet.Z),
+		push = if lucky then settings.push else 0,
 		distance = { startDistance, endDistance },
-		elevation = { closeElevation, math.rad(settings.endElevation) },
+		elevation = { closeElevation, math.rad(lerp(settings.endElevation, settings.bigEndElevation, bigness)) },
 	}
 end
 
@@ -320,31 +315,21 @@ end
 
 -- The camera `pulled` of the way through the pull back (0 to 1, eased). The distance grows evenly on a log scale, so
 -- a giant's long pull back feels as steady as a small one's, and the camera lifts its eyes from the egg to the
--- monster as it goes. Once pulled back it holds still: the owner doesn't want it circling.
-function RevealCloseUp.cameraAt(stage: Stage, pulled: number): CFrame
+-- monster as it goes. `back` (0 to 1, lucky catches) holds it that share of stage.push further back than the final
+-- framing, straight back along the same line, for the slow creep in. Once in it holds still: the owner doesn't want
+-- it circling.
+function RevealCloseUp.cameraAt(stage: Stage, pulled: number, back: number?): CFrame
 	local near, far = stage.distance[1], stage.distance[2]
 	local distance = near * (far / near) ^ pulled
 	local focus = stage.focus[1]:Lerp(stage.focus[2], (distance - near) / (far - near))
-	if stage.slow then
-		-- Across from the egg to the monster's feet over the first part, then up its body as the camera pulls back,
-		-- slowly at first, so the head comes into view last.
-		local across = math.clamp(pulled / settings.slowAcross, 0, 1)
-		across = across * across * (3 - 2 * across)
-		local ground = stage.focus[1]:Lerp(stage.feet, across)
-		local up = pulled ^ settings.slowRise
-		focus = Vector3.new(
-			lerp(ground.X, stage.focus[2].X, up),
-			lerp(ground.Y, stage.focus[2].Y, up),
-			lerp(ground.Z, stage.focus[2].Z, up)
-		)
-	end
+	distance *= 1 + stage.push * (back or 0)
 	local elevation = lerp(stage.elevation[1], stage.elevation[2], pulled)
 	local yaw = stage.turn * math.rad(settings.yaw)
 	local around = CFrame.Angles(0, yaw, 0):VectorToWorldSpace(stage.forward)
 	local position = focus + (around * math.cos(elevation) + Vector3.yAxis * math.sin(elevation)) * distance
 	position = Vector3.new(position.X, math.max(position.Y, stage.floor), position.Z)
 	-- Only the aim moves to frame them above the text, never the camera itself, so it can't sink into the ground.
-	local share = (distance - near) / (far - near)
+	local share = math.clamp((distance - near) / (far - near), 0, 1) * (1 + stage.push * (back or 0))
 	return CFrame.lookAt(insideWalls(position), focus + Vector3.new(0, stage.aim * share, 0))
 end
 

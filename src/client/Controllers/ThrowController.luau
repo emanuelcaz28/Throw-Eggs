@@ -1,6 +1,7 @@
 -- The timing meter, the throw's wind-up, the egg's flight and the landing result. Display and input only:
 -- the server decides when the meter runs and how far every egg goes.
 local ContextActionService = game:GetService("ContextActionService")
+local GuiService = game:GetService("GuiService")
 local KeyframeSequenceProvider = game:GetService("KeyframeSequenceProvider")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,6 +10,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
+local EggModel = require(ReplicatedStorage.Shared.EggModel)
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local PopText = require(ReplicatedStorage.Shared.PopText)
@@ -18,6 +20,7 @@ local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 local RevealController = require(script.Parent.RevealController)
+local PerfectMoment = require(script.Parent.PerfectMoment)
 local ThrowCinematic = require(script.Parent.ThrowCinematic)
 
 local player = Players.LocalPlayer
@@ -130,7 +133,7 @@ local function buildGui()
 		tick.Parent = meter
 	end
 
-	local zoneBottom = TUBE_TOP + TUBE_HEIGHT / levels
+	local zoneBottom = TUBE_TOP + TUBE_HEIGHT * Throw.meter.perfectZone
 	local zone = Instance.new("Frame")
 	zone.Name = "SweetZone"
 	zone.Position, zone.Size = meterBox(ZONE_LEFT, ZONE_TOP, ZONE_WIDTH, zoneBottom - TUBE_TOP + ZONE_OVERHANG)
@@ -188,6 +191,7 @@ local function buildGui()
 	local barsGui = Instance.new("ScreenGui")
 	barsGui.Name = "ThrowBars"
 	barsGui.IgnoreGuiInset = true
+	barsGui.ScreenInsets = Enum.ScreenInsets.None -- edge to edge, past a phone's notch too
 	barsGui.ResetOnSpawn = false
 	barsGui.DisplayOrder = -1
 	barsGui.Parent = gui.Parent
@@ -216,7 +220,8 @@ local function buildGui()
 	}
 end
 
-local function makeEgg(color: Color3): Part
+-- The thrown egg: a ball in its egg's colour, dressed in the egg's Blender model when the place has one (EggModel).
+local function makeEgg(eggConfig): Part
 	local egg = Instance.new("Part")
 	egg.Name = "ThrownEgg"
 	egg.Anchored = true
@@ -224,12 +229,13 @@ local function makeEgg(color: Color3): Part
 	egg.CanQuery = false
 	egg.CanTouch = false
 	egg.Size = EGG_SIZE
-	egg.Color = color
+	egg.Color = eggConfig.color
 	egg.CastShadow = true
 	local mesh = Instance.new("SpecialMesh")
 	mesh.MeshType = Enum.MeshType.Sphere
 	mesh.Parent = egg
 	egg.Parent = workspace
+	EggModel.dress(egg, eggConfig.id)
 	return egg
 end
 
@@ -326,7 +332,9 @@ end
 -- The reveal has the screen to itself. While aiming and flying, only Throw Power stays
 -- (keepPower), so the meter and the luck number aren't crowded.
 local function setHudsEnabled(enabled: boolean, keepPower: boolean?)
-	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud", "ShopHud", "EventHud", "DailyHud", "GoalHud", "RankingHud" } do
+	-- A phone's thumbstick and jump button go too: the thrower can't move, and the jump button sat on the meter.
+	GuiService.TouchControlsEnabled = enabled
+	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud", "ShopHud", "EventHud", "DailyHud", "GoalHud" } do
 		if keepPower and name == "TrainingHud" then
 			continue
 		end
@@ -378,6 +386,7 @@ function ThrowController.start()
 		hud.prompt.TextColor3 = if perfect then GOLD else TEXT
 		if perfect then
 			hud.zone.BackgroundColor3 = GOLD
+			PerfectMoment.play()
 		end
 		PopText.punch(hud.prompt)
 	end
@@ -412,8 +421,10 @@ function ThrowController.start()
 	end
 
 	hud.meter.Activated:Connect(tap)
+	-- A click or a touch anywhere throws, not just on the meter (phones had to hit the meter itself).
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton1 then
+		local kind = input.UserInputType
+		if not gameProcessed and (kind == Enum.UserInputType.MouseButton1 or kind == Enum.UserInputType.Touch) then
 			tap()
 		end
 	end)
@@ -443,11 +454,12 @@ function ThrowController.start()
 		local aim = Throw.aim
 		ThrowCinematic.fade(hud.fade, true, aim.fadeOut)
 		spot = ThrowCinematic.throwSpot(root, humanoid)
+		ThrowCinematic.setThrower(character)
 		root.CFrame = spot
 		root.AssemblyLinearVelocity = Vector3.zero
 		root.Anchored = true
 		local equipped = DinoStats.findOption(Eggs, equippedEggId) or Eggs[1]
-		heldEgg = heldEgg or makeEgg(equipped.color)
+		heldEgg = heldEgg or makeEgg(equipped)
 		heldEgg.Size = EGG_SIZE * Throw.windup.heldScale
 		local camera = workspace.CurrentCamera
 		camera.CameraType = Enum.CameraType.Scriptable
@@ -495,8 +507,11 @@ function ThrowController.start()
 		local eggConfig = DinoStats.findOption(Eggs, eggId) or Eggs[1]
 		-- The lucky throw the server will use up when this egg lands (the biggest owned).
 		local luckyThrow = if isMine then LuckyThrows.nextOf(player) or 1 else 1
-		local egg = if isMine and heldEgg then heldEgg else makeEgg(eggConfig.color)
+		-- The egg's share of the luck shown, against the egg made for the world it lands in (Luck.eggFactor).
+		local eggLuck = Luck.eggFactor(eggConfig.luckBonus, distance)
+		local egg = if isMine and heldEgg then heldEgg else makeEgg(eggConfig)
 		egg.Color = eggConfig.color
+		EggModel.dress(egg, eggConfig.id) -- the server's egg, should it differ from the one in the hand
 		if isMine then
 			heldEgg = nil
 		end
@@ -550,7 +565,7 @@ function ThrowController.start()
 			egg.CFrame = CFrame.new(position) * tumble * heldTurn
 			if isMine and cameraFrom then
 				camera.CFrame = ThrowCinematic.flightCamera(cameraFrom, position, elapsed, duration)
-				local luck = Luck.at(travelled) * eggConfig.luckBonus * (player:GetAttribute("IndexLuck") or 1) * boughtLuck() * luckyThrow
+				local luck = Luck.at(travelled) * eggLuck * boughtLuck() * luckyThrow
 				hud.luckPanel.set(luck, Luck.biomeAt(travelled))
 			end
 			if t >= 1 then
@@ -561,6 +576,7 @@ function ThrowController.start()
 
 		trail.Enabled = false
 		ThrowCinematic.landingEffects(Vector3.new(egg.Position.X, lane.floorY, egg.Position.Z))
+		EggModel.split(egg) -- cut in half where it lands, white and yolk showing (Config/Throw landing.split)
 		if not isMine then
 			task.wait(flight.landingPause)
 			egg:Destroy()

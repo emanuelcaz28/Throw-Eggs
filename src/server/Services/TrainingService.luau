@@ -2,7 +2,7 @@
 -- rack's pad locks you in under the bar; reps come automatically until you press STOP. Everyone sees
 -- every rack, but only the base's owner trains there. The orange button in front of it sells more XP
 -- per rep, and while training a bubble now and then offers a double rep. The rack and the button are
--- Blender models (BaseKit). Everything is decided here on the server; the client reads the Player attributes set in
+-- Blender models (BaseKit), and each base shows the rack its owner's upgrades have earned (Config/Training rackModels). Everything is decided here on the server; the client reads the Player attributes set in
 -- publish and can only ask through TrainingRemotes (StopTraining, TapBubble).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,6 +11,8 @@ local Training = require(ReplicatedStorage.Shared.Config.Training)
 local BaseKit = require(ReplicatedStorage.Shared.BaseKit)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
+local Roles = require(ReplicatedStorage.Shared.Roles)
+local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
 local PlotService = require(script.Parent.PlotService)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
@@ -30,6 +32,7 @@ local nextBubbleAt: { [Player]: number } = {}
 local activeBubble: { [Player]: { id: number, expires: number } } = {}
 local bubbleCount = 0
 local rackBarParts: { [number]: { BasePart } } = {} -- per base
+local shownRacks: { [number]: Model } = {} -- the rack standing at each base
 local FACING = Vector3.new(0, 0, -1) -- out of the base, the way the lifter looks
 local rng = Random.new()
 
@@ -45,15 +48,13 @@ local function makeRemotes()
 	folder.Parent = ReplicatedStorage
 end
 
-local function buildRack(parent: Instance, plotIndex: number)
-	local model = Instance.new("Model")
-	model.Name = `Rack{plotIndex}`
-
-	-- Both face out of the base, like the lifter.
+-- Stands a rack at a base in place of the one there, and notes its loaded bar. It faces out of the base, like the lifter.
+local function placeRack(parent: Instance, plotIndex: number, name: string)
 	local rackAt = Training.rackPosition(plotIndex)
-	local rack = BaseKit.place("base_SquatRack", CFrame.lookAt(rackAt, rackAt + FACING), model)
+	local rack = BaseKit.place(name, CFrame.lookAt(rackAt, rackAt + FACING), parent)
 	local barParts = {}
 	if rack then
+		Roles.lightUp(rack)
 		for _, part in rack:GetDescendants() do
 			if part:IsA("BasePart") then
 				if BAR_PARTS[part.Name] then
@@ -65,7 +66,18 @@ local function buildRack(parent: Instance, plotIndex: number)
 			end
 		end
 	end
+	if shownRacks[plotIndex] then
+		shownRacks[plotIndex]:Destroy()
+	end
+	shownRacks[plotIndex] = rack
 	rackBarParts[plotIndex] = barParts
+end
+
+local function buildRack(parent: Instance, plotIndex: number)
+	local model = Instance.new("Model")
+	model.Name = `Rack{plotIndex}`
+
+	placeRack(model, plotIndex, Training.rackModels[1].model)
 
 	local buttonAt = Training.xpPadPosition(plotIndex)
 	BaseKit.place("base_XpButton", CFrame.lookAt(buttonAt, buttonAt + FACING), model)
@@ -92,8 +104,11 @@ local function rootOf(player: Player): (BasePart?, Humanoid?)
 	return root, humanoid
 end
 
+-- The x2 Training pass, times the x2 XP from completing a world in the Index while it runs.
 local function passMultiplier(player: Player): number
-	return if player:GetAttribute("HasDoubleTraining") then Shop.doubleTraining.multiplier else 1
+	local pass = if player:GetAttribute("HasDoubleTraining") then Shop.doubleTraining.multiplier else 1
+	local data = PlayerData.get(player)
+	return pass * (if data then IndexService.xpMultiplier(data) else 1)
 end
 
 -- Power each full bar gives: the rack's tier, doubled by the x2 Power pass.
@@ -115,7 +130,7 @@ local function publish(player: Player, data: { [string]: any })
 	player:SetAttribute("ThrowPower", throwPower(data))
 	player:SetAttribute("TrainingLevel", data.trainingLevel)
 	player:SetAttribute("TrainingXp", data.trainingXp)
-	player:SetAttribute("TrainingXpNeeded", Training.xpToNextLevel(data.trainingLevel))
+	player:SetAttribute("TrainingXpNeeded", Training.xpForNextBar(throwPower(data)))
 	player:SetAttribute("XpPerRep", xpPerRep(player, data))
 	player:SetAttribute("NextXpPerRep", Training.xpPerRepFor(data.xpUpgrades + 1) * passMultiplier(player))
 	player:SetAttribute("XpUpgradePrice", Training.xpUpgradePrice(data.xpUpgrades))
@@ -125,13 +140,15 @@ local function publish(player: Player, data: { [string]: any })
 	player:SetAttribute("UpgradesToNextTier", upgradesLeft)
 end
 
--- Each full bar gives the rack's power per bar.
+-- Each full bar gives the rack's power per bar. The next bar's XP follows the power reached (Training.xpForNextBar).
 local function addXp(player: Player, data, amount: number)
 	data.trainingXp += amount
-	while data.trainingXp >= Training.xpToNextLevel(data.trainingLevel) do
-		data.trainingXp -= Training.xpToNextLevel(data.trainingLevel)
+	local needed = Training.xpForNextBar(throwPower(data))
+	while data.trainingXp >= needed do
+		data.trainingXp -= needed
 		data.trainingLevel += 1
 		data.trainedPower += powerPerBar(player, data)
+		needed = Training.xpForNextBar(throwPower(data))
 	end
 end
 
@@ -148,6 +165,23 @@ local function updateRackBar(plotIndex: number?)
 	end
 	for _, part in parts do
 		part.Transparency = if inUse then 1 else 0
+	end
+end
+
+-- Shows the rack this many upgrades has earned at a base. A model that hasn't been imported yet is skipped for the
+-- best one that has.
+local function showRack(plotIndex: number, upgrades: number)
+	local earned = Training.rackFor(upgrades)
+	for index = table.find(Training.rackModels, earned) :: number, 1, -1 do
+		local name = Training.rackModels[index].model
+		if BaseKit.has(name) then
+			local shown = shownRacks[plotIndex]
+			if not shown or shown.Name ~= name then
+				placeRack(workspace.Racks[`Rack{plotIndex}`], plotIndex, name)
+				updateRackBar(plotIndex)
+			end
+			return
+		end
 	end
 end
 
@@ -197,26 +231,35 @@ local function tryBuyXpUpgrade(player: Player, data)
 		return
 	end
 	local before = powerPerBar(player, data)
+	local rackBefore = Training.rackFor(data.xpUpgrades)
 	data.cash -= price
 	data.xpUpgrades += 1
 	player:SetAttribute("Cash", data.cash)
 	publish(player, data)
 	local now = powerPerBar(player, data)
+	-- One notice: a second would replace it on screen.
+	local rack = Training.rackFor(data.xpUpgrades)
+	local opening = if rack ~= rackBefore then `New rack: {rack.name}!` else "Upgraded!"
 	if now > before then
-		PlotService.notify(player, `Upgraded! Every full bar now gives {Format.short(now)} power`)
+		PlotService.notify(player, `{opening} Every full bar now gives {Format.short(now)} power`)
 	else
 		local left, nextPower = Training.nextTier(data.xpUpgrades)
-		PlotService.notify(player, `Upgraded! {left} more for {Format.short(nextPower)} power per bar`)
+		PlotService.notify(player, `{opening} {left} more for {Format.short(nextPower)} power per bar`)
 	end
 end
 
 local function step(dt: number)
 	local rack = Training.rack
 	local xpPad = Training.xpUpgrade
+	local owned: { [number]: boolean } = {}
 	for _, player in Players:GetPlayers() do
 		local data = PlayerData.get(player)
 		local plotIndex = player:GetAttribute("PlotIndex")
 		if data then
+			if plotIndex then
+				owned[plotIndex] = true
+				showRack(plotIndex, data.xpUpgrades)
+			end
 			local root, humanoid = rootOf(player)
 			if training[player] and (not root or training[player] ~= plotIndex) then
 				stopTraining(player, false)
@@ -252,6 +295,12 @@ local function step(dt: number)
 					remotes.BubbleShown:FireClient(player, bubbleCount)
 				end
 			end
+		end
+	end
+	-- A base nobody owns goes back to the first rack.
+	for plotIndex in shownRacks do
+		if not owned[plotIndex] then
+			showRack(plotIndex, 0)
 		end
 	end
 end

@@ -8,42 +8,51 @@ Saves spore_hollow_monsters.blend and renders to design/world/monsters_spore_hol
 two videos, spore_hollow_animation_preview.mp4 (all six walking and roaring, as on every map) and
 spore_hollow_pounce_preview.mp4 (each in turn close up, through its pounce). The map's props are in build_spore_hollow.py.
 
-Map 14, a hollow at the bottom of the world where no sun ever reached and the fungus grew as big as castles. The
-owner asked for monsters that suit it, "very aggressive and nice, more aggressive than the 13th map", built and
-animated in Blender. So down here the fungus is the predator: it has grown through everything that lives in the
-hollow and made it worse. All six are hostile, the commons too (their jokes stay in the names and one thing each),
-and none of them is ever still: on top of map 13's thrashing they pounce at you, and spores pour out of them.
+Map 14, a hollow at the bottom of the world where no sun ever reached and the fungus grew as big as castles. The owner
+first asked for monsters "very aggressive and nice, more aggressive than the 13th map". The first six came out toy-like
+(round eyes with a flat bar of a pupil that read sleepy, red caps with yellow spots that read like a game's power-up,
+small mouths, upright poses), and on 2026-11-06 the owner said they didn't like them at all and wanted them **more scary
+and aggressive**. So these are the same six, by name and by rig, rebuilt from scratch to frighten.
 
-Two ideas run through all six. The infected eye: a glowing chartreuse iris with a black bar of a pupil lying across
-it, a goat's or a toad's, and threads of glowing mycelium creeping in over the white from its rim (on the fierce
-ones there is no white at all, just a glowing orb sunk in a black socket, the threads spreading out of it over the
-face, under a brow with little mushrooms growing out of it). And the gill maw: a jaw hanging open on crooked teeth,
-the roof of the mouth the underside of a mushroom, gills glowing all the way back to a glowing throat, and threads
-of glowing mycelium stretched between the jaws. Fungus grows out of all of them: caps, shelf fungi and stalks.
+The idea: down here the rot is the predator. It has eaten into everything that lives in the hollow and is wearing it.
+Every one of them is dark and rotten, with bone-pale teeth, claws and spikes, crusts of pale mycelium bursting out of
+the hide (as the real fungus does on the ants it takes), black caps with gills glowing chartreuse under them, and none
+of them stands up straight: they crouch, hunch and reach, heads low and thrust at you. They share two things:
 
-  Toad Rage       a squat, furious toad with a toadstool for a hat, jammed down over its eyes into a scowl, the gills
-                  under the brim glowing down on them. A mouth as wide as it is, a sticky tongue whipping about,
-                  warts all over its back and two of them torn open, puffing spores
-  Morel Panic     a gaunt ghoul bent double, with no head of its own, only a morel: a tall honeycomb hood glowing
-                  amber out of every pit and an eye in a dozen of them, each rolling its own way. Under it a long jaw
-                  hangs open on two rows of teeth; its claws drag on the ground; spores rise off the tip of its head
-  Antagonist      a giant ant the fungus got to first: rust-red armour, mandibles like shears that never stop
-                  clacking, two glowing orbs for eyes, and tall pale stalks with glowing clubs bursting out of its
-                  head and back, whipping about as if looking for the next one
-  Sporantula      a spider whose back is a mushroom cap freckled with glowing specks, on eight long stalks of legs;
-                  eight infected eyes under the brim, fangs that never stop chattering, a glowing drop on each, and a
-                  puffball for an abdomen, torn open in two places and pouring spores
-  Gillotine       a towering mantis under a chocolate cap, its forelegs two serrated blades held up and ready, side
-                  jaws round a mouth of teeth, its wings stood up behind it in a threat display, a glowing eye on
-                  each and lilac light in their veins
-  Shroomageddon   the boss: the hollow's own god, a colossal titan on its knuckles that is more fungus than beast. A
-                  forest of glowing mushrooms on its back round a geyser of spores, the mycelium heart glowing in its
-                  open chest, whips of mycelium, a cap pulled down over its face like a hood with a crown of glowing
-                  morels, five eyes, and a mouth that opens four ways
+  The rot glare. No white in any eye. A burning chartreuse iris with a thin upright slit, sunk in a black socket under a
+  slab of brow slanting hard down to the nose, glowing threads of mycelium creeping out of it over the face; and spare
+  eyes burst up through the hide round the main ones, little black beads with the same burning slit.
+  The rot maw. The mouth is most of the face: a jaw hanging wide open, two rows of long needle teeth leaning inwards,
+  the roof of the mouth a mushroom's underside with gills glowing back to a glowing throat, and glowing strings of
+  mycelium stretched between the jaws like drool.
 
-What moves. The usual walk, idle and roar, map 13's thrashing (Lash and Snap bones: THRASH in DinoLifeController,
-thrash_of in build_thorn_kingdom_monsters.py), and two things new on this map, in DinoLifeController (VENT, POUNCE)
-and here (vent_rise, pounce_of), the same numbers in both:
+  Toad Rage       a bloated black cave toad crouched to spring, its head nearly all mouth. Two burning eyes on bumps
+                  under warty brows and more bursting up beside them, a row of bone spikes down its back, black ink caps
+                  and shelf fungi growing out of it, two warts torn open and pouring spores, and mycelium whips lashing
+                  from its rump. Splayed hands of long hooked claws
+  Morel Panic     a gaunt, ash-pale crawler on four long limbs, its knees and elbows higher than its back, ribs showing,
+                  long black-clawed fingers reaching. Its head is under a black morel pulled down like a hood, every
+                  pit glowing ember-orange and something looking out of a few of them; under the brim two burning eyes
+                  and a long jaw hanging open in a scream
+  Antagonist      a black ant reared up on four legs, its front pair raised to grab. Huge serrated mandibles spread wide
+                  round a mouth of needles, burning compound eyes under ridged brows, white mycelium bursting out of every
+                  joint, a sting curled over its back, and out of the back of its head the fungus that took it: a pale
+                  stalk arching over it to dangle a glowing club in front of its face
+  Sporantula      a black spider, its front legs raised high over its head to strike, bone knuckles on every joint, two
+                  burning eyes and six more in a cluster, huge bone fangs dripping glowing venom that never stop working,
+                  and a swollen abdomen marked with glowing chevrons, black caps bursting out of it and spores pouring out
+  Gillotine       a towering ash-pale mantis in a black executioner's hood of a cap, its gills glowing down over its
+                  burning eyes. Two great serrated blades raised high, side jaws round a mouth of needles, and behind it
+                  its wings stood up in a threat display, each with a huge glaring eye
+  Shroomageddon   the boss: a colossal black titan on its knuckles, more rot than beast. A ragged black cap pulled down
+                  over its head like a hood, seven burning eyes under it, bone horns and glowing morels for a crown, and
+                  a mouth that opens four ways, wide enough to swallow a house. Its chest is torn open on a glowing heart
+                  behind ribs of bone, a forest of black and deathly pale mushrooms grows on its back round a geyser of
+                  spores, mycelium whips thrash from its shoulders, and its tail ends in a club of bone spikes
+
+What moves is unchanged from the first six, so the game needs no new code. The usual walk, idle and roar, map 13's
+thrashing (Lash and Snap bones: THRASH in DinoLifeController, thrash_of in build_thorn_kingdom_monsters.py), and two
+things of this map's, in DinoLifeController (VENT, POUNCE) and here (vent_rise, pounce_of), the same numbers in both:
   - Vent<n> bones: a column of spore clouds over a vent in the hide, lifted one VENT_GAP every VENT_PERIOD and
     dropped back, so spores pour out for ever (each cloud only goes as far as where the one above it began). The
     clouds are added after grow(), so the gap is the same on every monster.
@@ -53,13 +62,14 @@ and here (vent_rise, pounce_of), the same numbers in both:
 Everything repeats every 4 seconds, so the preview's 4-stride walk and 8-second idle loop seamlessly.
 
 Rules the game adds: Jaw sits in front of Tail1 (or the Spine), since that's how the game tells which way a monster
-faces. Only the main eyes use the Pupil role, which the reveal aims at; spare eyes use Slit.
+faces. Only the main eyes use the Pupil role, which the reveal aims at; spare eyes use Slit. A bone the game looks for
+must carry a mesh (the importer drops empty bones).
 
-Glowing parts are EyeGlow, GillGlow, Vein, Spore, Speck, Glow, Pit, HeartGlow and Lilac (Neon in the game,
-shared/Roles.luau; Lilac is new). Skin roles Body, Accent, Belly and Claw take the colour mutations; caps, shelves,
-stalks, spore clouds and the face keep their colour. Built at the first map's size; the game scales them by
-Config/Biomes standardScale. 1 Blender unit = 1 stud, models face +Y, feet on Z = 0. No five- or six-pointed stars
-or crosses anywhere (the owner ruled them out on map 10).
+Glowing parts are EyeGlow, GillGlow, Vein, Spore, Glow, Pit and HeartGlow (Neon in the game, shared/Roles.luau, all there
+already). Skin roles Body, Accent, Belly and Claw take the colour mutations; caps, stalks, mycelium, spore clouds and the
+face keep their colour. Built at the first map's size; the game scales them by Config/Biomes standardScale. 1 Blender
+unit = 1 stud, models face +Y, feet on Z = 0. No five- or six-pointed stars or crosses anywhere (ruled out on map 10),
+and no gore: it's a kids' game, so nothing bleeds and the insides you see are bone and fungus.
 
 No stud texture in this file (kit.PREVIEW_STUDS off): plain colours, and the studs come only from Studio's shared
 "Studs" material.
@@ -79,14 +89,12 @@ from build_clockwork_citadel import Frame, obox, tube, turn  # noqa: E402
 from build_clockwork_citadel_monsters import fcurves_of  # noqa: E402,F401
 from build_desert import beam  # noqa: E402
 from build_eclipse_temple_monsters import grow  # noqa: E402
-from build_forest import Model, biped_legs  # noqa: E402
-from build_spore_hollow import (BELL, CAP, CAP_B, CAP_B_DARK, CAP_DARK, CLOUD, CLOUD_SPORES, GILL, GLOW, HEART, MYCEL, PIT,  # noqa: E402
-                                PUFF, PUFF_B, RIDGE, SHELF, SHELF_DARK, SPECK, SPORE, STALK, STALK_SHADE, VEIN, WART, bracket, cap,
-                                share, specks)
+from build_forest import Model  # noqa: E402
+from build_spore_hollow import CLOUD, CLOUD_SPORES, GILL, SPORE, VEIN, bracket, cap, share  # noqa: E402
 from build_starfall_crater import ball  # noqa: E402
-from build_thorn_kingdom_monsters import (W, WALK_PREVIEW, aim, along, clawed_leg, crooked_teeth, point, ridge, slab, thorn,  # noqa: E402
-                                          thrash_of, wander, yloft, zloft)
-from build_volcano import idle_pose as volcano_idle, prism, ring_at, roar, top_of, walk_pose as volcano_walk  # noqa: E402
+from build_thorn_kingdom_monsters import (W, WALK_PREVIEW, aim, along, point, ridge, slab, thorn, thrash_of, wander,  # noqa: E402
+                                          yloft, zloft)
+from build_volcano import idle_pose as volcano_idle, prism, ring_at, roar, walk_pose as volcano_walk  # noqa: E402
 from map_kit import limb, plate  # noqa: E402
 from monster_stage import build_and_render, light_up, set_sky  # noqa: E402
 
@@ -95,14 +103,16 @@ kit.PREVIEW_STUDS = False  # plain colours: studs come from Studio's "Studs" mat
 RENDERS = HERE.parent.parent / "design" / "world" / "monsters_spore_hollow"
 BLEND = "spore_hollow_monsters"  # for check_map.py and export_fbx.py
 
-GLOW_ROLES = {"EyeGlow", "GillGlow", "Vein", "Spore", "Speck", "Glow", "Pit", "HeartGlow", "Lilac"}
+GLOW_ROLES = {"EyeGlow", "GillGlow", "Vein", "Spore", "Glow", "Pit", "HeartGlow"}
 kit.NO_STUDS.update(GLOW_ROLES | {"Socket", "Slit"})
 GLOW_STRENGTH = 1.0  # the glowing roles' strength in the renders
 
-FACE = {"Pupil": "#120d08", "Slit": "#120d08", "Socket": "#0b0806", "EyeGlow": "#d6ff3c", "EyeWhite": "#eee8cc", "Highlight": "#ffffff",
-        "Mouth": "#1a100b", "Teeth": "#ece0be", "Tongue": "#b8455e", "GillGlow": GILL, "Vein": VEIN, "Spore": SPORE, "Speck": SPECK,
-        "Glow": GLOW, "Puff": PUFF, "PuffB": PUFF_B, "Puffskin": "#e2d7b0", "Cap": CAP, "CapDark": CAP_DARK, "Stalk": STALK,
-        "StalkShade": STALK_SHADE, "Mycel": MYCEL, "Shelf": SHELF, "ShelfDark": SHELF_DARK}
+ROT_CAP, ROT_CAP_DARK = "#3c2a32", "#241920"  # black caps, bruised
+PALE_CAP, PALE_CAP_DARK = "#d9d0b9", "#b0a58a"  # deathly pale caps
+FACE = {"Pupil": "#0b0806", "Slit": "#0b0806", "Socket": "#060403", "EyeGlow": "#d2ff2c", "EyeWhite": "#e6e0c6", "Highlight": "#ffffff",
+        "Mouth": "#110a08", "Teeth": "#efe6cc", "Tongue": "#3a1c22", "GillGlow": GILL, "Vein": VEIN, "Spore": SPORE, "Glow": "#b8ff3a",
+        "Puff": "#9da17b", "PuffB": "#747b58", "Puffskin": "#4a4236", "Cap": ROT_CAP, "CapDark": ROT_CAP_DARK, "CapB": PALE_CAP,
+        "CapBDark": PALE_CAP_DARK, "Stalk": "#d4c9ad", "Mycel": "#ddd5bf", "Shelf": "#4b3a30", "ShelfDark": "#30241d"}
 SKY, FLOOR = "#14120e", "#4a3830"
 
 
@@ -255,22 +265,25 @@ def egg(m, role, centre, rx, ry, rz, sides=10, rings=6):
     m._add(role, verts, faces)
 
 
-def sprout(m, base, direction, h, r, cap_r, cap_h, rng, cap_role="Cap", crown="CapDark", under="GillGlow", n_specks=0, shape="dome",
-           stalk="Stalk", sides=8):
-    """A mushroom growing out of the monster at base, along direction: a stalk h long and a cap on it, gills glowing
-    under it and n_specks glowing specks on it. Returns the cap's frame."""
+def on_egg(centre, rx, ry, rz, x, y):
+    """The height of an egg()'s top at (x, y), or None off its edge."""
+    k = 1 - (x / rx) ** 2 - ((y - centre[1]) / ry) ** 2
+    return centre[2] + rz * math.sqrt(k) if k > 0 else None
+
+
+def sprout(m, base, direction, h, r, cap_r, cap_h, rng, cap_role="Cap", crown="CapDark", under="GillGlow", shape="bell", stalk="Stalk",
+           sides=8):
+    """A mushroom bursting out of the monster at base, along direction: a stalk h long and a cap on it, gills glowing
+    under it. Returns the cap's frame."""
     d = Vector(direction).normalized()
     top = Vector(base) + d * h
-    tube(m, stalk, tuple(base), tuple(top + d * cap_h * 0.3), r, r * 0.8, 6 if r < 0.2 else 8)
+    tube(m, stalk, tuple(base), tuple(top + d * cap_h * 0.42), r, r * 0.8, 6 if r < 0.2 else 8)  # ending clear of the cap's slices (no flicker)
     # A rim at least 0.045 deep, so the glowing gills under even a tiny cap sit clear of its edge (no flicker).
-    f = cap(m, cap_role, tuple(top), cap_r, cap_h, shape, up_along(d), sides, crown, under, max(0.045, cap_h * 0.16))
-    if n_specks:
-        specks(m, "Speck", f, cap_r, cap_h, shape, n_specks, cap_r * 0.17, rng)
-    return f
+    return cap(m, cap_role, tuple(top), cap_r, cap_h, shape, up_along(d), sides, crown, under, max(0.045, cap_h * 0.16))
 
 
-def jointed_leg(m, points, w, role="Belly", ring="StalkShade", tip="Claw", taper=0.5):
-    """A long thin leg through points (hip, joints, foot): segments tapering from w, a knob at each joint and a dark
+def jointed_leg(m, points, w, role="Belly", ring="Claw", tip="Claw", taper=0.5):
+    """A long thin leg through points (hip, joints, foot): segments tapering from w, a bony knob at each joint and a
     pointed tip for a foot."""
     n = len(points) - 1
     for i, (a, b) in enumerate(zip(points, points[1:])):
@@ -288,8 +301,8 @@ def jointed_leg(m, points, w, role="Belly", ring="StalkShade", tip="Claw", taper
 
 def tendril(m, n, points, w0, w1=0.06, parent="Spine", role="Mycel", beads="Glow", every=2, tip=None, tip_size=None):
     """A whip through points on three bones, Lash<n>a, b and c, which never stop thrashing (thrash_of): a mycelium
-    tendril, a tongue, a thread of silk. beads: a glowing role for knots along it; tip: a role for a bulb on its end.
-    Leaves m.bone on its last bone, so more can go on the end; returns the end point."""
+    tendril, a fungal stalk, a thread of silk. beads: a glowing role for knots along it; tip: a role for a bulb on its
+    end. Leaves m.bone on its last bone, so more can go on the end; returns the end point."""
     segments = len(points) - 1
     per = math.ceil(segments / 3)
     bone = parent
@@ -309,6 +322,49 @@ def tendril(m, n, points, w0, w1=0.06, parent="Spine", role="Mycel", beads="Glow
     if tip:
         ball(m, tip, *points[-1], tip_size or w1 * 2.4, 6, 4)
     return Vector(points[-1])
+
+
+def crust(m, centre, normal, size, rng, count=5, role="Mycel"):
+    """A crust of pale mycelium bursting out of the hide at centre, facing normal: a clump of little turned blocks, as the
+    fungus does at the joints of the ants it takes."""
+    c, n = Vector(centre), Vector(normal).normalized()
+    for _ in range(count):
+        off = Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-1, 1)))
+        off -= n * off.dot(n)
+        p = c + off * size * 0.55 + n * size * rng.uniform(0.0, 0.22)
+        s = size * rng.uniform(0.35, 0.6)
+        obox(m, role, tuple(p), (s, s * 0.8, s * 0.8), aim(n) @ turn(rng.uniform(-0.6, 0.6), rng.uniform(-0.6, 0.6), rng.uniform(0, 3)))
+
+
+def ragged_cap(m, role, centre, r, h, rot, rng, crown=None, under="GillGlow", shape="bell", tatters=12, length=0.35, sides=14):
+    """A cap pulled down like a hood, its rim torn into ragged points hanging down all round. Returns its frame."""
+    f = cap(m, role, centre, r, h, shape, rot, sides, crown, under, max(0.06, h * 0.12))
+    for k in range(tatters):
+        a = (k + rng.uniform(-0.25, 0.25)) * math.tau / tatters
+        base = f.at(math.cos(a) * r * 0.97, math.sin(a) * r * 0.97, -h * 0.05)
+        tip = f.at(math.cos(a) * r * 1.02, math.sin(a) * r * 1.02, -length * r * rng.uniform(0.6, 1.3))
+        plate(m, role, base, tip, f.r @ Vector((-math.sin(a), math.cos(a), 0)), r * math.tau / tatters * 0.9, 0.04, 0.08)
+    return f
+
+
+def claw_hand(m, wrist, ahead, size, side, role="Body", claw="Claw", fingers=4, splay=0.9, lift=0.25):
+    """A long-fingered hand from the wrist, the fingers spread ahead with their knuckles up and curling down to the
+    ground, a long hooked claw on each."""
+    w = Vector(wrist)
+    a = Vector(ahead).normalized()
+    s = a.cross(Vector((0, 0, 1))).normalized()
+    palm = w + a * size * 0.6
+    beam(m, role, tuple(w), tuple(palm), size * 0.55, size * 0.25, size * 0.75)
+    for k in range(fingers):
+        t = k / (fingers - 1) - 0.5
+        d = (a + s * t * splay).normalized()
+        base = palm + s * t * size * 0.6
+        knuckle = base + d * size * 0.7 + Vector((0, 0, size * lift))
+        tip = knuckle + d * size * 0.5 + Vector((0, 0, -size * 0.42))
+        limb(m, role, [tuple(base), tuple(knuckle), tuple(tip)], size * 0.17, size * 0.11)
+        hook = tip + d * size * 0.5 + Vector((0, 0, -size * 0.18))
+        thorn(m, claw, tuple(tip), tuple(hook), size * 0.14, tuple(Vector((0, 0, size * 0.08))))
+    return palm
 
 
 # ---------------------------------------------------------------------- the spore vents
@@ -361,86 +417,85 @@ def finish(m, k=1.0):
     return m
 
 
-# ---------------------------------------------------------------------- the infected eye and the gill maw
+# ---------------------------------------------------------------------- the rot glare and the rot maw
 
 
-def spore_eye(m, centre, look, r, rng, pupil="Pupil", iris=0.56, veins=5, off=(0.0, 0.0), sprouts=0, role="EyeWhite"):
-    """The infected eye: a bulging ball, a glowing chartreuse iris with a black bar of a pupil lying across it,
-    threads of glowing mycelium creeping in over the white from its rim, and with sprouts, tiny mushrooms growing out
-    of its lid. off slides the iris across the eye: rolling, not looking at you."""
-    f = Frame(m, centre, aim(look))
-    ball(m, role, *centre, r, 8, 5)
-    n = r * 0.96
-    u, v = off[0] * r, off[1] * r
-    slab(f, "EyeGlow", u, v, n, r * iris, r * 0.1, 10)
-    f.box(pupil, u, n + r * 0.065, v, r * iris * 1.3, r * 0.05, r * iris * 0.36)
-    f.box("Highlight", u - r * iris * 0.46, n + r * 0.1, v + r * iris * 0.52, r * 0.16, r * 0.03, r * 0.16)
-    edge = math.asin(min(iris * 1.1, 0.95))
-    for _ in range(veins):
-        a = rng.uniform(0, math.tau)
-        mid_t = (1.4 + edge) / 2
-        pts = [on_ball(f, r * 1.02, 1.4, a), on_ball(f, r * 1.02, mid_t, a + rng.uniform(-0.35, 0.35)), on_ball(f, r * 1.02, edge, a + rng.uniform(-0.2, 0.2))]
-        for p, q in zip(pts, pts[1:]):
-            beam(m, "Vein", p, q, r * 0.085, None, r * 0.055)
-        beam(m, "Vein", pts[1], on_ball(f, r * 1.02, mid_t - 0.2, a + rng.choice((-1, 1)) * 0.5), r * 0.06, None, r * 0.04)
-    for k in range(sprouts):
-        a = math.pi / 2 + (k - (sprouts - 1) / 2) * 0.7  # along the top of the eye
-        base = Vector(on_ball(f, r * 0.94, 0.95, a))
-        out = (base - Vector(centre)).normalized() + Vector((0, 0, 0.7))
-        sprout(m, base, out, r * 0.5, r * 0.07, r * 0.26, r * 0.18, rng, crown=None, sides=6)
-
-
-def spore_glare(m, centre, look, size, inner, slant=0.55, pupil="Pupil", brow="Accent", sprouts=2, veins=4, rng=None, lid=True):
-    """The infected eye on the fierce ones: no white, one glowing orb sunk in a black socket with a black bar across it,
-    glowing threads of mycelium spreading out of the socket over the face, under a slab of brow slanting hard down to
-    the nose (inner is +1 if the nose lies at +X) with little mushrooms growing out of it."""
-    rng = rng or random.Random(int(size * 1000) + int(inner))
+def rot_eye(m, centre, look, size, inner, slant=0.6, pupil="Pupil", brow="Accent", rng=None, veins=3, lid=True, horns=0, horn_role="Claw"):
+    """The rot glare: no white at all, a burning chartreuse iris with a thin upright slit sunk in a black socket, under a
+    slab of brow slanting hard down to the nose (inner is +1 if the nose lies at +X), a lid squeezing it from below and
+    glowing threads of mycelium creeping out of the socket over the face. horns: bone spikes out of the brow's far end."""
+    rng = rng or random.Random(int(size * 1000) + int(inner * 7))
     f = Frame(m, centre, aim(look) @ turn(y=inner * slant * 0.5))
-    slab(f, "Socket", 0, 0, 0.03, size * 0.52, 0.08, 10, 1.4)
-    slab(f, "EyeGlow", 0, -size * 0.02, 0.09, size * 0.42, 0.05, 10, 1.15)
-    f.box(pupil, 0, 0.125, -size * 0.03, size * 0.66, 0.03, size * 0.14)
-    f.box("Highlight", -size * 0.2, 0.15, size * 0.15, size * 0.1, 0.02, size * 0.1)
+    slab(f, "Socket", 0, 0, 0.03, size * 0.56, 0.08, 10, 1.45)
+    slab(f, "EyeGlow", 0, -size * 0.05, 0.09, size * 0.4, 0.05, 10, 1.1)
+    slab(f, pupil, 0, -size * 0.05, 0.125, size * 0.35, 0.03, 8, 0.16)
+    f.box("Highlight", -size * 0.17, 0.15, size * 0.1, size * 0.09, 0.02, size * 0.09)
     b = Frame(m, centre, aim(look))
     for k in range(veins):  # threads out of the socket, down and out over the cheek
         a = math.radians(-150 + 120 * k / max(veins - 1, 1) + rng.uniform(-12, 12))
-        p = Vector((math.cos(a) * size * 0.68, 0.035, math.sin(a) * size * 0.5))
+        if inner > 0:
+            a = math.pi - a
+        p = Vector((math.cos(a) * size * 0.7, 0.035, math.sin(a) * size * 0.5))
         pts = [p]
         for _ in range(2):
             a += rng.uniform(-0.45, 0.45)
-            p = p + Vector((math.cos(a) * size * 0.42, 0.0, math.sin(a) * size * 0.42))
+            p = p + Vector((math.cos(a) * size * 0.4, 0.0, math.sin(a) * size * 0.4))
             pts.append(p)
         for p, q in zip(pts, pts[1:]):
-            beam(m, "Vein", b.at(*p), b.at(*q), size * 0.075, None, size * 0.05)
-    out, nose = -inner * size * 1.0, inner * size * 0.82
+            beam(m, "Vein", b.at(*p), b.at(*q), size * 0.07, None, size * 0.045)
+    out, nose = -inner * size * 1.0, inner * size * 0.85
     drop = slant * size
-    b.beam(brow, (out, 0.1, size * 0.5 + drop * 0.5), (nose, 0.2, size * 0.42 - drop * 0.6), size * 0.42, size * 0.5, size * 0.34)
+    b.beam(brow, (out, 0.1, size * 0.5 + drop * 0.5), (nose, 0.22, size * 0.4 - drop * 0.65), size * 0.46, size * 0.52, size * 0.34)
     if lid:
-        b.beam(brow, (out * 0.9, 0.1, -size * 0.5), (nose * 0.9, 0.12, -size * 0.58), size * 0.26, size * 0.18, size * 0.2)
-    for k in range(sprouts):  # little mushrooms growing out of the brow
-        t = 0.12 + 0.36 * k
-        p = Vector((out + (nose - out) * t, 0.05, size * 0.72 + drop * 0.5 * (1 - t) - drop * 0.1))
-        sprout(m, b.at(*p), b.r @ Vector((-inner * 0.35, -0.35, 1)), size * 0.5, size * 0.07, size * 0.3, size * 0.21, rng, crown=None, sides=6)
+        b.beam(brow, (out * 0.9, 0.1, -size * 0.52), (nose * 0.9, 0.12, -size * 0.58), size * 0.26, size * 0.18, size * 0.2)
+    for k in range(horns):
+        t = 0.06 + 0.3 * k
+        p = Vector((out + (nose - out) * t, 0.08, size * 0.72 + drop * 0.45 * (1 - t)))
+        tip = p + Vector((-inner * size * 0.5, -size * 0.4, size * (0.9 - 0.25 * k)))
+        thorn(m, horn_role, b.at(*p), b.at(*tip), size * 0.26)
 
 
-def bead_eye(m, centre, look, r, pupil="Slit", off=(0.0, 0.0)):
-    """A spider's eye gone over: a glossy black bead, a glowing ring of an iris and a black bar across it, no white."""
+def bead(m, centre, look, r, pupil="Slit"):
+    """A spare eye burst up through the hide: a black bead, a burning iris and a thin upright slit."""
     f = Frame(m, centre, aim(look))
     ball(m, "Socket", *centre, r, 8, 4)
-    u, v = off[0] * r, off[1] * r
-    slab(f, "EyeGlow", u, v, r * 0.93, r * 0.64, r * 0.12, 10)
-    f.box(pupil, u, r * 1.0, v, r * 0.86, r * 0.05, r * 0.24)
-    f.box("Highlight", u - r * 0.32, r * 1.02, v + r * 0.34, r * 0.17, r * 0.03, r * 0.17)
+    slab(f, "EyeGlow", 0, 0, r * 0.92, r * 0.68, r * 0.12, 10)
+    slab(f, pupil, 0, 0, r * 0.99, r * 0.58, r * 0.06, 8, 0.2)
+    f.box("Highlight", -r * 0.3, r * 1.02, r * 0.3, r * 0.16, r * 0.03, r * 0.16)
 
 
-def orb_eye(m, centre, look, r, inner, pupil="Pupil", brow="Accent", slant=0.6):
-    """A mantis's great eye gone over: a bulging glowing orb with a black bar across it, set in a black rim, under a
-    brow slanting down to the middle (inner is +1 if the middle lies at +X)."""
+def orb(m, centre, look, r, inner, pupil="Pupil", brow="Accent", slant=0.65):
+    """A great bulging eye (an ant's, a mantis's): a glossy black ball, a burning iris and a thick upright slit, under a
+    ridge of brow slanting down to the middle (inner is +1 if the middle lies at +X)."""
     f = Frame(m, centre, aim(look))
-    ball(m, "Socket", *f.at(0, -r * 0.3, 0), r * 1.04, 8, 4)
-    ball(m, "EyeGlow", *centre, r, 8, 5)
-    f.box(pupil, 0, r * 0.97, -r * 0.05, r * 1.15, r * 0.07, r * 0.27)
-    f.box("Highlight", -r * 0.36, r * 0.95, r * 0.36, r * 0.2, r * 0.07, r * 0.2)
-    f.beam(brow, (-inner * r * 1.2, r * 0.15, r * (0.8 + 0.3 * slant)), (inner * r * 0.8, r * 0.7, r * (0.62 - 0.45 * slant)), r * 0.5, r * 0.46, r * 0.36)
+    ball(m, "Socket", *centre, r, 8, 5)
+    slab(f, "EyeGlow", 0, -r * 0.05, r * 0.9, r * 0.6, r * 0.14, 12)
+    slab(f, pupil, 0, -r * 0.05, r * 0.98, r * 0.52, r * 0.06, 8, 0.2)
+    f.box("Highlight", -r * 0.32, r * 1.0, r * 0.3, r * 0.15, r * 0.03, r * 0.15)
+    f.beam(brow, (-inner * r * 1.15, r * 0.3, r * (0.75 + 0.3 * slant)), (inner * r * 0.8, r * 0.85, r * (0.55 - 0.45 * slant)), r * 0.5, r * 0.42,
+           r * 0.34)
+
+
+def needles(m, lf, width_at, edge_at, length, tooth, per_side, rng, up, across=3, thin=0.36, fang=-2):
+    """Long thin teeth along a jaw in frame lf, none the same, leaning in towards the throat, with one fang much longer
+    near the front of each side. width_at(y) and edge_at(y) give the jaw there; up points them up."""
+    sign = 1 if up else -1
+    for side in (-1, 1):
+        for i in range(per_side):
+            y = length * (0.08 + 0.86 * i / max(per_side - 1, 1))
+            big = i == per_side + fang
+            size = tooth * rng.uniform(0.7, 1.2) * (1.8 if big else 1)
+            x = side * (width_at(y) / 2 - tooth * 0.2)
+            edge = edge_at(y)
+            point(m, "Teeth", lf.at(x, y, edge - sign * 0.04),
+                  lf.at(x - side * rng.uniform(0.0, 0.25) * size, y + rng.uniform(-0.2, 0.3) * size, edge + sign * size * rng.uniform(1.15, 1.6)),
+                  tooth * thin * (1.35 if big else 1))
+    for k in range(across):
+        x = (k + 0.5 - across / 2) * width_at(length) / max(across, 1) * 0.85
+        size = tooth * rng.uniform(0.75, 1.15)
+        point(m, "Teeth", lf.at(x, length * 0.97, edge_at(length) - sign * 0.04),
+              lf.at(x + rng.uniform(-0.15, 0.15) * size, length + rng.uniform(0.0, 0.3) * size, edge_at(length) + sign * size * rng.uniform(1.0, 1.4)),
+              tooth * thin)
 
 
 def mandible(m, f, side, x0, y0, z0, length, width, rng, teeth=5, height=None, curl=1.0, role="Claw", parent="Head"):
@@ -465,25 +520,33 @@ def mandible(m, f, side, x0, y0, z0, length, width, rng, teeth=5, height=None, c
         t = 0.28 + 0.62 * k / max(teeth - 1, 1)
         p = at(t)
         inward = Vector((-side, 0.25, -0.15)).normalized()
-        size = width * rng.uniform(0.75, 1.15) * (1.4 if k == teeth // 2 else 1)
+        size = width * rng.uniform(0.8, 1.25) * (1.5 if k == teeth // 2 else 1)
         base = p + Vector((-side * width * 0.3, 0, 0))
-        point(m, "Teeth", f.at(*base), f.at(*(base + inward * size)), width * 0.42)
+        point(m, "Teeth", f.at(*base), f.at(*(base + inward * size)), width * 0.36)
     m.bone = parent
 
 
-def gill_maw(m, f, skull_w, length, snout_w, upper_h, lower_h, rng, gape=0.16, drop=0.34, upper="Body", lower="Accent", tooth=0.3,
-             per_side=5, head="Head", jaw="Jaw", tongue=True, gills=5, strands=2, rows=1, lift=0.1, mandibles=None, across=3):
-    """The gill maw, built in frame f, whose origin is the middle of the mouth's back and whose +Y is out of the mouth:
-    an upper jaw on the head bone, its roof the underside of a mushroom with gills glowing all the way back to a
-    glowing throat; a lower jaw on the jaw bone hanging open by drop (radians) at rest; crooked teeth, two rows of
-    them with rows=2; threads of glowing mycelium stretched between the jaws. mandibles (a dict of mandible()'s
-    arguments) adds side jaws. Returns the lower jaw's frame and length, for a tongue."""
+def rot_maw(m, f, skull_w, length, snout_w, upper_h, lower_h, rng, gape=0.18, drop=0.55, upper="Body", lower="Accent", tooth=0.3,
+            per_side=7, head="Head", jaw="Jaw", gills=5, strands=3, rows=2, lift=0.1, mandibles=None, across=4, thin=0.36, tip_h=None,
+            nostrils=False):
+    """The rot maw, built in frame f, whose origin is the middle of the mouth's back and whose +Y is out of the mouth: an
+    upper jaw on the head bone (upper_h deep at the back, tip_h at the snout, so its top slopes down), its roof the
+    underside of a mushroom with gills glowing back to a glowing throat; a lower jaw on the jaw bone hanging wide open by
+    drop (radians) at rest; two rows of long needle teeth in each; glowing strings of mycelium stretched between the
+    jaws. mandibles (a dict of mandible()'s arguments) adds side jaws, so it opens four ways. nostrils: two flared slits on
+    the snout. Returns the lower jaw's frame and length."""
     m.bone = head
-    yloft(f, upper, (-0.05, 0, gape / 2 + upper_h * 0.5, skull_w * 0.96, upper_h), (length, 0, gape / 2 + upper_h / 2 + lift, snout_w, upper_h))
+    tip_h = tip_h or upper_h
+    yloft(f, upper, (-0.05, 0, gape / 2 + upper_h * 0.5, skull_w * 0.96, upper_h), (length, 0, gape / 2 + tip_h / 2 + lift, snout_w, tip_h))
+    if nostrils:
+        y = length * 0.82
+        top = gape / 2 + upper_h + (tip_h + lift - upper_h) * (y + 0.05) / (length + 0.05)
+        for side in (-1, 1):
+            f.box("Mouth", side * snout_w * 0.2, y, top, snout_w * 0.13, length * 0.1, 0.06, turn(z=side * 0.5))
     yloft(f, "Mouth", (0, 0, gape / 2 - 0.03, skull_w * 0.84, 0.06), (length * 0.95, 0, gape / 2 + lift * 0.95 - 0.03, snout_w * 0.86, 0.06))
     open_h = gape + drop * length * 0.8 + 0.2
     f.box("Mouth", 0, 0.03, gape / 2 - open_h / 2, skull_w * 0.88, 0.12, open_h)
-    f.box("GillGlow", 0, 0.11, gape / 2 - open_h * 0.5, skull_w * 0.5, 0.06, open_h * 0.64)
+    f.box("GillGlow", 0, 0.11, gape / 2 - open_h * 0.5, skull_w * 0.46, 0.06, open_h * 0.6)
     for k in range(gills):  # the roof of the mouth: gills fanning forward from the throat
         x = (k - (gills - 1) / 2) / max(gills - 1, 1) * skull_w * 0.62
         xb = x * snout_w / skull_w * 0.92
@@ -495,9 +558,9 @@ def gill_maw(m, f, skull_w, length, snout_w, upper_h, lower_h, rng, gape=0.16, d
     def roof(y):
         return gape / 2 + lift * y / length
 
-    crooked_teeth(m, f, width, roof, length, tooth, per_side, rng, False, across=across)
+    needles(m, f, width, roof, length, tooth, per_side, rng, False, across=across, thin=thin)
     if rows > 1:
-        crooked_teeth(m, f, lambda y: width(y) * 0.62, roof, length * 0.8, tooth * 0.72, max(per_side - 2, 2), rng, False, across=0)
+        needles(m, f, lambda y: width(y) * 0.64, roof, length * 0.82, tooth * 0.62, max(per_side - 2, 2), rng, False, across=0, thin=thin, fang=-99)
 
     hinge = f.at(0, -0.05, -gape / 2)
     m.use(jaw, hinge, head)
@@ -509,15 +572,15 @@ def gill_maw(m, f, skull_w, length, snout_w, upper_h, lower_h, rng, gape=0.16, d
     def low_width(y):
         return skull_w * 0.86 + (snout_w * 0.92 - skull_w * 0.86) * y / ll
 
-    crooked_teeth(m, lf, low_width, lambda y: 0.0, ll, tooth * 0.85, per_side, rng, True, across=max(across - 1, 0))
+    needles(m, lf, low_width, lambda y: 0.0, ll, tooth * 0.88, per_side, rng, True, across=max(across - 1, 0), thin=thin)
     if rows > 1:
-        crooked_teeth(m, lf, lambda y: low_width(y) * 0.6, lambda y: 0.0, ll * 0.8, tooth * 0.62, max(per_side - 2, 2), rng, True, across=0)
-    if tongue:
-        lf.beam("Tongue", (0, ll * 0.1, 0.06), (0, ll * 0.8, 0.08), snout_w * 0.42, 0.1, snout_w * 0.3)
-    for k in range(strands):  # threads of mycelium stretched between the jaws
-        x = (k - (strands - 1) / 2) * skull_w * 0.5 / max(strands - 1, 1) + (0.2 * skull_w if strands == 1 else 0)
-        y = length * (0.22 + 0.12 * (k % 2))
-        beam(m, "Vein", f.at(x, y, roof(y) - 0.02), lf.at(x * 0.95, y * 0.95, 0.03), 0.06, None, 0.04)
+        needles(m, lf, lambda y: low_width(y) * 0.6, lambda y: 0.0, ll * 0.8, tooth * 0.58, max(per_side - 2, 2), rng, True, across=0, thin=thin,
+                fang=-99)
+    for k in range(strands):  # glowing strings of mycelium stretched between the jaws, like drool
+        u = (k + 0.5) / strands - 0.5
+        x = u * skull_w * 0.7 + rng.uniform(-0.05, 0.05) * skull_w
+        y = length * (0.18 + 0.22 * ((k * 7) % 3) / 2)
+        beam(m, "Vein", f.at(x, y, roof(y) - 0.02), lf.at(x * 0.95 + rng.uniform(-0.1, 0.1) * skull_w, y * 0.95, 0.03), 0.055, None, 0.035)
         m.stretch("Vein", head)
     if mandibles:
         for side in (-1, 1):
@@ -526,94 +589,9 @@ def gill_maw(m, f, skull_w, length, snout_w, upper_h, lower_h, rng, gape=0.16, d
     return lf, ll
 
 
-# ---------------------------------------------------------------------- the common ones
-
-
-def toad_rage():
-    """A squat, furious toad with a toadstool for a hat, cocked over one eye, and brows slammed down over both. A mouth as
-    wide as it is, hanging open on crooked teeth with glowing gills for a roof, a sticky tongue whipping about, warts
-    all over its back, a few of them glowing, and two of them torn open, puffing spores."""
-    rng = random.Random(1401)
-    m = monster("dino_ToadRage", Body="#7f7d3c", Accent="#525526", Belly="#d9cc8f", Claw="#2a2216", Wart="#a59d58")
-    m.joint("Spine", (0, -0.3, 1.3))
-    bc, brx, bry, brz = Vector((0, -0.45, 1.25)), 1.45, 1.62, 1.05
-    egg(m, "Body", bc, brx, bry, brz, 12, 7)
-    m.loft_y("Belly", (-1.5, 0, 0.32, 1.7, 0.2), (0.75, 0, 0.5, 2.2, 0.22))
-
-    def top(x, y):
-        return bc.z + brz * math.sqrt(max(0.0, 1 - (x / brx) ** 2 - ((y - bc.y) / bry) ** 2))
-
-    for _ in range(26):  # warts all over its back, a few of them glowing
-        a, e = rng.uniform(0, math.tau), rng.uniform(0.12, 1.25)
-        p = bc + Vector((brx * math.cos(e) * math.cos(a), bry * math.cos(e) * math.sin(a), brz * math.sin(e)))
-        if p.y > 0.55:
-            continue
-        r_ = rng.uniform(0.11, 0.2)
-        ball(m, "Wart", *p, r_, 6, 3)
-        if rng.random() < 0.3:
-            m.block("Speck", p.x, p.y, p.z + r_ * 0.85, r_ * 0.7, r_ * 0.7, r_ * 0.4)
-    for x, y in ((0.45, -0.3), (-0.7, -1.4), (0.9, -1.05)):  # little mushrooms come up through its skin
-        sprout(m, (x, y, top(x, y) - 0.1), (rng.uniform(-0.35, 0.35), rng.uniform(-0.3, 0.1), 1), 0.4, 0.06, 0.25, 0.18, rng, crown=None)
-    for n, x, y in ((1, -0.55, -0.6), (2, 0.5, -1.25)):  # two warts torn open, puffing spores
-        z = top(x, y)
-        ball(m, "Puffskin", x, y, z - 0.06, 0.36, 8, 4)
-        vent(m, n, (x, y, z + 0.22), "Spine", 0.32, 4)
-
-    for side, bone in ((-1, "FrontL"), (1, "FrontR")):  # stubby arms, fingers splayed, claws out
-        sh = (side * 1.05, 0.55, 1.15)
-        m.use(bone, sh)
-        elbow = (side * 1.6, 0.85, 0.7)
-        wrist = (side * 1.5, 1.35, 0.24)
-        beam(m, "Body", sh, elbow, 0.64, None, 0.52)
-        ball(m, "Body", *elbow, 0.3, 6, 3)
-        beam(m, "Accent", elbow, wrist, 0.5, None, 0.42)
-        m.block("Belly", wrist[0], wrist[1] + 0.12, 0.13, 0.62, 0.52, 0.24)
-        for k in range(4):
-            a = side * (-0.5 + k * 0.42)
-            d = Vector((math.sin(a), math.cos(a), 0))
-            base = Vector((wrist[0], wrist[1] + 0.2, 0.12))
-            tip = base + d * 0.6
-            beam(m, "Belly", tuple(base), tuple(tip), 0.17, 0.14, 0.13)
-            thorn(m, "Claw", tuple(tip), tuple(tip + d * 0.34 + Vector((0, 0, -0.08))), 0.12)
-    for side, bone in ((-1, "BackL"), (1, "BackR")):  # big folded thighs, long toes splayed forward
-        m.use(bone, (side * 1.0, -1.0, 1.05))
-        x = side * 1.32
-        egg(m, "Body", (x, -1.05, 0.88), 0.5, 0.95, 0.62, 8, 5)
-        m.loft_y("Accent", (-1.75, x * 1.08, 0.3, 0.55, 0.5), (-0.35, x * 1.12, 0.28, 0.48, 0.42))
-        ankle = Vector((x * 1.12, -0.3, 0.14))
-        for k in range(4):
-            a = side * (0.15 + k * 0.32)
-            d = Vector((math.sin(a), math.cos(a), 0))
-            tip = ankle + d * (0.95 - 0.1 * abs(k - 1.5))
-            beam(m, "Belly", tuple(ankle), tuple(tip), 0.18, 0.12, 0.14)
-            thorn(m, "Claw", tuple(tip), tuple(tip + d * 0.3 + Vector((0, 0, -0.06))), 0.12)
-    m.bone = "Spine"
-
-    m.use("Neck", (0, 0.3, 1.7))
-    yc, zc, w, d, h = 1.0, 1.95, 2.5, 1.3, 1.05
-    m.head_joint(yc, d, zc, h)
-    hf = Frame(m, (0, yc, zc), turn(x=-0.05, y=0.06))
-    hf.box("Body", 0, 0, 0.05, w, d, h)
-    mf = Frame(m, hf.at(0, d / 2 - 0.2, -0.32), hf.r)
-    lf, ll = gill_maw(m, mf, w * 0.95, 0.72, w * 0.8, 0.46, 0.42, rng, gape=0.12, drop=0.32, upper="Body", lower="Belly", tooth=0.24,
-                      per_side=7, tongue=False, gills=6, strands=2, lift=0.04)
-    # The tongue: a whip of its own, lolling out of the mouth and lashing about.
-    tendril(m, 1, [lf.at(0.15, ll * 0.25, 0.08), lf.at(0.3, ll * 0.95, 0.14), lf.at(0.6, ll * 1.6, 0.06), lf.at(0.95, ll * 2.1, -0.18),
-                   lf.at(1.25, ll * 2.4, -0.48), lf.at(1.5, ll * 2.4, -0.7), lf.at(1.78, ll * 2.2, -0.72)],
-            0.44, 0.26, "Jaw", "Tongue", beads=None, tip="Tongue", tip_size=0.3)
-    m.bone = "Head"
-    for side, r, off in ((-1, 0.54, (0.12, -0.1)), (1, 0.47, (-0.15, 0.04))):  # bulging up off the front corners, mismatched
-        spore_eye(m, hf.at(side * 0.8, 0.3, 0.6), hf.r @ Vector((side * 0.22, 1, 0.08)), r, rng, off=off, veins=5)
-        hf.beam("Accent", (side * 1.32, 0.12, 1.12), (side * 0.22, 0.86, 0.72), 0.34, 0.3, 0.26)  # brows slammed down to the nose
-    hat = cap(m, "Cap", hf.at(0.1, -0.5, 0.88), 1.0, 0.85, "dome", hf.r @ turn(x=-0.22, y=0.3), 12, crown="CapDark", under="GillGlow")
-    specks(m, "Speck", hat, 1.0, 0.85, "dome", 7, 0.2, rng)
-    m.head_centre = tuple(hf.at(0, d / 2 + 0.35, 0.3))
-    return finish(m, 0.95)
-
-
-def morel_hood(m, f, r, h, rng, cols=8, rows=5, ridge_role="Ridge", pit="Pit"):
-    """A morel for a head, in frame f, its base at f's origin and rising up f's Z: a glowing core and over it a
-    honeycomb of ridges, amber light glowing out of every pit. Returns the pits as (centre, outward, size)."""
+def morel_hood(m, f, r, h, rng, cols=8, rows=5, ridge_role="Ridge", pit="Pit", ridge_w=0.17):
+    """A morel, in frame f, its base at f's origin and rising up f's Z: a glowing core and over it a honeycomb of ridges
+    ridge_w * r thick, light glowing out of every pit. Returns the pits as (centre, outward, size), and its tip."""
     prof = ((0, 1.0), (0.18, 1.06), (0.45, 0.95), (0.7, 0.72), (0.88, 0.42), (1.0, 0.14))
 
     def rad(t):
@@ -622,7 +600,7 @@ def morel_hood(m, f, r, h, rng, cols=8, rows=5, ridge_role="Ridge", pit="Pit"):
     for (t0, s0), (t1, s1) in zip(prof, prof[1:]):
         f.prism(pit, 0, 0, h * t0, h * t1, r * s0 * 0.9, r * s1 * 0.9, cols * 2)
     rings = [0.03 + 0.9 * k / rows for k in range(rows + 1)]
-    w = r * 0.15
+    w = r * ridge_w
     for k, t in enumerate(rings):  # rings round it
         pts = [f.at(math.cos(a) * rad(t), math.sin(a) * rad(t), h * t) for a in [i * math.tau / cols for i in range(cols + 1)]]
         for p, q in zip(pts, pts[1:]):
@@ -641,148 +619,291 @@ def morel_hood(m, f, r, h, rng, cols=8, rows=5, ridge_role="Ridge", pit="Pit"):
     return pits, Vector(tip)
 
 
-def morel_panic():
-    """A gaunt ghoul bent double, with no head of its own, only a morel: a tall honeycomb hood glowing amber out of
-    every pit, and an eye in a dozen of the pits, each rolling its own way. Under it a long jaw hangs open on two rows
-    of teeth, two mismatched eyes glare from under the hood's rim, its claws drag on the ground, whips of mycelium
-    lash from its shoulders and spores rise off the tip of its head."""
-    rng = random.Random(1402)
-    m = monster("dino_MorelPanic", Body="#a99d86", Accent="#6c604e", Belly="#d7ccb0", Claw="#211912", Ridge=RIDGE, Pit=PIT)
-    m.joint("Spine", (0, -0.2, 2.6))
-    biped_legs(m, 0.55, -0.2, 2.6, 0.55, 1.3, 0.38, 1.0, 0.26)
-    t = Frame(m, (0, -0.2, 2.5), turn(x=-0.62, y=0.1))  # bent nearly double, and over to one side
-    zloft(t, "Accent", (-0.15, 0, 0, 0.95, 0.75), (0.35, 0, 0, 1.0, 0.8))
-    zloft(t, "Body", (0.3, 0, 0, 0.92, 0.72), (1.4, 0, 0.05, 1.15, 0.82))
-    zloft(t, "Body", (1.35, 0, 0.05, 1.15, 0.82), (2.3, 0, 0.12, 1.6, 1.05))
-    for k in range(4):  # ribs showing
-        z = 1.5 + k * 0.2
-        for side in (-1, 1):
-            t.beam("Belly", (side * 0.66, 0.3, z), (side * 0.16, 0.5, z - 0.1), 0.1, 0.1, 0.08)
-    ridge(m, "Accent", [t.at(0, -0.42, z) for z in (0.5, 0.85, 1.2, 1.55, 1.9, 2.2)], rng, 0.38, 0.24, 0.3)
-    bracket(m, *t.at(0.42, -0.4, 1.25), 0.42)
-    bracket(m, *t.at(-0.48, -0.44, 1.75), 0.34)
-    bracket(m, *t.at(0.5, -0.35, 2.0), 0.26)
+# ---------------------------------------------------------------------- the common ones
 
-    for side, letter in ((-1, "L"), (1, "R")):  # arms down to the ground, three long claws on each
-        sh = Vector(t.at(side * 0.82, 0.05, 2.1))
-        m.use(f"Arm{letter}", tuple(sh))
-        elbow = sh + Vector((side * 0.45, 0.3, -1.6))
-        wrist = elbow + Vector((-side * 0.05, 0.7, -1.55))
-        beam(m, "Body", tuple(sh), tuple(elbow), 0.42, None, 0.32)
-        ball(m, "Accent", *elbow, 0.22, 6, 3)
-        beam(m, "Body", tuple(elbow), tuple(wrist), 0.32, None, 0.26)
-        m.block("Accent", *wrist, 0.36, 0.42, 0.3)
-        for k in (-1, 0, 1):
-            base = wrist + Vector((k * 0.13, 0.15, -0.05))
-            thorn(m, "Claw", tuple(base), tuple(base + Vector((k * 0.18, 0.72, -0.5))), 0.13, (0, 0.1, 0.16))
-    m.bone = "Spine"
-    for n, side in ((1, -1), (2, 1)):  # whips of mycelium out of its shoulders
-        start = Vector(t.at(side * 0.55, -0.3, 2.05))
-        tendril(m, n, wander(tuple(start), tuple(start + Vector((side * 1.6, -1.4, 1.4))), rng, 7, (side * 0.3, 0, 0.45), 0.14), 0.2, 0.06, "Spine",
-                "Mycel", beads="Glow", tip="Glow", tip_size=0.13)
-    m.bone = "Spine"
 
-    neck = Vector(t.at(0, 0.15, 2.3))
-    m.use("Neck", tuple(neck))
-    head = neck + Vector((0.05, 0.85, 0.12))
-    beam(m, "Body", tuple(neck - Vector((0, 0.15, 0.1))), tuple(head), 0.62, 0.62, 0.5)
-    m.stretch("Body", "Spine")
-    m.use("Head", tuple(head - Vector((0, 0.25, 0.1))), "Neck")
-    hf = Frame(m, tuple(head), turn(x=0.05, z=-0.08))
-    hf.box("Body", 0, 0, 0, 1.0, 0.95, 0.8)
-    mf = Frame(m, hf.at(0, 0.32, -0.3), hf.r)
-    gill_maw(m, mf, 0.95, 1.15, 0.62, 0.3, 0.3, rng, gape=0.12, drop=0.48, upper="Body", lower="Accent", tooth=0.24, per_side=6, rows=2,
-             gills=4, strands=2)
-    for side, r, off in ((-1, 0.32, (0.1, -0.12)), (1, 0.25, (-0.16, 0.1))):
-        spore_eye(m, hf.at(side * 0.28, 0.42, 0.1), hf.r @ Vector((side * 0.12, 1, -0.05)), r, rng, off=off, veins=4)
-        hf.beam("Accent", (side * 0.6, 0.42, 0.44), (side * 0.06, 0.68, 0.2), 0.18, 0.16, 0.13)
-    mo = Frame(m, hf.at(0, -0.05, 0.34), hf.r @ turn(x=0.2, y=0.12))
-    pits, tip = morel_hood(m, mo, 0.76, 1.95, rng)
-    rng.shuffle(pits)
-    eyes = 0
-    for centre, out, size in pits:  # an eye in a dozen of the pits, every one rolling its own way
-        if eyes == 12 or centre.z < head.z + 0.55:
+def toad_rage():
+    """A bloated black cave toad crouched to spring, its head nearly all mouth: a jaw hanging wide on two rows of needles,
+    glowing gills for a roof and strings of glowing mycelium stretched across it. Two burning eyes on bumps under warty
+    brows slammed down to the nose, more bursting up through the hide beside them. A row of bone spikes down its back,
+    black ink caps and shelf fungi growing out of it, two warts torn open and pouring spores, mycelium whips lashing from
+    its rump, and splayed hands of long hooked claws."""
+    rng = random.Random(1401)
+    m = monster("dino_ToadRage", Body="#3c3727", Accent="#23201a", Belly="#776e53", Claw="#e8dec2", Wart="#555038")
+    m.joint("Spine", (0, -0.4, 1.35))
+    lumps = (((0, -0.95, 1.12), 1.6, 1.55, 1.05), ((0, 0.25, 1.55), 1.5, 1.15, 1.02))  # a heavy rump, shoulders hunched up
+    for c, rx, ry, rz in lumps:
+        egg(m, "Body", c, rx, ry, rz, 12, 7)
+    m.loft_y("Belly", (-2.05, 0, 0.3, 1.8, 0.26), (0.9, 0, 0.7, 2.3, 0.3))
+
+    def top(x, y):
+        heights = [h for h in (on_egg(c, rx, ry, rz, x, y) for c, rx, ry, rz in lumps) if h is not None]
+        return max(heights) if heights else 0.6
+
+    for _ in range(30):  # warts all over its back
+        x, y = rng.uniform(-1.35, 1.35), rng.uniform(-2.3, 0.5)
+        z = top(x, y)
+        if z < 0.8:
             continue
-        look = out + Vector((rng.uniform(-0.5, 0.5), rng.uniform(-0.5, 0.5), rng.uniform(-0.3, 0.4)))
-        spore_eye(m, tuple(centre), tuple(look), size * 0.42, rng, pupil="Slit", off=(rng.uniform(-0.3, 0.3), rng.uniform(-0.3, 0.3)), veins=2)
-        eyes += 1
+        r_ = rng.uniform(0.1, 0.2)
+        ball(m, "Wart", x, y, z - r_ * 0.35, r_, 6, 3)
+    ridge(m, "Claw", [(rng.uniform(-0.1, 0.1), y, top(0, y) - 0.1) for y in (0.5, 0.1, -0.3, -0.7, -1.1, -1.5, -1.9)], rng, 0.7, 0.24, 0.75)
+    for side in (-1, 1):  # and smaller ones down its flanks
+        ridge(m, "Claw", [(side * 0.85, y, top(side * 0.85, y) - 0.08) for y in (0.25, -0.5, -1.25, -1.9)], rng, 0.38, 0.16, 0.6)
+    for x, y in ((1.0, -0.15), (-1.1, -1.45), (0.55, -2.1), (1.2, -1.6), (-0.95, 0.05)):  # pale mycelium bursting out of it
+        crust(m, (x, y, top(x, y) - 0.05), (x * 0.6, 0, 1), 0.4, rng, 6)
+    for x, y, d, h, r_, cr, ch in ((-0.7, -0.55, (-0.55, -0.15, 1), 1.0, 0.12, 0.52, 0.66), (0.75, -1.3, (0.6, -0.35, 1), 0.8, 0.1, 0.44, 0.55),
+                                   (-0.3, -1.95, (-0.25, -0.8, 1), 0.55, 0.08, 0.32, 0.42)):  # black ink caps growing out of it
+        sprout(m, (x, y, top(x, y) - 0.15), d, h, r_, cr, ch, rng)
+    for side, y, z, r_ in ((-1, -0.75, 1.25, 0.44), (-1, -1.4, 0.92, 0.32), (1, -0.95, 1.5, 0.38), (1, 0.15, 1.1, 0.3)):  # shelf fungi
+        k = 1 - ((y + 0.95) / 1.55) ** 2 - ((z - 1.12) / 1.05) ** 2
+        bracket(m, side * 1.6 * math.sqrt(max(k, 0.05)) * 0.98, y, z, r_)
+    for n, x, y in ((1, 0.32, -0.55), (2, -0.62, -1.35)):  # two warts torn open, pouring spores
+        z = top(x, y)
+        ball(m, "Puffskin", x, y, z - 0.1, 0.34, 8, 4)
+        vent(m, n, (x, y, z + 0.16), "Spine", 0.3, 4)
+    for n, side in ((1, -1), (2, 1)):  # mycelium whips lashing from its rump
+        start = Vector((side * 0.5, -1.85, top(side * 0.5, -1.85) - 0.1))
+        tendril(m, n, wander(tuple(start), tuple(start + Vector((side * 1.2, -1.4, 1.7))), rng, 7, (side * 0.3, 0, 0.5), 0.15), 0.22, 0.06, "Spine",
+                "Mycel", beads="Glow", tip="Glow", tip_size=0.13)
+        m.bone = "Spine"
+
+    for side, bone in ((-1, "FrontL"), (1, "FrontR")):  # thick arms planted wide, hands of long hooked claws
+        sh = Vector((side * 1.15, 0.65, 1.4))
+        m.use(bone, tuple(sh))
+        elbow = Vector((side * 1.9, 0.95, 0.85))
+        wrist = Vector((side * 1.75, 1.6, 0.26))
+        beam(m, "Body", tuple(sh), tuple(elbow), 0.72, None, 0.56)
+        ball(m, "Body", *elbow, 0.33, 6, 3)
+        thorn(m, "Claw", tuple(elbow + Vector((side * 0.2, -0.1, 0.1))), tuple(elbow + Vector((side * 0.7, -0.5, 0.45))), 0.22)
+        beam(m, "Accent", tuple(elbow), tuple(wrist), 0.54, None, 0.46)
+        m.block("Accent", wrist.x, wrist.y + 0.12, 0.17, 0.72, 0.62, 0.32)
+        for k in range(4):
+            a = side * (-0.5 + k * 0.38)
+            d = Vector((math.sin(a), math.cos(a), 0))
+            base = Vector((wrist.x, wrist.y + 0.3, 0.18)) + d * 0.15
+            thorn(m, "Claw", tuple(base), tuple(base + d * 0.95 + Vector((0, 0, -0.14))), 0.17, (0, 0, 0.16))
+    for side, bone in ((-1, "BackL"), (1, "BackR")):  # big folded thighs, toes splayed forward, clawed
+        m.use(bone, (side * 1.05, -1.15, 1.05))
+        x = side * 1.38
+        egg(m, "Body", (x, -1.2, 0.85), 0.52, 1.0, 0.64, 8, 5)
+        m.loft_y("Accent", (-1.95, x * 1.06, 0.3, 0.55, 0.5), (-0.5, x * 1.1, 0.28, 0.48, 0.42))
+        ankle = Vector((x * 1.1, -0.45, 0.15))
+        for k in range(4):
+            a = side * (0.15 + k * 0.32)
+            d = Vector((math.sin(a), math.cos(a), 0))
+            tip = ankle + d * (0.9 - 0.1 * abs(k - 1.5))
+            beam(m, "Accent", tuple(ankle), tuple(tip), 0.18, 0.12, 0.14)
+            thorn(m, "Claw", tuple(tip), tuple(tip + d * 0.4 + Vector((0, 0, -0.08))), 0.13)
+    m.bone = "Spine"
+
+    m.use("Neck", (0, 0.85, 1.85))
+    m.block("Body", 0, 0.95, 1.7, 1.7, 0.5, 0.75)  # a thick fold of neck (a bone the game moves must carry something)
+    m.use("Head", (0, 1.05, 1.85), "Neck")
+    hf = Frame(m, (0, 1.4, 1.95), turn(x=-0.06))
+    hf.box("Body", 0, -0.4, 0.12, 2.3, 1.0, 0.75)  # the back of the skull, behind the eyes
+    mf = Frame(m, hf.at(0, -0.2, -0.1), hf.r @ turn(x=0.08))
+    lf, ll = rot_maw(m, mf, 2.5, 1.45, 1.8, 0.44, 0.4, rng, gape=0.18, drop=0.62, upper="Body", lower="Accent", tooth=0.38, per_side=8, rows=2,
+                     gills=7, strands=5, lift=0.0, across=5, tip_h=0.22, nostrils=True)
+    egg(m, "Body", mf.at(0, 0.62, 0.36), 1.0, 0.82, 0.3, 10, 4)  # a low dome over the snout, so the head isn't a box
+    for side in (-1, 1):
+        ball(m, "Body", *mf.at(side * 1.18, 0.1, 0.12), 0.4, 8, 4)  # cheeks bulging at the hinge
+    m.bone = "Jaw"
+    egg(m, "Belly", lf.at(0, ll * 0.42, -0.42), 0.95, 0.62, 0.32, 10, 5)  # the throat pouch under it
+    m.bone = "Head"
+    for _ in range(9):  # warts on the snout
+        y = rng.uniform(0.15, 1.1)
+        top = 0.18 / 2 + 0.44 + (0.22 - 0.44) * (y + 0.05) / 1.5
+        ball(m, "Wart", *mf.at(rng.uniform(-0.9, 0.9), y, top - 0.03), rng.uniform(0.08, 0.14), 6, 3)
+    for side in (-1, 1):  # two burning eyes on bumps, under warty brows slammed down to the nose
+        ball(m, "Body", *hf.at(side * 0.82, 0.12, 0.55), 0.42, 8, 4)
+        rot_eye(m, hf.at(side * 0.86, 0.5, 0.62), hf.r @ Vector((side * 0.2, 1, 0.04)), 0.5, -side, 0.72, rng=rng, veins=3, horns=1)
+        for k in range(3):  # warts along the brow
+            ball(m, "Wart", *hf.at(side * (1.22 - 0.22 * k), 0.3 + 0.08 * k, 0.98 - 0.1 * k), 0.12, 6, 3)
+    for x, y, z, r in ((-1.25, 0.1, 0.62, 0.13), (-1.08, -0.22, 0.9, 0.1), (1.26, 0.12, 0.66, 0.14), (1.04, -0.24, 0.92, 0.11),
+                       (1.32, -0.2, 0.4, 0.09)):  # spare eyes bursting up beside them
+        bead(m, hf.at(x, y, z), hf.r @ Vector((x * 0.9, 0.7, 0.35)), r)
+    m.head_centre = tuple(hf.at(0, 0.9, 0.35))
+    return finish(m, 1.0)
+
+
+def morel_panic():
+    """A gaunt, ash-pale crawler on four long limbs, its knees and elbows up higher than its back, ribs and spine showing,
+    long black-clawed fingers reaching. Its head is under a black morel pulled down like a hood, every pit glowing
+    ember-orange and eyes looking out of a few of them; under the brim, two burning eyes and a long jaw hanging open in
+    a scream. Mycelium whips lash from its shoulders and spores rise off the tip of the hood."""
+    rng = random.Random(1402)
+    m = monster("dino_MorelPanic", Body="#a19b85", Accent="#5c574a", Belly="#d6cfb8", Claw="#1a1411", Ridge="#221a15", Pit="#e8651c")
+    hips, waist, chest = Vector((0, -1.0, 2.65)), Vector((0, -0.2, 2.45)), Vector((0, 0.75, 2.15))
+    m.joint("Spine", tuple(hips))
+    beam(m, "Accent", tuple(hips + Vector((0, -0.4, 0.05))), tuple(waist), 0.85, 0.62, 0.48)  # the pelvis, to a thin waist
+    beam(m, "Body", tuple(waist), tuple(chest), 0.5, 0.5, 1.0)  # and out to a deep chest
+    for k in range(5):  # ribs showing down its sides
+        t = 0.2 + 0.17 * k
+        c = waist.lerp(chest, t)
+        half = 0.25 + 0.26 * t
+        for side in (-1, 1):
+            beam(m, "Belly", (side * half * 0.5, c.y, c.z - half * 0.95), (side * (half + 0.06), c.y + 0.05, c.z - 0.02), 0.1, 0.1, 0.08)
+    spine = [hips.lerp(chest, k / 6) + Vector((0, 0, 0.3 + 0.28 * math.sin(math.pi * k / 6))) for k in range(7)]
+    for k, p in enumerate(spine):  # the knobs of its spine, arched, bone spikes out of every other one
+        ball(m, "Belly", *p, 0.15, 6, 3)
+        if k % 2:
+            thorn(m, "Belly", tuple(p), tuple(p + Vector((rng.uniform(-0.1, 0.1), -0.35, 0.6))), 0.14)
+    for k, side in ((0, -1), (1, 1), (2, -1)):  # mycelium bursting out of its back
+        p = hips.lerp(chest, 0.2 + 0.3 * k) + Vector((side * 0.28, 0, 0.3))
+        crust(m, tuple(p), (side * 0.6, 0, 1), 0.28, rng, 5)
+
+    for side, letter in ((-1, "L"), (1, "R")):  # arms: elbows up and out like a spider's, long hands reaching ahead
+        sh = Vector((side * 0.5, 0.85, 2.25))
+        m.use(f"Front{letter}", tuple(sh))
+        elbow = Vector((side * 1.6, 0.85, 2.85))
+        wrist = Vector((side * 1.6, 3.2, 0.6))
+        limb(m, "Body", [tuple(sh), tuple(elbow)], 0.26, 0.2)
+        ball(m, "Belly", *elbow, 0.19, 6, 3)
+        thorn(m, "Belly", tuple(elbow), tuple(elbow + Vector((side * 0.3, -0.45, 0.6))), 0.14)
+        limb(m, "Body", [tuple(elbow), tuple(wrist)], 0.2, 0.15)
+        ball(m, "Belly", *wrist, 0.14, 6, 3)
+        claw_hand(m, wrist, (side * 0.18, 1, -0.4), 0.5, side, role="Body", claw="Claw")
+    for side, letter in ((-1, "L"), (1, "R")):  # legs folded up like a cricket's, knees above its back
+        hip = Vector((side * 0.42, -1.1, 2.55))
+        m.use(f"Back{letter}", tuple(hip))
+        knee = Vector((side * 1.45, -0.55, 3.3))
+        ankle = Vector((side * 1.35, -1.8, 0.7))
+        foot = Vector((side * 1.4, -1.35, 0.1))
+        limb(m, "Body", [tuple(hip), tuple(knee)], 0.3, 0.22)
+        ball(m, "Belly", *knee, 0.2, 6, 3)
+        thorn(m, "Belly", tuple(knee), tuple(knee + Vector((side * 0.2, -0.5, 0.5))), 0.13)
+        limb(m, "Body", [tuple(knee), tuple(ankle)], 0.22, 0.15)
+        ball(m, "Belly", *ankle, 0.13, 6, 3)
+        limb(m, "Accent", [tuple(ankle), tuple(foot)], 0.15, 0.14)
+        for k in (-1, 0, 1):
+            d = Vector((k * 0.35, 1, 0)).normalized()
+            thorn(m, "Claw", tuple(foot + d * 0.05), tuple(foot + d * 0.55 + Vector((0, 0, -0.08))), 0.1, (0, 0, 0.08))
+    m.bone = "Spine"
+    for n, side in ((1, -1), (2, 1)):  # whips of mycelium out of its shoulder blades
+        start = Vector((side * 0.35, 0.4, 2.65))
+        tendril(m, n, wander(tuple(start), tuple(start + Vector((side * 1.5, -1.6, 1.7))), rng, 7, (side * 0.3, 0, 0.45), 0.14), 0.19, 0.06, "Spine",
+                "Mycel", beads="Glow", tip="Glow", tip_size=0.12)
+        m.bone = "Spine"
+
+    neck = chest + Vector((0, 0.15, 0.25))
+    m.use("Neck", tuple(neck))
+    beam(m, "Body", tuple(neck - Vector((0, 0.15, 0.1))), (0, 1.45, 2.7), 0.42, 0.42, 0.36)
+    m.stretch("Body", "Spine")
+    m.use("Head", (0, 1.4, 2.65), "Neck")
+    hf = Frame(m, (0, 1.78, 2.72), turn(x=-0.04))  # thrust out low, at the height of its shoulders
+    hf.box("Body", 0, -0.18, 0.1, 1.0, 0.85, 0.74)
+    for side in (-1, 1):
+        hf.box("Accent", side * 0.44, 0.12, -0.1, 0.2, 0.6, 0.32)  # sunken cheeks
+    for k in range(3):  # glowing threads running down its neck from under the hood
+        a = Vector(hf.at(-0.15 + 0.15 * k, -0.45, 0.35))
+        limb(m, "Vein", [tuple(a), tuple(a + Vector((0.1 * (k - 1), -0.45, -0.2))), tuple(a + Vector((0.15 * (k - 1), -0.9, -0.3)))], 0.07, 0.05,
+             joints=False)
+    mf = Frame(m, hf.at(0, 0.2, -0.3), hf.r)
+    rot_maw(m, mf, 0.95, 1.25, 0.62, 0.28, 0.26, rng, gape=0.1, drop=0.72, upper="Body", lower="Accent", tooth=0.3, per_side=8, rows=2, gills=4,
+            strands=3, lift=0.0, across=3, tip_h=0.2)
+    for side in (-1, 1):
+        rot_eye(m, hf.at(side * 0.27, 0.32, 0.27), hf.r @ Vector((side * 0.1, 1, -0.04)), 0.36, -side, 0.78, rng=rng, veins=3)
+    mo = Frame(m, hf.at(0, -0.32, 0.42), hf.r @ turn(x=0.32, y=0.1))  # a black morel for a hood, swept back off its skull
+    pits, tip = morel_hood(m, mo, 0.6, 1.35, rng, cols=10, rows=6, pit="Socket", ridge_w=0.26)
+    rng.shuffle(pits)
+    for centre, out, size in pits[:7]:  # embers glowing deep in a few of the pits
+        obox(m, "Pit", tuple(centre + out * size * 0.05), (size * 0.5, size * 0.5, size * 0.5), aim(out))
     vent(m, 1, tuple(tip + Vector((0, 0, 0.08))), "Head", 0.26, 4, lips=None)
-    m.head_centre = tuple(hf.at(0, 0.8, 0.25))
-    return finish(m, 0.92)
+    m.head_centre = tuple(hf.at(0, 0.8, 0.15))
+    return finish(m, 1.0)
 
 
 def antagonist():
-    """A giant ant the fungus got to first: rust-red armour, mandibles like shears that never stop clacking, two
-    glowing orbs for eyes under a jutting brow, and out of its head and back the fungus has burst in tall pale stalks
-    with glowing clubs on the end, whipping about as if looking for the next one. Shelf fungi step up its abdomen and
-    spores pour out of a split in it."""
+    """A black ant the fungus got to, reared up on four legs with its front pair raised to grab. Huge serrated mandibles
+    spread wide round a mouth of needles, burning compound eyes under ridged brows, white mycelium bursting out of every
+    joint, a sting curled up over its back, and out of the back of its head the fungus that took it: a pale stalk arching
+    up and over to dangle a glowing club in front of its face, whipping about as if looking for the next one."""
     rng = random.Random(1403)
-    m = monster("dino_Antagonist", Body="#9c4024", Accent="#5c2414", Belly="#c87a40", Claw="#1c120c")
-    m.joint("Spine", (0, 0, 2.1))
-    m.loft_y("Body", (-0.75, 0, 2.0, 0.85, 0.8), (0.1, 0, 2.2, 1.05, 1.0))
-    m.loft_y("Body", (0.1, 0, 2.2, 1.05, 1.0), (0.85, 0, 2.45, 1.0, 1.05))
-    m.loft_y("Accent", (-0.55, 0, 2.48, 0.6, 0.2), (0.7, 0, 2.95, 0.66, 0.24))
-    ball(m, "Accent", 0, -0.95, 2.05, 0.32, 6, 3)
-    for y in (-0.4, 0.35):
-        point(m, "Accent", (0, y, 2.5), (0, y - 0.35, 3.05), 0.28)
+    m = monster("dino_Antagonist", Body="#241c1b", Accent="#4a1b16", Belly="#6b2c20", Claw="#ddd1b4")
+    m.joint("Spine", (0, 0, 2.05))
+    m.loft_y("Body", (-0.8, 0, 2.1, 0.85, 0.85), (0.1, 0, 2.3, 1.1, 1.05))
+    m.loft_y("Body", (0.1, 0, 2.3, 1.1, 1.05), (0.85, 0, 2.2, 1.0, 0.95))
+    m.loft_y("Accent", (-0.6, 0, 2.62, 0.62, 0.22), (0.7, 0, 2.8, 0.66, 0.24))
+    ridge(m, "Claw", along((0, -0.65, 2.7), (0, 0.65, 2.88), 4), rng, 0.65, 0.22, 0.65)
+    crust(m, (0, -0.85, 2.15), (0, -1, 0.3), 0.32, rng, 5)  # white mycelium bursting from the waist
 
-    m.use("Tail1", (0, -1.1, 2.15))
-    gc, grx, gry, grz = Vector((0, -2.35, 2.55)), 1.18, 1.38, 1.02
-    m.loft_y("Body", (-0.95, 0, 2.15, 0.5, 0.5), (-1.15, 0, 2.3, 0.8, 0.8))
+    m.use("Tail1", (0, -1.05, 2.25))
+    m.loft_y("Accent", (-1.45, 0, 2.55, 0.5, 0.5), (-0.85, 0, 2.2, 0.42, 0.42))  # the waist, rising to the gaster
+    gc, grx, gry, grz = Vector((0, -2.5, 3.0)), 1.2, 1.4, 1.1
     egg(m, "Body", gc, grx, gry, grz, 12, 7)
-    for y in (-1.75, -2.45, -3.1):  # bands round it
+    for y in (-1.95, -2.55, -3.15):  # bands round it, white mycelium bursting from between them
         k = math.sqrt(max(0.0, 1 - ((y - gc.y) / gry) ** 2)) * 1.04
         egg(m, "Accent", (0, y, gc.z), grx * k, 0.09, grz * k, 12, 3)
-    m.use("Tail2", (0, -3.55, 2.45), "Tail1")
-    point(m, "Claw", (0, -3.6, 2.42), (0, -4.3, 2.1), 0.36)
-    m.bone = "Tail1"
-    for side, y, z, r_ in ((-1, -2.25, 2.8, 0.46), (-1, -2.9, 2.25, 0.34), (1, -2.05, 2.3, 0.4), (1, -2.8, 2.85, 0.32)):
-        k = math.sqrt(max(0.0, 1 - ((y - gc.y) / gry) ** 2 - ((z - gc.z) / grz) ** 2))
-        bracket(m, side * grx * k * 0.98, y, z, r_)
-    vent(m, 1, (0.25, -2.3, gc.z + grz - 0.04), "Tail1", 0.38, 4, lips="Accent")
-    sprout(m, (-0.5, -2.75, gc.z + grz * 0.82), (-0.3, -0.2, 1), 0.7, 0.09, 0.42, 0.3, rng, n_specks=3)
+        for side in (-1, 1):
+            crust(m, (side * grx * k * 0.85, y, gc.z + grz * k * 0.45), (side, 0, 0.6), 0.24, rng, 4)
+    for side in (-1, 1):  # glowing cracks where the fungus is splitting it
+        pts = [(side * 0.3, -1.6, 3.6), (side * 0.65, -2.1, 3.85), (side * 0.55, -2.7, 3.95), (side * 0.85, -3.2, 3.55)]
+        limb(m, "Vein", pts, 0.09, 0.06, joints=False)
+    vent(m, 1, (0.3, -2.45, gc.z + grz - 0.05), "Tail1", 0.36, 4, lips="Accent")
+    m.use("Tail2", (0, -3.75, 3.2), "Tail1")
+    sting = [(0, -3.75, 3.25), (0, -4.2, 3.95), (0, -4.05, 4.7), (0, -3.5, 5.15)]  # the sting, curled up over its back, aimed ahead
+    limb(m, "Accent", sting, 0.48, 0.26)
+    point(m, "Claw", sting[-1], (0, -2.6, 5.3), 0.28)
     m.bone = "Spine"
 
-    legs = (("Arm", 0.55, 1.9, (1.35, 1.25, 2.6), (1.6, 2.35, 0.05)),
-            ("Front", 0.1, 1.85, (1.7, 0.35, 2.55), (2.4, 0.6, 0.05)),
-            ("Back", -0.45, 1.85, (1.6, -1.25, 2.5), (2.2, -2.35, 0.05)))
-    for prefix, hy, hz, knee, foot in legs:  # six legs; the front pair on the Arm bones, so they rake when it pounces
+    legs = (("Front", 0.15, 1.95, (1.8, 0.5, 3.05), (2.5, 1.05, 0.05)), ("Back", -0.45, 1.95, (1.7, -1.2, 3.0), (2.35, -2.3, 0.05)))
+    for prefix, hy, hz, knee, foot in legs:  # four legs on the ground
         for side, letter in ((-1, "L"), (1, "R")):
             hip = Vector((side * 0.42, hy, hz))
             m.use(f"{prefix}{letter}", tuple(hip))
             k = Vector((side * knee[0], knee[1], knee[2]))
             f_ = Vector((side * foot[0], foot[1], foot[2]))
             ankle = k.lerp(f_, 0.7) + Vector((side * 0.15, 0, 0.15))
-            jointed_leg(m, [hip, k, ankle, f_], 0.3, role="Accent", ring="Body", tip="Claw")
-            thorn(m, "Accent", tuple(k), tuple(k + Vector((side * 0.15, -0.2, 0.45))), 0.14)
+            jointed_leg(m, [hip, k, ankle, f_], 0.3, role="Body", ring="Accent", tip="Claw")
+            thorn(m, "Claw", tuple(k), tuple(k + Vector((side * 0.15, -0.25, 0.5))), 0.15)
+            crust(m, tuple(k), (side, 0, 0.4), 0.22, rng, 4)
+    for side, letter in ((-1, "L"), (1, "R")):  # the front pair raised to grab, on the Arm bones so they rake when it pounces
+        hip = Vector((side * 0.42, 0.6, 2.0))
+        m.use(f"Arm{letter}", tuple(hip))
+        knee = Vector((side * 1.4, 1.3, 3.35))
+        wrist = Vector((side * 1.15, 2.6, 2.4))
+        tip = Vector((side * 0.8, 3.1, 1.55))
+        jointed_leg(m, [hip, knee, wrist, tip], 0.3, role="Body", ring="Accent", tip="Claw")
+        for k in range(4):  # hooked spines along the forearm
+            p = knee.lerp(wrist, 0.2 + 0.2 * k) + Vector((-side * 0.1, 0, -0.12))
+            point(m, "Claw", tuple(p), tuple(p + Vector((-side * 0.15, 0.12, -0.38))), 0.1)
+        crust(m, tuple(knee), (side, 0, 0.5), 0.24, rng, 4)
     m.bone = "Spine"
-    tendril(m, 4, wander((0.25, 0.35, 2.85), (1.1, -1.0, 5.6), rng, 7, (0.4, 0, 0.3), 0.1), 0.24, 0.16, "Spine", "Stalk", beads=None)
-    tube(m, "Glow", (1.1, -1.0, 5.55), (1.25, -1.2, 6.25), 0.22, 0.12, 6)
+    for n, x, y, end in ((2, 0.3, -0.35, (1.3, -1.6, 5.1)), (3, -0.3, 0.2, (-1.4, -0.9, 4.6))):  # more of the fungus out of its back
+        start = (x, y, 2.75)
+        tendril(m, n, wander(start, end, rng, 6, (0.2 * x, 0, 0.3), 0.1), 0.2, 0.12, "Spine", "Stalk", beads=None)
+        tube(m, "Glow", end, tuple(Vector(end) + (Vector(end) - Vector(start)).normalized() * 0.6), 0.18, 0.08, 6)
+        m.bone = "Spine"
 
-    m.use("Neck", (0, 0.85, 2.45))
-    beam(m, "Accent", (0, 0.7, 2.4), (0, 1.3, 2.62), 0.52)
-    m.use("Head", (0, 1.35, 2.62), "Neck")
-    hf = Frame(m, (0, 1.95, 2.75), turn(x=-0.14, y=0.06))
-    zloft(hf, "Body", (-0.62, 0, 0.02, 1.05, 1.0), (0.1, 0, 0, 1.75, 1.35))
-    zloft(hf, "Body", (0.1, 0, 0, 1.75, 1.35), (0.62, 0, -0.1, 1.5, 1.05))
-    hf.box("Accent", 0, -0.05, 0.64, 0.12, 0.9, 0.08)
-    mf = Frame(m, hf.at(0, 0.5, -0.42), hf.r)
-    gill_maw(m, mf, 0.95, 0.5, 0.6, 0.26, 0.24, rng, gape=0.1, drop=0.32, upper="Accent", lower="Accent", tooth=0.17, per_side=4,
-             tongue=False, gills=3, strands=1, rows=2,
-             mandibles=dict(x0=0.52, y0=0.1, z0=0.02, length=1.65, width=0.36, teeth=6))
-    for side in (-1, 1):
-        spore_glare(m, hf.at(side * 0.7, 0.5, 0.18), hf.r @ Vector((side * 0.45, 1, 0.05)), 0.5, -side, 0.6, sprouts=1, rng=rng)
-    for n, side in ((1, -1), (2, 1)):  # elbowed feelers, twitching
-        pts = [hf.at(side * x, y, z) for x, y, z in ((0.28, 0.5, 0.5), (0.42, 0.68, 1.15), (0.58, 0.8, 1.7), (1.0, 1.4, 1.95), (1.4, 2.0, 1.85),
-                                                     (1.65, 2.45, 1.6), (1.8, 2.75, 1.3))]
-        tendril(m, n, pts, 0.13, 0.07, "Head", "Accent", beads=None, tip="Glow", tip_size=0.12)
+    m.use("Neck", (0, 0.85, 2.3))
+    beam(m, "Accent", (0, 0.7, 2.3), (0, 1.3, 2.4), 0.55)
+    crust(m, (0, 1.0, 2.62), (0, 0.2, 1), 0.26, rng, 4)
+    m.use("Head", (0, 1.35, 2.4), "Neck")
+    hf = Frame(m, (0, 2.0, 2.4), turn(x=-0.24, y=0.05))  # big and heavy, thrust down at you
+    zloft(hf, "Body", (-0.7, 0, 0.0, 1.15, 1.05), (0.1, 0, 0, 1.95, 1.45))
+    zloft(hf, "Body", (0.1, 0, 0, 1.95, 1.45), (0.66, 0, -0.12, 1.6, 1.1))
+    hf.box("Accent", 0, -0.05, 0.68, 0.14, 0.95, 0.1)  # the seam down its crown
+    mf = Frame(m, hf.at(0, 0.55, -0.48), hf.r @ turn(x=0.15))
+    rot_maw(m, mf, 1.0, 0.55, 0.7, 0.28, 0.26, rng, gape=0.14, drop=0.5, upper="Accent", lower="Accent", tooth=0.22, per_side=5, rows=2, gills=3,
+            strands=2, across=3, mandibles=dict(x0=0.62, y0=0.1, z0=0.05, length=2.1, width=0.44, teeth=7, curl=0.5, role="Accent"))
+    for side in (-1, 1):  # burning compound eyes on the corners of its head, three more on its crown
+        orb(m, hf.at(side * 0.88, 0.38, 0.28), hf.r @ Vector((side * 0.55, 1, 0.05)), 0.4, -side)
+    for x, z, r in ((0, 0.62, 0.11), (-0.22, 0.52, 0.09), (0.22, 0.52, 0.09)):
+        bead(m, hf.at(x, 0.5, z), hf.r @ Vector((x, 1, 0.6)), r)
+    for side in (-1, 1):  # elbowed feelers, held stiff
+        limb(m, "Accent", [hf.at(side * 0.32, 0.45, 0.5), hf.at(side * 0.55, 0.65, 1.35), hf.at(side * 1.15, 1.45, 1.55), hf.at(side * 1.45, 2.05, 1.25)],
+             0.12, 0.07)
+    start = Vector(hf.at(0.1, -0.5, 0.55))  # the stalk out of the back of its head, arching over to dangle its club ahead
+    pts = [tuple(start), tuple(start + Vector((0.1, -0.35, 1.1))), tuple(start + Vector((0.2, -0.2, 2.2))), tuple(start + Vector((0.25, 0.5, 3.0))),
+           tuple(start + Vector((0.2, 1.5, 3.25))), tuple(start + Vector((0.12, 2.35, 2.85))), tuple(start + Vector((0.05, 2.75, 2.15)))]
+    end = tendril(m, 1, pts, 0.32, 0.18, "Head", "Stalk", beads=None)
+    m.bone = "Lash1c"
+    tube(m, "Glow", tuple(end), tuple(end + Vector((0, 0.1, -0.8))), 0.28, 0.14, 8)
+    for k in range(4):  # dark knots on the club
+        ball(m, "Accent", *(end + Vector((0.2 * math.cos(2 * k), 0.2 * math.sin(2 * k) + 0.05, -0.15 - 0.15 * k))), 0.09, 6, 3)
     m.bone = "Head"
-    start = Vector(hf.at(0.18, -0.38, 0.52))
-    tendril(m, 3, wander(tuple(start), tuple(start + Vector((0.5, -1.4, 3.3))), rng, 7, (0.35, 0, 0.2), 0.1), 0.26, 0.16, "Head", "Stalk", beads=None)
-    tube(m, "Glow", tuple(start + Vector((0.5, -1.4, 3.25))), tuple(start + Vector((0.6, -1.6, 4.0))), 0.24, 0.12, 6)
-    m.bone = "Head"
-    sprout(m, hf.at(-0.45, -0.3, 0.58), hf.r @ Vector((-0.5, -0.2, 1)), 0.5, 0.08, 0.34, 0.24, rng, n_specks=2)
-    m.head_centre = tuple(hf.at(0, 0.85, 0.05))
+    m.head_centre = tuple(hf.at(0, 0.9, 0.05))
     return finish(m, 1.0)
 
 
@@ -790,108 +911,118 @@ def antagonist():
 
 
 def sporantula():
-    """A spider whose back is a mushroom cap: a broad rust-red cap freckled with glowing specks, glowing gills under
-    it, on eight long jointed stalks of legs. Eight infected eyes crowd its face under the brim, two big and six small,
-    its fangs never stop chattering, a drop of glowing venom on each, and its abdomen is a fat puffball, torn open in
-    two places and pouring spores, glowing threads of mycelium trailing from its spinnerets."""
+    """A black spider, its front legs raised high over its head to strike, bone knuckles on every joint and bristles on
+    every leg. Two burning eyes under heavy brows and six more in a cluster, huge bone fangs dripping glowing venom that
+    never stop working, and a swollen abdomen marked with glowing chevrons, black caps and pale mycelium bursting out of
+    it, spores pouring from two vents and glowing threads trailing from its spinnerets."""
     rng = random.Random(1404)
-    m = monster("dino_Sporantula", Body=CAP, Accent=CAP_DARK, Belly="#e2d5b8", Claw="#24160f", Wart=WART, Face="#3a1d14")
-    m.joint("Spine", (0, 0, 2.35))
-    m.loft_y("Belly", (-0.75, 0, 2.15, 1.35, 0.85), (0.85, 0, 2.3, 1.2, 0.9))
-    carapace = cap(m, "Body", (0, 0.05, 2.8), 2.1, 1.25, "dome", turn(x=0.1), 14, crown="Accent", under="GillGlow")  # brim up at the front
-    specks(m, "Speck", carapace, 2.1, 1.25, "dome", 14, 0.32, rng)
+    m = monster("dino_Sporantula", Body="#211b19", Accent="#3a2f29", Belly="#55463b", Claw="#e4d9be", Face="#16110e")
+    m.joint("Spine", (0, 0, 2.4))
+    egg(m, "Body", (0, 0.1, 2.42), 1.25, 1.3, 0.72, 12, 6)  # a low, wide, armoured front body
+    m.loft_y("Accent", (-0.95, 0, 2.95, 0.5, 0.2), (0.95, 0, 3.05, 0.42, 0.2))
+    for _ in range(12):  # bristling
+        x, y = rng.uniform(-0.9, 0.9), rng.uniform(-0.8, 0.9)
+        z = on_egg((0, 0.1, 2.42), 1.25, 1.3, 0.72, x, y)
+        if z:
+            thorn(m, "Claw", (x, y, z - 0.05), (x * 1.4, y - 0.3, z + rng.uniform(0.25, 0.45)), 0.09)
 
-    # Eight legs, out from under the brim, up over it and down: 1 and 3 on Front, 2 and 4 on Back, so the
-    # diagonal pairs step together like a spider's.
-    hips = (0.75, 0.3, -0.15, -0.55)
-    feet = (2.7, 1.0, -0.8, -2.45)
+    hips, feet = (0.3, -0.15, -0.55), (1.2, -0.7, -2.4)  # three pairs walking: diagonal pairs step together
     for side, letter in ((-1, "L"), (1, "R")):
         for k, (hy, fy) in enumerate(zip(hips, feet)):
-            bone = f"{'Front' if k % 2 == 0 else 'Back'}{letter}"
+            bone = f"{'Front' if k == 1 else 'Back'}{letter}"
             if bone not in m.joints:
-                m.use(bone, (side * 0.55, 0.4 if k % 2 == 0 else -0.2, 2.3))
+                m.use(bone, (side * 0.55, 0.3 if k == 1 else -0.2, 2.3))
             m.bone = bone
-            spread = 1.0 - 0.1 * abs(k - 1.5)
-            hip = Vector((side * 0.5, hy, 2.3))
-            under = Vector((side * 2.3 * spread, hy + (fy - hy) * 0.3, 2.4))
-            knee = Vector((side * 2.95 * spread, hy + (fy - hy) * 0.55, 3.75 - 0.1 * k))
-            ankle = Vector((side * 3.5 * spread, hy + (fy - hy) * 0.9, 1.3))
-            foot = Vector((side * 3.62 * spread, fy, 0.03))
-            jointed_leg(m, [hip, under, knee, ankle, foot], 0.32, role="Belly", ring="StalkShade", tip="Claw", taper=0.45)
-            for p in (knee, ankle):  # bristles at the joints
-                thorn(m, "Claw", tuple(p), tuple(p + Vector((side * 0.2, rng.uniform(-0.2, 0.2), 0.35))), 0.09)
+            spread = 1.0 - 0.08 * k
+            hip = Vector((side * 0.6, hy, 2.3))
+            under = Vector((side * 2.3 * spread, hy + (fy - hy) * 0.3, 2.5))
+            knee = Vector((side * 3.0 * spread, hy + (fy - hy) * 0.55, 4.15 - 0.15 * k))
+            ankle = Vector((side * 3.55 * spread, hy + (fy - hy) * 0.9, 1.3))
+            foot = Vector((side * 3.65 * spread, fy, 0.03))
+            jointed_leg(m, [hip, under, knee, ankle, foot], 0.36, role="Body", ring="Claw", tip="Claw", taper=0.45)
+            for a, b in ((under, knee), (knee, ankle)):  # bristles down the leg
+                for t in (0.3, 0.6):
+                    p = a.lerp(b, t)
+                    thorn(m, "Accent", tuple(p), tuple(p + Vector((side * 0.28, rng.uniform(-0.2, 0.2), 0.22))), 0.08)
+    for side, letter in ((-1, "L"), (1, "R")):  # the front pair raised high over its head, hooked down to strike
+        hip = Vector((side * 0.55, 0.8, 2.4))
+        m.use(f"Arm{letter}", tuple(hip))
+        knee = Vector((side * 1.75, 1.35, 4.9))
+        fore = Vector((side * 1.4, 2.7, 4.35))
+        tip = Vector((side * 0.95, 3.35, 3.2))
+        jointed_leg(m, [hip, knee, fore, tip], 0.36, role="Body", ring="Claw", tip="Claw", taper=0.5)
+        for t in (0.25, 0.55, 0.8):
+            p = knee.lerp(fore, t)
+            thorn(m, "Accent", tuple(p), tuple(p + Vector((side * 0.15, 0.1, 0.35))), 0.09)
     m.bone = "Spine"
 
-    m.use("Tail1", (0, -0.8, 2.45))
-    ac, arx, ary, arz = Vector((0, -2.35, 2.8)), 1.22, 1.5, 1.08
-    egg(m, "Belly", ac, arx, ary, arz, 12, 7)
+    m.use("Tail1", (0, -0.85, 2.5))
+    ac, arx, ary, arz = (0, -2.55, 3.0), 1.5, 1.8, 1.35
+    m.loft_y("Accent", (-1.2, 0, 2.6, 0.5, 0.45), (-0.8, 0, 2.5, 0.45, 0.4))
+    egg(m, "Body", ac, arx, ary, arz, 12, 7)
 
     def on_top(x, y):
-        return ac.z + arz * math.sqrt(max(0.0, 1 - (x / arx) ** 2 - ((y - ac.y) / ary) ** 2))
+        return on_egg(ac, arx, ary, arz, x, y) or ac[2]
 
-    for k in range(4):  # chevrons down its back
-        y = ac.y + 0.75 - k * 0.5
+    for k in range(4):  # glowing chevrons down its back
+        y = ac[1] + 1.0 - k * 0.55
         for side in (-1, 1):
-            a_, b_ = (0, y), (side * 0.62, y - 0.32)
-            beam(m, "Accent", (*a_, on_top(*a_) + 0.02), (*b_, on_top(*b_) + 0.02), 0.18, 0.08, 0.12)
-    for _ in range(14):
-        a, e = rng.uniform(0, math.tau), rng.uniform(0.1, 1.2)
-        p = ac + Vector((arx * math.cos(e) * math.cos(a), ary * math.cos(e) * math.sin(a), arz * math.sin(e)))
-        ball(m, "Wart", *p, rng.uniform(0.09, 0.16), 6, 3)
-    for n, x, y in ((1, -0.42, -1.85), (2, 0.48, -2.6)):
-        vent(m, n, (x, y, on_top(x, y) - 0.02), "Tail1", 0.3, 4)
+            a_, b_ = (0, y), (side * (0.75 - 0.08 * k), y - 0.38)
+            beam(m, "Glow", (*a_, on_top(*a_) + 0.01), (*b_, on_top(*b_) + 0.01), 0.17, 0.08, 0.12)
+    for x, y in ((0.95, -2.0), (-1.0, -2.9), (0.6, -3.6), (-0.7, -1.6)):  # pale mycelium bursting out of it
+        crust(m, (x, y, on_top(x, y) - 0.05), (x, 0, 1), 0.38, rng, 6)
+    for x, y, d, h, r_, cr, ch in ((-0.75, -2.3, (-0.6, -0.1, 1), 0.85, 0.11, 0.5, 0.6), (0.85, -2.85, (0.6, -0.4, 1), 0.65, 0.09, 0.4, 0.48),
+                                   (0.2, -3.55, (0.1, -0.8, 1), 0.5, 0.08, 0.3, 0.38)):
+        sprout(m, (x, y, on_top(x, y) - 0.15), d, h, r_, cr, ch, rng)
+    for n, x, y in ((1, -0.35, -1.75), (2, 0.4, -3.05)):
+        vent(m, n, (x, y, on_top(x, y) - 0.02), "Tail1", 0.32, 4)
     for side in (-1, 1):  # spinnerets, and glowing threads trailing from them
-        tube(m, "Accent", (side * 0.16, -3.8, 2.65), (side * 0.2, -4.15, 2.5), 0.14, 0.08, 6)
-    tendril(m, 1, wander((-0.18, -4.1, 2.5), (-1.0, -6.2, 0.6), rng, 7, (-0.3, 0, 0.4), 0.12), 0.09, 0.05, "Tail1", "Vein", beads=None)
-    tendril(m, 2, wander((0.18, -4.1, 2.5), (1.2, -5.8, 0.35), rng, 7, (0.3, 0, 0.5), 0.12), 0.09, 0.05, "Tail1", "Vein", beads=None)
+        tube(m, "Accent", (side * 0.16, -4.25, 2.7), (side * 0.2, -4.6, 2.55), 0.15, 0.08, 6)
+    tendril(m, 1, wander((-0.18, -4.55, 2.55), (-1.1, -6.6, 0.6), rng, 7, (-0.3, 0, 0.4), 0.12), 0.09, 0.05, "Tail1", "Vein", beads=None)
+    tendril(m, 2, wander((0.18, -4.55, 2.55), (1.3, -6.2, 0.35), rng, 7, (0.3, 0, 0.5), 0.12), 0.09, 0.05, "Tail1", "Vein", beads=None)
     m.bone = "Spine"
 
-    m.use("Head", (0, 0.9, 2.2))
-    hf = Frame(m, (0, 1.45, 2.18), turn(x=0.08))  # tipped up at you a little
-    hf.box("Face", 0, 0, 0, 1.25, 0.72, 0.92)
-    mf = Frame(m, hf.at(0, 0.28, -0.3), hf.r)
-    gill_maw(m, mf, 0.72, 0.32, 0.46, 0.16, 0.18, rng, gape=0.08, drop=0.36, upper="Face", lower="Face", tooth=0.14, per_side=3,
-             tongue=False, gills=3, strands=1, across=2)
-    for side in (-1, 1):  # eight eyes, glossy black beads glowing in the middle, the big pair glaring under heavy brows
-        bead_eye(m, hf.at(side * 0.3, 0.3, 0.1), hf.r @ Vector((side * 0.12, 1, 0.05)), 0.29, pupil="Pupil", off=(-side * 0.08, -0.05))
-        hf.beam("Accent", (side * 0.66, 0.36, 0.5), (side * 0.06, 0.62, 0.26), 0.22, 0.2, 0.16)
-        for x, z, r in ((0.6, 0.3, 0.15), (0.2, 0.47, 0.12), (0.5, 0.56, 0.11)):
-            bead_eye(m, hf.at(side * x, 0.3, z), hf.r @ Vector((side * x * 0.8, 1, 0.2)), r, off=(rng.uniform(-0.15, 0.15), rng.uniform(-0.1, 0.1)))
-    for n, side in ((1, -1), (2, 1)):  # the fangs, chattering for ever on Snap bones
-        base = hf.at(side * 0.28, 0.42, -0.3)
+    m.use("Head", (0, 0.95, 2.25))
+    hf = Frame(m, (0, 1.42, 2.28), turn(x=0.06))
+    hf.box("Face", 0, 0, 0, 1.4, 0.72, 1.05)
+    mf = Frame(m, hf.at(0, 0.3, -0.34), hf.r)
+    rot_maw(m, mf, 0.92, 0.42, 0.6, 0.16, 0.18, rng, gape=0.08, drop=0.6, upper="Face", lower="Face", tooth=0.2, per_side=5, rows=2, gills=3,
+            strands=2, across=3)
+    for side in (-1, 1):  # eight eyes: the big pair under heavy brows, six round them
+        rot_eye(m, hf.at(side * 0.3, 0.37, 0.12), hf.r @ Vector((side * 0.12, 1, 0.05)), 0.36, -side, 0.78, rng=rng, veins=2)
+        for x, z, r in ((0.64, 0.28, 0.15), (0.2, 0.47, 0.12), (0.5, 0.54, 0.11)):
+            bead(m, hf.at(side * x, 0.34, z), hf.r @ Vector((side * x * 0.8, 1, 0.25)), r)
+    for n, side in ((1, -1), (2, 1)):  # the fangs, working for ever on Snap bones
+        base = hf.at(side * 0.3, 0.4, -0.32)
         m.use(f"Snap{n}", base, "Head")
-        knuckle = hf.at(side * 0.32, 0.74, -0.6)
-        beam(m, "Accent", base, knuckle, 0.3, 0.34, 0.22)
-        for k in range(3):  # bristles on the base
-            p = Vector(hf.at(side * 0.42, 0.55 + 0.08 * k, -0.4 - 0.08 * k))
-            thorn(m, "Claw", tuple(p), tuple(p + hf.r @ Vector((side * 0.2, 0.15, 0.05))), 0.06)
-        tip = hf.at(side * 0.08, 0.9, -1.3)
-        thorn(m, "Claw", knuckle, tip, 0.22, hf.r @ Vector((side * 0.1, 0.22, 0)))
-        ball(m, "Glow", *hf.at(side * 0.07, 0.9, -1.38), 0.08, 6, 3)
+        knuckle = hf.at(side * 0.38, 0.8, -0.66)
+        beam(m, "Accent", base, knuckle, 0.38, 0.42, 0.3)
+        for k in range(3):
+            p = Vector(hf.at(side * 0.46, 0.55 + 0.09 * k, -0.42 - 0.09 * k))
+            thorn(m, "Claw", tuple(p), tuple(p + hf.r @ Vector((side * 0.22, 0.15, 0.05))), 0.06)
+        tip = hf.at(side * 0.08, 1.0, -1.55)
+        thorn(m, "Claw", knuckle, tip, 0.27, tuple(hf.r @ Vector((side * 0.12, 0.28, 0))))
+        for k, dz in enumerate((0.06, 0.3)):  # glowing venom dripping off it
+            ball(m, "Glow", *hf.at(side * 0.07, 1.0, -1.6 - dz), 0.06 - 0.015 * k, 6, 3)
     m.bone = "Head"
-    for side, letter in ((-1, "L"), (1, "R")):  # feelers either side of the fangs, that grab when it pounces
-        root = Vector(hf.at(side * 0.58, 0.2, -0.32))
-        m.use(f"Arm{letter}", tuple(root))
-        jointed_leg(m, [root, root + Vector((side * 0.3, 0.6, 0.35)), root + Vector((side * 0.22, 1.15, -0.25))], 0.2, role="Belly",
-                    ring="StalkShade", tip="Claw", taper=0.6)
-    m.bone = "Head"
-    m.head_centre = tuple(hf.at(0, 0.7, 0.1))
+    m.head_centre = tuple(hf.at(0, 0.7, 0.0))
     return finish(m, 1.05)
 
 
 def mantis_wing(m, side, root, rng):
-    """One of the Gillotine's wings, stood up behind it: ribs fanning from the root up and back, a dusky membrane
-    between them, lilac light along the ribs and a glowing eye on the outer half, which is on its own WingTip bone."""
+    """One of the Gillotine's wings, stood up behind it in a threat display: ribs fanning from the root up and back, a
+    dark membrane between them, glowing veins along the ribs and a huge glaring eye on the outer half, which is on its
+    own WingTip bone."""
     letter = "L" if side < 0 else "R"
     root = Vector(root)
     m.use(f"Wing{letter}", tuple(root))
-    u = Vector((side * 0.32, -0.5, 0.8)).normalized()  # up the wing
-    v = Vector((side * 0.62, -0.72, -0.25)).normalized()  # across it, out and back
+    u = Vector((side * 0.32, -0.45, 0.85)).normalized()  # up the wing
+    v = Vector((side * 0.65, -0.7, -0.2)).normalized()  # across it, out and back
     ribs = []
     for k in range(5):
-        a = 0.08 + k * 0.3
+        a = 0.06 + k * 0.3
         d = u * math.cos(a) + v * math.sin(a)
-        ribs.append((d, 3.3 - 0.32 * k))
+        ribs.append((d, 3.6 - 0.34 * k))
     normal = u.cross(v).normalized()
     split = 0.5
     for bone, t0, t1 in ((f"Wing{letter}", 0.0, split), (f"WingTip{letter}", split, 1.0)):
@@ -899,9 +1030,11 @@ def mantis_wing(m, side, root, rng):
             m.use(bone, tuple(root + ribs[2][0] * ribs[2][1] * split), f"Wing{letter}")
         for k, (d, length) in enumerate(ribs):
             a, b = root + d * length * t0, root + d * length * t1
-            if t0 == 0:  # dark and stiff near the root, then only lilac light
-                beam(m, "Accent", tuple(a), tuple(root + d * length * 0.22), 0.16, None, 0.1)
-            beam(m, "Lilac", tuple(a), tuple(b), 0.1 * (1 - 0.4 * t0), None, 0.1 * (1 - 0.4 * t1))
+            if t0 == 0:
+                beam(m, "Accent", tuple(a), tuple(root + d * length * 0.25), 0.17, None, 0.11)
+            beam(m, "Vein", tuple(a), tuple(b), 0.09 * (1 - 0.4 * t0), None, 0.09 * (1 - 0.4 * t1))
+            if t1 == 1.0:  # a hooked spine on the end of each rib
+                thorn(m, "Claw", tuple(b), tuple(b + d * 0.45 + normal * 0.05), 0.1)
             if k < len(ribs) - 1:
                 d2, length2 = ribs[k + 1]
                 mid = (d + d2).normalized()
@@ -910,44 +1043,41 @@ def mantis_wing(m, side, root, rng):
                 lift = normal * (0.014 * k - 0.03)  # each panel a hair off the last, so where they overlap they don't flicker
                 plate(m, "Membrane", tuple(root + mid * lm * t0 + lift), tuple(root + mid * lm * t1 * 0.98 + lift), tuple(across_),
                       max(0.05, lm * t0 * 0.3 * 1.2), lm * t1 * 0.3 * 1.15, 0.04)
-    # The eyespot, on the outer half: a glowing ring round a black eye, a bar across it.
+    # The glaring eye, on the outer half, on both faces: a black socket, a burning iris, an upright slit, a brow.
     d = (ribs[1][0] + ribs[2][0]).normalized()
-    c = root + d * 2.35
+    c = root + d * 2.5
     normal = normal * side
-    f = Frame(m, tuple(c + normal * 0.06), aim(normal))
-    slab(f, "EyeGlow", 0, 0, 0.0, 0.42, 0.05, 12)
-    slab(f, "Socket", 0, 0, 0.03, 0.27, 0.04, 10)
-    f.box("Slit", 0, 0.06, 0, 0.36, 0.02, 0.09)
-    f2 = Frame(m, tuple(c - normal * 0.06), aim(-normal))
-    slab(f2, "EyeGlow", 0, 0, 0.0, 0.42, 0.05, 12)
-    slab(f2, "Socket", 0, 0, 0.03, 0.27, 0.04, 10)
-    f2.box("Slit", 0, 0.06, 0, 0.36, 0.02, 0.09)
+    for face in (1, -1):
+        f = Frame(m, tuple(c + normal * face * 0.06), aim(normal * face) @ turn(y=0.35 * side * face))
+        slab(f, "Socket", 0, 0, 0.0, 0.62, 0.05, 12, 1.4)
+        slab(f, "EyeGlow", 0, -0.04, 0.03, 0.44, 0.04, 12, 1.1)
+        slab(f, "Slit", 0, -0.04, 0.06, 0.38, 0.03, 8, 0.16)
+        f.box("Accent", 0, 0.06, 0.44, 1.3, 0.04, 0.22, turn(y=0.3))
     m.bone = "Spine"
 
 
 def gillotine():
-    """A towering mantis, aubergine and bone, under a chocolate cap whose gills glow down over its eyes. Its forelegs
-    are two serrated blades held up and ready to come down, side jaws open round a mouth of teeth, its wings stand up
-    behind it in a threat display, a glowing eye on each and lilac light in their veins, feelers twitch and spores
-    pour out of the vents along its abdomen."""
+    """A towering ash-pale mantis in a black executioner's hood of a cap, its gills glowing down over its burning eyes.
+    Two great serrated blades raised high and ready to come down, side jaws round a mouth of needles, and behind it its
+    wings stood up in a threat display, each with a huge glaring eye. Spores pour from vents along its abdomen."""
     rng = random.Random(1405)
-    m = monster("dino_Gillotine", Body="#5d3d66", Accent="#35223c", Belly="#a06fa4", Claw="#ece0c4", Cap=CAP_B, CapDark=CAP_B_DARK,
-                Membrane="#5a4a6e", Lilac=BELL)
+    m = monster("dino_Gillotine", Body="#a39b84", Accent="#3a332c", Belly="#d2cab2", Claw="#eee5ce", Cap="#1c1618", CapDark="#100c0d",
+                Membrane="#2a2326")
     m.joint("Spine", (0, -0.3, 3.1))
     m.loft_y("Body", (-0.85, 0, 3.15, 0.95, 0.95), (0.3, 0, 3.35, 0.8, 0.85))
-    for side, letter in ((-1, "L"), (1, "R")):  # four walking legs, long and thin
-        hip = Vector((side * 0.35, 0.0, 3.0))
-        m.use(f"Front{letter}", tuple(hip))
-        jointed_leg(m, [hip, Vector((side * 1.75, 0.65, 3.95)), Vector((side * 2.45, 1.05, 1.6)), Vector((side * 2.55, 1.15, 0.03))], 0.26,
-                    role="Body", ring="Accent", tip="Claw")
-        hip = Vector((side * 0.35, -0.6, 3.0))
-        m.use(f"Back{letter}", tuple(hip))
-        jointed_leg(m, [hip, Vector((side * 1.85, -1.6, 3.85)), Vector((side * 2.55, -2.6, 1.5)), Vector((side * 2.65, -2.85, 0.03))], 0.26,
-                    role="Body", ring="Accent", tip="Claw")
+    for side, letter in ((-1, "L"), (1, "R")):  # four walking legs, long, thin and spined
+        for bone, hy, knee, ankle, foot in ((f"Front{letter}", 0.0, (1.8, 0.7, 4.0), (2.5, 1.1, 1.6), (2.6, 1.2, 0.03)),
+                                            (f"Back{letter}", -0.6, (1.9, -1.6, 3.9), (2.6, -2.6, 1.5), (2.7, -2.85, 0.03))):
+            hip = Vector((side * 0.35, hy, 3.0))
+            m.use(bone, tuple(hip))
+            pts = [hip] + [Vector((side * p[0], p[1], p[2])) for p in (knee, ankle, foot)]
+            jointed_leg(m, pts, 0.26, role="Body", ring="Accent", tip="Accent")
+            for t in (0.3, 0.6):
+                p = pts[1].lerp(pts[2], t)
+                thorn(m, "Accent", tuple(p), tuple(p + Vector((side * 0.25, 0.1, 0.12))), 0.08)
     m.bone = "Spine"
 
-    # The abdomen, long and curling up at its end, banded, two vents along its top.
-    m.use("Tail1", (0, -0.75, 3.2))
+    m.use("Tail1", (0, -0.75, 3.2))  # the abdomen, long and curling up at its end, banded dark
     pts = [(-0.75, 3.2, 1.0), (-1.9, 3.12, 1.4), (-3.0, 3.18, 1.32), (-3.9, 3.45, 1.08), (-4.6, 3.95, 0.8), (-5.0, 4.6, 0.46)]
     for i, (a, b) in enumerate(zip(pts, pts[1:])):
         if i == 2:
@@ -957,103 +1087,117 @@ def gillotine():
         m.loft_y("Body", (a[0], 0, a[1], a[2], a[2] * 0.92), (b[0], 0, b[1], b[2], b[2] * 0.92))
         if i in (2, 4):
             m.stretch("Body", "Tail1" if i == 2 else "Tail2")
-        m.loft_y("Accent", (a[0] - 0.07, 0, a[1], a[2] + 0.06, a[2] * 0.92 + 0.06), (a[0] + 0.07, 0, a[1], a[2] + 0.06, a[2] * 0.92 + 0.06))
+        m.loft_y("Accent", (a[0] - 0.08, 0, a[1], a[2] + 0.06, a[2] * 0.92 + 0.06), (a[0] + 0.08, 0, a[1], a[2] + 0.06, a[2] * 0.92 + 0.06))
         m.loft_y("Belly", (b[0] + 0.1, 0, b[1] - b[2] * 0.42, b[2] * 0.7, 0.12), (a[0] - 0.1, 0, a[1] - a[2] * 0.42, a[2] * 0.7, 0.12))
     m.bone = "Tail1"
     vent(m, 1, (0, -1.85, 3.12 + 0.68), "Tail1", 0.32, 4)
+    crust(m, (0.55, -2.4, 3.55), (1, 0, 0.5), 0.3, rng, 5)
     m.bone = "Tail2"
     vent(m, 2, (0, -3.2, 3.2 + 0.62), "Tail2", 0.28, 4)
+    crust(m, (-0.5, -3.6, 3.6), (-1, 0, 0.5), 0.26, rng, 4)
     m.bone = "Tail3"
-    tendril(m, 3, wander((0, -5.0, 4.75), (0.4, -5.4, 6.6), rng, 6, (0.3, -0.3, 0), 0.1), 0.2, 0.06, "Tail3", "Mycel", beads="Glow", tip="Glow",
+    tendril(m, 3, wander((0, -5.0, 4.75), (0.4, -5.5, 6.6), rng, 6, (0.3, -0.3, 0), 0.1), 0.2, 0.06, "Tail3", "Mycel", beads="Glow", tip="Glow",
             tip_size=0.14)
     m.bone = "Spine"
     for side in (-1, 1):
         mantis_wing(m, side, (side * 0.3, -0.45, 3.65), rng)
 
-    # The long neck of a thorax, up to the head.
-    m.loft_z("Body", (3.0, 0, 0.0, 0.85, 0.85), (3.6, 0, 0.25, 0.75, 0.75))
-    beam(m, "Body", (0, 0.2, 3.5), (0, 1.25, 6.05), 0.62, 0.66, 0.5)
-    beam(m, "Belly", (0, 0.42, 3.55), (0, 1.48, 5.9), 0.36, 0.2, 0.28)
-    for side, letter in ((-1, "L"), (1, "R")):  # the blades, held up either side of its face
-        sh = Vector((side * 0.45, 1.12, 5.72))
+    m.loft_z("Body", (3.0, 0, 0.0, 0.85, 0.85), (3.6, 0, 0.25, 0.75, 0.75))  # the long neck of a thorax, rearing up
+    beam(m, "Body", (0, 0.2, 3.5), (0, 1.15, 6.15), 0.64, 0.68, 0.5)
+    beam(m, "Belly", (0, 0.42, 3.55), (0, 1.38, 6.0), 0.36, 0.2, 0.28)
+    ridge(m, "Accent", along((0, 0.05, 4.0), (0, 0.85, 5.9), 4), rng, 0.5, 0.16, 0.7)
+    for side, letter in ((-1, "L"), (1, "R")):  # the blades, raised high and spread wide in a threat, hooked down to come down on you
+        sh = Vector((side * 0.45, 1.05, 5.75))
         m.use(f"Arm{letter}", tuple(sh))
-        coxa = sh + Vector((side * 0.55, 0.65, -0.95))
-        femur = coxa + Vector((side * 0.3, 0.3, 1.95))
-        blade_end = femur + Vector((-side * 0.2, 1.45, -1.3))
-        beam(m, "Body", tuple(sh), tuple(coxa), 0.44, None, 0.36)
-        ball(m, "Accent", *coxa, 0.24, 6, 3)
-        beam(m, "Body", tuple(coxa), tuple(femur), 0.42, 0.62, 0.34)
-        for k in range(5):  # spines along the inside of the femur
-            p = coxa.lerp(femur, 0.2 + 0.16 * k) + Vector((-side * 0.12, 0.22, 0))
-            point(m, "Claw", tuple(p), tuple(p + Vector((-side * 0.1, 0.32 + 0.06 * (k % 2), 0.05))), 0.12)
-        ball(m, "Accent", *femur, 0.24, 6, 3)
-        beam(m, "Claw", tuple(femur), tuple(blade_end), 0.18, 0.55, 0.08)
-        down = (blade_end - femur).normalized().cross(Vector((side, 0, 0))).normalized()
+        coxa = sh + Vector((side * 0.6, 0.55, -0.55))
+        femur = coxa + Vector((side * 1.1, 0.45, 1.75))
+        blade_end = femur + Vector((side * 0.45, 1.6, -1.45))
+        beam(m, "Body", tuple(sh), tuple(coxa), 0.46, None, 0.38)
+        ball(m, "Accent", *coxa, 0.26, 6, 3)
+        beam(m, "Body", tuple(coxa), tuple(femur), 0.44, 0.66, 0.36)
+        for k in range(6):  # black spines along the inside of the femur
+            p = coxa.lerp(femur, 0.15 + 0.14 * k) + Vector((-side * 0.12, 0.24, 0))
+            point(m, "Accent", tuple(p), tuple(p + Vector((-side * 0.1, 0.36 + 0.08 * (k % 2), 0.05))), 0.12)
+        ball(m, "Accent", *femur, 0.26, 6, 3)
+        run = (blade_end - femur).normalized()
+        down = run.cross(Vector((side, 0, 0))).normalized()
         if down.z > 0:
             down = -down
-        for k in range(7):  # the serrated edge underneath
-            p = femur.lerp(blade_end, 0.12 + 0.12 * k) + down * 0.2
-            point(m, "Claw", tuple(p), tuple(p + down * 0.22 - (blade_end - femur).normalized() * 0.1), 0.1)
-        thorn(m, "Claw", tuple(blade_end), tuple(blade_end + Vector((0, 0.1, -0.6))), 0.16, (0, 0.18, 0))
+        plate(m, "Claw", tuple(femur), tuple(blade_end), tuple(down), 0.6, 0.14, 0.12)  # a broad blade, bone pale
+        for k in range(8):  # its serrated edge, black
+            p = femur.lerp(blade_end, 0.1 + 0.11 * k) + down * 0.26
+            point(m, "Accent", tuple(p), tuple(p + down * 0.26 - run * 0.12), 0.11)
+        thorn(m, "Claw", tuple(blade_end), tuple(blade_end + Vector((0, 0.15, -0.75))), 0.18, (0, 0.2, 0))
     m.bone = "Spine"
 
-    m.use("Neck", (0, 1.3, 6.2))
-    beam(m, "Body", (0, 1.18, 6.0), (0, 1.6, 6.55), 0.44)
-    m.use("Head", (0, 1.6, 6.55), "Neck")
-    hf = Frame(m, (0, 1.95, 6.9), turn(x=-0.16, y=0.08))
-    zloft(hf, "Body", (-0.7, 0, 0.0, 0.7, 0.66), (0.3, 0, 0.0, 1.95, 0.86))  # a mantis's triangle of a head
-    zloft(hf, "Body", (0.3, 0, 0.0, 1.95, 0.86), (0.58, 0, -0.06, 1.7, 0.66))
-    mf = Frame(m, hf.at(0, 0.24, -0.58), hf.r)
-    gill_maw(m, mf, 0.66, 0.55, 0.44, 0.22, 0.22, rng, gape=0.08, drop=0.38, upper="Body", lower="Accent", tooth=0.17, per_side=4, rows=2,
-             tongue=False, gills=3, strands=1, across=2, mandibles=dict(x0=0.36, y0=0.06, z0=0.0, length=1.05, width=0.22, teeth=4, role="Accent"))
-    for side in (-1, 1):  # great glowing eyes on the corners of its head
-        orb_eye(m, hf.at(side * 0.86, 0.12, 0.3), hf.r @ Vector((side * 0.55, 1, 0.08)), 0.4, -side)
-    hood = cap(m, "Cap", hf.at(0, -0.35, 0.78), 0.95, 0.62, "dome", hf.r @ turn(x=-0.18, y=0.1), 12, crown="CapDark", under="GillGlow")
-    specks(m, "Speck", hood, 0.95, 0.62, "dome", 6, 0.18, rng)
+    m.use("Neck", (0, 1.25, 6.25))
+    beam(m, "Body", (0, 1.12, 6.05), (0, 1.55, 6.6), 0.46)
+    m.use("Head", (0, 1.55, 6.6), "Neck")
+    hf = Frame(m, (0, 1.95, 6.85), turn(x=-0.22, y=0.08))  # glaring down at you
+    zloft(hf, "Body", (-0.75, 0, 0.0, 0.7, 0.66), (0.3, 0, 0.0, 2.0, 0.86))  # a mantis's triangle of a head
+    zloft(hf, "Body", (0.3, 0, 0.0, 2.0, 0.86), (0.58, 0, -0.06, 1.75, 0.66))
+    mf = Frame(m, hf.at(0, 0.26, -0.6), hf.r)
+    rot_maw(m, mf, 0.7, 0.6, 0.46, 0.22, 0.22, rng, gape=0.08, drop=0.45, upper="Body", lower="Accent", tooth=0.19, per_side=5, rows=2, gills=3,
+            strands=2, across=3, mandibles=dict(x0=0.38, y0=0.06, z0=0.0, length=1.15, width=0.24, teeth=5, role="Accent"))
+    for side in (-1, 1):  # burning eyes on the corners of its head, under brows slanting hard to the middle
+        rot_eye(m, hf.at(side * 0.66, 0.3, 0.2), hf.r @ Vector((side * 0.35, 1, 0.0)), 0.5, -side, 0.85, rng=rng, veins=2, horns=1)
+    for x, z in ((-0.2, 0.42), (0.2, 0.42), (0, 0.55)):
+        bead(m, hf.at(x, 0.36, z), hf.r @ Vector((x, 1, 0.3)), 0.1)
+    for side in (-1, 1):  # horns of bone swept back off its head
+        thorn(m, "Claw", hf.at(side * 0.5, -0.2, 0.55), hf.at(side * 1.0, -1.4, 1.9), 0.28, tuple(hf.r @ Vector((side * 0.15, 0.2, 0.3))))
+    for x, d, h, cr, ch in ((-0.25, (-0.35, -0.6, 1), 1.0, 0.34, 0.62), (0.3, (0.4, -0.5, 1), 1.25, 0.4, 0.72), (0.0, (0.05, -0.9, 0.7), 0.7, 0.26, 0.48)):
+        sprout(m, hf.at(x, -0.45, 0.4), hf.r @ Vector(d), h, 0.09, cr, ch, rng)  # black ink caps bursting out of the back of its head
     for n, side in ((1, -1), (2, 1)):  # long feelers, twitching
-        start = Vector(hf.at(side * 0.22, 0.42, 0.42))
-        tendril(m, n, wander(tuple(start), tuple(start + hf.r @ Vector((side * 1.4, 1.2, 2.1))), rng, 7, (side * 0.3, 0.4, 0.2), 0.08), 0.09, 0.05,
-                "Head", "Accent", beads=None, tip="Glow", tip_size=0.1)
+        start = Vector(hf.at(side * 0.25, 0.45, 0.32))
+        tendril(m, n, wander(tuple(start), tuple(start + hf.r @ Vector((side * 1.5, 1.4, 1.9))), rng, 7, (side * 0.3, 0.4, 0.2), 0.08), 0.09, 0.05,
+                "Head", "Accent", beads=None)
     m.bone = "Head"
-    m.head_centre = tuple(hf.at(0, 0.8, 0.05))
-    return finish(m, 1.08)
+    m.head_centre = tuple(hf.at(0, 0.8, 0.0))
+    return finish(m, 1.1)
 
 
 def shroomageddon():
-    """The boss: the hollow's own god, a colossal titan hunched on its knuckles that is more fungus than beast now.
-    A forest of glowing mushrooms on its back round a geyser of spores, shelf fungi stepping up its arms, the mycelium
-    heart glowing in its open chest behind ribs of bone and glowing threads running out of it all over its hide, whips
-    of mycelium thrashing from its back, a club of puffballs on its tail, and a great cap pulled down over its face like
-    a hood with a crown of glowing morels round it. Five eyes, and a mouth that opens four ways."""
+    """The boss: a colossal black titan on its knuckles that is more rot than beast. A ragged black cap pulled down over
+    its head like a hood, seven burning eyes under it, bone horns and glowing morels for a crown, and a mouth that opens
+    four ways, wide enough to swallow a house. Its chest is torn open on a glowing heart behind ribs of bone, a forest
+    of black and deathly pale mushrooms grows on its back round a geyser of spores, mycelium whips thrash from its
+    shoulders, and its tail ends in a club of bone spikes."""
     rng = random.Random(1406)
-    m = monster("dino_Shroomageddon", Body="#4a2e45", Accent="#28182a", Belly="#7d4466", Claw="#e8dbbd", Heart=HEART, HeartGlow="#c8ff4c",
-                CapB=CAP_B, CapBDark=CAP_B_DARK, Ridge=RIDGE, Pit=PIT)
+    m = monster("dino_Shroomageddon", Body="#2e2229", Accent="#191116", Belly="#553845", Claw="#e9dcbd", Heart="#2a1520",
+                HeartGlow="#c8ff4c", Ridge="#221a1e", Pit="#b8ff3a")
     m.joint("Spine", (0, 0, 6.0))
     for side, letter in ((-1, "L"), (1, "R")):  # arms like tree trunks, walking on their knuckles
-        sh = Vector((side * 2.2, 2.0, 7.6))
+        sh = Vector((side * 2.25, 2.0, 7.6))
         m.use(f"Front{letter}", tuple(sh))
-        elbow = Vector((side * 3.15, 2.45, 4.4))
-        fist = Vector((side * 3.0, 3.1, 1.25))
-        beam(m, "Body", tuple(sh + Vector((0, 0, 0.4))), tuple(elbow), 2.0, None, 1.5)
-        ball(m, "Body", *elbow, 0.85, 8, 4)
-        beam(m, "Body", tuple(elbow), tuple(fist), 1.5, None, 1.25)
-        m.loft_z("Accent", (0.0, fist.x, fist.y + 0.15, 1.55, 1.45), (1.6, fist.x, fist.y, 1.4, 1.3))
-        for k in range(4):  # knuckle claws, curled forward into the ground
-            x = fist.x + (k - 1.5) * 0.36
-            thorn(m, "Claw", (x, fist.y + 0.6, 0.55), (x + (k - 1.5) * 0.08, fist.y + 1.45, 0.05), 0.34, (0, 0.1, 0.22))
-        for k in range(3):  # bone spikes out of its elbow
-            p = elbow + Vector((side * 0.55, -0.3 + 0.3 * k, 0.2 - 0.15 * k))
-            thorn(m, "Claw", tuple(p), tuple(p + Vector((side * 0.75, -0.35, 0.55 - 0.2 * k))), 0.36)
-        for k, (t, r_) in enumerate(((0.3, 0.55), (0.55, 0.45), (0.72, 0.36))):  # shelf fungi stepping up the forearm
-            p = fist.lerp(elbow, t) + Vector((side * 0.62, -0.1, 0))
-            bracket(m, *p, r_)
-        for k in range(3):  # glowing threads down the arm
-            a = elbow + Vector((side * 0.4 * (k - 1), 0.62, 0.3 * k))
-            b = fist + Vector((side * 0.3 * (k - 1), 0.66, 0.6 + 0.2 * k))
-            limb(m, "Vein", [tuple(a), tuple(a.lerp(b, 0.5) + Vector((side * 0.15 * (k - 1), 0.08, 0))), tuple(b)], 0.11, 0.07, joints=False)
-    for bone, x in (("BackL", -1.85), ("BackR", 1.85)):
-        clawed_leg(m, bone, x, -2.6, 5.3, 1.75, rng, reach=0.7)
-        m.bone = bone
+        elbow = Vector((side * 3.3, 2.55, 4.4))
+        fist = Vector((side * 3.1, 3.25, 1.25))
+        beam(m, "Body", tuple(sh + Vector((0, 0, 0.4))), tuple(elbow), 2.1, None, 1.55)
+        ball(m, "Body", *elbow, 0.9, 8, 4)
+        beam(m, "Body", tuple(elbow), tuple(fist), 1.55, None, 1.3)
+        m.loft_z("Accent", (0.0, fist.x, fist.y + 0.15, 1.6, 1.5), (1.6, fist.x, fist.y, 1.45, 1.35))
+        for k in range(4):  # long knuckle claws, hooked into the ground
+            x = fist.x + (k - 1.5) * 0.38
+            thorn(m, "Claw", (x, fist.y + 0.6, 0.6), (x + (k - 1.5) * 0.1, fist.y + 1.75, 0.05), 0.36, (0, 0.15, 0.3))
+        for k in range(4):  # bone spikes out of its elbow and forearm
+            p = elbow + Vector((side * 0.6, -0.35 + 0.35 * k, 0.25 - 0.45 * k))
+            thorn(m, "Claw", tuple(p), tuple(p + Vector((side * 0.85, -0.45, 0.6 - 0.15 * k))), 0.4)
+        for t, r_ in ((0.3, 0.55), (0.55, 0.45)):  # shelf fungi stepping up the forearm
+            bracket(m, *(fist.lerp(elbow, t) + Vector((side * 0.66, -0.1, 0))), r_)
+        crust(m, tuple(sh + Vector((side * 0.9, 0, 0.6))), (side, 0, 1), 0.8, rng, 7)
+        crust(m, tuple(elbow + Vector((side * 0.5, 0.5, -0.4))), (side, 1, 0), 0.5, rng, 5)
+        a, b = elbow + Vector((side * 0.3, 0.7, 0.1)), fist + Vector((-side * 0.1, 0.72, 0.7))  # a glowing thread, forking down the arm
+        mid = a.lerp(b, 0.45) + Vector((side * 0.2, 0.05, 0))
+        limb(m, "Vein", [tuple(a), tuple(mid), tuple(b)], 0.12, 0.07, joints=False)
+        limb(m, "Vein", [tuple(mid), tuple(mid + Vector((side * 0.55, 0.1, -0.9)))], 0.09, 0.06, joints=False)
+    for side, letter in ((-1, "L"), (1, "R")):  # hunched hind legs, clawed
+        x = side * 1.9
+        m.use(f"Back{letter}", (x, -2.6, 5.3))
+        m.loft_z("Body", (2.2, x, -2.6, 1.15, 1.25), (5.45, x, -2.6, 1.8, 2.1))
+        m.loft_z("Accent", (0.25, x, -2.55, 0.9, 0.95), (2.4, x, -2.6, 1.15, 1.25))
+        m.loft_z("Body", (0, x, -2.25, 1.65, 1.9), (0.6, x, -2.35, 1.2, 1.35))
+        for k in range(3):
+            cx = x + (k - 1) * 0.55
+            thorn(m, "Claw", (cx, -1.4, 0.3), (cx, -0.55, 0.03), 0.38, (0, 0, 0.2))
         bracket(m, x * 1.32, -2.6, 3.6, 0.42)
     m.bone = "Spine"
 
@@ -1061,10 +1205,13 @@ def shroomageddon():
     m.loft_y("Body", *body)
     m.loft_y("Body", (-0.6, 0, 8.4, 3.0, 1.4), (2.2, 0, 9.3, 3.5, 1.6))  # the hunch of its shoulders
     m.loft_y("Belly", (-2.9, 0, 4.45, 2.0, 0.2), (2.2, 0, 5.3, 3.0, 0.25))
+    ridge(m, "Claw", along((0, 1.9, 10.0), (0, -3.2, 7.3), 7), rng, 1.1, 0.42, 0.55)  # bone spikes down its spine
+    for x, y, z, n in ((1.9, 0.6, 8.6, (1, 0, 0.6)), (-2.0, -1.4, 7.6, (-1, 0, 0.5)), (1.7, -2.4, 7.1, (1, 0, 0.6))):
+        crust(m, (x, y, z), n, 0.7, rng, 7)
 
-    # Its chest is open on the mycelium heart: a black hollow, the heart glowing in it and ribs of bone across it.
+    # Its chest is torn open on the heart: a black hollow, the heart glowing in it and ribs of bone across it.
     cf = Frame(m, (0, 2.62, 7.0))
-    slab(cf, "Socket", 0, 0, 0.0, 1.4, 0.1, 12, 0.85)
+    slab(cf, "Socket", 0, 0, 0.0, 1.45, 0.1, 12, 0.85)
     egg(m, "Heart", (0, 2.62, 6.95), 0.85, 0.55, 1.05, 10, 6)
     for k in range(6):  # glowing seams down the heart
         a = math.pi * (0.1 + 0.8 * k / 5)
@@ -1072,21 +1219,19 @@ def shroomageddon():
         limb(m, "HeartGlow", pts, 0.1, 0.08, joints=False)
     for k in range(4):
         z = 6.1 + k * 0.55
-        pts = [(-1.15, 2.62, z + 0.05), (-0.6, 3.12, z + 0.12), (0.0, 3.24, z + 0.15), (0.6, 3.12, z + 0.12), (1.15, 2.62, z + 0.05)]
-        limb(m, "Claw", pts, 0.24, 0.2)
+        pts = [(-1.2, 2.62, z + 0.05), (-0.62, 3.14, z + 0.12), (0.0, 3.26, z + 0.15), (0.62, 3.14, z + 0.12), (1.2, 2.62, z + 0.05)]
+        limb(m, "Claw", pts, 0.26, 0.2)
     for k in range(9):  # glowing threads running out of it all over its hide
         a = k * math.tau / 9 + 0.2
         p = Vector((math.cos(a) * 1.35, 2.6, 7.0 + math.sin(a) * 1.25))
         pts = [tuple(p)]
-        on_side = 1.02 / max(abs(math.cos(a)), abs(math.sin(a)))  # out to the body's square sides
+        on_side = 1.02 / max(abs(math.cos(a)), abs(math.sin(a)))
         for j in range(3):
             y = 2.3 - 1.1 * (j + 1)
             _, cx, cz, w0, h0 = ring_at(*body, max(y, -3.3))
-            q = Vector((math.cos(a) * on_side * w0 / 2, y, cz + math.sin(a) * on_side * h0 / 2))
-            pts.append(tuple(q))
+            pts.append((math.cos(a) * on_side * w0 / 2, y, cz + math.sin(a) * on_side * h0 / 2))
         limb(m, "Vein", pts, 0.14, 0.08, joints=False)
 
-    # The forest on its back, leaning out round the geyser in the middle.
     def back_top(x, y):
         _, cx, cz, w0, h0 = ring_at(*body, y)
         top = cz + h0 / 2 * math.sqrt(max(0.05, 1 - (2 * x / w0) ** 2))
@@ -1095,76 +1240,71 @@ def shroomageddon():
             top = max(top, hz + hh / 2)
         return top
 
-    shrooms = ((-1.45, -0.4, (-0.55, 0.15, 1), 2.6, 0.36, 1.6, 1.15, "Cap", "CapDark", 7),
-               (1.55, 0.6, (0.5, 0.2, 1), 3.0, 0.4, 1.75, 1.25, "Cap", "CapDark", 8),
-               (-1.25, -2.6, (-0.45, -0.4, 1), 2.0, 0.3, 1.25, 0.9, "CapB", "CapBDark", 5),
-               (1.25, -2.5, (0.5, -0.35, 1), 1.7, 0.26, 1.05, 0.75, "Cap", "CapDark", 4),
-               (0.45, 1.8, (0.25, 0.45, 1), 1.1, 0.2, 0.75, 0.55, "CapB", "CapBDark", 3),
-               (-0.6, 1.5, (-0.4, 0.3, 1), 0.8, 0.15, 0.55, 0.42, "Cap", "CapDark", 2))
-    for x, y, d, h, r_, cr, ch, role, crown, n in shrooms:
-        sprout(m, (x, y, back_top(x, y) - 0.25), d, h, r_, cr, ch, rng, cap_role=role, crown=crown, n_specks=n, sides=12 if cr > 1 else 8)
-    for _ in range(9):  # and little ones everywhere
-        x, y = rng.uniform(-1.6, 1.6), rng.uniform(-3.0, 2.0)
-        if abs(x) < 0.7 and -2.2 < y < -0.6:
-            continue
-        sprout(m, (x, y, back_top(x, y) - 0.08), (rng.uniform(-0.5, 0.5), rng.uniform(-0.5, 0.5), 1), rng.uniform(0.3, 0.6), 0.07, rng.uniform(0.2, 0.32),
-               0.18, rng, crown=None, sides=6)
+    shrooms = ((-1.45, -0.4, (-0.55, 0.15, 1), 2.7, 0.36, 1.5, 1.6, "Cap", "CapDark", "bell"),
+               (1.55, 0.6, (0.5, 0.2, 1), 3.1, 0.4, 1.65, 1.75, "Cap", "CapDark", "bell"),
+               (-1.25, -2.6, (-0.45, -0.4, 1), 2.1, 0.3, 1.2, 1.3, "CapB", "CapBDark", "bell"),
+               (1.25, -2.5, (0.5, -0.35, 1), 1.8, 0.26, 1.0, 1.1, "Cap", "CapDark", "cone"),
+               (0.45, 1.8, (0.25, 0.45, 1), 1.1, 0.2, 0.7, 0.75, "CapB", "CapBDark", "bell"),
+               (-0.6, 1.5, (-0.4, 0.3, 1), 0.8, 0.15, 0.5, 0.55, "Cap", "CapDark", "cone"))
+    for x, y, d, h, r_, cr, ch, role, crown, shape in shrooms:  # a forest of black and deathly pale caps on its back
+        sprout(m, (x, y, back_top(x, y) - 0.25), d, h, r_, cr, ch, rng, cap_role=role, crown=crown, shape=shape, sides=12 if cr > 1 else 8)
     gx, gy = 0.0, -1.45
     gz = back_top(gx, gy)
     prism(m, "Accent", gx, gy, gz - 0.3, gz + 0.35, 1.05, 0.85, 10, math.pi / 10)  # the geyser's crater
     vent(m, 1, (gx, gy, gz + 0.4), "Spine", 0.8, 6)
     vent(m, 2, (-1.75, 1.6, back_top(-1.75, 1.6) - 0.1), "Spine", 0.36, 4)
 
-    # Tail: short and thick, a club of puffballs on its end.
-    pts = [(0, -3.3, 5.9), (0.2, -4.6, 5.4), (-0.15, -5.7, 4.8), (0.1, -6.5, 4.5)]
+    pts = [(0, -3.3, 5.9), (0.2, -4.6, 5.4), (-0.15, -5.7, 4.8), (0.1, -6.5, 4.5)]  # tail: short and thick, a club of bone spikes
     widths = (2.2, 1.6, 1.15, 0.9)
     for i, (a, b) in enumerate(zip(pts, pts[1:])):
         m.use(f"Tail{i + 1}", a, f"Tail{i}" if i else "Spine")
         beam(m, "Body", a, b, widths[i], None, widths[i + 1])
         if i:
             m.stretch("Body", f"Tail{i}")
-        bracket(m, a[0] + widths[i] * 0.48, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2 - 0.1, 0.36 - 0.06 * i)
+        thorn(m, "Claw", (a[0], (a[1] + b[1]) / 2, (a[2] + b[2]) / 2 + widths[i] * 0.4),
+              (a[0], (a[1] + b[1]) / 2 - 0.4, (a[2] + b[2]) / 2 + widths[i] * 0.4 + 0.8), 0.32)
     club = Vector((0.1, -6.9, 4.5))
-    for k, (dx, dy, dz, r_) in enumerate(((0, 0, 0, 0.85), (0.6, -0.3, 0.4, 0.55), (-0.55, -0.4, 0.35, 0.5), (0.1, -0.7, -0.35, 0.48), (-0.2, 0.2, 0.75, 0.42))):
-        c = club + Vector((dx, dy, dz))
-        ball(m, "Puffskin", *c, r_, 8, 4)
-        ball(m, "Glow", *(c + Vector((0, 0, r_ * 0.8))), r_ * 0.3, 6, 3)
+    ball(m, "Accent", *club, 0.9, 8, 4)
+    for k in range(10):
+        z = 1 - 2 * (k + 0.5) / 10
+        a = k * 2.4
+        d = Vector((math.sqrt(1 - z * z) * math.cos(a), math.sqrt(1 - z * z) * math.sin(a), z))
+        if d.y > 0.6:
+            continue
+        thorn(m, "Claw", tuple(club + d * 0.7), tuple(club + d * 1.7), 0.32)
     m.bone = "Spine"
 
     for n, start, end, bow in ((1, (1.75, 1.3, 9.0), (4.6, 0.6, 11.6), (0.4, 0, 0.4)), (2, (-1.75, 1.0, 9.0), (-4.4, 0.2, 12.0), (-0.3, 0, 0.5)),
                                (3, (1.5, -2.6, 7.9), (3.9, -4.8, 9.8), (0.5, 0, 0.5)), (4, (-1.5, -2.7, 7.8), (-3.7, -5.0, 10.3), (-0.4, 0, 0.6))):
         tendril(m, n, wander(start, end, rng, 7, bow, 0.22), 0.5, 0.14, "Spine", "Mycel", beads="Glow", tip="Glow", tip_size=0.3)
-        m.bone = f"Lash{n}c"
-        sprout(m, end, Vector(end) - Vector(start), 0.3, 0.12, 0.45, 0.32, rng, crown=None, sides=8)
-    m.bone = "Spine"
+        m.bone = "Spine"
 
-    m.use("Neck", (0, 2.4, 8.3))
-    beam(m, "Body", (0, 1.9, 8.0), (0, 3.6, 8.85), 2.3, 2.1, 1.75)
+    m.use("Neck", (0, 2.4, 8.2))
+    beam(m, "Body", (0, 1.9, 7.95), (0, 3.6, 8.3), 2.4, 2.1, 1.8)
     m.stretch("Body", "Spine")
-    m.use("Head", (0, 3.75, 8.7), "Neck")
-    hf = Frame(m, (0, 4.7, 8.95), turn(x=-0.12, y=-0.06))
-    hf.box("Body", 0, 0, 0, 2.5, 2.1, 2.1)
-    for side in (-1, 1):
-        hf.box("Accent", side * 1.12, -0.25, -0.35, 0.42, 1.4, 1.25)
-    mf = Frame(m, hf.at(0, 0.85, -0.55), hf.r)
-    gill_maw(m, mf, 2.2, 1.55, 1.35, 0.6, 0.55, rng, gape=0.2, drop=0.46, upper="Body", lower="Accent", tooth=0.46, per_side=7, rows=2,
-             tongue=False, gills=7, strands=3, lift=0.1,
-             mandibles=dict(x0=1.12, y0=0.12, z0=-0.08, length=1.45, width=0.42, height=0.8, teeth=7, curl=0.75, role="Accent"))
-    spore_glare(m, hf.at(-0.6, 1.06, 0.36), hf.r @ Vector((-0.1, 1, 0)), 0.95, 1, 0.6, sprouts=2, rng=rng, lid=False)
-    spore_glare(m, hf.at(0.64, 1.06, 0.42), hf.r @ Vector((0.1, 1, 0)), 0.8, -1, 0.6, sprouts=2, rng=rng, lid=False)
-    for x, y, z, r, look in ((0.0, 1.08, 0.7, 0.17, (0, 1, 0.15)), (-1.2, 0.8, 0.52, 0.17, (-1, 0.7, 0.1)), (1.2, 0.85, 0.55, 0.15, (1, 0.7, 0.05))):
-        spore_eye(m, hf.at(x, y, z), hf.r @ Vector(look), r, rng, pupil="Slit", veins=2, off=(rng.uniform(-0.2, 0.2), rng.uniform(-0.2, 0.2)))
-    hood = cap(m, "Cap", hf.at(0, -0.55, 1.55), 2.45, 1.75, "dome", hf.r @ turn(x=-0.16, y=0.07), 14, crown="CapDark", under="GillGlow", lip=0.3)
-    specks(m, "Speck", hood, 2.45, 1.75, "dome", 11, 0.42, rng, (0.22, 0.75))
-    for k in range(5):  # a crown of glowing morels round the top of the cap
-        a = math.pi / 2 + (k - 2) * 0.62
-        t = 0.62
-        rr = 2.45 * share(((0, 1.0), (0.35, 0.94), (0.65, 0.76), (0.88, 0.48), (1, 0.16)), t)
-        base = hood.at(math.cos(a) * rr * 0.92, math.sin(a) * rr * 0.92, 1.75 * t - 0.05)
-        out = hood.r @ Vector((math.cos(a) * 0.35, math.sin(a) * 0.35, 1))
-        mo = Frame(m, base, up_along(out))
-        morel_hood(m, mo, 0.3, 1.05 - 0.15 * abs(k - 2), rng, cols=6, rows=3)
-    m.head_centre = tuple(hf.at(0, 1.6, 0.1))
+    m.use("Head", (0, 3.75, 8.15), "Neck")
+    hf = Frame(m, (0, 4.75, 8.1), turn(x=-0.16, y=-0.05))  # low, thrust out at you
+    hf.box("Body", 0, -0.1, 0.25, 2.6, 2.1, 2.0)
+    mf = Frame(m, hf.at(0, 0.6, -0.65), hf.r @ turn(x=0.08))
+    rot_maw(m, mf, 2.5, 1.75, 1.6, 0.62, 0.58, rng, gape=0.24, drop=0.6, upper="Body", lower="Accent", tooth=0.6, per_side=9, rows=2, gills=7,
+            strands=5, lift=0.0, across=5, tip_h=0.32, nostrils=True,
+            mandibles=dict(x0=1.3, y0=0.05, z0=-0.15, length=2.2, width=0.55, height=1.25, teeth=9, curl=0.7, role="Accent"))
+    for side in (-1, 1):  # seven burning eyes under the hood: two great ones, five round them
+        rot_eye(m, hf.at(side * 0.62, 0.98, 0.55), hf.r @ Vector((side * 0.1, 1, 0)), 1.0, -side, 0.7, rng=rng, veins=4, horns=1)
+    for x, y, z, r in ((0.0, 1.0, 0.95, 0.2), (-1.2, 0.8, 0.9, 0.2), (1.22, 0.82, 0.85, 0.18), (-1.25, 0.86, 0.15, 0.14), (1.28, 0.88, 0.2, 0.15)):
+        bead(m, hf.at(x, y, z), hf.r @ Vector((x * 0.7, 1, 0.1)), r)
+    hood = ragged_cap(m, "Cap", hf.at(0, -0.45, 1.35), 2.4, 1.9, hf.r @ turn(x=-0.1), rng, crown="CapDark", under="GillGlow", shape="bell",
+                      tatters=16, length=0.25)
+    for k in range(7):  # a crown of bone horns bursting up through the cap, curving forward
+        a = math.pi / 2 + (k - 3) * 0.5
+        t = 0.5 if k % 2 else 0.36
+        rr = 2.4 * share(((0, 1.0), (0.3, 0.9), (0.6, 0.72), (0.85, 0.46), (1, 0.14)), t)
+        base = hood.at(math.cos(a) * rr * 0.92, math.sin(a) * rr * 0.92, 1.9 * t - 0.05)
+        out = (hood.r @ Vector((math.cos(a) * 0.45, math.sin(a) * 0.45, 1))).normalized()
+        length = (2.3 if k % 2 == 0 else 1.5) * (1.15 if k == 3 else 1)
+        thorn(m, "Claw", base, tuple(Vector(base) + out * length + hood.r @ Vector((0, 0.55, 0))), 0.5 if k % 2 == 0 else 0.38,
+              tuple(hood.r @ Vector((0, 0.4, 0))))
+    m.head_centre = tuple(hf.at(0, 1.6, 0.2))
     return finish(m, 1.0)
 
 

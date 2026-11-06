@@ -11,6 +11,8 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Save = require(ReplicatedStorage.Shared.Config.Save)
+local Shop = require(ReplicatedStorage.Shared.Config.Shop)
+local Specials = require(ReplicatedStorage.Shared.Config.Specials)
 
 local PlayerData = {}
 
@@ -118,6 +120,43 @@ local function write(player: Player, session: Session, releaseLock: boolean): st
 	return "failed"
 end
 
+-- The owner's resets (Config/Save resets). Runs before anything reads the save. Until the next save nothing is marked,
+-- so a crash just resets again. SaveWasReset tells the leaderboards to drop the player's old scores.
+local function applyResets(player: Player, data: { [string]: any }): { [string]: any }
+	for _, reset in Save.resets do
+		if table.find(reset.userIds, player.UserId) and not data.receipts[reset.id] then
+			local fresh = withDefaults(nil)
+			fresh.receipts = data.receipts
+			fresh.giftedPasses = data.giftedPasses
+			fresh.luckDealBought = data.luckDealBought
+			fresh.receipts[reset.id] = true
+			data = fresh
+			player:SetAttribute("SaveWasReset", true)
+		end
+	end
+	return data
+end
+
+-- Takes away every Game Pass for players in Config/Shop ignorePassesFor: the gifted passes, and the Game Pass
+-- monsters they gave (dinos and their special records). Runs on every load, so it stays off.
+local function withoutPasses(player: Player, data: { [string]: any }): { [string]: any }
+	if not table.find(Shop.ignorePassesFor, player.UserId) then
+		return data
+	end
+	data.giftedPasses = {}
+	for _, special in Specials do
+		if special.passId and data.specialsGiven[special.id] then
+			data.specialsGiven[special.id] = nil
+			for index = #data.dinos, 1, -1 do
+				if data.dinos[index].id == special.id then
+					table.remove(data.dinos, index)
+				end
+			end
+		end
+	end
+	return data
+end
+
 local function load(player: Player)
 	local token = HttpService:GenerateGUID(false)
 	local store, storeErr = getStore()
@@ -137,7 +176,7 @@ local function load(player: Player)
 
 	local session: Session
 	if data then
-		session = { token = token, data = data, memoryOnly = false, released = false }
+		session = { token = token, data = withoutPasses(player, applyResets(player, data)), memoryOnly = false, released = false }
 	elseif RunService:IsStudio() and reason ~= "locked by another session" then
 		warn(
 			`[PlayerData] Saving is OFF in this Studio session: {reason}\n`

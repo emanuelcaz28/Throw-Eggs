@@ -1,6 +1,6 @@
 -- The pieces that stand at every base, modelled in Blender (assets/models/build_base_kit.py) and kept in
--- ReplicatedStorage.Assets.Maps.Forest.Base: base_Stall, base_SquatRack, base_XpButton,
--- base_FencePost, base_FenceRails and base_UpgradeSign. Each one's pivot is its floor centre and its
+-- ReplicatedStorage.Assets.Maps.Forest.Base: base_Stall, base_SquatRack and the racks that follow it
+-- (build_racks.py), base_XpButton, base_FencePost, base_FenceRails and base_UpgradeSign. Each one's pivot is its floor centre and its
 -- front faces the pivot's LookVector, so placing one is a single PivotTo. Server and client both use it.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -15,6 +15,12 @@ local function pieces(): Instance?
 		folder = maps:WaitForChild("Forest"):FindFirstChild("Base")
 	end
 	return folder
+end
+
+-- Whether a piece has been imported.
+function BaseKit.has(name: string): boolean
+	local source = pieces()
+	return source ~= nil and source:FindFirstChild(name) ~= nil
 end
 
 -- A copy of a piece standing at `at` (its floor centre, front along at.LookVector), anchored, with any

@@ -5,12 +5,15 @@
 --
 -- Panels and cards are laid out in design pixels for a 1280x720 screen; a UIScale on each panel
 -- fits it to the real screen.
-local GuiService = game:GetService("GuiService")
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local BlockModel = require(script.Parent.BlockModel)
 local DinoModel = require(script.Parent.DinoModel)
+local EggModel = require(script.Parent.EggModel)
+local DinoStats = require(script.Parent.DinoStats)
 local Dinos = require(script.Parent.Config.Dinos)
 local Icons = require(script.Parent.Config.Icons)
 
@@ -113,13 +116,54 @@ local function track(kind: string, object: Instance, data)
 	table.insert(moving, { kind = kind, object = object, data = data })
 end
 
--- How big design pixels are on this screen.
-function UiKit.scale(): number
-	local camera = workspace.CurrentCamera
-	while camera.ViewportSize.Y <= 1 do
+-- The area our ScreenGuis lay out in: under Roblox's top bar and, on phones, inside the safe area (clear of the
+-- notch and the home bar), measured with an empty ScreenGui. Phones play in landscape, but while a game loads the
+-- screen can still read as portrait (the Roblox app is portrait on phones), and a size read then made the whole HUD
+-- PC-sized on an iPhone. So on touch screens the first call waits (up to 3 s) for a landscape size that holds still
+-- for half a second, and a portrait size is always read the landscape way round.
+local probe: ScreenGui? = nil
+local settling: "no" | "waiting" | "done" = "no"
+
+function UiKit.screenSize(): Vector2
+	if not probe then
+		local gui = Instance.new("ScreenGui")
+		gui.Name = "ScreenProbe"
+		gui.ResetOnSpawn = false
+		gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+		probe = gui
+	end
+	local gui = probe :: ScreenGui
+	while gui.AbsoluteSize.Y <= 1 do
 		task.wait()
 	end
-	local size = camera.ViewportSize - Vector2.new(0, GuiService:GetGuiInset().Y)
+	local touch = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+	if touch and settling == "no" then
+		settling = "waiting"
+		local started, last, stillSince = os.clock(), gui.AbsoluteSize, os.clock()
+		while os.clock() - started < 3 do
+			task.wait(0.1)
+			local now = gui.AbsoluteSize
+			if now ~= last then
+				last, stillSince = now, os.clock()
+			elseif now.X > now.Y and os.clock() - stillSince >= 0.5 then
+				break
+			end
+		end
+		settling = "done"
+	end
+	while settling == "waiting" do
+		task.wait(0.1)
+	end
+	local size = gui.AbsoluteSize
+	if touch and size.Y > size.X then
+		size = Vector2.new(size.Y, size.X)
+	end
+	return size
+end
+
+-- How big design pixels are on this screen.
+function UiKit.scale(): number
+	local size = UiKit.screenSize()
 	return math.clamp(math.min(size.X / DESIGN.X, size.Y / DESIGN.Y), MIN_SCALE, MAX_SCALE)
 end
 
@@ -362,18 +406,29 @@ local function aim(frame: ViewportFrame, target: Vector3, radius: number, yaw: n
 	end
 end
 
+-- A block model from ModelBlueprints, or for an egg (egg_<id>) its Blender model when the place has one (EggModel).
 function UiKit.viewport(parent: Instance, modelName: string, options): ViewportFrame
 	options = options or {}
 	local frame = newViewport(parent, options)
-	local model = BlockModel.build(modelName, Vector3.zero, options.tint, options.tintAmount)
-	if not model then
-		return frame
+	local eggId = string.match(modelName, "^egg_(.+)$")
+	local blender = if eggId then EggModel.clone(eggId) else nil
+	local model, target, e
+	if blender then
+		blender:PivotTo(CFrame.new()) -- its foot at the middle of the view's floor
+		local box, size = blender:GetBoundingBox()
+		model, target, e = blender, box.Position, size
+	else
+		model = BlockModel.build(modelName, Vector3.zero, options.tint, options.tintAmount)
+		if not model then
+			return frame
+		end
+		e = BlockModel.extents(modelName)
+		target = Vector3.new(0, e.Y / 2, 0)
 	end
 	model.Parent = frame
-	local e = BlockModel.extents(modelName)
 	local radius = math.max(math.sqrt(e.X * e.X + e.Z * e.Z) / 2, e.Y / 2)
 	local yaw = (options.yaw or math.rad(120)) + (if options.spin then math.random() * 2 * math.pi else 0) -- front three-quarter view
-	aim(frame, Vector3.new(0, e.Y / 2, 0), radius, yaw, options)
+	aim(frame, target, radius, yaw, options)
 	return frame
 end
 
@@ -402,21 +457,32 @@ end
 -- Blender model, else its block model), seen from the front three-quarters and filling its view. options:
 -- position, size, aspect (the view's width over its height, 1 if left out), zoom, spin, silhouette, and mutation
 -- (a colour mutation's id, which recolours its skin as on a base).
-function UiKit.monster(parent: Instance, dinoId: string, options): ViewportFrame
+-- live puts it in a WorldModel and returns it too, for the caller to animate (the Shop hands it to
+-- DinoLifeController.showcase); turn changes how far round it's seen from (radians, default MONSTER_TURN).
+function UiKit.monster(parent: Instance, dinoId: string, options): (ViewportFrame, Model)
 	options = options or {}
 	local frame = newViewport(parent, options)
 	local model = DinoModel.build(dinoId, options.mutation, Vector3.zero, 1)
-	model.Parent = frame
+	if options.live then
+		local world = Instance.new("WorldModel")
+		world.Parent = frame
+		model.Parent = world
+	else
+		model.Parent = frame
+	end
 	local centre, size = DinoModel.visibleBox(model)
-	local yaw = (if DinoModel.facesBack(model) then 0 else math.pi) - MONSTER_TURN
+	local yaw = (if DinoModel.facesBack(model) then 0 else math.pi) - (options.turn or MONSTER_TURN)
 	local distance = fitDistance(size, yaw, options.aspect or 1, options.spin) * MONSTER_MARGIN * (options.zoom or 1)
 	-- aim takes a radius; this one stands the camera at exactly that distance.
 	aim(frame, centre, distance * math.tan(math.rad(VIEW_FOV / 2)), yaw, { zoom = 1, spin = options.spin })
-	return frame
+	return frame, model
 end
 
 -- Which rarity tier a dino is: its place in its biome's list, most common first.
 function UiKit.rarityOf(dinoId: string): string
+	if DinoStats.special(dinoId) then
+		return UiKit.RARITY_ORDER[#UiKit.RARITY_ORDER]
+	end
 	for _, list in Dinos do
 		for index, dino in list do
 			if dino.id == dinoId then
@@ -557,7 +623,17 @@ function UiKit.setHeader(panel, style: string)
 end
 
 -- Opens with a small pop (85% to full size, overshooting a little).
+-- One panel at a time: opening one closes any other that's open, so they never stack inside each other. A panel
+-- with keepOpen set (Welcome back, closed only by its CLAIM) is left alone.
+local openPanels = {}
+
 function UiKit.openPanel(panel)
+	for other in openPanels do
+		if other ~= panel and not other.keepOpen then
+			UiKit.closePanel(other)
+		end
+	end
+	openPanels[panel] = true
 	local full = UiKit.scale()
 	panel.frame.Visible = true
 	panel.scale.Scale = full * 0.85
@@ -565,6 +641,7 @@ function UiKit.openPanel(panel)
 end
 
 function UiKit.closePanel(panel)
+	openPanels[panel] = nil
 	panel.frame.Visible = false
 end
 

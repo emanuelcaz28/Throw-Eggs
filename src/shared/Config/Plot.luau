@@ -50,23 +50,28 @@ local Plot = {
 	-- Walk Vision"): its mutations (only when it has some), its name, its $/s. Only the few monsters nearest to you
 	-- show one, so a full base doesn't pile its tags into a heap.
 	tags = {
-		nearest = 3, -- this many tags at most, on the monsters closest to you...
-		maxDistance = 120, -- ...no further than this many studs from you (measured to the monster's edge)
+		-- Tags show only while you stand on a base or within plotMargin studs of its edge [Owner, 2026-11-04], and
+		-- only on that base's monsters: at most `nearest` of them, the ones closest to you.
+		plotMargin = 10,
+		nearest = 3,
+		maxDistance = 60, -- studs at which a tag has shrunk to farScale (measured to the monster's edge)
 		ceiling = 18, -- studs over the monster's feet a tag stops at, so a giant's tag stays readable from its base
 		headGap = 1.5, -- studs between the top of the head and the tag
-		size = Vector2.new(420, 150), -- the tag's box in pixels, the same on screen for every monster size
-		farScale = 0.7, -- how big a tag is at maxDistance, against up close
-		mutationText = 26, -- pixel heights of the three lines
-		nameText = 42,
-		incomeText = 38,
-		outline = 5, -- the dark outline round the letters, in pixels
+		size = Vector2.new(240, 80), -- the tag's box in pixels, the same on screen for every monster size
+		farScale = 0.75, -- how big a tag is at maxDistance, against up close
+		mutationText = 13, -- pixel heights of the three lines [Owner, 2026-11-04: the first ones were far too big]
+		nameText = 20,
+		incomeText = 17,
+		outline = 2.5, -- the dark outline round the letters, in pixels
 		sizeWord = { "#FFFFFF", "#AEB8C8" }, -- size mutations are silver, top to bottom
 		income = { "#B6FF8A", "#2FD24A" },
 		-- A colour mutation's word runs from its colour lifted towards white (by this much) down to its colour.
 		colourLift = 0.6,
-		-- Mutations too dark to read on the dark outline get a light outline instead.
-		darkOutline = Color3.fromRGB(233, 226, 255),
+		-- Mutations too dark to read on the dark outline (Shadow) are lifted towards white instead: the top of the
+		-- word by darkTop, the bottom by darkBottom.
 		darkBelow = 0.25, -- a colour this dark or darker (0 black, 1 white)
+		darkTop = 0.8,
+		darkBottom = 0.45,
 	},
 }
 

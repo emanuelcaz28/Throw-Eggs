@@ -1,18 +1,25 @@
+local Biomes = require(script.Parent.Biomes)
 local Plot = require(script.Parent.Plot)
+local Throw = require(script.Parent.Throw)
 
 -- Training station: a squat rack at each base. Stepping on its pad locks the player in under the bar and
 -- reps come automatically until they press STOP. Placeholder numbers; tune during playtesting.
 local Training = {
 	repInterval = 1, -- seconds per rep (one squat)
 	xpPerRep = 1, -- every rep, before the x2 Training pass and the bubble
+	xpPerRepGrowth = 1.25, -- XP per rep is multiplied by this for each upgrade bought at the sign
 
 	-- Power works like the reference: XP fills a bar, and each full bar gives a fixed amount of Throw Power
-	-- (powerPerBar, raised by rack upgrades). Each bar needs xpGrowth times the XP of the one before, so
-	-- early bars fill in seconds and late ones in minutes: that, not money, paces the later maps
-	-- (docs/GAME_SPEC.md section 12, from a play simulation: map 2 at ~2 min, map 8 at ~3 h, map 15 at ~31 h).
-	-- XP needed for the next bar = baseXp * xpGrowth ^ (level - 1)
+	-- (powerPerBar, raised by rack upgrades). The XP a bar needs grows with how far your Throw Power reaches, also
+	-- like the reference ("XP per level grows with distance down the lane"): baseXp at the throw line, times
+	-- xpPerMap for every map a PERFECT throw passes, smoothly in between (xpForNextBar). It depends on where you
+	-- are, not on how many bars you've filled, so the x2 Power and x2 Training passes make training exactly 2x
+	-- faster and a power pack skips just the bars it replaces. (When it grew with the bar count, x2 Power skipped
+	-- the most expensive bars and finished the game in under an hour.) Early bars fill in seconds, late ones in
+	-- minutes: that paces the game (docs/GAME_SPEC.md section 12, a play simulation on the game's code,
+	-- 2026-11-06: map 2 at ~3 min, map 8 at ~1.8 h, map 15 at ~30 h).
 	baseXp = 2,
-	xpGrowth = 1.011,
+	xpPerMap = 2.03,
 
 	startPower = 100, -- Throw Power before any bar
 
@@ -24,6 +31,18 @@ local Training = {
 		padRadius = 5, -- stepping inside this starts training
 		padHeight = 8, -- how far above the pad still counts
 		stopOffset = Vector3.new(7, 0, -6), -- after STOP the player is put down here, from the pad's centre
+	},
+
+	-- [Owner] The rack itself gets better as its owner buys upgrades, for everyone to see. upgrades is how many it
+	-- takes, lowest first: spread so a new rack comes about every 2 to 3 maps, the last one around map 15. model is
+	-- a piece in BaseKit (assets/models/build_racks.py). A base with no owner has the first.
+	rackModels = {
+		{ upgrades = 0, model = "base_SquatRack", name = "Gym Rack" },
+		{ upgrades = 3, model = "base_SquatRack_Iron", name = "Iron Rack" },
+		{ upgrades = 7, model = "base_SquatRack_Bone", name = "Bone Rack" },
+		{ upgrades = 10, model = "base_SquatRack_Crystal", name = "Crystal Rack" },
+		{ upgrades = 13, model = "base_SquatRack_Magma", name = "Magma Rack" },
+		{ upgrades = 16, model = "base_SquatRack_Titan", name = "Titan Rack" },
 	},
 
 	-- The orange pad in front of the rack: each step onto it buys more XP per rep. Only the owner buys.
@@ -58,12 +77,36 @@ function Training.xpPadPosition(plotIndex: number): Vector3
 	return Plot.gatePosition(plotIndex) + Training.xpUpgrade.offset
 end
 
-function Training.xpToNextLevel(level: number): number
-	return math.floor(Training.baseXp * Training.xpGrowth ^ (level - 1))
+-- How many maps a throw this far has passed: 0 at the throw line, 1.5 halfway through the second map, and so on.
+local function mapsPassed(distance: number): number
+	for index, biome in Biomes do
+		if distance <= biome.endDist then
+			return index - 1 + math.clamp((distance - biome.startDist) / (biome.endDist - biome.startDist), 0, 1)
+		end
+	end
+	return #Biomes
 end
 
-function Training.xpPerRepFor(_upgrades: number): number
-	return Training.xpPerRep
+-- The XP the next bar needs at this Throw Power (power packs included): see xpPerMap.
+function Training.xpForNextBar(power: number): number
+	return math.floor(Training.baseXp * Training.xpPerMap ^ mapsPassed(power * Throw.meter.perfectMultiplier))
+end
+
+-- Each upgrade at the sign also multiplies XP per rep by xpPerRepGrowth (the pad shows "+X XP / rep", like the
+-- reference's bars). Bars cost about 2x more XP a map against about 1.3x more XP a rep, so later maps take longer.
+function Training.xpPerRepFor(upgrades: number): number
+	return math.floor(Training.xpPerRep * Training.xpPerRepGrowth ^ upgrades * 10 + 0.5) / 10
+end
+
+-- The best entry of rackModels this many upgrades has earned.
+function Training.rackFor(upgrades: number)
+	local best = Training.rackModels[1]
+	for _, rack in Training.rackModels do
+		if upgrades >= rack.upgrades then
+			best = rack
+		end
+	end
+	return best
 end
 
 -- After this many rack upgrades: the tier (0 = first), upgrades already into it, and the tier's length.

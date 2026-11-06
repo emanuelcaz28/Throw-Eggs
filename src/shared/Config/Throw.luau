@@ -24,6 +24,9 @@ local Throw = {
 		minMultiplier = 0.4, -- distance multiplier at level 1
 		maxMultiplier = 1, -- at the level just below the top
 		perfectMultiplier = 1.5, -- at the top level
+		-- The PERFECT band: this share of the tube at its top (the other levels split the rest evenly). The
+		-- marker slows near the top, so a band of 0.1 was hit about 1 tap in 5; 0.06 is about 1 in 6.5.
+		perfectZone = 0.06,
 	},
 
 	-- Stepping onto the platform: the screen dips to black, and comes back on the thrower standing still on the throw
@@ -101,16 +104,41 @@ local Throw = {
 		ringTime = 0.3,
 		dustDelay = 0.1,
 		dustColor = Color3.fromRGB(226, 208, 170),
+		-- Then the egg is cut in half (EggModel.split): a white streak sweeps across its middle, the top half slides
+		-- off along the cut, tips over and lands upside down beside the bottom half, and rocks to a stop, so both show
+		-- their white and yolk. Seconds, and studs at the egg's own size; the same as SPLIT in
+		-- assets/models/build_eggs.py, whose egg_slice.mp4 plays them. Only eggs with a Blender model in
+		-- ReplicatedStorage.Assets.Eggs are cut; the others stay whole.
+		split = {
+			height = 3, -- the Blender egg's shell is this tall at scale 1 (ThrowController EGG_SIZE.Y)
+			radius = 1.2, -- and this wide at its waist
+			cut = 0.42, -- where it's cut: its widest point, as a share of its height up from its foot
+			delay = 0.05, -- after touching down
+			slice = 0.14, -- the streak's sweep
+			slide = 0.12, -- the top half sliding off along the cut
+			fall = 0.42, -- tipping over and dropping beside the bottom half
+			push = 0.42, -- how far it slides, in radii
+			lift = 0.15, -- and how far it rises as it slides, clear of the bottom half's yolk
+			gap = 0.3, -- between the two halves once it's down
+			hop = 0.6, -- how high it hops on the way over
+			rock = 0.16, -- radians it rocks once down
+			rockTime = 0.7, -- seconds the rocking dies away over
+			sink = 0.04, -- how far its tip sinks into the ground
+		},
 	},
 }
 
 -- Which level a marker height (0 = bottom, 1 = top) falls in, from 1 up to meter.levels.
-function Throw.level(height: number): number
-	return math.min(math.floor(height * Throw.meter.levels) + 1, Throw.meter.levels)
+function Throw.isPerfect(height: number): boolean
+	return height >= 1 - Throw.meter.perfectZone
 end
 
-function Throw.isPerfect(height: number): boolean
-	return Throw.level(height) == Throw.meter.levels
+function Throw.level(height: number): number
+	local levels = Throw.meter.levels
+	if Throw.isPerfect(height) then
+		return levels
+	end
+	return math.min(math.floor(height * levels) + 1, levels - 1)
 end
 
 function Throw.multiplier(height: number): number

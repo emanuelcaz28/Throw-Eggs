@@ -126,21 +126,26 @@ end
 
 -- Price and reward floating over the XP upgrade pad at the player's own base, so only they see
 -- their numbers. Returns the sign too, so it can move to a new base.
-local function buildPadSign(): (BillboardGui, TextLabel, TextLabel)
+local function buildPadSign(): (BillboardGui, TextLabel, TextLabel, TextLabel)
 	local sign = Instance.new("BillboardGui")
 	sign.Name = "XpUpgradeSign"
-	sign.Size = UDim2.fromOffset(220, 90)
+	sign.Size = UDim2.fromOffset(220, 116)
 	sign.StudsOffsetWorldSpace = Vector3.new(0, 5, 0)
 	sign.MaxDistance = 120
 	sign.Parent = player:WaitForChild("PlayerGui")
 	local price = makeLabel(sign, Enum.Font.GothamBlack, TOO_PRICEY, Enum.TextXAlignment.Center)
-	price.Size = UDim2.fromScale(1, 0.6)
+	price.Size = UDim2.fromScale(1, 0.46)
 	price.TextStrokeTransparency = 0
 	local reward = makeLabel(sign, Enum.Font.GothamBlack, TEXT, Enum.TextXAlignment.Center)
-	reward.Position = UDim2.fromScale(0, 0.6)
-	reward.Size = UDim2.fromScale(1, 0.4)
+	reward.Position = UDim2.fromScale(0, 0.46)
+	reward.Size = UDim2.fromScale(1, 0.27)
 	reward.TextStrokeTransparency = 0
-	return sign, price, reward
+	-- Each upgrade also raises XP per squat (Training.xpPerRepGrowth): what it will be after this one.
+	local xp = makeLabel(sign, Enum.Font.GothamBlack, UiKit.POWER, Enum.TextXAlignment.Center)
+	xp.Position = UDim2.fromScale(0, 0.73)
+	xp.Size = UDim2.fromScale(1, 0.27)
+	xp.TextStrokeTransparency = 0
+	return sign, price, reward, xp
 end
 
 function TrainingController.start()
@@ -211,7 +216,7 @@ function TrainingController.start()
 	render()
 
 	task.spawn(function()
-		local sign, price, reward = buildPadSign()
+		local sign, price, reward, xpLine = buildPadSign()
 		local function placeSign()
 			local plotIndex = player:GetAttribute("PlotIndex")
 			local rack = plotIndex and workspace:WaitForChild("Racks"):WaitForChild(`Rack{plotIndex}`)
@@ -232,6 +237,8 @@ function TrainingController.start()
 			price.TextColor3 = if (player:GetAttribute("Cash") or 0) >= cost then AFFORD else TOO_PRICEY
 			-- Upgrades raise the power each full bar gives, a tier at a time (Config/Training).
 			reward.Text = if left == 1 then `{Format.short(nextPower)} ⚡ per bar!` else `{left} more: {Format.short(nextPower)} ⚡ per bar`
+			local nextXp = player:GetAttribute("NextXpPerRep") or 0
+			xpLine.Text = `+{if nextXp % 1 == 0 then nextXp else string.format("%.1f", nextXp)} XP per squat`
 		end
 		player.AttributeChanged:Connect(renderPad)
 		renderPad()

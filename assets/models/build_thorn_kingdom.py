@@ -911,14 +911,14 @@ MOTION = {
 
 # Where the props go: the same rules as Config/Decor's ThornKingdom (keep the two in step). The map is 1600 long.
 DECOR = dict(
-    floor=dict(first=12, gap=(12, 22), side=(24, 34),
-               props=[("prop_BriarRose", 14, (1.3, 1.7)), ("prop_ThornThicket", 10, (1.1, 1.4)), ("prop_BriarLantern", 9, (1.2, 1.5)),
-                      ("prop_Toadstools", 9, (1.2, 1.6)), ("prop_StoneKnight", 8, (1.2, 1.5)), ("prop_SpinningWheel", 7, (1.2, 1.5)),
-                      ("prop_RoseFountain", 7, (1.1, 1.4)), ("prop_FloatingCrown", 5, (1.2, 1.4)), ("prop_MagicMirror", 4, (1.2, 1.4))],
-               extras=dict(chance=0.7, spread=8, props=[("prop_BriarTuft", 5, (0.9, 1.3)), ("prop_Toadstools", 2, (0.6, 0.8)),
+    floor=dict(first=10, gap=(9, 16), side=(23, 34),
+               props=[("prop_BriarRose", 14, (1.5, 1.9)), ("prop_ThornThicket", 10, (1.3, 1.6)), ("prop_BriarLantern", 9, (1.4, 1.7)),
+                      ("prop_Toadstools", 9, (1.4, 1.8)), ("prop_StoneKnight", 8, (1.4, 1.7)), ("prop_SpinningWheel", 7, (1.4, 1.7)),
+                      ("prop_RoseFountain", 7, (1.3, 1.6)), ("prop_FloatingCrown", 5, (1.4, 1.6)), ("prop_MagicMirror", 4, (1.4, 1.6))],
+               extras=dict(chance=0.85, spread=8, props=[("prop_BriarTuft", 5, (0.9, 1.3)), ("prop_Toadstools", 2, (0.6, 0.8)),
                                                          ("prop_ThornThicket", 2, (0.5, 0.7))])),
-    rim=dict(first=6, gap=(14, 24), chance=0.9, side=(64, 102),
-             props=[("prop_ThornTree", 6, (1.8, 2.4)), ("prop_Turret", 3, (1.6, 2.0)), ("prop_BriarRose", 4, (2.0, 2.6)),
+    rim=dict(first=6, gap=(10, 17), chance=0.95, side=(60, 104),
+             props=[("prop_ThornTree", 6, (2.0, 2.6)), ("prop_Turret", 3, (1.7, 2.1)), ("prop_BriarRose", 4, (2.2, 2.8)),
                     ("prop_ThornThicket", 3, (2.0, 2.5)), ("prop_BriarTuft", 2, (2.2, 2.8))]),
     overhead=[("prop_StoneBridge", 270, 0, 1), ("prop_StoneBridge", 830, 0, 1.05), ("prop_StoneBridge", 1390, 0, 1)],
     walls=[("prop_BriarCurtain", d, side) for d, side in ((80, 1), (260, -1), (450, 1), (640, -1), (820, 1), (1000, -1), (1180, 1),

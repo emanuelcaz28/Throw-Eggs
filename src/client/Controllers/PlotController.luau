@@ -18,6 +18,7 @@ local Hub = require(ReplicatedStorage.Shared.Config.Hub)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Pop = require(ReplicatedStorage.Shared.Config.Pop)
 local PopText = require(ReplicatedStorage.Shared.PopText)
+local SellPanel = require(script.Parent.SellPanel)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local player = Players.LocalPlayer
@@ -33,6 +34,7 @@ local SLOT_GAP = 8
 local HELD_RAISE = 1.14 -- the carried monster's hotbar slot stands this much bigger
 local SIZE_WORD = Color3.fromRGB(217, 222, 232) -- size mutations are silver
 local CASH_HEIGHT = 56 -- height of the cash number, before scaling for small screens
+local POWER_HEIGHT = 52 -- Throw Power's, just above it (TrainingController)
 local INCOME_HEIGHT = 22
 local SELL_CONFIRM_TIME = 3 -- seconds the "SURE?" button waits for a second tap
 local GOOD_SPOT = Color3.fromRGB(90, 220, 110)
@@ -128,8 +130,12 @@ local function buildGui()
 	hotbar.Size = UDim2.fromOffset(#HOTBAR_KEYS * (SLOT_SIZE.X + SLOT_GAP), SLOT_SIZE.Y * HELD_RAISE + 24)
 	hotbar.BackgroundTransparency = 1
 	hotbar.Parent = gui
+	-- On narrow screens (phones) it shrinks to fit between the cash and power at the bottom left and the same
+	-- margin on the right, rather than running under them.
+	local statsWidth = 16 + math.max(CASH_HEIGHT, POWER_HEIGHT) * 5 * scale + 12
+	local roomForHotbar = UiKit.screenSize().X - 2 * statsWidth
 	local hotbarScale = Instance.new("UIScale")
-	hotbarScale.Scale = HudStyle.scale()
+	hotbarScale.Scale = math.clamp(roomForHotbar / hotbar.Size.X.Offset, 0.3, scale)
 	hotbarScale.Parent = hotbar
 	local hotbarLayout = Instance.new("UIListLayout")
 	hotbarLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -153,7 +159,8 @@ local function buildGui()
 		local edge = UiKit.stroke(slot, 4)
 		local raise = Instance.new("UIScale")
 		raise.Parent = slot
-		local income = UiKit.text(slot, "", 14, UiKit.CASH)
+		-- Larger when the hotbar is shrunk for a phone, so the $/s stays readable (14 at full size).
+		local income = UiKit.text(slot, "", math.floor(14 / math.max(hotbarScale.Scale, 0.75)), UiKit.CASH)
 		income.Position = UDim2.fromOffset(-12, -20)
 		income.Size = UDim2.new(1, 24, 0, 18)
 		income.ZIndex = 3
@@ -181,6 +188,7 @@ local function buildGui()
 	hint.Visible = false
 
 	return {
+		gui = gui,
 		hotbar = hotbar,
 		slots = slots,
 		hint = hint,
@@ -204,9 +212,12 @@ function PlotController.start()
 	local slots = 0
 	local renderList
 
-	local function send(action: string, key: number?, x: number?, z: number?)
+	local function send(action: string, key: (number | { number })?, x: number?, z: number?)
 		remotes.DinoAction:FireServer(action, key, x, z)
 	end
+	local sellPanel = SellPanel.new(hud.gui, function(keys)
+		send("sellMany", keys)
+	end)
 
 	-- Backpack dinos in hotbar order (the list arrives best first).
 	local function backpack()
@@ -374,6 +385,7 @@ function PlotController.start()
 
 		local sell = UiKit.button(row, if confirmKey == dino.key then "SURE?" else `SELL {Format.cash(dino.sellPrice)}`, "red", 124, 38, 17)
 		sell.Name = "Sell"
+		sell.Visible = DinoStats.sellable(dino.id) -- a pass gives its monster only once
 		sell.AnchorPoint = Vector2.new(1, 0)
 		sell.Position = UDim2.new(1, -12, 0, 52)
 		sell.Activated:Connect(function()
@@ -448,7 +460,7 @@ function PlotController.start()
 		task.defer(showVisibleTiles)
 	end)
 
-	-- Stepping onto the SELL stall's pad opens this panel; walking off closes it again.
+	-- Stepping onto the SELL stall's pad opens the Sell Stand; walking off closes it again.
 	local onStallPad = false
 	RunService.Heartbeat:Connect(function()
 		local character = player.Character
@@ -457,10 +469,9 @@ function PlotController.start()
 		if nowOnPad ~= onStallPad then
 			onStallPad = nowOnPad
 			if nowOnPad then
-				UiKit.openPanel(hud.panel)
-				task.defer(showVisibleTiles)
+				sellPanel.open()
 			else
-				UiKit.closePanel(hud.panel)
+				sellPanel.close()
 			end
 		end
 	end)
@@ -472,18 +483,20 @@ function PlotController.start()
 		slots = newSlots
 		renderList()
 		renderHotbar()
+		sellPanel.setDinos(newDinos)
 	end)
 	remotes.Notice.OnClientEvent:Connect(function(text: string, bad: boolean?)
 		PopText.notice(text, not bad)
 	end)
 	-- Training fills the bottom of the screen, so the hotbar steps aside.
 	-- The open My Dinos panel stands where the hotbar's right end is, and lists the same monsters, so the hotbar
-	-- steps aside for it too.
+	-- steps aside for it too, and for the Sell Stand.
 	local function renderHotbarVisible()
-		hud.hotbar.Visible = player:GetAttribute("IsTraining") ~= true and not hud.panel.frame.Visible
+		hud.hotbar.Visible = player:GetAttribute("IsTraining") ~= true and not hud.panel.frame.Visible and not sellPanel.panel.frame.Visible
 	end
 	player:GetAttributeChangedSignal("IsTraining"):Connect(renderHotbarVisible)
 	hud.panel.frame:GetPropertyChangedSignal("Visible"):Connect(renderHotbarVisible)
+	sellPanel.panel.frame:GetPropertyChangedSignal("Visible"):Connect(renderHotbarVisible)
 	renderHotbarVisible()
 	player:GetAttributeChangedSignal("HeldDino"):Connect(function()
 		renderList()
@@ -564,14 +577,49 @@ function PlotController.start()
 		return { x = offset.X, z = offset.Z, inBounds = Plot.inBounds(offset.X, offset.Z), plotIndex = plotIndex }
 	end
 
+	-- One of the player's own monsters standing on their plot under a point on the screen, or nil. Tapping or
+	-- clicking it picks it up (onto the head, ready to put down elsewhere), the same as PICK UP in My Dinos.
+	local function statueAt(viewportPoint: Vector2): Model?
+		local plotIndex = player:GetAttribute("PlotIndex")
+		local plots = workspace:FindFirstChild("Plots")
+		local plotModel = plotIndex and plots and plots:FindFirstChild(`Plot{plotIndex}`)
+		local statues = plotModel and plotModel:FindFirstChild("Statues")
+		if not statues then
+			return nil
+		end
+		local ray = workspace.CurrentCamera:ViewportPointToRay(viewportPoint.X, viewportPoint.Y)
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Include
+		params.FilterDescendantsInstances = { plotModel } -- so the fence in front of a monster still blocks it
+		local result = workspace:Raycast(ray.Origin, ray.Direction * 1000, params)
+		local hit: Instance? = result and result.Instance
+		while hit and hit.Parent ~= statues do
+			hit = hit.Parent
+		end
+		return if hit and hit:GetAttribute("DinoKey") then hit :: Model else nil
+	end
+
+	-- On a computer, the monster a click would pick up gets a white outline while the mouse is over it.
+	local hover = Instance.new("Highlight")
+	hover.Name = "PickUpHover"
+	hover.FillTransparency = 1
+	hover.OutlineColor = Color3.new(1, 1, 1)
+	hover.DepthMode = Enum.HighlightDepthMode.Occluded
+	hover.Enabled = false
+	hover.Parent = workspace
+
 	RunService.RenderStepped:Connect(function()
 		local dino = heldDino()
 		if not dino then
 			clearGhost()
 			aim = nil
 			hud.hint.Visible = false
+			local hovered = if UserInputService.MouseEnabled then statueAt(UserInputService:GetMouseLocation()) else nil
+			hover.Adornee = hovered
+			hover.Enabled = hovered ~= nil
 			return
 		end
+		hover.Enabled = false
 		local touch = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 		local spot = spotAt(UserInputService:GetMouseLocation())
 		local model = ghostFor(dino)
@@ -611,22 +659,38 @@ function PlotController.start()
 				return
 			end
 		end
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+			return
+		end
 		local dino = heldDino()
 		if not dino then
+			local statue = statueAt(UserInputService:GetMouseLocation())
+			if statue then
+				send("pickUp", statue:GetAttribute("DinoKey"))
+			end
+		elseif aim and aim.valid then
+			send("placeAt", dino.key, aim.x, aim.z)
+		end
+	end)
+	-- Phones: a tap (not a drag, which turns the camera) puts the carried monster down where it lands, or with
+	-- nothing carried picks up the monster tapped. Phones have no hover, so the tap itself picks the spot. Touch
+	-- positions leave out the top bar, while the camera's ray needs the whole screen.
+	UserInputService.TouchTap:Connect(function(positions, gameProcessed)
+		if gameProcessed or #positions ~= 1 then
 			return
 		end
-		local target = aim
-		if input.UserInputType == Enum.UserInputType.Touch then
-			-- Phones have no hover, so a tap both picks and places. Touch positions leave out
-			-- the top bar, while the camera's ray needs the whole screen.
-			local point = Vector2.new(input.Position.X, input.Position.Y) + GuiService:GetGuiInset()
-			local spot = spotAt(point)
-			target = spot and { x = spot.x, z = spot.z, valid = spot.inBounds and plotHasRoom() }
-		elseif input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+		local point = positions[1] + GuiService:GetGuiInset()
+		local dino = heldDino()
+		if not dino then
+			local statue = statueAt(point)
+			if statue then
+				send("pickUp", statue:GetAttribute("DinoKey"))
+			end
 			return
 		end
-		if target and target.valid then
-			send("placeAt", dino.key, target.x, target.z)
+		local spot = spotAt(point)
+		if spot and spot.inBounds and plotHasRoom() then
+			send("placeAt", dino.key, spot.x, spot.z)
 		end
 	end)
 	-- Spending floats a red "-$X" up beside the cash and other gains a green "+$X", but not the plot's $/s

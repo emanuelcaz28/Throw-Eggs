@@ -1,6 +1,6 @@
 -- Tags floating over the monsters on the bases: its mutations (only when it has some: the colour word in its
--- colour, the size word in silver), its name in white and its $/s in green. Only the few monsters nearest to you
--- show one, so a full base never piles its tags into a heap (docs/GAME_SPEC.md section 4, numbers in Config/Plot
+-- colour, the size word in silver), its name in white and its $/s in green. They show only while you're on or next
+-- to a base, on the few of its monsters nearest to you, so a full base never piles its tags into a heap (docs/GAME_SPEC.md section 4, numbers in Config/Plot
 -- `tags`). A giant's tag stops at a ceiling over its feet, so it can be read from its base. Display only: the
 -- server puts what each tag says on the monster (PlotService).
 local CollectionService = game:GetService("CollectionService")
@@ -107,11 +107,10 @@ local function build(model: Model)
 		if colour then
 			local label = word(row, colour.name, 1)
 			table.insert(lines, label)
-			gradient(label, colour.color:Lerp(WHITE, settings.colourLift), colour.color)
 			if brightness(colour.color) <= settings.darkBelow then
-				local stroke = label:FindFirstChildOfClass("UIStroke")
-				stroke.Color = settings.darkOutline
-				stroke.Thickness = settings.outline * 0.6 -- a thick light outline blurs into a glow
+				gradient(label, colour.color:Lerp(WHITE, settings.darkTop), colour.color:Lerp(WHITE, settings.darkBottom))
+			else
+				gradient(label, colour.color:Lerp(WHITE, settings.colourLift), colour.color)
 			end
 		end
 		if size then
@@ -169,15 +168,27 @@ local function pick()
 	local character = player.Character
 	local body = character and character:FindFirstChild("HumanoidRootPart")
 	local nearby = {}
-	if body and not RevealController.isPlaying() then
+	-- The base you're on or next to, if any.
+	local plotIndex = nil
+	if body then
+		for index, centre in Plot.positions do
+			local offset = body.Position - centre
+			if
+				math.abs(offset.X) <= Plot.size.X / 2 + settings.plotMargin
+				and math.abs(offset.Z) <= Plot.size.Z / 2 + settings.plotMargin
+			then
+				plotIndex = index
+				break
+			end
+		end
+	end
+	if plotIndex and not RevealController.isPlaying() then
 		local here = body.Position * Vector3.new(1, 0, 1)
 		for model, tag in tags do
-			if model.Parent and tag.adornee and tag.adornee.Parent then
+			if model.Parent and tag.adornee and tag.adornee.Parent and model:GetAttribute("PlotIndex") == plotIndex then
 				local feet = model:GetPivot().Position * Vector3.new(1, 0, 1)
 				local distance = math.max((feet - here).Magnitude - tag.radius, 0)
-				if distance <= settings.maxDistance then
-					table.insert(nearby, { model = model, distance = distance })
-				end
+				table.insert(nearby, { model = model, distance = distance })
 			end
 		end
 		table.sort(nearby, function(a, b)
@@ -192,7 +203,7 @@ local function pick()
 		local tag = tags[model]
 		keep[model] = true
 		tag.gui.Enabled = true
-		tag.scale.Scale = 1 - (1 - settings.farScale) * nearby[index].distance / settings.maxDistance
+		tag.scale.Scale = 1 - (1 - settings.farScale) * math.min(nearby[index].distance / settings.maxDistance, 1)
 	end
 	for model in shown do
 		if not keep[model] and tags[model] then

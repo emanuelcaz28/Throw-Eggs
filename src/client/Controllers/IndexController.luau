@@ -1,13 +1,14 @@
--- The Dino Index panel, from Figma "Throw Eggs - Index & Inventory": every map as a tab down the left (its colours,
--- its number, how many of its monsters you've found, a tick when they all are; maps whose monsters aren't made yet
--- say COMING SOON), and the chosen map's monsters on the right, sorted by rarity from COMMON to its MYTHIC boss, each
--- on a rarity tile with its real model turning. Unseen monsters are black silhouettes named "???", their rarity and
--- odds still showing. Under them, what completing the map gives. Display only: the server decides what's been found.
+-- The Dino Index panel, from Figma "Throw Eggs - Index & Inventory" (Index v2): one long scrolling list of every map,
+-- its picture on a card against the panel's left edge and its monsters beside it in rows of four, sorted by rarity
+-- from COMMON up, each on a rarity tile with its real model turning. Unseen monsters are black silhouettes named "???",
+-- their rarity and odds still showing. Only the maps near the screen hold live models, so phones aren't drawing all
+-- of them at once. Display only: the server decides what's been found.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
+local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Index = require(ReplicatedStorage.Shared.Config.Index)
@@ -20,29 +21,15 @@ local player = Players.LocalPlayer
 local IndexController = {}
 
 local PANEL_SIZE = Vector2.new(1060, 672)
-local LIST = { x = 18, y = 10, width = 262, height = 556 } -- the map tabs, in the panel's body
-local TAB_SIZE = Vector2.new(236, 62)
-local RIGHT_X, RIGHT_WIDTH = 290, 752 -- the chosen map's banner, monsters and reward
-local TILE_SIZE = Vector2.new(244, 190)
-local TILE_GAP = Vector2.new(10, 12)
--- Map colours, top to bottom on its tab and left to right on its banner; a map missing here uses the sky gradient.
-local CARD_COLOURS = {
-	Forest = { "#4fe0ff", "#1aa6e0" },
-	Desert = { "#ffc14d", "#ff7a2f" },
-	Swamp = { "#8fe05a", "#2f9e6a" },
-	Volcano = { "#ffb347", "#e8481c" },
-	FrozenPeaks = { "#c8f2ff", "#4aa8e0" },
-	ShadowBog = { "#c9a2ff", "#7a3fd6" },
-	Abyss = { "#7ff0ff", "#1f6fb8" },
-	StarfallCrater = { "#ffe27a", "#2e3a8c" },
-	EclipseTemple = { "#7dffb8", "#7a3a3a" },
-	ForbiddenLibrary = { "#c3a8ff", "#56392a" },
-	MidnightCarnival = { "#ffd36b", "#b3263a" },
-	ClockworkCitadel = { "#f0b85a", "#343844" },
-	ThornKingdom = { "#ff6b88", "#344e3c" },
-	SporeHollow = { "#c4ff48", "#523c34" },
-	WeepingDark = { "#d8e4f4", "#26262a" },
-}
+local LIST = { x = 4, y = 10, width = 1040, height = 556 } -- the scrolling list, in the panel's body
+local CARD_SIZE = Vector2.new(310, 272) -- a map's card, as much of it as shows
+local CARD_TUCK = 26 -- the card starts this far off the list's left edge, which hides its rounded left corners
+local TILE_SIZE = Vector2.new(168, 131)
+local TILE_GAP = 10
+local TILE_COLUMNS = 4
+local TILES_X = CARD_SIZE.X + 12
+local MAP_PITCH = CARD_SIZE.Y + 20 -- from one map's top to the next
+local LIVE_MARGIN = 120 -- how far off the list's edges a map still gets its live models
 
 -- Text that shrinks to fit its box but never grows past its own size.
 local function fitText(label: TextLabel, size: number)
@@ -63,7 +50,7 @@ local function frame(parent: Instance, name: string, x: number, y: number, width
 end
 
 -- A dark bar with a green fill and "done / count" over it.
-local function progressBar(parent: Instance, x: number, y: number, width: number, height: number, textSize: number)
+local function progressBar(parent: Instance, x: number, y: number, width: number, height: number, textSize: number, colours)
 	local bar = frame(parent, "Progress", x, y, width, height)
 	bar.BackgroundTransparency = 0
 	bar.BackgroundColor3 = UiKit.DEEP
@@ -74,16 +61,37 @@ local function progressBar(parent: Instance, x: number, y: number, width: number
 	fill.Name = "Fill"
 	fill.Size = UDim2.fromScale(0, 1)
 	fill.Parent = bar
-	UiKit.gradient(fill, "green")
+	UiKit.gradient(fill, colours or "green")
 	UiKit.corner(fill, 12)
 	local label = UiKit.text(bar, "", textSize)
 	label.Size = UDim2.fromScale(1, 1)
 	label.ZIndex = 2
-	return function(done: number, count: number, suffix: string?)
+	return function(done: number, count: number, text: string)
 		fill.Size = UDim2.fromScale(if count > 0 then done / count else 0, 1)
 		fill.Visible = done > 0
-		label.Text = `{done} / {count}{suffix or ""}`
+		label.Text = text
 	end
+end
+
+-- A rounded tag round a line of text, as wide as its text. colours is left out for a caller that colours it itself.
+local function chip(parent: Instance, text: string, textSize: number, height: number, colours, textColor: Color3?): Frame
+	local tag = Instance.new("Frame")
+	tag.AutomaticSize = Enum.AutomaticSize.X
+	tag.Size = UDim2.fromOffset(0, height)
+	tag.Parent = parent
+	if colours then
+		UiKit.gradient(tag, colours)
+	end
+	UiKit.corner(tag, 10)
+	UiKit.stroke(tag, 3)
+	local pad = Instance.new("UIPadding")
+	pad.PaddingLeft = UDim.new(0, 10)
+	pad.PaddingRight = UDim.new(0, 10)
+	pad.Parent = tag
+	local label = UiKit.text(tag, text, textSize, textColor)
+	label.AutomaticSize = Enum.AutomaticSize.X
+	label.Size = UDim2.fromScale(0, 1)
+	return tag
 end
 
 local function buildGui()
@@ -107,100 +115,19 @@ local function buildGui()
 	totalHolder.ZIndex = 4
 	local total = progressBar(totalHolder, 0, 0, 250, 50, 24)
 
-	local tabs = Instance.new("ScrollingFrame")
-	tabs.Name = "MapTabs"
-	tabs.BackgroundTransparency = 1
-	tabs.BorderSizePixel = 0
-	tabs.Position = UDim2.fromOffset(LIST.x, LIST.y)
-	tabs.Size = UDim2.fromOffset(LIST.width, LIST.height)
-	tabs.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	tabs.CanvasSize = UDim2.new()
-	tabs.ScrollBarThickness = 8
-	tabs.ScrollBarImageColor3 = Color3.fromRGB(91, 74, 140)
-	tabs.ScrollingDirection = Enum.ScrollingDirection.Y
-	tabs.Parent = panel.body
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 10)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = tabs
-	local pad = Instance.new("UIPadding")
-	pad.PaddingTop = UDim.new(0, 4)
-	pad.PaddingLeft = UDim.new(0, 4)
-	pad.PaddingBottom = UDim.new(0, 4)
-	pad.Parent = tabs
+	local list = Instance.new("ScrollingFrame")
+	list.Name = "Maps"
+	list.BackgroundTransparency = 1
+	list.BorderSizePixel = 0
+	list.Position = UDim2.fromOffset(LIST.x, LIST.y)
+	list.Size = UDim2.fromOffset(LIST.width, LIST.height)
+	list.CanvasSize = UDim2.fromOffset(0, #Biomes * MAP_PITCH - (MAP_PITCH - CARD_SIZE.Y))
+	list.ScrollBarThickness = 8
+	list.ScrollBarImageColor3 = Color3.fromRGB(91, 74, 140)
+	list.ScrollingDirection = Enum.ScrollingDirection.Y
+	list.Parent = panel.body
 
-	-- The chosen map's banner: its number and name, and how many of its monsters you've found.
-	local banner = frame(panel.body, "MapBanner", RIGHT_X, LIST.y, RIGHT_WIDTH, 72)
-	banner.BackgroundTransparency = 0
-	banner.ClipsDescendants = true
-	local bannerGradient = UiKit.gradient(banner, "sky", 0)
-	UiKit.corner(banner, 22)
-	UiKit.stroke(banner, 4)
-	local mapNumber = UiKit.text(banner, "", 16, nil, Enum.TextXAlignment.Left)
-	mapNumber.Position = UDim2.fromOffset(20, 4)
-	local mapName = UiKit.text(banner, "", 36, nil, Enum.TextXAlignment.Left)
-	mapName.Position = UDim2.fromOffset(20, 22)
-	mapName.Size = UDim2.fromOffset(470, 44)
-	local mapProgress = progressBar(banner, 506, 16, 230, 40, 24)
-
-	local grid = frame(panel.body, "Monsters", RIGHT_X, LIST.y + 84, RIGHT_WIDTH, 2 * TILE_SIZE.Y + TILE_GAP.Y)
-	local gridLayout = Instance.new("UIGridLayout")
-	gridLayout.CellSize = UDim2.fromOffset(TILE_SIZE.X, TILE_SIZE.Y)
-	gridLayout.CellPadding = UDim2.fromOffset(TILE_GAP.X, TILE_GAP.Y)
-	gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	gridLayout.Parent = grid
-
-	-- What completing the map gives, in coloured chips.
-	local reward = frame(panel.body, "Reward", RIGHT_X, LIST.y + 84 + grid.Size.Y.Offset + 14, RIGHT_WIDTH, 62)
-	reward.BackgroundTransparency = 0
-	UiKit.gradient(reward, { "#3a3060", "#2a2348" })
-	UiKit.corner(reward, 18)
-	UiKit.stroke(reward, 4)
-	local rewardTitle = UiKit.text(reward, "", 20, UiKit.GOLD, Enum.TextXAlignment.Left)
-	rewardTitle.Position = UDim2.fromOffset(18, 0)
-	rewardTitle.Size = UDim2.new(0, 220, 1, 0)
-	local chips = frame(reward, "Chips", 0, 0, RIGHT_WIDTH - 14, 62)
-	local chipLayout = Instance.new("UIListLayout")
-	chipLayout.FillDirection = Enum.FillDirection.Horizontal
-	chipLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-	chipLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-	chipLayout.Padding = UDim.new(0, 10)
-	chipLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	chipLayout.Parent = chips
-	for order, chip in {
-		{ `+{math.round(Index.cashBonusPerBiome * 100)}% $/s`, "green" },
-		{ `+{math.round(Index.luckBonusPerBiome * 100)}% luck`, "blue" },
-		{ `x{Index.xpBoost.multiplier} XP for {math.round(Index.xpBoost.seconds / 60)} min`, "purple" },
-	} do
-		local tag = Instance.new("Frame")
-		tag.LayoutOrder = order
-		tag.AutomaticSize = Enum.AutomaticSize.X
-		tag.Size = UDim2.fromOffset(0, 36)
-		tag.Parent = chips
-		UiKit.gradient(tag, chip[2])
-		UiKit.corner(tag, 14)
-		UiKit.stroke(tag, 3)
-		local chipPad = Instance.new("UIPadding")
-		chipPad.PaddingLeft = UDim.new(0, 12)
-		chipPad.PaddingRight = UDim.new(0, 12)
-		chipPad.Parent = tag
-		local label = UiKit.text(tag, chip[1], 18)
-		label.AutomaticSize = Enum.AutomaticSize.X
-		label.Size = UDim2.fromScale(0, 1)
-	end
-
-	return {
-		open = open,
-		panel = panel,
-		total = total,
-		tabs = tabs,
-		bannerGradient = bannerGradient,
-		mapNumber = mapNumber,
-		mapName = mapName,
-		mapProgress = mapProgress,
-		grid = grid,
-		rewardTitle = rewardTitle,
-	}
+	return { open = open, panel = panel, total = total, list = list }
 end
 
 -- A map's monsters from most common to rarest, each with its rarity tier.
@@ -223,109 +150,163 @@ local function countFound(biome, discovered): (number, number)
 	return found, count
 end
 
--- One map's tab: its colours, its number in a dark disc, its name, "4/6 found" and a tick once complete.
-local function mapTab(parent: Instance, biome, number: number, found: number, count: number, selected: boolean): TextButton
-	local soon = count == 0
-	local tab = Instance.new("TextButton")
-	tab.Name = biome.id
-	tab.LayoutOrder = number
-	tab.AutoButtonColor = false
-	tab.Text = ""
-	tab.Size = UDim2.fromOffset(TAB_SIZE.X, TAB_SIZE.Y)
-	tab.Active = not soon
-	tab.Parent = parent
-	UiKit.gradient(tab, if soon then "dark" else (CARD_COLOURS[biome.id] or "sky"))
-	UiKit.corner(tab, 18)
-	UiKit.stroke(tab, 4, if selected then Color3.new(1, 1, 1) else nil)
-	local disc = Instance.new("Frame")
-	disc.Position = UDim2.fromOffset(10, 12)
-	disc.Size = UDim2.fromOffset(38, 38)
-	disc.BackgroundColor3 = UiKit.INK
-	disc.BackgroundTransparency = 0.45
-	disc.Parent = tab
-	UiKit.corner(disc, 19)
-	local digits = UiKit.text(disc, tostring(number), 18)
-	digits.Size = UDim2.fromScale(1, 1)
-	local name = UiKit.text(tab, biome.name, 17, nil, Enum.TextXAlignment.Left)
-	name.Position = UDim2.fromOffset(58, 9)
-	name.Size = UDim2.fromOffset(if found == count and not soon then 136 else 166, 22)
-	fitText(name, 17)
-	local progress = UiKit.text(tab, if soon then "COMING SOON" else `{found}/{count} found`, 14, if soon then UiKit.MUTED else nil, Enum.TextXAlignment.Left)
-	progress.Position = UDim2.fromOffset(58, 32)
-	progress.Size = UDim2.fromOffset(166, 18)
-	if found == count and not soon then
-		local tick = Instance.new("Frame")
-		tick.Name = "Complete"
-		tick.AnchorPoint = Vector2.new(1, 0.5)
-		tick.Position = UDim2.new(1, -10, 0.5, 0)
-		tick.Size = UDim2.fromOffset(26, 26)
-		tick.Parent = tab
-		UiKit.gradient(tick, "green")
-		UiKit.corner(tick, 13)
-		UiKit.stroke(tick, 2)
-		local mark = UiKit.text(tick, "✓", 16)
-		mark.Size = UDim2.fromScale(1, 1)
-	end
-	return tab
+-- A map's card: its picture, its number, name and how many of its monsters you've found, and what completing it gives.
+local function mapCard(parent: Instance, biome, number: number, found: number, count: number)
+	local done = count > 0 and found == count
+	local card = Instance.new("ImageLabel")
+	card.Name = "MapCard"
+	card.BackgroundColor3 = UiKit.DEEP
+	card.Image = Index.mapPictures[biome.id] or ""
+	card.ScaleType = Enum.ScaleType.Crop
+	card.Position = UDim2.fromOffset(-CARD_TUCK, 0)
+	card.Size = UDim2.fromOffset(CARD_SIZE.X + CARD_TUCK, CARD_SIZE.Y)
+	card.Parent = parent
+	UiKit.corner(card, 22)
+	UiKit.stroke(card, 4)
+
+	-- Darkens the top a little for the map's number and the bottom a lot for its name.
+	local shade = frame(card, "Shade", 0, 0, 0, 0)
+	shade.Size = UDim2.fromScale(1, 1)
+	shade.BackgroundTransparency = 0
+	shade.BackgroundColor3 = UiKit.INK
+	UiKit.corner(shade, 22)
+	local fade = Instance.new("UIGradient")
+	fade.Rotation = 90
+	fade.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.7),
+		NumberSequenceKeypoint.new(0.3, 1),
+		NumberSequenceKeypoint.new(0.5, 0.75),
+		NumberSequenceKeypoint.new(0.72, 0.12),
+		NumberSequenceKeypoint.new(1, 0.04),
+	})
+	fade.Parent = shade
+
+	local edge = frame(card, "MapColourEdge", 4, 4, 0, 0)
+	edge.Size = UDim2.new(1, -8, 1, -8)
+	UiKit.corner(edge, 18)
+	UiKit.stroke(edge, 3, biome.color)
+
+	local left = CARD_TUCK + 18
+	local mapChip = chip(card, `MAP {number}`, 18, 30, nil)
+	mapChip.BackgroundColor3 = biome.color
+	mapChip.Position = UDim2.fromOffset(CARD_TUCK + 16, 16)
+
+	local name = UiKit.text(card, biome.name, 30, nil, Enum.TextXAlignment.Left)
+	name.Position = UDim2.fromOffset(left, 140)
+	name.Size = UDim2.fromOffset(CARD_SIZE.X - 26, 36)
+	fitText(name, 30)
+
+	local bar = progressBar(card, left, 184, 270, 32, 18, if done then { "#ffe666", "#faa81a" } else nil)
+	bar(found, count, if done then "COMPLETE!" elseif count == 0 then "COMING SOON" else `{found} / {count} found`)
+
+	local reward = frame(card, "Reward", left, 225, 270, 30)
+	local row = Instance.new("UIListLayout")
+	row.FillDirection = Enum.FillDirection.Horizontal
+	row.VerticalAlignment = Enum.VerticalAlignment.Center
+	row.Padding = UDim.new(0, 8)
+	row.SortOrder = Enum.SortOrder.LayoutOrder
+	row.Parent = reward
+	local title = UiKit.text(reward, if done then "EARNED ✓" else "REWARD", 15, if done then Color3.fromRGB(140, 242, 92) else UiKit.GOLD)
+	title.AutomaticSize = Enum.AutomaticSize.X
+	title.Size = UDim2.fromScale(0, 1)
+	title.LayoutOrder = 1
+	local xp = `x{Index.xpBoost.multiplier} XP for {math.round(Index.xpBoost.seconds / 60)} min`
+	local tag = chip(reward, xp, 14, 28, if done then { "#5a4a8c", "#463a70" } else "purple", if done then UiKit.MUTED else nil)
+	tag.LayoutOrder = 2
 end
 
--- One monster's tile: rarity colour, its rarity in a pill, its odds, its real model turning, its name.
+-- One monster's tile: rarity colour, its rarity in a pill, its odds and its name. Its model comes and goes with
+-- showModels, while it's near the screen.
 local function monsterTile(parent: Instance, dino, rarity: string, seen: boolean, order: number)
 	local tile = Instance.new("Frame")
 	tile.Name = dino.id
-	tile.LayoutOrder = order
 	tile.ClipsDescendants = true
+	tile.Position = UDim2.fromOffset(
+		TILES_X + ((order - 1) % TILE_COLUMNS) * (TILE_SIZE.X + TILE_GAP),
+		((order - 1) // TILE_COLUMNS) * (TILE_SIZE.Y + TILE_GAP)
+	)
+	tile.Size = UDim2.fromOffset(TILE_SIZE.X, TILE_SIZE.Y)
 	tile.Parent = parent
 	UiKit.gradient(tile, if seen then rarity else "unseen")
-	UiKit.corner(tile, 20)
-	UiKit.stroke(tile, 4)
+	UiKit.corner(tile, 14)
+	UiKit.stroke(tile, 3)
 	local glow = Instance.new("Frame")
 	glow.AnchorPoint = Vector2.new(0.5, 0.5)
-	glow.Position = UDim2.fromScale(0.5, 0.48)
-	glow.Size = UDim2.fromOffset(150, 110)
+	glow.Position = UDim2.fromScale(0.5, 0.5)
+	glow.Size = UDim2.fromOffset(104, 76)
 	glow.BackgroundColor3 = Color3.new(1, 1, 1)
 	glow.BackgroundTransparency = if seen then 0.72 else 0.85
 	glow.Parent = tile
-	UiKit.corner(glow, 55)
-	local view = UiKit.monster(tile, dino.id, {
-		spin = seen,
-		silhouette = not seen,
-		position = UDim2.fromOffset(14, 26),
-		size = UDim2.fromOffset(TILE_SIZE.X - 28, 136),
-		aspect = (TILE_SIZE.X - 28) / 136,
-	})
-	view.ZIndex = 2
+	UiKit.corner(glow, 38)
 	-- The rarity pill: see-through dark on a found monster, in the rarity's colours on an unseen one.
 	local pill = Instance.new("Frame")
-	pill.Position = UDim2.fromOffset(10, 10)
+	pill.Position = UDim2.fromOffset(7, 7)
 	pill.AutomaticSize = Enum.AutomaticSize.X
-	pill.Size = UDim2.fromOffset(0, 24)
+	pill.Size = UDim2.fromOffset(0, 20)
 	pill.BackgroundColor3 = UiKit.INK
 	pill.BackgroundTransparency = if seen then 0.45 else 0
 	pill.ZIndex = 3
 	pill.Parent = tile
-	UiKit.corner(pill, 10)
+	UiKit.corner(pill, 8)
 	if not seen then
-		UiKit.gradient(pill, rarity)
-		UiKit.stroke(pill, 3)
+		local pair = UiKit.RARITY[rarity]
+		pill.BackgroundColor3 = Color3.fromHex(pair[2]):Lerp(Color3.new(0, 0, 0), 0.12)
 	end
 	local pillPad = Instance.new("UIPadding")
-	pillPad.PaddingLeft = UDim.new(0, 9)
-	pillPad.PaddingRight = UDim.new(0, 9)
+	pillPad.PaddingLeft = UDim.new(0, 7)
+	pillPad.PaddingRight = UDim.new(0, 7)
 	pillPad.Parent = pill
-	local rarityLabel = UiKit.text(pill, string.upper(rarity), 14)
+	local rarityLabel = UiKit.text(pill, string.upper(rarity), 12)
 	rarityLabel.AutomaticSize = Enum.AutomaticSize.X
 	rarityLabel.Size = UDim2.fromScale(0, 1)
 	rarityLabel.ZIndex = 3
-	local odds = UiKit.text(tile, `1 in {Format.commas(dino.chance)}`, 15, nil, Enum.TextXAlignment.Right)
-	odds.Position = UDim2.fromOffset(110, 11)
-	odds.Size = UDim2.fromOffset(TILE_SIZE.X - 122, 20)
+	local odds = UiKit.text(tile, `1 in {Format.commas(DinoStats.monsterOneIn(dino.id))}`, 12, nil, Enum.TextXAlignment.Right)
+	odds.Position = UDim2.fromOffset(70, 8)
+	odds.Size = UDim2.fromOffset(TILE_SIZE.X - 78, 18)
 	odds.ZIndex = 3
-	local name = UiKit.text(tile, if seen then dino.name else "???", 22)
-	name.Position = UDim2.fromOffset(6, TILE_SIZE.Y - 38)
-	name.Size = UDim2.fromOffset(TILE_SIZE.X - 12, 28)
-	fitText(name, 22)
+	local name = UiKit.text(tile, if seen then dino.name else "???", 16)
+	name.Position = UDim2.fromOffset(5, TILE_SIZE.Y - 27)
+	name.Size = UDim2.fromOffset(TILE_SIZE.X - 10, 22)
+	fitText(name, 16)
 	name.ZIndex = 3
+	return tile
+end
+
+-- Builds one map's row of the list. Returns what showModels needs.
+local function mapRow(parent: Instance, biome, number: number, discovered)
+	local found, count = countFound(biome, discovered)
+	local row = frame(parent, biome.id, 0, (number - 1) * MAP_PITCH, LIST.width - 14, CARD_SIZE.Y)
+	mapCard(row, biome, number, found, count)
+	local tiles = {}
+	for order, dino in monstersOf(biome) do
+		local seen = discovered[dino.id] == true
+		local rarity = UiKit.RARITY_ORDER[math.min(order, #UiKit.RARITY_ORDER)]
+		table.insert(tiles, { frame = monsterTile(row, dino, rarity, seen, order), dino = dino, seen = seen })
+	end
+	return { top = (number - 1) * MAP_PITCH, tiles = tiles, shown = false }
+end
+
+-- Puts a map's models on its tiles, or takes them off again.
+local function showModels(row, show: boolean)
+	if row.shown == show then
+		return
+	end
+	row.shown = show
+	for _, tile in row.tiles do
+		if show then
+			tile.view = UiKit.monster(tile.frame, tile.dino.id, {
+				spin = tile.seen,
+				silhouette = not tile.seen,
+				position = UDim2.fromOffset(10, 17),
+				size = UDim2.fromOffset(TILE_SIZE.X - 20, 90),
+				aspect = (TILE_SIZE.X - 20) / 90,
+			})
+			tile.view.ZIndex = 2
+		elseif tile.view then
+			tile.view:Destroy()
+			tile.view = nil
+		end
+	end
 end
 
 function IndexController.start()
@@ -334,9 +315,11 @@ function IndexController.start()
 	local completed = {} -- biome ids with every dino caught
 	local heardFromServer = false -- the first list is what they already had, so it shouts nothing
 	local discovered = {}
-	local chosen: string? = nil -- the map whose monsters show; nil until the first render picks one
-	local picked = false -- whether the player chose a map themselves, so new catches don't move them off it
-	local render
+	local rows = {}
+	local stale = true -- the list needs rebuilding next time it's seen
+	local openedAt: string? = nil -- the farthest map last time it opened, to jump to a new one but not move you otherwise
+	local scrolledTo = 0 -- where the list was left, in design pixels
+	local holding: number? = nil -- where to keep the list while the panel pops open and its size changes
 
 	-- Catching a biome's last dino shouts its reward, once the reveal of that dino is over.
 	local function shoutCompleted(biome)
@@ -345,86 +328,100 @@ function IndexController.start()
 				task.wait(0.25)
 			end
 			task.wait(1)
-			PopText.shout(`{string.upper(biome.name)} COMPLETE!`, `+{math.round(Index.cashBonusPerBiome * 100)}% $/s and +{math.round(Index.luckBonusPerBiome * 100)}% luck, for good`)
+			PopText.shout(`{string.upper(biome.name)} COMPLETE!`, `x{Index.xpBoost.multiplier} XP for {math.round(Index.xpBoost.seconds / 60)} min`)
 		end)
 	end
 
-	-- The map whose monsters show first: the farthest one you've found anything in, so you see what you're hunting.
-	local function defaultMap(): string
-		local pick = Biomes[1].id
-		for _, biome in Biomes do
+	-- The farthest map you've found anything in, so you see what you're hunting. Its number too.
+	local function farthestMap(): (string, number)
+		local pick, number = Biomes[1].id, 1
+		for index, biome in Biomes do
 			if countFound(biome, discovered) > 0 then
-				pick = biome.id
+				pick, number = biome.id, index
 			end
 		end
-		return pick
+		return pick, number
 	end
 
-	local function showMap(biome, number: number)
-		for _, child in hud.grid:GetChildren() do
+	-- CanvasPosition is in screen pixels and the panel is scaled to the screen, so this turns design pixels into them.
+	local function screenPixels(): number
+		return hud.list.AbsoluteCanvasSize.Y / hud.list.CanvasSize.Y.Offset
+	end
+
+	local function updateModels()
+		local top = hud.list.CanvasPosition.Y / screenPixels()
+		for _, row in rows do
+			local near = row.top + CARD_SIZE.Y > top - LIVE_MARGIN and row.top < top + LIST.height + LIVE_MARGIN
+			showModels(row, near and hud.panel.frame.Visible)
+		end
+	end
+
+	local function render()
+		for _, child in hud.list:GetChildren() do
 			if child:IsA("Frame") then
 				child:Destroy()
 			end
 		end
-		local pair = CARD_COLOURS[biome.id] or UiKit.GRADIENTS.sky
-		hud.bannerGradient.Color = ColorSequence.new(Color3.fromHex(pair[1]), Color3.fromHex(pair[2]))
-		hud.mapNumber.Text = `MAP {number}`
-		hud.mapName.Text = biome.name
-		local found, count = countFound(biome, discovered)
-		hud.mapProgress(found, count)
-		for order, dino in monstersOf(biome) do
-			monsterTile(hud.grid, dino, UiKit.RARITY_ORDER[math.min(order, #UiKit.RARITY_ORDER)], discovered[dino.id] == true, order)
-		end
-		hud.rewardTitle.Text = if count > 0 and found == count then "✓ COMPLETE!" else "COMPLETE TO GET"
-	end
-
-	render = function()
-		chosen = chosen or defaultMap()
-		for _, child in hud.tabs:GetChildren() do
-			if child:IsA("GuiButton") then
-				child:Destroy()
-			end
-		end
+		table.clear(rows)
 		local seen, total = 0, 0
 		for number, biome in Biomes do
 			local found, count = countFound(biome, discovered)
 			seen += found
 			total += count
-			local tab = mapTab(hud.tabs, biome, number, found, count, biome.id == chosen)
-			if count > 0 then
-				tab.Activated:Connect(function()
-					picked = true
-					if chosen ~= biome.id then
-						chosen = biome.id
-						render()
-					end
-				end)
-				if biome.id == chosen then
-					showMap(biome, number)
-				end
-				if found == count and not completed[biome.id] then
-					completed[biome.id] = true
-					if heardFromServer then
-						shoutCompleted(biome)
-					end
-				end
-			end
+			table.insert(rows, mapRow(hud.list, biome, number, discovered))
 		end
-		hud.total(seen, total, " found")
+		hud.total(seen, total, `{seen} / {total} found`)
+		stale = false
 	end
 
 	hud.open.Activated:Connect(function()
 		UiKit.togglePanel(hud.panel)
 	end)
+	hud.panel.frame:GetPropertyChangedSignal("Visible"):Connect(function()
+		if hud.panel.frame.Visible then
+			if stale then
+				render()
+			end
+			local farthest, number = farthestMap()
+			if farthest ~= openedAt then
+				openedAt = farthest
+				scrolledTo = (number - 1) * MAP_PITCH
+			end
+			holding = scrolledTo
+			hud.list.CanvasPosition = Vector2.new(0, scrolledTo * screenPixels())
+			task.delay(0.3, function()
+				holding = nil
+			end)
+		else
+			scrolledTo = hud.list.CanvasPosition.Y / screenPixels()
+		end
+		updateModels()
+	end)
+	hud.list:GetPropertyChangedSignal("AbsoluteCanvasSize"):Connect(function()
+		if holding then
+			hud.list.CanvasPosition = Vector2.new(0, holding * screenPixels())
+		end
+	end)
+	hud.list:GetPropertyChangedSignal("CanvasPosition"):Connect(updateModels)
 	remote.OnClientEvent:Connect(function(newDiscovered)
 		discovered = newDiscovered
-		if not picked then
-			chosen = defaultMap()
+		for _, biome in Biomes do
+			local found, count = countFound(biome, discovered)
+			if count > 0 and found == count and not completed[biome.id] then
+				completed[biome.id] = true
+				if heardFromServer then
+					shoutCompleted(biome)
+				end
+			end
 		end
-		render()
 		heardFromServer = true
+		if hud.panel.frame.Visible then
+			render()
+			updateModels()
+		else
+			stale = true
+		end
 	end)
-	render()
 end
 
 return IndexController

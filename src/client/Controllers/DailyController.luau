@@ -7,8 +7,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Daily = require(ReplicatedStorage.Shared.Config.Daily)
-local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local PopText = require(ReplicatedStorage.Shared.PopText)
+local WelcomeController = require(script.Parent.WelcomeController)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local player = Players.LocalPlayer
@@ -61,22 +61,6 @@ local function buildGui()
 	gui.DisplayOrder = 5
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	-- Left column, under Shop.
-	local open = HudStyle.iconButton(gui, "🎁", "Daily", nil)
-	open.Name = "OpenDaily"
-	open.AnchorPoint = Vector2.new(0, 0.5)
-	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, (HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) * 1.5 * HudStyle.scale())
-	local dot = Instance.new("Frame")
-	dot.Name = "Waiting"
-	dot.AnchorPoint = Vector2.new(0.5, 0.5)
-	dot.Position = UDim2.fromScale(0.92, 0.08)
-	dot.Size = UDim2.fromScale(0.26, 0.26)
-	dot.BackgroundColor3 = Color3.fromRGB(255, 60, 70)
-	dot.Visible = false
-	dot.Parent = open
-	UiKit.corner(dot, 999)
-	UiKit.stroke(dot, 3)
-
 	local width = TILE.X * (#Daily.days - 1) + BIG_TILE.X + TILE_GAP * (#Daily.days - 1)
 	local panel = UiKit.panel(gui, { name = "DailyPanel", width = width + 60, height = 470, header = "gold", title = "Daily Reward", icon = "🎁" })
 
@@ -105,7 +89,7 @@ local function buildGui()
 	claim.AnchorPoint = Vector2.new(0.5, 0)
 	claim.Position = UDim2.new(0.5, 0, 0, 56 + BIG_TILE.Y + 24)
 
-	return { open = open, dot = dot, panel = panel, tiles = tiles, claim = claim }
+	return { panel = panel, tiles = tiles, claim = claim }
 end
 
 local function countdown(seconds: number): string
@@ -128,7 +112,6 @@ function DailyController.start()
 			tile.stroke.Color = if index == day then Color3.new(1, 1, 1) else UiKit.INK
 			tile.stroke.Thickness = if index == day then 6 else 4
 		end
-		hud.dot.Visible = claimable
 		hud.claim.TextSize = if claimable then 42 else 30
 		if claimable then
 			UiKit.restyle(hud.claim, "CLAIM", "green")
@@ -146,9 +129,6 @@ function DailyController.start()
 	end
 	render()
 
-	hud.open.Activated:Connect(function()
-		UiKit.togglePanel(hud.panel)
-	end)
 	hud.claim.Activated:Connect(function()
 		if player:GetAttribute("DailyClaimable") then
 			local reward = Daily.days[player:GetAttribute("DailyDay") or 1]
@@ -168,11 +148,18 @@ function DailyController.start()
 		end
 	end)
 
-	-- Opens by itself once, a moment after joining, when a claim is waiting.
-	task.delay(Daily.openDelay, function()
+	-- No button: the panel opens by itself when a claim is waiting, once the Welcome back pop-up is out of the way
+	-- (after CLAIM, or straight away when there was nothing to collect), and again at midnight UTC for a player
+	-- still in the game, when the server makes the next day claimable.
+	local function offer()
 		if player:GetAttribute("DailyClaimable") then
 			UiKit.openPanel(hud.panel)
 		end
+	end
+	task.delay(Daily.openDelay, function()
+		WelcomeController.waitUntilDone()
+		offer()
+		player:GetAttributeChangedSignal("DailyClaimable"):Connect(offer)
 	end)
 end
 

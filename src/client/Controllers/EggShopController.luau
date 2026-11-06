@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Hub = require(ReplicatedStorage.Shared.Config.Hub)
@@ -19,14 +20,7 @@ local EggShopController = {}
 local CARD_SIZE = Vector2.new(176, 380)
 local CARD_GAP = 16
 local VISIBLE_CARDS = 5
--- Card colours and rarity words by tier; later tiers reuse the last one.
-local TIERS = {
-	{ "Common", { "#f6ead2", "#d9bf91" } },
-	{ "Uncommon", { "#d8f8e4", "#5cc98a" } },
-	{ "Rare", { "#fff3b8", "#ffb81f" } },
-	{ "Epic", { "#ffd3c2", "#ff6a3d" } },
-	{ "Legendary", { "#e4d2ff", "#8a5cff" } },
-}
+local CARD_LIGHTEN = 0.65 -- how much paler the top of a card is than its egg's colour
 
 local function buildGui()
 	local gui = Instance.new("ScreenGui")
@@ -63,20 +57,21 @@ end
 
 -- Cards are kept and updated, not rebuilt, so cash ticking up can't eat a click.
 local function buildCard(row: Instance, egg, order: number, onPressed: () -> ())
-	local tier = TIERS[math.min(order, #TIERS)]
 	local card = Instance.new("Frame")
 	card.Name = egg.id
 	card.LayoutOrder = order
 	card.Size = UDim2.fromOffset(CARD_SIZE.X, CARD_SIZE.Y)
 	card.Parent = row
-	UiKit.gradient(card, tier[2])
+	-- Eggs follow the maps in order, so each card wears its egg's colour and names its map.
+	local pale = egg.color:Lerp(Color3.new(1, 1, 1), CARD_LIGHTEN)
+	UiKit.gradient(card, { `#{pale:ToHex()}`, `#{egg.color:ToHex()}` })
 	UiKit.corner(card, 24)
 	UiKit.stroke(card, 5)
 
 	local name = UiKit.text(card, egg.name, 25)
 	name.Position = UDim2.fromOffset(0, 12)
-	local rarity = UiKit.text(card, tier[1], 18, UiKit.GOLD)
-	rarity.Position = UDim2.fromOffset(0, 44)
+	local map = UiKit.text(card, Biomes[order].name, 18, UiKit.GOLD)
+	map.Position = UDim2.fromOffset(0, 44)
 
 	local glow = Instance.new("Frame")
 	glow.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -118,7 +113,7 @@ function EggShopController.start()
 		for _, egg in Eggs do
 			local button = buttons[egg.id]
 			if equipped == egg.id then
-				UiKit.restyle(button, "✓ EQUIPPED", "grey")
+				UiKit.restyle(button, "EQUIPPED", "grey") -- no "✓": phone fonts lack it
 				button.TextSize = 20
 			elseif owned[egg.id] then
 				UiKit.restyle(button, "EQUIP", "blue")
@@ -160,6 +155,17 @@ function EggShopController.start()
 	player:GetAttributeChangedSignal("PlotIndex"):Connect(placeStall)
 	placeStall()
 
+	-- The row opens on the player's best egg with the next ones after it, so it never starts on old eggs.
+	local function showNextEgg()
+		local best = 1
+		for order, egg in Eggs do
+			if owned[egg.id] then
+				best = order
+			end
+		end
+		hud.row.CanvasPosition = Vector2.new((best - 1) * (CARD_SIZE.X + CARD_GAP), 0)
+	end
+
 	-- Stepping onto the Egg Shop stall's pad opens this panel; walking off closes it again.
 	local onStallPad = false
 	RunService.Heartbeat:Connect(function()
@@ -170,6 +176,7 @@ function EggShopController.start()
 			onStallPad = nowOnPad
 			if nowOnPad then
 				UiKit.openPanel(hud.panel)
+				showNextEgg()
 			else
 				UiKit.closePanel(hud.panel)
 			end

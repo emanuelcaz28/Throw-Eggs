@@ -17,7 +17,6 @@ local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local BaseSigns = require(script.Parent.BaseSigns)
-local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
 local World = require(ReplicatedStorage.Shared.World)
 
@@ -166,6 +165,17 @@ local function incomeOf(entry): number
 	return if stats then stats.income else 0
 end
 
+-- The best monster this player owns from the maps: what a special monster's share is taken from.
+local function bestIncome(data): number
+	local best = 0
+	for _, entry in data.dinos do
+		if not DinoStats.special(entry.id) then
+			best = math.max(best, incomeOf(entry))
+		end
+	end
+	return best
+end
+
 -- The plot's $/s with every lasting bonus, but not the timed event's.
 local function baseIncome(player: Player, data): number
 	local total = 0
@@ -173,7 +183,7 @@ local function baseIncome(player: Player, data): number
 		total += incomeOf(entry)
 	end
 	local passMultiplier = if player:GetAttribute("HasDoubleCash") then Shop.doubleCash.multiplier else 1
-	return total * IndexService.cashMultiplier(data) * passMultiplier
+	return total * passMultiplier
 end
 
 local function totalIncome(player: Player, data): number
@@ -291,6 +301,15 @@ local function setHeld(player: Player, data, key: number?)
 	end
 end
 
+-- Listeners told whenever a player's plot is rebuilt (BestCatchService), and the dinos on a save's plot.
+local plotListeners = {}
+function PlotService.onPlotChanged(listener: (Player) -> ())
+	table.insert(plotListeners, listener)
+end
+function PlotService.plotted(data): { any }
+	return plotted(data)
+end
+
 local function rebuildStatues(player: Player, data)
 	local plotIndex = plotIndexOf(player)
 	if not plotIndex then
@@ -314,12 +333,16 @@ local function rebuildStatues(player: Player, data)
 			statue:SetAttribute("TagSize", entry.size)
 			statue.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 			statue:SetAttribute("PlotIndex", plotIndex)
+			statue:SetAttribute("DinoKey", entry.key) -- tapping or clicking it picks it up (PlotController)
 			CollectionService:AddTag(statue, DinoLife.tag)
 			statue.Parent = folder
 		end
 	end
 	folder.Parent = plotModels[plotIndex]
 	statueFolders[player] = folder
+	for _, listener in plotListeners do
+		task.spawn(listener, player)
+	end
 end
 
 -- Everything the client's panel shows, best dino first.
@@ -346,6 +369,7 @@ local function publish(player: Player, data)
 	end)
 	player:SetAttribute("Income", totalIncome(player, data))
 	player:SetAttribute("BaseIncome", baseIncome(player, data))
+	player:SetAttribute("BestIncome", bestIncome(data))
 	remotes.DinosChanged:FireClient(player, list, capacityOf(data))
 end
 
@@ -415,6 +439,33 @@ local function renameOldSizes(data)
 	end
 end
 
+-- The Sell Stand: sells the backpack monsters with these keys at once. Monsters on the base and the carried one stay.
+local function sellMany(player: Player, data, keys: any)
+	if typeof(keys) ~= "table" or #keys > Plot.backpackSize then
+		return
+	end
+	local wanted = {}
+	for _, key in keys do
+		if typeof(key) == "number" and key == key then -- key ~= key is only true for NaN
+			wanted[key] = true
+		end
+	end
+	local sold, cash = 0, 0
+	for index = #data.dinos, 1, -1 do
+		local entry = data.dinos[index]
+		if wanted[entry.key] and not entry.onPlot and entry.key ~= held[player] and DinoStats.sellable(entry.id) then
+			sold += 1
+			cash += sellPrice(entry)
+			table.remove(data.dinos, index)
+		end
+	end
+	if sold > 0 then
+		earn(player, data, cash)
+		changed(player, data)
+		remotes.Notice:FireClient(player, `+{Format.cash(cash)} sold!`)
+	end
+end
+
 local function onAction(player: Player, action: any, key: any, x: any, z: any)
 	local data = PlayerData.get(player)
 	if not data then
@@ -427,6 +478,9 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 		return
 	elseif action == "unequip" then
 		setHeld(player, data, nil)
+		return
+	elseif action == "sellMany" then
+		sellMany(player, data, key)
 		return
 	end
 
@@ -457,7 +511,7 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 			changed(player, data)
 			setHeld(player, data, entry.key)
 		end
-	elseif action == "sell" then
+	elseif action == "sell" and DinoStats.sellable(entry.id) then
 		earn(player, data, sellPrice(entry))
 		table.remove(data.dinos, index)
 		changed(player, data)
@@ -482,13 +536,13 @@ function PlotService.addCatch(player: Player, catch): string?
 	if not data then
 		return nil
 	end
-	local entry = { key = data.nextDinoKey, id = catch.id, mutation = catch.mutation, size = catch.size, onPlot = false }
+	local entry = { key = data.nextDinoKey, id = catch.id, mutation = catch.mutation, size = catch.size, income = catch.income, onPlot = false }
 	local result
 	if #plotted(data) < capacityOf(data) then
 		entry.onPlot = true
 		result = "plot"
-	elseif backpackCount(data) < Plot.backpackSize then
-		result = "backpack"
+	elseif backpackCount(data) < Plot.backpackSize or catch.income then
+		result = "backpack" -- a bought monster always fits: it's never sold off for lack of room
 	else
 		earn(player, data, sellPrice(entry))
 		return "sold"
@@ -497,6 +551,15 @@ function PlotService.addCatch(player: Player, catch): string?
 	table.insert(data.dinos, entry)
 	changed(player, data)
 	return result
+end
+
+-- Gives a Config/Specials monster, its income fixed now at its share of the player's best, and returns that income.
+-- The caller saves the data.
+function PlotService.addSpecial(player: Player, data, special): number
+	local income = math.max(bestIncome(data), special.minimumIncome) * special.share
+	PlotService.addCatch(player, { id = special.id, income = income })
+	PlotService.notify(player, `{special.name} joined you! +{Format.cash(income)}/s`)
+	return income
 end
 
 local function onLoaded(player: Player, data)

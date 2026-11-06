@@ -20,7 +20,9 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
 3. **Hatch / reveal** — the egg lands in a biome and hatches. Dino name fills in letter by letter
    (hangman style) while a "1 in X" counter climbs. Labels escalate: LUCKY! → SUPER LUCKY! → INSANE → LEGENDARY → GODLY.
    Final card: mutation (Gold / Diamond / Emerald…), size (Big / Large / Huge / Colossal), $/s, "NEW BEST!".
-   The roll is decided on landing; the counter is just suspense animation.
+   The roll is decided on landing; the counter is just suspense animation. Luck aims the roll at a "1 in X" in the
+   map's list, chances fall off on both sides, and the last two catches are less likely to come again
+   (`DinoRoll`, `Config/Catch` pick; GAME_SPEC section 8b).
    Common catches skip the counter. Tapping skips to the final card. Reveal numbers live in `Config/Reveal`,
    mutation and size odds in `Config/Catch`. Dinos are block stand-ins until the Blender models exist.
    After the reveal the player is teleported back to their own plot, next to its exit (`Config/Plot` homeInset).
@@ -57,14 +59,14 @@ Loop: train → farther throws → more luck → rarer dinos → more cash → b
 | 12 | Clockwork Citadel | 100M (world and monsters in the game) |
 | 13 | Thorn Kingdom | 500M (world and monsters in the game) |
 | 14 | Spore Hollow | 2.5B (world and monsters in the game) |
-| 15 | The Weeping Dark | 10B (world in the game; monsters later) |
+| 15 | The Weeping Dark | 10B |
 
 MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Peaks (5) is built too, map and monsters, and so is Shadow Bog (6); The Abyss (7) and Starfall Crater (8) have their maps, their monsters come later (Starfall Crater's are in the game: `build_starfall_crater_monsters.py`, imported into `Assets.Dinos`, listed in `Config/Dinos`).
 
 ## Differentiators (things the reference doesn't have)
 
 - Steer the egg mid-flight (tap left/right) to hit boost rings / dodge obstacles.
-- Biome completion rewards (permanent luck/cash boost per completed biome in the Index).
+- Biome completion reward: x2 training XP for 15 minutes (no cash or luck from the Index).
 - Server-wide announcement for catches rarer than 1 in 1M.
 - Timed events (e.g. "Meteor Shower": 2x mutation chance for 10 min).
 
@@ -82,14 +84,15 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
 3. 3 biomes × 5 dinos, weighted roll × luck multiplier.
 4. Reveal sequence (hangman letters + climbing "1 in X"). Spend real time here.
 5. Plot holding 8 dinos placed freely + $/s income, fenced, with capacity upgrades at its sign (`Config/Plot`).
-6. Egg Shop with 5 tiers. (Buy any egg you can afford; each multiplies distance luck. Numbers live in `Config/Eggs`.)
-7. Index: a tab per map (COMING SOON for maps without monsters yet) and the chosen map's monsters sorted by
-   rarity, COMMON to MYTHIC (the boss), on real-model tiles; completing a biome gives a permanent bonus (`Config/Index`).
+6. Egg Shop with one egg per map (15). (Buy any egg you can afford; each multiplies distance luck, counted against the egg made for the map it lands in, `Luck.forRoll`. Numbers live in `Config/Eggs`.)
+7. Index: one scrolling list of every map, its picture on a card at the panel's left edge and its monsters beside it in
+   rows of four, sorted by rarity, COMMON to MYTHIC (the boss), on real-model tiles (only maps near the screen hold live
+   models); it opens at your farthest map; completing a biome gives x2 training XP for 15 minutes (`Config/Index`).
 8. Robux shop: x2 Cash, x2 Training, Server Luck x2, four cash packs (10 min to 30 h of the plot's $/s
    without events, each with a minimum), four Throw Power packs (+100 to +10,000 power, saved on top of the
    training level) and a free starter dino (`Config/Shop`).
-9. Timed events: every server runs one at a time (Meteor Shower 2x mutations, Growth Spurt 2x sizes,
-   Gold Rush 2x cash), 10 min each with a 20 min break, shown with a top-right timer (`Config/Events`).
+9. Timed events: one every 15 minutes for 5 minutes, taking turns: Double Luck (2x luck) and Ghost Rush (GHOST 10x
+   likelier), from the server clock (`Config/Events`); an icon at the bottom right explains it on hover or tap.
 10. Arena leaderboards (along the right-hand wall, seen from the platform): MOST DINOS (dinos caught), TOP MONEY (money earned) and LUCKIEST CATCH (rarest
     "1 in X"), top 10 across all servers, refreshed every minute (`Config/Leaderboards`).
 11. Offline earnings: on rejoin, the plot pays 50% of its $/s for the time away (up to 8 hours, events not
@@ -108,7 +111,7 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
     Welcome Back, HUD, training and motion/colour notes. Source: `design/ui-mockups/build.py`.
     Dino, egg, map and pack art are Blender renders of blocky blueprint models in `assets/models`
     (`dino_blueprints.blend`; rebuild with `build_blueprints.py`, re-render with `render_thumbnails.py`).
-    Shop items not in the game yet: dinos priced by % of best, Prism Egg, GIFT.
+    Shop items not in the game yet: dinos priced by % of best. Prism Egg and GIFT are built (GAME_SPEC).
     Built in-game with `UiKit` (panels, glossy buttons, tags, spinning model tiles, motion): Index, Shop
     (Boosts, Packs, Passes, Free), My Dinos (ON PLOT / BACKPACK tabs), Egg Shop, Welcome Back with CLAIM
     (offline earnings are held until claimed), HUD buttons, hotbar and training HUD. Monster tiles (Index, My
@@ -121,7 +124,7 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
     bottom, then a white flash and turning light rays behind the monster in its rarity's colour (no rings), and the
     final text straight on the screen (no card), and a "YOU CAUGHT!" banner on the plot after very rare ones. Catches of 1 in 10K
     or rarer get the lucky catch banner (mock-up 12) for the whole server (`LuckyBannerController`).
-Not built yet: dinos priced by % of best and the Gift button. No rebirth: the reference game has none.
+Not built yet: dinos priced by % of best. No rebirth: the reference game has none.
 
 ## Reference game notes
 

@@ -165,7 +165,21 @@ the ground in front of it. Standing on the pad opens the Egg Shop.
 **[Owner]** Ours is a squat rack where the reference has a pull-up bar.
 **[Seen]** Two thick pillars with coloured rings and a bar across them. A dashed circle on the ground marks the training
 spot. A round orange button with a grey edge sits in front of it, with floating text above: the price in big red
-outlined numbers and "+X XP / rep" under it. Other players' racks can look different from yours (see section 15).
+outlined numbers and "+X XP / rep" under it.
+**[Owner, 2026-11-05]** The rack gets better on its own as its owner buys rack upgrades, and everyone sees it, so it's
+there to show off: no menu, nothing to choose. Six racks (`Config/Training` `rackModels`, a new one about every 2 to 3 maps):
+
+| Rack | Upgrades | Look |
+|---|---|---|
+| Gym | 0 | Yellow pillars with coloured rings. Every base with no owner has this one |
+| Iron | 3 | Braced steel with bolts, blue bands, chains and kettlebells |
+| Bone | 7 | Thigh-bone pillars, ribs, a spine for a crossbar, a horned skull with green eyes |
+| Crystal | 10 | Amethyst columns grown from rock, a glowing gem floating overhead |
+| Magma | 13 | Basalt split by lava, standing in lava pools, braziers, black horns |
+| Titan | 16 | Gold columns on marble, banners, a crowned monster's head with golden wings |
+
+The upgrade that earns one says "New rack: Iron Rack!". Models: `assets/models/build_racks.py` (Gym is in
+`build_base_kit.py`); they must keep the bar and pad where the Gym rack has them, as its notes explain.
 
 ### Upgrade sign
 **[Seen]** A small sign with a paw icon, showing the size, and a darker price bar under it. At the top level it reads "20" and "MAX".
@@ -181,6 +195,11 @@ An empty base's owner shows "$0/s".
 
 - **SELL stall [Seen]:** one red and white striped stall in the open ground, with a dashed red circle on the ground.
   **[Built]** Front left of the arena seen from the platform, its counter and pad facing the bases (`Config/Hub`).
+  **[Built], [Owner, 2026-11-05] Sell Stand panel** (Figma "Throw Eggs - Index & Inventory", `SellPanel`): the pad opens a
+  red panel in the middle of the screen with the backpack as a grid, cheapest rarity first. Rarity buttons (ALL, COMMON
+  to MYTHIC) pick or unpick all of a rarity; tapping a tile picks one. The footer shows how many and the total, and
+  SELL needs a second tap (SURE? TAP AGAIN, 3 seconds). Nothing is picked on opening, monsters on the base aren't
+  shown, and the carried one shows HOLDING and can't be picked. The server re-checks all of this (`sellMany`).
 - **Leaderboards:** MOST DINOS, TOP MONEY and LUCKIEST CATCH, top 10 across all servers, refreshed every minute,
   standing side by side **[Built]**. In the arena they stand on the ground in front of the wall, on the right as you
   face the bases from the platform **[Seen]**. The exact spot is an estimate. **[Built]** A shallow arc in front of the front
@@ -219,7 +238,9 @@ reveal; your own catch appears once you've tapped through it. Limit and timings 
 
 ### Throw
 - **[Built]** Step on the throw pad and a vertical meter appears. A marker swings up and down a tube with 10 levels and
-  slows near the top. Level 10 is PERFECT and gives the biggest throw.
+  slows near the top. Level 10 is PERFECT and gives the biggest throw. **[Owner, 2026-11-05]** PERFECT is a little harder
+  (the top 6% of the tube, `Throw.meter.perfectZone`, about 1 tap in 6.5) and gets its own moment (`PerfectMoment`, Figma
+  "Perfect / Moment"): gold edge flash, sunburst, a big slammed PERFECT! and x1.5 THROW. No extra reward.
 - **[Built]** Distance = Throw Power × the level's bonus. Our meter multiplies on purpose, unlike the reference's flat bonus.
 - **[Built]** All HUD except Throw Power hides while aiming and flying.
 - **[Seen]** The owner's recording of the throw (`~/Documents/Screen Recording 2026-11-03 at 20.02.26.mov`,
@@ -266,6 +287,13 @@ reveal; your own catch appears once you've tapped through it. Limit and timings 
   numbers and world names that stood in the corridor are gone, as in the reference.
 - **[Built]** Landing: a white ring flashes out on the ground and a puff of dust rises (`Config/Throw` `landing`).
   The walking view after it, then the close-up and pull back, are built (below).
+- **[Owner, 2026-11-06] When the egg lands it's cut in half, and the white and the yolk show.** **[Built]**
+  (`EggModel.split`, numbers in `Config/Throw` `landing.split`, the same as `SPLIT` in `assets/models/build_eggs.py`,
+  preview `design/eggs/egg_slice.mp4`): the egg stands upright where it landed, a white streak sweeps across its middle
+  (its widest point), the top half slides off along the cut, tips over and lands upside down beside the bottom half, and
+  rocks to a stop, so both halves show a disc of white with a domed yolk. About 1.3 seconds, played on every screen.
+  The bottom half stays where the egg landed, so the reveal is unchanged. Only eggs with their Blender model in the
+  place are cut; until they're imported the egg stays a ball.
 
 ### Landing and arrival: the animal walks to the egg
 **[Owner]** Pay special attention to this part. The animal walking towards what you threw is the key moment, then its
@@ -343,6 +371,33 @@ name shows up slowly.
     to solid with a bounce, then a flash in its colour, a camera jolt that grows with the label, and a burst of
     sparkles. The counter pauses on the label's own number ("1 in 10,000" under INSANE!) and the letters wait. At
     the end of the pause the label flies up to its place at the top and the climb goes on. A tap still skips ahead.
+- **[Owner, 2026-11-06] A better reveal: the monster in view, bigger lucky effects, numbers that never stop.** The owner
+  watched the reveal in Studio: the monster was barely visible (the lucky reveal crept up from its feet, the head
+  last; a giant seen from out over a wall was hidden behind the wall's top), the slowed camera moved badly, and the
+  "1 in X" stopped on every label. **[Built]** (`RevealAura`, `RevealCloseUp`, `Config/Reveal` `aura`, `closeUp`
+  `luckyHold`/`push`; previews in `design/reveal/v2/`):
+  - **Always in view:** after the walk (now 2 to 3.2 seconds, was up to 4.6) a short close-up on the egg, then the
+    camera pulls back to the whole monster in about 1.5 to 2.5 seconds on every catch. On lucky ones it pulls back a
+    little further, then creeps straight in on the monster over the count, landing with the last number. No
+    circling. It stays inside the corridor at any height, so the walls can't hide a giant, and looks down a little
+    on the biggest (`bigEndElevation`). The egg lies closer to the monster (`aheadShare` 0.3), so the monster is
+    framed bigger.
+  - **Nonstop count:** the "1 in X" never pauses. Each luck label slams onto the screen between the monster and the
+    counter as it's passed, then settles over the counter, while the numbers keep climbing. The label and counter sit
+    at the bottom, just above the name's letters, so the monster has the top of the screen; the final text takes the
+    same space, so the monster doesn't move when it comes.
+  - **Luck building up round the monster** (from the first label): a glowing outline in the label's colour that
+    breathes and flashes as each label lands, lights rising off the ground round its feet, a light on it, a shockwave
+    ring racing out along the ground at each label, the screen's edges darkening (vignette) so the monster stands out;
+    from GODLY! lightning striking round it, and on IMPOSSIBLE! everything cycling through the rainbow. At the final
+    moment one or two big shockwaves, a burst of lights and lightning, then a soft glow stays on.
+  - **Softer screen colour:** the luck glows at the screen's top and bottom are smaller and weaker, the flashes
+    gentler, so the screen never washes over the monster.
+  - **The "1 in X" is the real chance of that exact catch** (monster, colour and size) on a plain throw at its map's
+    start, from the rolls themselves (`DinoStats.describe`, `monsterOneIn` for the Index), instead of the configs'
+    round chances multiplied together. So it never comes out round: a Gold Thicc Pteranodon is 1 in 483,422, a Shadow
+    Planet-Sized Volcano King 1 in 51,177,829,002. The rarest colour and size have odd chances (Ghost 1 in 19,683,
+    Unit of Doom 1 in 9,787) for the same reason. None of the 5,311 catches that show a "1 in X" ends in 000.
 - **[Owner]** The walk depends on the catch: a very rare monster starts far from the egg, and a very big one starts way
   above the map. It simulates the POV of each monster. Made in-game, not in Blender: it changes with every catch's
   rarity and size and with where the egg landed, so a camera script works it out on the spot.
@@ -375,7 +430,8 @@ name shows up slowly.
   Previews in `design/reveal/closeup/`.
   - **The monster is simply there:** behind the black after the walk, the caught monster stands still where its walk
     ended, at its real size (its map's standard size × its size mutation), facing the way it walked. It never pops out
-    of the egg or spins. The egg lies upright on the ground and never moves.
+    of the egg or spins. The egg lies upright on the ground and never moves (cut in half since 2026-11-06: its bottom
+    half stands where it landed, the top half lies beside it).
   - **Where the egg lies [Owner, 2026-11-04: too close before]:** a clear gap ahead of the monster's front feet, half
     its length (`closeUp` `aheadShare`) and at most 15 egg heights, turned 60° away from the camera's side so the egg
     sits beside the monster on screen rather than in front of the lens. Worked out from the spot described next. With a giant, the egg lies far enough ahead of its feet
@@ -450,18 +506,18 @@ Unit of Doom**. **[Built]** (`Config/Catch`), scale is on top of the map's stand
 | Chonker | 1 in 150 | ×4 | 5× |
 | Mega Chonk | 1 in 600 | ×8 | 12× |
 | Planet-Sized | 1 in 2,500 | ×20 | 35× |
-| Unit of Doom | 1 in 10,000 | ×50 | 100× |
+| Unit of Doom | 1 in 9,787 | ×50 | 100× |
 
 **[Built]** Luck makes mutations and sizes likelier too, gently: their chances are multiplied by luck^0.4 (`Config/Catch`
-`luckPower`), and no single one goes above a 1 in 2 chance. The luck here is counted from the map's start, like the
-monster roll (section 8b). Roughly, worked out from the formula:
+`luckPower`), and no single one goes above a 1 in 2 chance. It's the same luck as the monster roll, counted from the
+map's par, lucky throws included (section 8b). Roughly, worked out from the formula:
 
-| Luck (counted from the map's start) | Thicc | Chonker | Unit of Doom |
+| Luck (counted from the map's par) | Thicc | Chonker | Unit of Doom |
 |---|---|---|---|
-| 1x (start of any map) | 1 in 10 | 1 in 150 | 1 in 10,000 |
-| 5x (end of any map) | 1 in 5 | 1 in 80 | 1 in 5,300 |
-| 15x (end of a map, best egg) | 1 in 3 | 1 in 50 | 1 in 3,400 |
-| 1,500x (and Luck x100) | 1 in 2 | 1 in 8 | 1 in 540 |
+| 1x (start of any map, its own egg) | 1 in 10 | 1 in 150 | 1 in 9,787 |
+| 5x (far end of any map) | 1 in 5 | 1 in 80 | 1 in 5,300 |
+| 500x (a x100 lucky throw at a far end) | 1 in 2 | 1 in 12 | 1 in 830 |
+| 2,500x (a x500 lucky throw at a far end) | 1 in 2 | 1 in 7 | 1 in 440 |
 
 The "1 in X" shown on a catch stays the normal odds.
 
@@ -471,16 +527,16 @@ Old saves keep their sizes under the new names (Big → Thicc, Large → Absolut
 - **[Owner]** More colour mutations, some much rarer than others. Gold is the most common, but not too common.
 - **[Built]** Colour mutations (`Config/Catch`), most common first. Each recolours the skin and leaves the face alone:
 
-| Mutation | Chance | Income | At 15x luck (end of a map, best egg) |
-|---|---|---|---|
-| Gold | 1 in 30 | ×2 | 1 in 10 |
-| Ruby | 1 in 80 | ×3.5 | 1 in 27 |
-| Diamond | 1 in 200 | ×6 | 1 in 68 |
-| Emerald | 1 in 500 | ×12 | 1 in 170 |
-| Bubblegum | 1 in 1,200 | ×18 | 1 in 410 |
-| Amethyst | 1 in 3,000 | ×30 | 1 in 1,000 |
-| Shadow | 1 in 8,000 | ×50 | 1 in 2,700 |
-| Ghost | 1 in 20,000 | ×100 | 1 in 6,800 |
+| Mutation | Chance | Income | At a map's far end (5x) | x500 lucky throw there (2,500x) |
+|---|---|---|---|---|
+| Gold | 1 in 30 | ×2 | 1 in 16 | 1 in 2 |
+| Ruby | 1 in 80 | ×3.5 | 1 in 42 | 1 in 3.5 |
+| Diamond | 1 in 200 | ×6 | 1 in 105 | 1 in 9 |
+| Emerald | 1 in 500 | ×12 | 1 in 260 | 1 in 22 |
+| Bubblegum | 1 in 1,200 | ×18 | 1 in 630 | 1 in 52 |
+| Amethyst | 1 in 3,000 | ×30 | 1 in 1,600 | 1 in 130 |
+| Shadow | 1 in 8,000 | ×50 | 1 in 4,200 | 1 in 350 |
+| Ghost | 1 in 19,683 | ×100 | 1 in 10,300 | 1 in 860 |
 
 - **[Built]** Each map's standard size is `standardScale` in `Config/Biomes`: 1x, 1.05x, 1.1x ... 1.42x for maps 1 to 8.
 - **[Seen]** The reference's mutated animals are recoloured all over (gold, rainbow and so on), with the face still readable.
@@ -524,8 +580,8 @@ Each map's standard size is about 1.05x the previous map's, reaching 2x at map 1
 | 7 | The Abyss | 1.35x | Spiral Gary, Derpichthys, Dunkleosteus, Plesiosaur, Megalodon, Mosasaurus |
 | 8 | Starfall Crater | 1.42x | Craterback, Stargazer, Comet Trike, Ringhorn, Nebulasaur, Star Sovereign |
 | 9 | Eclipse Temple | 1.49x | Idol Ollie, Mossy Mo, Lantern Larry, Jade Jaguar, Plumed Wyrm, Eclipse Devourer |
-| 10 | Forbidden Library | 1.56x | Not made yet (its world is built) |
-| 11 | Midnight Carnival | 1.64x | Not made yet (its world is built) |
+| 10 | Forbidden Library | 1.56x | Inkling, Hermit Tome, Wax Hound, Quillback, Hex Owl, Tome Tyrant |
+| 11 | Midnight Carnival | 1.64x | Jack Snap, Popcorn Fiend, Twisty, Nightmare Mare, Grinmaster, Big Top Terror |
 | 12 | Clockwork Citadel | 1.72x | Wind-Up Wally, Sprocket, Kettle Belly, Gearjaw, Drillhorn, Chrono Rex |
 | 13 | Thorn Kingdom | 1.81x | Bramble Brat, Grandma Gnash, Sir Skewer, Hart Attack, Hydrangry, Wrathorn |
 | 14 | Spore Hollow | 1.9x | Toad Rage, Morel Panic, Antagonist, Sporantula, Gillotine, Shroomageddon |
@@ -573,6 +629,29 @@ good-looking, aggressive dinos.
   behind a pale skull of a head under a gold mask, the eaten sun glowing in its chest, a black sun in each raised
   hand, great horns, a third eye and jade fire in its throat. The rarer ones stand bigger.
 
+- **[Owner] Map 10, Forbidden Library (2026-11-04):** monsters that suit the biome, aggressive in a good way, animated.
+  **[Built]** `build_forbidden_library_monsters.py`: all six glare and bare page-white teeth, sharing the **ink eye** (a
+  glowing violet iris with a slit pupil under a brow slanting to the nose; white eyes on the common ones, black sockets
+  on the fierce ones) with violet ink glowing in their mouths and dripping off them: Inkling (an ink gremlin, quill
+  crest, nib tail), Hermit Tome (a crab under an open book, pincers up), Wax Hound (candles burning on its back),
+  Quillback (a raptor bristling with ink-dipped quills, nib claws), Hex Owl (gold spectacles, page feathers, a chest
+  of glowing writing) and Tome Tyrant, the boss (its head a grimoire whose covers bite, a crown of candles, broken
+  shackles, a ribbon tail). Plain colours in Blender, like the map. Renders and
+  `forbidden_library_animation_preview.mp4` in `design/world/monsters_forbidden_library/`, FBX in
+  `fbx/10_ForbiddenLibrary/Animals/`; they go in `Config/Dinos` once imported.
+
+- **[Owner] Map 11, Midnight Carnival (2026-11-05):** monsters that suit the biome, scary and aggressive at the same
+  time, animated. **[Built]** `build_midnight_carnival_monsters.py`: the fair's attractions come alive, all teeth.
+  They share the **carnival face**: chalk-white greasepaint, black harlequin diamonds over glowing neon-pink eyes with
+  pinprick pupils, and a crimson painted grin carrying a mouth of needle teeth up the cheeks (white eyes on the
+  common ones, black sockets on the fierce ones): Jack Snap (a jack-in-the-box, clown head on a spring neck),
+  Popcorn Fiend (a popcorn box whose top half is a jaw), Twisty (a balloon-animal dog with devil-horn ears),
+  Nightmare Mare (a carousel horse with the brass pole through its back and a neon mane), Grinmaster (the
+  ringmaster, top hat, cracking whip) and Big Top Terror, the boss (the big top on its back, a giant clown head
+  with a crown of bulbs, arms reaching from under its ruff). Plain colours in Blender. Renders and
+  `midnight_carnival_animation_preview.mp4` in `design/world/monsters_midnight_carnival/`, FBX in
+  `fbx/11_MidnightCarnival/Animals/`; they go in `Config/Dinos` once imported.
+
 - **[Owner] Map 12, Clockwork Citadel (2026-11-05):** monsters that suit the biome, animated as well, and nice.
   **[Built]** `build_clockwork_citadel_monsters.py`: the citadel's machines built in the shape of beasts and wound up,
   silly at the common end, fierce at the rare end, then a boss. They share the **lens eye**: a riveted brass bezel
@@ -611,49 +690,32 @@ good-looking, aggressive dinos.
   `thorn_kingdom_animation_preview.mp4` in `design/world/monsters_thorn_kingdom/`, FBX in
   `fbx/13_ThornKingdom/Animals/`; imported into `Assets.Dinos` and in `Config/Dinos` (2026-11-05).
 
-### How animal models are made
-- **Simple shapes:** chunky blocks and tapered blocks, no fine detail. The silhouette should read from far away.
-- **Good faces:** big eyes with a pupil and a highlight, an expressive brow, clear teeth or mouth. Each animal has its
-  own personality. The face is where the effort goes.
-- **No studs modelled**, but every model has UV maps laid out so the stud texture repeats evenly in Studio.
-- **Parts by colour role** (body, accent, belly, eyes, teeth and so on), so a mutation can recolour the skin and leave
-  the eyes and teeth alone, keeping the face readable.
-
----
-
-## 8b. Luck and keeping players hooked
-
-**[Owner, 2026-11-04]** The main goal: players get hooked, progress is easy, and now and then they get a very nice
-monster so they stay. The luck number climbing during the flight should be big and exciting, and a 100x luck boost
-should feel huge.
-
-- **[Built] The number on screen is real, but each map counts it from its own start.** Luck climbs from one map's end
-  to the next, multiplying evenly along the way (`Config/Luck`). The roll divides it by the map's starting luck, so
-  every map runs from 1x at its start to about 5x at its end, then the egg, the Index, Server Luck, Luck x100 and
-  events multiply on top. That's how a 10B number doesn't break a map's odds.
-- **[Built] How luck changes a roll:** it multiplies every monster except the map's most common one, so extra luck is
-  shared by five monsters. Forest, at the end of the map: the common Compy drops from 28% of catches to under 1% with
-  Luck x100, and the rarest goes from 1 in 725 to 1 in 527. Every catch gets visibly better, and the rarest stay rare.
-- **[Built] Lucky throws** (`Config/Shop` `luckyThrows`, `Config/LuckyOutcomes`, `LuckyThrows`). **[Owner, 2026-11-04]**
-  A luck boost is for **one throw only**, and the shop sells several sizes: **x100** and **x500**. They're kept until
 - **[Owner] Map 14, Spore Hollow (2026-11-05):** monsters that suit the map, "very aggressive and nice, more aggressive
-  than the 13th map", built in Blender and animated nicely. **[Built]** `build_spore_hollow_monsters.py`: down here the
-  fungus is the predator, grown through everything that lives in the hollow and made it worse. All six are hostile, the
-  commons too (the jokes are in the names and one thing each). They share the **infected eye** (a glowing chartreuse
-  iris with a black bar of a pupil, a goat's or a toad's, and glowing threads of mycelium creeping in over the white; on
-  the fierce ones no white at all, a glowing orb in a black socket, the threads spreading out over the face under a brow
-  sprouting little mushrooms) and the **gill maw** (the roof of the mouth is a mushroom's underside, gills glowing back
-  to a glowing throat, crooked teeth, glowing threads stretched between the jaws): Toad Rage (a furious toad with a
-  toadstool for a hat, brows slammed down, a mouth as wide as it is, a whipping tongue, warts torn open puffing spores),
-  Morel Panic (a gaunt ghoul whose head is a glowing morel with an eye in a dozen of its pits, each rolling its own way,
-  two rows of teeth, claws dragging), Antagonist (a giant ant the fungus got to: shear mandibles, glowing orb eyes,
-  pale stalks with glowing clubs bursting from its head and back), Sporantula (a spider whose back is a mushroom cap,
-  eight glossy black eyes glowing in the middle, fangs that never stop chattering, a puffball abdomen pouring spores),
-  Gillotine (a mantis under a chocolate cap, serrated blades held up, side jaws, wings stood up in a threat display
-  with a glowing eye on each and lilac light in their veins) and Shroomageddon, the boss (a titan on its knuckles that
-  is more fungus than beast: a forest of glowing mushrooms round a spore geyser on its back, the mycelium heart glowing
-  in its open chest behind ribs of bone, mycelium whips, a cap pulled down like a hood with a crown of glowing morels,
-  five eyes and a mouth that opens four ways). **On top of map 13's thrashing (`Lash`, `Snap`) they pounce and pour
+  than the 13th map", built in Blender and animated nicely. **[Owner, 2026-11-06]** The first six came out toy-like and the
+  owner didn't like them at all: they want them **more scary and aggressive**. **[Built]** The same six (same names, ids
+  and rig), rebuilt from scratch in `build_spore_hollow_monsters.py`: down here the rot is the predator, eating into
+  everything that lives in the hollow and wearing it. All six are dark and rotten with bone-pale teeth, claws and spikes,
+  crusts of pale mycelium bursting out of the hide, black caps with gills glowing chartreuse under them, and none of them
+  stands up straight: they crouch, hunch and reach, heads low and thrust at you. They share the **rot glare** (no white in
+  any eye: a burning chartreuse iris with a thin upright slit in a black socket, under a brow slanting hard to the nose,
+  glowing threads creeping out of it, and spare eyes burst up through the hide round it) and the **rot maw** (most of the
+  face, hanging wide open on two rows of long needle teeth, gills glowing back to a glowing throat, glowing strings of
+  mycelium stretched between the jaws like drool): Toad Rage (a bloated black cave toad crouched to spring, its head
+  nearly all mouth, burning eyes on bumps under warty brows, bone spikes down its back, black ink caps and shelf fungi
+  growing out of it, splayed hooked claws), Morel Panic (a gaunt ash-pale crawler on four long limbs, knees and elbows
+  above its back, ribs and spine showing, long black-clawed fingers reaching, a black morel for a hood with embers in its
+  pits, and under it two burning eyes and a jaw hanging open in a scream), Antagonist (a black ant reared up with its front
+  legs raised to grab, huge serrated mandibles spread round a mouth of needles, white mycelium bursting from every joint,
+  a sting curled over its back, and the fungus that took it arching out of its head to dangle a glowing club in front of
+  its face), Sporantula (a black spider, front legs raised high to strike, bone knuckles, two burning eyes and six more,
+  huge bone fangs dripping glowing venom, a swollen abdomen with glowing chevrons and black caps bursting out of it),
+  Gillotine (a towering ash-pale mantis, two great serrated blades raised wide, slanted burning eyes, bone horns and
+  black ink caps bursting from the back of its head, side jaws round a mouth of needles, wings stood up behind it each
+  with a huge glaring eye) and Shroomageddon, the boss (a colossal black titan on its knuckles, a ragged black cap pulled
+  down over its head like a hood, seven burning eyes under it, a crown of bone horns, a mouth that opens four ways, its
+  chest torn open on a glowing heart behind ribs of bone, a forest of black and deathly pale caps round a spore geyser on
+  its back, mycelium whips, and a club of bone spikes on its tail). What moves is unchanged, so the game needed no new
+  code. **On top of map 13's thrashing (`Lash`, `Snap`) they pounce and pour
   spores (`POUNCE` and `VENT` in `DinoLifeController`, the same as `pounce_of` and `vent_rise` in the script, compared
   number by number):** every 4 seconds they rear back, front legs up and side jaws spread, then lunge, neck down, jaw
   flung open, arms raking and side jaws slamming shut; the side jaws (`MandL`, `MandR`) gnash the rest of the time and
@@ -663,7 +725,10 @@ should feel huge.
   `design/world/monsters_spore_hollow/`, FBX in `fbx/14_SporeHollow/Animals/`; imported into `Assets.Dinos` and in
   `Config/Dinos` (2026-11-05): chances 2, 4, 12, 60, 400, 3000; income 1e26, 3e26, 1e27, 4e27, 2e28, 5e28 (100x
   Thorn Kingdom's), so throws reach 14,700. In play at their real size every whip, fang, jaw, side jaw, arm, wing and
-  vent was measured moving, the spores rising 1.14 studs a cycle (0.6 x 1.9). That also lets map 15's go in.
+  vent was measured moving, the spores rising 1.14 studs a cycle (0.6 x 1.9). That also lets map 15's go in. **The
+  rebuilt six (2026-11-06) are exported to the same folder; they replace the old ones in `Assets.Dinos` once the owner
+  re-imports them and they're tidied (`studio_tidy.py SporeHollow build_spore_hollow build_spore_hollow_monsters`). `Config/Dinos` doesn't
+  change, as the ids are the same.**
 
 - **[Owner] Map 15, The Weeping Dark (2026-11-05):** monsters that suit the map, "very aggressive, the most aggressive
   out of all the animals we did", built in Blender and animated nicely. **[Built]** `build_weeping_dark_monsters.py`:
@@ -696,29 +761,96 @@ should feel huge.
   would be a world eggs could land in with nothing to catch. Their line then: chances 2, 4, 12, 60, 400, 3000; income 1e28,
   3e28, 1e29, 4e29, 2e30, 5e30 (100x map 14's, which is 100x Thorn Kingdom's).
 
+### How animal models are made
+- **Simple shapes:** chunky blocks and tapered blocks, no fine detail. The silhouette should read from far away.
+- **Good faces:** big eyes with a pupil and a highlight, an expressive brow, clear teeth or mouth. Each animal has its
+  own personality. The face is where the effort goes.
+- **No studs modelled**, but every model has UV maps laid out so the stud texture repeats evenly in Studio.
+- **Parts by colour role** (body, accent, belly, eyes, teeth and so on), so a mutation can recolour the skin and leave
+  the eyes and teeth alone, keeping the face readable.
+
+---
+
+## 8b. Luck and keeping players hooked
+
+**[Owner, 2026-11-04]** The main goal: players get hooked, progress is easy, and now and then they get a very nice
+monster so they stay. The luck number climbing during the flight should be big and exciting, and a 100x luck boost
+should feel huge.
+
+- **[Built] The number on screen climbs from 1x to 50x across the whole game** (**[Owner, 2026-11-06]**: billions
+  were useless; 50x is the most without boosts). Each map ends at: Forest 3, Desert 5, Swamp 7, Volcano 9, Frozen
+  Peaks 11, Shadow Bog 14, Abyss 17, Starfall 20, Eclipse 24, Forbidden 28, Carnival 32, Clockwork 36, Thorn 40, Spore
+  45, Weeping Dark 50 (`Config/Biomes` luck). The egg multiplies it by its luck against the egg made for the map it
+  lands in (`Luck.eggFactor`, worked out once so it doesn't jump mid-flight), then Server Luck and lucky
+  throws multiply on top (a x500 throw can show thousands). The number is only for show: the roll has its own luck,
+  1x at every map's start to 5x at its far end (`Luck.rollRange`), times that egg factor and the boosts
+  (`Luck.forRoll`). A newer egg gives a bit more (about 1.2x per egg), an older one less, and a much older one leaves
+  only the map's starting odds (like the reference, where older food brings only the commonest animals).
+- **[Built, 2026-11-06] The luck sign during the flight is plain text, no panel** (**[Owner]**): the number big
+  (92) with a thick outline and a tint of the world's colour, LUCK under it, and the world's name big (58) in its
+  colour. It pops when the egg crosses into a new world (`ThrowCinematic.buildLuckPanel`).
+- **[Built, 2026-11-06] How luck picks the monster** (`Config/Catch` `pick`, `DinoRoll`). **[Owner, 2026-11-06]**
+  After the owner's friends played: "the luck is fucked, the monsters are the same every single time", x100 can give
+  "just a 1 in 32k" and x500 always gives the best, never the second best. The whole roll was redone following the
+  reference game's catch rules, as game.guide's catch calculator describes them (its food aims at a rank, each
+  rank's chance falls off smoothly away from the aim, and your last catch is 200x less likely, the one before 2.5x):
+  - **Luck aims at a "1 in X":** the map's commonest monster's odds times the luck. 50x luck on the Forest
+    (commonest 1 in 2) aims at 1 in 100, the Stegosaurus.
+  - **Monsters near the aim come most,** and each one further away, rarer or more common, is that many times less
+    likely: 10x rarer or 10x more common than the aim is 10x less likely (`falloff` 1). So luck really multiplies a
+    rare monster's chance (x100 makes a 1 in 2,000 a 1 in 20), and monsters far more common than the aim fade out.
+  - **The aim stops halfway between the two rarest** (`topAim` 0.5), so with huge luck the best and the second best
+    come about equally and the third now and then. Nothing is ever certain.
+  - **No repeats** (`repeatPenalty`): the monster you just caught is 200x less likely on the next throw, the one
+    before it 2.5x (kept in the save, `recentCatches`). The same monster twice in a row went from 40-55% of throws to
+    under 1%, and 10 throws show about 4 different monsters instead of 2 or 3.
+  - What it gives with each map's own egg, % per monster from the commonest to the rarest (the game's own code run
+    in a simulation, before the no-repeat rule):
+
+    | Throw | Forest | The Weeping Dark |
+    |---|---|---|
+    | Normal, map start | 66, 26, 7, 1.3, 0.3, 0.07 (rarest 1 in 1,500) | 59, 29, 10, 2, 0.3, 0.04 (1 in 2,600) |
+    | Normal, far end | 15, 38, 38, 8, 1.5, 0.4 (1 in 265) | 16, 32, 42, 8, 1.3, 0.2 (1 in 590) |
+    | x100, map start | 1, 2, 9, 44, 35, 9 | 1, 2, 6, 31, 52, 7 |
+    | x100, far end | 0.2, 0.4, 2, 9, 44, 44 | 0.3, 0.6, 2, 9, 58, 31 |
+    | x500, anywhere | 0.2, 0.4, 2, 9, 44, 44 | 0.2, 0.5, 1.4, 7, 46, 46 |
+
+    With the no-repeat rule, 20 x500 throws in a row give the best about 38% of the time, the second best 38% and
+    the third 19%, a colour 70% of the time, and 1 in a million or rarer (GODLY) 36%.
+  - The old roll, for the record: luck multiplied every monster but the commonest, so it only moved catches from the
+    commonest to the second (70% of every catch on late maps, whatever the luck), and the rarest stayed about 1 in 1,100.
+  - **For the 8-monster maps:** with 6 monsters from 1 in 2 to 1 in 3,000, a x100 at a map's far end already reaches
+    the aim's stop (on the Desert, 1 in 2 to 1 in 1,000, from its middle), so it gives the same monsters as a x500,
+    which only keeps twice the colour and size luck. Spread the odds so the rarest is about 1 in 20,000 or rarer and
+    x100 and x500 stay apart everywhere. Pity and the new-map gift count "the map's N rarest", so they need no change.
+  - Average income per throw is about 2x what it was (fewer commonest monsters, more rare ones): the economy
+    timeline in section 12 was worked out with the old roll.
+- **[Built] Lucky throws** (`Config/Shop` `luckyThrows`, `LuckyThrows`). **[Owner, 2026-11-04]**
+  A luck boost is for **one throw only**, and the shop sells several sizes: **x100** and **x500**. They're kept until
   used (several can be owned), and the next throw uses the biggest one owned, when the egg lands. The panel at the top
   right shows "NEXT THROW x100" and how many are owned.
-  **[Owner] The x number is for show:** it multiplies the luck number during the flight, not the roll. What each one
-  really does:
-  - **x50** (daily reward): a 50/50. If it hits, the same as x100; if not, an ordinary throw.
-  - **x100:** always something nice, never the nicest: the map's 4th or 5th rarest monster with a Gold, Ruby or
-    Diamond colour (Gold most often), size rolled as normal. Forest: 1 in 3,000 to 1 in 100,000.
-  - **x500:** the show. The map's rarest monster in one of four presets: Amethyst + Planet-Sized, Shadow +
-    Planet-Sized, Shadow + Unit of Doom, Ghost + Unit of Doom. The reveal's counter climbs for 9 seconds through every
-    label to a new top one, **IMPOSSIBLE!** (1 in a billion and up, pink, 400 sparkles), and the whole server gets the
-    lucky catch banner.
-  - **The "1 in X" is never made up** (the owner offered presets of numbers; we chose presets of catches instead).
-    It's always the catch's real odds in normal play, and a banger's really are huge: Forest 1 in 15,000,000,000 to
-    1 in 400,000,000,000. Roblox bans misleading purchases and most players are kids, so the shop text says what each
-    throw really gives ("Next throw: the map's rarest, rare colour, GIANT").
-  - A banger earns 600x to 5,000x its monster's $/s: a Forest banger makes 300K to 2.5M $/s, Volcano money.
+  **[Owner, 2026-11-06] The x number is real luck now:** it multiplies that throw's luck in the roll, not just the
+  number on screen. (Before, each had a fixed outcome: x100 always the 4th or 5th rarest with Gold, Ruby or Diamond,
+  x500 always the map's rarest in a rare colour and size, so the friends' 20 gifted x500s hatched the same monster 20
+  times.) Each is rolled like any throw:
+  - **x50** (daily reward): 50x luck.
+  - **x100:** 100x luck. At a map's start mostly its 3rd and 2nd rarest, the rarest about 1 in 10; at its far end the
+    two rarest about equally. A colour on a third to a half of them.
+  - **x500:** 500x luck. The two rarest about equally, the third now and then, a colour on 70%. About a third land
+    GODLY (1 in a million or rarer); IMPOSSIBLE (1 in a billion) only when the rarest gets a rare colour and size at once.
+  - **The "1 in X" is never made up:** it's always the catch's normal odds, whatever luck helped. Roblox bans
+    misleading purchases and most players are kids, so the shop text says only what's true: "Next throw: 100x luck,
+    rare monsters far likelier" and "Next throw: 500x luck, the map's top monsters".
   - **x100:** two Developer Products. "ONE TIME DEAL LUCK x100" (3728190387) at **R$ 3**, so people buy it without a
     thought, offered once per player with a ONE TIME DEAL! sticker; after that "Luck x100" (3728190780) at **R$ 9**.
-  - **x500:** its Developer Product isn't created yet; the card shows SOON until its id is in `Config/Shop`.
+  - **x500:** "Luck x500" (3728240108) at R$ 39.
   - Prices are set on the Creator Dashboard; the shop reads them from Roblox. Server Luck x2 stays a timed boost for
     the whole server.
-- **[Built] Pity** (`Config/Hooks`): after 25 throws in a row without a monster of the map's 3 rarest, the next throw
-  is guaranteed one. It says so after the reveal ("LUCKY STREAK!").
+- **[Built] Pity** (`Config/Hooks`): after 25 throws in a row without one of the map's 3 rarest monsters, the next
+  throw is guaranteed one. It says so after the reveal ("LUCKY STREAK!").
+- **[Built] Jackpot pity** (`Config/Hooks` jackpotPity, **[Owner, 2026-11-05]**): after 250 throws in a row without the
+  map's rarest monster, the next throw is it ("JACKPOT STREAK!"), about 2 hours of play. With the new roll the rarest
+  comes on its own about 1 in 250 to 1 in 900 throws on 6-monster maps, so this mostly helps the unlucky.
 - **[Built] New-map gift:** the first egg that lands in a map you've never caught anything in hatches one of its 3
   rarest ("NEW WORLD BONUS!").
 - **[Built] So close:** landing within 60 studs of the next map shows "SO CLOSE! 23 studs short of Swamp".
@@ -750,8 +882,10 @@ maps; the owner can rename it (only `name` in `Config/Biomes` changes).
 **[Built]** Map 11 is **Midnight Carnival** (`MidnightCarnival`), our name too, built before map 10.
 **[Built]** Map 12 is **Clockwork Citadel** (`ClockworkCitadel`), our name too; the owner can rename it.
 **[Built]** Map 13 is **Thorn Kingdom** (`ThornKingdom`), our name too; the owner can rename it.
+**[Built]** Map 14 is **Spore Hollow** (`SporeHollow`), our name too; the owner can rename it.
 
-**[Owner, 2026-11-04]** Luck reaches the billions, about 4-5x more per map (section 8b):
+**[Owner, 2026-11-04]** Luck reaches the billions, about 4-5x more per map (section 8b). **Replaced 2026-11-06:** the
+luck shown now tops out at 50x (section 8b); the table below is the old plan:
 
 | # | World | Luck at its end |
 |---|---|---|
@@ -778,7 +912,6 @@ black spires, neon purple with crystals. The reference's thumbnail shows worlds 
 exactly. Worlds pass in under a second each at high power, so they're read from a distance:
 big shapes and strong colours matter more than detail. The sky, fog and light change per world too, from bright blue
 to dark green. Props are themed and include things overhead, such as power lines and bridges across the valley.
-**[Built]** Map 14 is **Spore Hollow** (`SporeHollow`), our name too; the owner can rename it.
 
 The reference's worlds, in order, for scale only (ours keep their own names): Forest, Savanna, Desert, Jungle, Ocean,
 Mountains, Taiga, Winter, Deep Waters, Ancient Ruins, Mythical Paradise, Shadow Realm, Harvest Fields, Phantom Harbor,
@@ -1048,33 +1181,6 @@ Done one at a time, each in its own step:
      are made (2026-11-05, `build_thorn_kingdom_monsters.py`, FBX in `fbx/13_ThornKingdom/Animals/`), imported and in
      `Config/Dinos` (chances 2, 4, 12, 60, 400, 3000; income 100x Clockwork Citadel's: 1e24 to 5e26), so throws reach it
      (13,000).
-   - **Joining**: whether the floor steps down at each world (question 5 in section 15) is still open.
-
-The walking reveal and the flight camera are a separate job, after the world. The throw wind-up is built (section 7).
-
----
-
-## 10. How it looks
-
-**[Owner]** Studs on everything.
-
-**[Seen]**
-- Chunky, bright and readable from far away. Everything is big blocks.
-- **Two-tone checker on all ground and walls**: light and dark green grass, light and dark brown dirt, orange and yellow platform.
-- **Grass over walls**: a flat band with square blocks of different lengths hanging down. It's a signature of the look.
-- Saturated colours, slightly neon greens. Black outlines on UI text.
-
----
-
-## 11. Screens and HUD
-
-**[Built]**, built with `UiKit` from the Figma designs:
-
-- **Left:** square icon buttons with bold outlined labels: Index (book) and Shop (basket).
-- **Right:** Dinos (paw) button.
-- **Bottom left:** ⚡ Throw Power in big blue outlined numbers, and cash in big green outlined numbers.
-- **Bottom:** 10-slot hotbar with each dino's $/s and key number.
-- **Panels:** Index, Robux Shop, My Dinos (ON PLOT / BACKPACK tabs), Egg Shop (opens only from its stall), Welcome Back.
    - **Spore Hollow** *(map 14's world made 2026-11-05, in Blender; imported into `Assets.Maps.SporeHollow.Props` and play-tested the same day: 524 props placed; its monsters built, imported and play-tested the same day)*:
      **[Owner]** map 14, made in Blender like the maps before it, nice, with animated objects, no animals yet; maps 12 to
      15 mysterious and dark. **[Built]** A hollow at the bottom of the world where no sun ever reached, so the fungus grew
@@ -1145,7 +1251,51 @@ The walking reveal and the flight camera are a separate job, after the world. Th
      `Config/Lighting`). In play, 21 of the 23 prop kinds in range moved (candle stubs and tear pools only glow) and all
      151 lights in range flickered. Shots from the game: `ingame_*.jpg`. Not seen yet: a real throw through it, and how a
      phone draws it. Its monsters must stay readable in the reveal, which keeps this world's light.
+   - **Joining**: whether the floor steps down at each world (question 5 in section 15) is still open.
+
+The walking reveal and the flight camera are a separate job, after the world. The throw wind-up is built (section 7).
+
+---
+
+## 10. How it looks
+
+**[Owner]** Studs on everything.
+
+**[Seen]**
+- Chunky, bright and readable from far away. Everything is big blocks.
+- **Two-tone checker on all ground and walls**: light and dark green grass, light and dark brown dirt, orange and yellow platform.
+- **Grass over walls**: a flat band with square blocks of different lengths hanging down. It's a signature of the look.
+- Saturated colours, slightly neon greens. Black outlines on UI text.
+
+---
+
+## 11. Screens and HUD
+
+**[Built]**, built with `UiKit` from the Figma designs:
+
+- **Left:** square icon buttons with bold outlined labels: Index (book) and Shop (basket).
+- **Right:** Dinos (paw) button.
+- **Bottom left:** ⚡ Throw Power in big blue outlined numbers, and cash in big green outlined numbers.
+- **Bottom:** 10-slot hotbar with each dino's $/s and key number.
+- **Panels:** Index, Robux Shop, My Dinos (ON PLOT / BACKPACK tabs), Egg Shop (opens only from its stall), Welcome Back.
 - Everything shrinks to fit short screens.
+- **[Owner, 2026-11-06] Phones** (play-tested by the owner's friends on an iPhone): the HUD came out PC-sized, the
+  Shop button covered Throw Power, the hotbar covered the cash, the jump button sat on the meter, the PERFECT! tint
+  and the throw's bars stopped short of the screen's sides, the sparkles were empty boxes, the NEW! sticker sat on
+  the monster's name, the #1 crown was a big yellow blob, and monsters couldn't be picked up off the base. **[Built]**
+  fixes:
+  - Sizes come from the area our UI really gets (`UiKit.screenSize`: under the top bar, inside the phone's safe
+    area), read the landscape way round: the Roblox app is portrait on phones, and a size read while the game was
+    still loading made the HUD full size. The hotbar shrinks to fit between the cash/power and the same margin on
+    the right; its $/s stays readable.
+  - While aiming, throwing and in the reveal the phone's joystick and jump button are hidden, and a tap anywhere
+    throws (before, only a tap on the meter did). Full-screen layers (the throw's bars, the fades, the PERFECT! edges)
+    reach past the notch. The aim camera pulls back for big avatars (`ThrowCinematic.setThrower`).
+  - **Tap or click one of your monsters on your base to pick it up** (on a computer it's outlined while the mouse is
+    over it), as well as PICK UP in My Dinos. A drag turns the camera without dropping a carried monster.
+  - The crown is shiny metal with a soft light, not Neon, and no bigger than a normal head's. The event icon sits just
+    above a phone's (smaller, lower) jump button.
+  - Text uses no symbols phone fonts lack ("✦", "✓", "▲", "›" showed as empty boxes); sparkles are drawn shapes.
 
 **[Seen]** The reference's gear icon sits next to Throw Power, and spending shows a red "-$X" floating up from cash.
 
@@ -1168,30 +1318,55 @@ just a thick ink outline and a hard shadow:
 feel powerful and compete; how big the numbers get doesn't matter.
 
 **[Built]** Worked out with a play simulation (a player who trains 40 s, throws 4 times, then buys the cheapest
-thing they can, no Robux) that uses the game's real formulas, over all 15 maps (maps 9 to 15 continue the
-pattern: each 100 studs longer than the last, incomes ×100, one egg each):
+thing they can, no Robux) that runs the game's own code (2026-11-06, median of 5 runs):
 
 | Map | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Reached after | 2 min | 9 min | 18 min | 34 min | 54 min | 75 min | 1.9 h | 2.8 h | 4 h | 6 h | 9 h | 14 h | 21 h | 31 h |
+| Reached after | 3 min | 9 min | 16 min | 29 min | 42 min | 65 min | 1.7 h | 2.6 h | 3.9 h | 5.6 h | 8.5 h | 13 h | 20 h | 30 h |
+| With x2 Training or x2 Power | 1 min | 6 min | 9 min | 16 min | 25 min | 36 min | 54 min | 1.4 h | 2.1 h | 2.9 h | 4.4 h | 7 h | 10.5 h | 16 h |
+| With both passes | 1 min | 3 min | 7 min | 10 min | 16 min | 21 min | 31 min | 47 min | 70 min | 1.7 h | 2.5 h | 3.8 h | 5.9 h | 8.6 h |
+
+**[Owner, 2026-11-06]** The owner's friends reached far maps far too easily. Two causes, both fixed:
+1. Each rack upgrade had started multiplying XP per rep by 1.25 (`xpPerRepGrowth`) while a bar's XP only grew 1.1%
+   a bar, so training snowballed: map 15 in about 2 hours instead of 31. The friends' 20 gifted x500 lucky throws
+   (each a map's rarest in a rare colour and size, before the luck change in section 8b) made it under an hour.
+2. A bar's XP grew with how many bars you'd filled, so anything that gives more power per bar skipped the most
+   expensive bars: the x2 Power pass finished the game in 48 minutes.
 
 - **Income** by rank is 1, 3, 10, 40, 150, 500 $/s on the Forest, **×100 for each map after it** (`Config/Dinos`), so a
   new map's first good catch multiplies income at once (map 15's rarest: about $5 × 10^30/s before mutations).
 - **Throw Power works like the reference [Owner]:** XP fills a bar, and each full bar gives a fixed amount of power.
   **Rack upgrades** (the pad by the squat rack, bought with money) raise the power per bar in tiers: **5**, then
   **10** after 3 upgrades, **20** after 4 more, then each tier is one upgrade longer and gives 25% more (25, 31, 39...).
-  Upgrades cost $50, ×50 each (`Config/Training`). Each bar needs 1.1% more XP than the one before: early bars
-  fill in 2 seconds, by map 13 a bar takes about 2½ minutes (the x2 Training pass halves that). That growth, not
-  money, is what makes the later maps take hours. (With fixed-size bars every map took about 20 minutes and the
-  game was over in 5 hours.) A full bar floats "+5 ⚡ POWER"; the bar shows the power per bar.
+  Upgrades cost $50, ×50 each (`Config/Training`), and each also gives 25% more XP per rep (the pad shows
+  "+X XP / rep", like the reference's bars). **The XP a bar needs follows how far your Throw Power reaches**, like
+  the reference ("XP per level grows with distance down the lane"): 2 XP at the throw line, about 2x more for every
+  map a PERFECT throw passes (`baseXp`, `xpPerMap` 2.03, `Training.xpForNextBar`). Power from packs counts too. So
+  x2 Power and x2 Training each make training exactly 2x faster, and a power pack skips just the bars it replaces.
+  Early bars fill in seconds; a bar takes about 30 s at map 8, 3 minutes at map 13 and 9 minutes at map 15. That,
+  more than money, makes the later maps take hours; money gates the rack upgrades (each costs minutes of income
+  early on, hours later). A full bar floats "+5 ⚡ POWER"; the bar shows the power per bar.
 - **Throw Power packs (Robux) [Owner]:** power put straight into your stats, small amounts at small prices so
   everything looks cheap: +100, +500, +1,000 (`Config/Shop` `powerPacks`).
 - **x2 Power (Game Pass) [Owner]:** every full bar on the squat rack gives double power, forever. Its card sits under
   x2 Cash and x2 Training in the shop; it shows SOON until its pass id is in `Config/Shop` `doublePower`.
 - **Base upgrades** $1,000, ×10 each (`Config/Plot`).
 - **One egg per map** (`Config/Eggs`), each 100x the one before: Dirty (free), Spotted ($500), Golden ($50K), Lava
-  ($5M), Frost ($500M), Shadow ($50B), Abyss ($5T), Cosmic ($500T); luck ×1 to ×4.5. The Egg Shop row scrolls
-  sideways past five.
+  ($5M), Frost ($500M), Shadow ($50B), Abyss ($5T), Cosmic ($500T), Eclipse ($50Qa), Forbidden ($5Qi), Carnival
+  ($500Qi), Clockwork ($50Sx), Thorn ($5Sp), Spore ($500Sp), Weeping ($50Oc); luck ×1 to ×17. **[Built], [Owner,
+  2026-11-05]** Each egg's model follows its map (`assets/models/build_egg_blueprints.py`), and its card wears its
+  colour and names its map. The Egg Shop row scrolls sideways past five and opens on your best egg.
+  **[Owner, 2026-11-06]** The eggs made in Blender, "nothing special but more attractive as they ramp up in price".
+  **[Built]** `assets/models/build_eggs.py` (renders in `design/eggs/`, FBX in `assets/models/fbx/00_Eggs/Props/`): all
+  15 are the same faceted shell, exactly the thrown egg's size, each painted by its own pattern and following its map.
+  The first three are plain patterns (dirt smudges, spots, a gold zigzag); then glow comes in (Lava's cracks, Frost's
+  snow cap and icicles, Shadow's glowing eyes); then extra pieces (Abyss's lure, Cosmic's twinkling stars and gold
+  planet's ring, Eclipse's glowing corona); then gold, gems and machinery (Forbidden's gilt book binding and gem clasp,
+  Carnival's candy stripes and bulbs, Clockwork's gear, gauge and wind-up key); and the last three wear a gold crown with
+  glowing roses (Thorn), glowing mushrooms (Spore) and a red weeping eye under a glowing halo (Weeping). From Cosmic on the
+  yolk glows too. Each egg is two halves, the top half's parts ending in `Lid`, each closed by white and yolk. In the game
+  (`src/shared/EggModel.luau`) the shop's cards and the egg in the hand and in flight use the Blender egg once it's in
+  `ReplicatedStorage.Assets.Eggs`, and the block egg until then. The Prism Egg keeps its block model.
 - **Number names** go up to 10^63 (K, M, B, T, Qa, Qi, Sx, Sp, Oc, No, Dc ... Vg).
 - **Next goal bar** at the top: the Throw Power the next world needs with a PERFECT throw (a bar in that world's
   colour), and the cheapest thing to buy next with "$X to go" or "you can buy it!".
@@ -1212,17 +1387,63 @@ pattern: each 100 studs longer than the last, incomes ×100, one egg each):
 - **Egg Shop [Built]:** one egg per map, see The economy above.
 - **Robux Shop [Built]:** x2 Cash, x2 Training, x2 Power, lucky throws x100 (R$ 3 once, then R$ 9) and x500 (one throw each), Server Luck x2 (15 min), 4 cash packs, 4 Throw Power packs, free starter dino.
   Product ids still have to be created on the Creator Dashboard.
-- **Not built yet:** dinos priced as a % of your best dino, Prism Egg, GIFT button.
-- **Index [Built]:** every dino by world. **[Owner, 2026-11-05]** Redesigned (Figma "Throw Eggs - Index &
+  **[Owner, 2026-11-05]** Everything bought comes back after leaving. Server Luck runs for the whole server, and the
+  buyer also keeps the time they haven't used (it only counts down while they play): it starts again when they next
+  join, even if the old server closed. Game Passes are checked on join, with retries if Roblox doesn't answer.
+- **Special monsters [Built], [Owner, 2026-11-05]:** Game Passes at the top of the Shop, bought once (a pass bought on
+  the Store page counts, given on the next join). They can't be sold. They belong to no map and earn a share of your best monster (`Config/Specials`). The income is fixed when bought and saved on the monster;
+  other special monsters never count as "best", so buying a second can't multiply the first. A bought monster always
+  fits: it goes to the backpack if the base is full. First one: **Gloomfin**, 900%, a dark shark floating clear of the
+  ground with red glowing eyes (`assets/models/build_special_monsters.py`; our name, the owner may rename it). Its
+  pass id is in `Config/Specials`. **[Owner, 2026-11-06]** Remade as "the most aggressive" of the specials: hunched
+  and scarred, a mouth that is most of its face hanging open on crooked teeth with a red eye in its throat, slit eyes
+  under hard brows and bone horns, a torn bone-edged dorsal fin, bone spikes, burning gills and slashes, and foam
+  dripping from its jaws. It swims and hovers like The Abyss's monsters, and its foam's Drip bone gives it The
+  Weeping Dark's RAGE on top: every 4 seconds it lunges and bites, snapping between, its tail cracking.
+- **Prism Egg [Built], [Owner, 2026-11-05]:** a Robux egg (Developer Product) bought again and again, like the
+  reference's Rainbow Egg, on a card under the pass monsters. It hatches at once, rolled on the server, into one of
+  three special monsters of Gloomfin's dark family: **Duskeel** 150% (70%), **Umbray** 300% (25%), **Dreadlure** 900%
+  (5%) (`Config/Shop` prismEgg, `Config/Specials`). The card shows each one turning with its odds, its share and what
+  it would earn now (Roblox wants odds shown before buying). A hatch gets a shout. Like Gloomfin they never count as
+  "best", but they can be sold, since another egg can always be bought; pass monsters still can't.
+- **GIFT [Built], [Owner, 2026-11-05]:** "only dev products and game passes": a GIFT button in the Shop's header opens
+  a panel to pick a player in the server, then one of: Prism Egg, Gloomfin, Luck x100/x500, x2 Cash/Training/Power,
+  cash packs, Throw Power packs (`Shared/Gifts`). Server Luck is left out (it's for the whole server already), and so
+  is the one-time Luck x100 deal. Developer Products are gifted with their own ids: the server remembers who the gift
+  is for when it shows the prompt and gives the receipt to them. A Game Pass can't be bought for someone else, so each
+  pass has a gift Developer Product priced like it (`giftProductId`, 0 until created); a gifted pass is saved on the
+  receiver (`giftedPasses`). The receiver gets a shout "GIFT FROM NAME!"; if they left before it arrived, the buyer
+  keeps it. Someone who already has a pass shows OWNED and can't be sent it.
+- **Shop redesign [Built], [Owner, 2026-11-06]:** "like the original but more beautiful, more effects". Figma
+  "Throw Eggs - Shop" (https://www.figma.com/design/kMvEjKptJBD0q5GRR5SaX4) is the design; `ShopController` builds it.
+  Each pass monster gets a big featured card with the real model **playing its own idle, never spinning** (it bursts out
+  over the card's top edge), red light rays turning behind it, a breathing glow and a glowing pedestal; the Prism Egg
+  card has a shimmering rainbow edge, drifting rainbow beams and its three monsters on tier-coloured pedestals (Dreadlure
+  bigger, JACKPOT!). Boosts, packs and passes are card grids; the free starter monster idles on a pedestal. Effects only
+  run while the panel is open (`DinoLifeController.showcase`).
+- **Not built yet:** more special monsters.
+- **Index [Built], [Owner, 2026-11-06]:** the tabs below are replaced. "Scrollable like it was in the very first version",
+  with real map pictures, and "the maps to show on the left edge", ready for 8 monsters a map. Figma Index v2: one
+  scrolling list; each map's in-game picture on a card flush with the panel's left edge (number, name, found bar, the XP
+  reward) and its monsters beside it in rows of four. It opens at your farthest map. Only maps near the screen hold live
+  models, and none while it's closed. Pictures in `Config/Index` `mapPictures`.
+- **Index, earlier:** every dino by world. **[Owner, 2026-11-05]** Redesigned (Figma "Throw Eggs - Index &
   Inventory"): a tab per map down the left (its colours, number, "4/6 found", a tick when complete; maps whose
   monsters aren't made yet say COMING SOON), and the chosen map's banner and its 6 monsters on the right, **sorted by
   rarity** from COMMON to the map's boss, a new 6th tier **MYTHIC** (pink; it also colours that monster's reveal and
   lucky banner): COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, MYTHIC. Each tile shows the real model turning, its rarity,
   its "1 in X" and its name; unseen ones are black silhouettes named "???" with their rarity and odds still shown.
   The total found sits in the header, the map's reward under its monsters. It opens on the farthest map you've
-  found anything in. Completing a world gives +10% $/s and +5% luck for good.
-- **Timed events [Built], accepted by the owner:** Meteor Shower (2x mutations), Growth Spurt (2x sizes), Gold Rush
-  (2x cash). 10 minutes each with a 20 minute break.
+  found anything in. **[Owner, 2026-11-06]** Completing a world gives only
+  x2 training XP for 15 minutes (`Config/Index` xpBoost; shown in the top-right panel): no cash or luck from the Index.
+- **Timed events [Built], [Owner, 2026-11-05]:** every 15 minutes one starts and runs 5 minutes, taking turns:
+  Double Luck (2x luck) and Ghost Rush (GHOST 10x likelier) (`Config/Events`, from the server clock, the same on
+  every server). A shout when one starts and an icon at the bottom right with the time left; hover (PC) or tap
+  (phone) for what it does. The older Meteor Shower / Growth Spurt / Gold Rush were removed before this.
+- **Server best catch [Built], [Owner, 2026-11-05]:** the rarest catch of the server's life stands on a pedestal at
+  the arena's front-left, against the wall, off every walking path (`Config/BestCatch`, `BestCatchService`) at its map's standard size, never its size mutation's.
+  A sign in front, part of the map (not a floating label), shows mutation, size, name, odds, income, world and
+  who caught it. Pedestal: `build_best_catch.py` > `fbx/01_Forest/Arena/prop_BestCatchPedestal.fbx`.
 - **No rebirth [Owner].** The reference game has none.
 
 ---
@@ -1258,13 +1479,14 @@ new base when they load (the best dinos stay, the rest go to the backpack).
 ## 15. Open questions for the owner
 
 1. Why are some bases' fences blue instead of wood? (Upgraded? Top level? A paid item?)
-2. Do racks change look as you progress, since they're for showing off? One rack in the screenshots is gold and another blue.
-3. Do empty or new players have a rack? Only two bases in the screenshots seem to have one.
+2. ~~Do racks change look as you progress?~~ Yes, with rack upgrades (section 5).
+3. ~~Do empty or new players have a rack?~~ Every base has one; a base with no owner has the Gym rack (section 5).
 4. ~~Where do the leaderboards stand?~~ Answered by a screenshot (section 6).
 5. Does the corridor floor step **down** at each new world, as the thumbnail shows?
 6. Is the sky changing a normal day/night cycle or part of the Halloween event?
 7. How do you get back from a throw if you walk down into the corridor? Can players walk down there at all?
-8. Our item is an egg. Should the dino just stand over it like the reference, or should the egg also crack at the end?
+8. ~~Our item is an egg. Should the dino just stand over it like the reference, or should the egg also crack at the end?~~
+   Answered 2026-11-06: it's cut in half when it lands, white and yolk showing (section 7, Flight).
 9. ~~Does the amber glow in the walking view change colour with rarity?~~ Answered: the glow shows the catch's colour
    mutation (the video's animal was Gold). Still unknown: whether the reference darkens the edges on a catch with no
    colour mutation. Ours walks with a clear view then.

@@ -15,10 +15,12 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
+local Index = require(ReplicatedStorage.Shared.Config.Index)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
+local RevealAura = require(script.Parent.RevealAura)
 local RevealCloseUp = require(script.Parent.RevealCloseUp)
 local RevealRays = require(script.Parent.RevealRays)
 local RevealWalk = require(script.Parent.RevealWalk)
@@ -41,6 +43,8 @@ local LABEL_WIGGLE = 3 -- degrees the luck label rocks either way
 local NEW_COLORS = { "#ffc14d", "#ff7a2f" }
 local BANNER_HEIGHT = 132
 local STICKER_ROW = 84
+local LUCK_ABOVE_BOTTOM = 150 -- design pixels from the screen's bottom to the luck label and counter, clear of the letters
+local LUCK_SCALE = 0.85 -- they're a little smaller down there
 local MIN_TEXT_BRIGHTNESS = 0.55 -- mutation names darker than this are lifted towards white
 -- The final text's rows, in design pixels (as built in buildGui), from the screen's bottom edge up: its gap, "tap to
 -- continue", the message, the odds, $/s, the name, size and mutation, then the tier sticker. The camera frames the
@@ -178,7 +182,7 @@ local function edgeGlow(parent: Instance, top: boolean): Frame
 	glow.Name = if top then "GlowTop" else "GlowBottom"
 	glow.AnchorPoint = Vector2.new(0, if top then 0 else 1)
 	glow.Position = UDim2.fromScale(0, if top then 0 else 1)
-	glow.Size = UDim2.fromScale(1, 0.36)
+	glow.Size = UDim2.fromScale(1, 0.22) -- [Owner, 2026-11-06] was 0.36: with a strong label it washed the whole screen
 	glow.BackgroundTransparency = 1
 	glow.BorderSizePixel = 0
 	glow.Parent = parent
@@ -201,17 +205,31 @@ local function buildGui()
 	local inset = GuiService:GetGuiInset().Y
 
 	local glows = { edgeGlow(gui, true), edgeGlow(gui, false) }
+	-- Lucky catches darken the screen's edges as their luck builds, so the monster in the middle stands out
+	-- (Config/Reveal aura vignette). Built-in Roblox image: black at the edges, clear in the middle.
+	local vignette = Instance.new("ImageLabel")
+	vignette.Name = "Vignette"
+	vignette.AnchorPoint = Vector2.new(0.5, 0.5)
+	vignette.Position = UDim2.fromScale(0.5, 0.5)
+	vignette.Size = UDim2.fromScale(1.25, 1.25)
+	vignette.BackgroundTransparency = 1
+	vignette.Image = Reveal.walk.glow.darkImage
+	vignette.ImageTransparency = 1
+	vignette.ZIndex = 0
+	vignette.Parent = gui
 
-	-- Top: the luck label (LUCKY! ... GODLY!) and the "1 in X" counter.
+	-- The luck label (LUCKY! ... GODLY!) and the "1 in X" counter, just above the letters at the bottom, so the monster
+	-- has the top of the screen to itself and stays where it is when the final text comes [Owner, 2026-11-06: at the
+	-- top, the counter sat on the monster].
 	local top = Instance.new("Frame")
 	top.Name = "Top"
-	top.AnchorPoint = Vector2.new(0.5, 0)
-	top.Position = UDim2.new(0.5, 0, 0, inset + 4)
+	top.AnchorPoint = Vector2.new(0.5, 1)
+	top.Position = UDim2.new(0.5, 0, 1, -LUCK_ABOVE_BOTTOM * scale)
 	top.Size = UDim2.fromOffset(1000, 210)
 	top.BackgroundTransparency = 1
 	top.Visible = false
 	top.Parent = gui
-	addScale(top, scale)
+	addScale(top, scale * LUCK_SCALE)
 
 	local luck = UiKit.text(top, "", 84)
 	luck.Name = "Luck"
@@ -320,10 +338,15 @@ local function buildGui()
 	local newTag = UiKit.tag(nameRow, "NEW!", NEW_COLORS, 30, 9)
 	newTag.AnchorPoint = Vector2.new(0, 0.5)
 	newTag.Visible = false
+	-- TextBounds is in screen pixels, already shrunk or grown by the UIScales above the name, while the tag's
+	-- position is in design pixels; divide that out, or on a phone (scale ~0.5) the tag landed on the name.
 	local function placeNewTag()
-		newTag.Position = UDim2.new(0.5, name.TextBounds.X / 2 + 14, 0, 22)
+		local shown = name.AbsoluteSize.Y / 86
+		local halfWidth = if shown > 0 then name.TextBounds.X / shown / 2 else 0
+		newTag.Position = UDim2.new(0.5, halfWidth + 14, 0, 22)
 	end
 	name:GetPropertyChangedSignal("TextBounds"):Connect(placeNewTag)
+	name:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeNewTag)
 	placeNewTag()
 
 	local income = UiKit.text(final, "", 36, UiKit.CASH)
@@ -447,6 +470,7 @@ local function buildGui()
 		scale = scale,
 		inset = inset,
 		glows = glows,
+		vignette = vignette,
 		top = top,
 		luck = luck,
 		luckGradient = luckGradient,
@@ -623,11 +647,9 @@ local function slamLabel(tier)
 	local slam = hud.slam
 	slam.Text = tier.label
 	hud.slamGradient.Color = tierGradient(tier)
-	-- At slamY down the screen, but always below the counter, so its number stays readable during the pause.
+	-- At slamY down the screen: between the monster and the counter below, which keeps climbing in view.
 	local screenHeight = workspace.CurrentCamera.ViewportSize.Y
-	local below = if hud.pill.Visible then hud.pill.AbsolutePosition.Y + hud.pill.AbsoluteSize.Y else 0
-	local slamHalf = slam.Size.Y.Offset * hud.scale * settings.slamScale / 2
-	slam.Position = UDim2.new(0.5, 0, 0, math.max(screenHeight * settings.slamY, below + slamHalf + 8 * hud.scale))
+	slam.Position = UDim2.new(0.5, 0, 0, screenHeight * settings.slamY)
 	slam.Rotation = -4
 	slam.TextTransparency = 1
 	slam:FindFirstChildOfClass("UIStroke").Transparency = 1
@@ -784,30 +806,22 @@ local function play(catch, egg: BasePart)
 	-- Only catches that show the counter get a luck label, sticker and odds at the end.
 	local finalTier = if showCounter then tierFor(catch.oneIn) else nil
 	local message = if catch.completedBiome
-		then `{catch.completedBiome} complete! Permanent bonus earned`
+		then `{catch.completedBiome} complete! x{Index.xpBoost.multiplier} XP for {Index.xpBoost.seconds // 60} min`
 		elseif catch.newBest and not catch.isNew then "NEW BEST!"
 		else STORED_TEXT[catch.storedIn]
 	local finalTierIndex = if finalTier then table.find(Reveal.tiers, finalTier) else 0
 	local shakeAngle = math.rad(Reveal.shake[finalTierIndex + 1] or 0)
-	-- The counter pauses on each luck label it reaches, so the whole climb is that much longer. The climb's own clock
-	-- (climbed) stops during a pause (until holdUntil); the camera keeps moving on real time over the whole of it.
-	local labelCount = 0
-	if showCounter then
-		for _, tier in Reveal.tiers do
-			if catch.oneIn >= tier.minOneIn then
-				labelCount += 1
-			end
-		end
-	end
-	local total = duration + labelCount * Reveal.lucky.holdTime
+	-- The counter never stops [Owner, 2026-11-06]: each luck label slams onto the screen while the numbers keep
+	-- climbing past it. (It used to pause on every label.)
+	local total = duration
 	local climbed = 0
 	local lastFrame = 0
-	local holdUntil = 0
-	local heldAt = nil -- the label's own number, shown on the counter during its pause
 	local joltAt, joltAngle = 0, 0
 	local revealedCount = 0
 	local currentTier = nil
 	local dino = nil
+	local aura = nil -- the luck building up round the monster (RevealAura), once it stands there
+	local back, backAtCard = 0, 0 -- lucky catches: how far back the camera still is in its slow creep in (0 to 1)
 	-- The close-up and pull back (RevealCloseUp), set up once the walk is over. The pull back runs from pullFrom
 	-- (0 to 1) at pullAt for pullLength seconds; a tap to skip restarts it from where it is, quicker.
 	local stage = nil
@@ -836,16 +850,21 @@ local function play(catch, egg: BasePart)
 	hud.final.Visible = false
 	clearColourMoment()
 
-	-- `slam` on the climb: the label slams in, the counter pauses on it and the camera jolts.
+	-- `slam` on the climb: the label slams in and the camera jolts, while the counter keeps climbing. The aura round the
+	-- monster grows.
 	local function setTier(tier, slam: boolean?)
 		currentTier = tier
 		sparkles.Rate = math.min(tier.sparkles, SPARKLE_RATE_MAX)
 		sparkles.Color = ColorSequence.new(tier.color, WHITE)
 		pulse(tier, slam)
+		local index = table.find(Reveal.tiers, tier) or 1
+		if aura then
+			aura.setTier(tier, index, slam)
+		end
+		local strength = (index - 1) / math.max(#Reveal.tiers - 1, 1)
+		tween(hud.vignette, 0.5, { ImageTransparency = Reveal.aura.vignette[1] + (Reveal.aura.vignette[2] - Reveal.aura.vignette[1]) * strength })
 		if slam then
 			local now = os.clock()
-			holdUntil = now + Reveal.lucky.holdTime
-			heldAt = tier.minOneIn
 			joltAt = now + Reveal.lucky.slamIn
 			joltAngle = math.rad(Reveal.lucky.jolt[table.find(Reveal.tiers, tier) or 1] or 0)
 			sparkles:Emit(30)
@@ -873,9 +892,14 @@ local function play(catch, egg: BasePart)
 		if finalTier and finalTier ~= currentTier then
 			setTier(finalTier)
 		end
+		backAtCard = back
 		hud.top.Visible = false
 		hud.letters.Visible = false
 		colourMoment(rarity, sparkles, stage, finalTierIndex / #Reveal.tiers)
+		if aura then
+			local pair = UiKit.RARITY[rarity]
+			aura.final(finalTierIndex / #Reveal.tiers, if finalTier then finalTier.color else Color3.fromHex(pair[2]))
+		end
 
 		if finalTier then
 			local sticker = UiKit.tag(hud.stickerHolder, finalTier.sticker.label, finalTier.sticker.colors, 44, -4)
@@ -982,6 +1006,7 @@ local function play(catch, egg: BasePart)
 	}
 	stage = RevealCloseUp.stage(catch, egg, walkPlan and walkPlan.approach, total, nil, band, showCounter)
 	dino = stage.model
+	aura = RevealAura.new(stage.model, ground.Y)
 	local monsterFrame, monsterExtent = stage.model:GetBoundingBox()
 	hud.showBlockers = hideBlockers(RevealCloseUp.cameraAt(stage, 1).Position, monsterFrame, monsterExtent)
 	-- Seen from far off, a giant would be lost in the world's haze, so the haze thins the further back the camera ends.
@@ -1005,17 +1030,28 @@ local function play(catch, egg: BasePart)
 	local stepConnection = RunService.RenderStepped:Connect(function()
 		local now = os.clock()
 		local elapsed = now - startedAt
-		if now >= holdUntil then
-			climbed += now - lastFrame
-			heldAt = nil
-		end
+		climbed += now - lastFrame
 		lastFrame = now
 		local progress = math.min(climbed / duration, 1)
 
 		hud.luck.Rotation = LABEL_WIGGLE * math.sin(elapsed * 4)
 
 		camera.CameraType = Enum.CameraType.Scriptable -- in case anything else took the camera back
-		local view = RevealCloseUp.cameraAt(stage, pulled(now))
+		-- Lucky catches: pulled back further than the final framing, then a slow creep in that lands with the last
+		-- number (or quickly, on a tap).
+		if stage.push > 0 then
+			if cardShown then
+				local u = math.clamp((now - cardShownAt) / Reveal.closeUp.skipTime, 0, 1)
+				back = backAtCard * (1 - u * u * (3 - 2 * u))
+			else
+				local settled = progress * progress * (3 - 2 * progress)
+				back = pulled(now) * (1 - settled)
+			end
+		end
+		local view = RevealCloseUp.cameraAt(stage, pulled(now), back)
+		if aura then
+			aura.update(now)
+		end
 		if hud.rays then
 			hud.rays.update(now, view)
 		end
@@ -1038,11 +1074,10 @@ local function play(catch, egg: BasePart)
 
 		if showCounter then
 			local value = catch.oneIn ^ progress
-			hud.counter.Text = Format.commas(heldAt or value)
+			hud.counter.Text = Format.commas(value)
 			local tier = tierFor(value)
 			if tier and tier ~= currentTier then
 				setTier(tier, true)
-				hud.counter.Text = Format.commas(heldAt)
 			end
 		end
 
@@ -1052,7 +1087,7 @@ local function play(catch, egg: BasePart)
 			showLetter(tiles[letterOrder[revealedCount]])
 		end
 
-		if progress >= 1 and now >= holdUntil then
+		if progress >= 1 then
 			showCard(false)
 		end
 	end)
@@ -1082,6 +1117,10 @@ local function play(catch, egg: BasePart)
 	for _, glow in hud.glows do
 		glow.BackgroundTransparency = 1
 	end
+	if aura then
+		aura.destroy()
+	end
+	hud.vignette.ImageTransparency = 1
 	if dino then
 		dino:Destroy()
 	end
@@ -1123,10 +1162,13 @@ function RevealController.play(catch, egg: BasePart)
 			hud.showBlockers = nil
 		end
 		ContextActionService:UnbindAction(SKIP_ACTION)
-		local leftover = workspace:FindFirstChild("RevealDino")
-		if leftover then
-			leftover:Destroy()
+		for _, name in { "RevealDino", "RevealAura" } do
+			local leftover = workspace:FindFirstChild(name)
+			if leftover then
+				leftover:Destroy()
+			end
 		end
+		hud.vignette.ImageTransparency = 1
 		error(err, 0)
 	end
 	finishedEvent:Fire(catch)

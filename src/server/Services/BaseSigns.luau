@@ -183,7 +183,7 @@ function BaseSigns.buildSignFace(board: BasePart, face: Enum.NormalId)
 	end
 	piece("Paw", "🐾", WHITE, 60, 1)
 	piece("Now", "", WHITE, 74, 2)
-	piece("Arrow", "›", WHITE, 26, 3)
+	piece("Arrow", ">", WHITE, 26, 3) -- plain ">": phone fonts may lack "›"
 	piece("Next", "", NEXT, 74, 4)
 
 	local bar = Instance.new("Frame")
@@ -230,7 +230,7 @@ function BaseSigns.setSignFace(board: BasePart, data, cash: number?)
 		card.Bar.Price.TextColor3 = WHITE
 	else
 		local cost = Plot.upgradePrice(data.plotUpgrades)
-		card.Bar.Price.Text = `▲ {Format.cash(cost)}`
+		card.Bar.Price.Text = Format.cash(cost) -- no "▲": phone fonts lack it
 		card.Bar.Price.TextColor3 = if (cash or 0) >= cost then CASH else SHORT
 	end
 end

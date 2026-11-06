@@ -2,8 +2,6 @@
 -- large outlined numbers with an icon (⚡ Throw Power, cash). Client only. An icon is its image from
 -- Config/Icons when one is set, else the emoji given. Sizes shrink on short screens (phones) so
 -- everything still fits.
-local GuiService = game:GetService("GuiService")
-
 local UiKit = require(script.Parent.UiKit)
 
 local HudStyle = {}
@@ -23,18 +21,13 @@ local MIN_SCALE = 0.5
 
 local cachedScale: number? = nil
 
--- 1 on normal screens, smaller on short ones. Worked out once, when the HUD is built, from
--- the height left under Roblox's top bar.
+-- 1 on normal screens, smaller on short ones. Worked out once, when the HUD is built, from the height our
+-- ScreenGuis really get (UiKit.screenSize: under the top bar, inside a phone's safe area, landscape).
 function HudStyle.scale(): number
 	if cachedScale then
 		return cachedScale
 	end
-	local camera = workspace.CurrentCamera
-	while camera.ViewportSize.Y <= 1 do
-		task.wait()
-	end
-	local usable = camera.ViewportSize.Y - GuiService:GetGuiInset().Y
-	cachedScale = math.clamp(usable / DESIGN_HEIGHT, MIN_SCALE, 1)
+	cachedScale = math.clamp(UiKit.screenSize().Y / DESIGN_HEIGHT, MIN_SCALE, 1)
 	return cachedScale
 end
 

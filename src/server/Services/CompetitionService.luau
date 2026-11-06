@@ -27,7 +27,9 @@ local function buildCrown(head: BasePart): Model
 		local part = Instance.new("Part")
 		part.Size = size
 		part.Color = color
-		part.Material = Enum.Material.Neon
+		-- Shiny metal, not Neon: with the game's bloom a Neon crown glowed into a big yellow blob, worst on a phone.
+		part.Material = Enum.Material.Foil
+		part.Reflectance = 0.15
 		part.CanCollide = false
 		part.CanQuery = false
 		part.CanTouch = false
@@ -43,14 +45,21 @@ local function buildCrown(head: BasePart): Model
 		part.Parent = crown
 		return part
 	end
-	-- A band of four sides with a spike on each corner and a gem at the front.
-	local width = head.Size.X * 1.05
+	-- A band of four sides with a spike on each corner and a gem at the front. Sized to the head, but never past
+	-- a big avatar's head size, which made a giant crown.
+	local width = math.clamp(head.Size.X * 1.05, 1, 2.4)
 	for side = 0, 3 do
 		local turn = CFrame.Angles(0, side * math.pi / 2, 0)
 		piece(Vector3.new(width, 0.45, 0.15), turn * CFrame.new(0, 0, -width / 2), settings.color)
 		piece(Vector3.new(0.3, 0.6, 0.3), turn * CFrame.new(width / 2, 0.5, -width / 2) * CFrame.Angles(0, math.pi / 4, 0), settings.color)
 	end
-	piece(Vector3.new(0.35, 0.35, 0.35), CFrame.new(0, 0, -width / 2 - 0.12), settings.gem, Enum.PartType.Ball)
+	local gem = piece(Vector3.new(0.35, 0.35, 0.35), CFrame.new(0, 0, -width / 2 - 0.12), settings.gem, Enum.PartType.Ball)
+	-- A soft gold light round it does the glowing instead.
+	local light = Instance.new("PointLight")
+	light.Color = settings.color
+	light.Brightness = 1.2
+	light.Range = 6
+	light.Parent = gem
 	crown.Parent = head.Parent
 	return crown
 end

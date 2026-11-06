@@ -227,17 +227,18 @@ def animate(armature):
 
 
 def rage_maw(m, f, skull_w, length, snout_w, upper_h, lower_h, rng, gape=0.2, drop=0.42, upper="Body", lower="Accent", tooth=0.4, per_side=6, head="Head",
-             jaw="Jaw", tongue=True, lift=0.12, on_jaw=None, eye=0.28, jaw_long=1.0):
+             jaw="Jaw", tongue=True, lift=0.12, on_jaw=None, eye=0.28, jaw_long=1.0, back_h=None):
     """The mouth they share, built in frame f, whose origin is the middle of the mouth's back and whose +Y is out of the
     mouth: an upper jaw on the head bone, a lower jaw on the jaw bone hanging open by drop (radians), two rows of crooked
-    teeth in each, strands stretched between the jaws, and at the back of the throat, the throat eye. Returns the
+    teeth in each, strands stretched between the jaws, and at the back of the throat, the throat eye. back_h shortens the
+    throat's back wall, for a head whose cheeks close the mouth's sides (it hangs below the jaw otherwise). Returns the
     snout's top height along it."""
     m.bone = head
     back = (-0.05, 0, gape / 2 + upper_h * 0.5, skull_w * 0.96, upper_h)
     tip = (length, 0, gape / 2 + upper_h / 2 + lift, snout_w, upper_h)
     yloft(f, upper, back, tip)
     yloft(f, "Mouth", (0, 0, gape / 2 - 0.03, skull_w * 0.84, 0.06), (length * 0.95, 0, gape / 2 + lift * 0.95 - 0.03, snout_w * 0.86, 0.06))
-    open_h = gape + drop * length * 0.8 + 0.2
+    open_h = back_h if back_h is not None else gape + drop * length * 0.8 + 0.2
     f.box("Mouth", 0, 0.03, gape / 2 - open_h / 2, skull_w * 0.88, 0.12, open_h)
     if eye:
         z = gape / 2 - open_h * 0.5

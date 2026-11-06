@@ -83,6 +83,24 @@ return {
 		{ id = "PlumedWyrm",      name = "Plumed Wyrm",      chance = 400,  income = 2e18 },
 		{ id = "EclipseDevourer", name = "Eclipse Devourer", chance = 3000, income = 5e18 },
 	},
+	-- Models from assets/models/build_forbidden_library_monsters.py (dino_<id>): ink blots to the tome tyrant.
+	ForbiddenLibrary = {
+		{ id = "Inkling",    name = "Inkling",     chance = 2,    income = 1e18 },
+		{ id = "HermitTome", name = "Hermit Tome", chance = 4,    income = 3e18 },
+		{ id = "WaxHound",   name = "Wax Hound",   chance = 12,   income = 1e19 },
+		{ id = "Quillback",  name = "Quillback",   chance = 60,   income = 4e19 },
+		{ id = "HexOwl",     name = "Hex Owl",     chance = 400,  income = 2e20 },
+		{ id = "TomeTyrant", name = "Tome Tyrant", chance = 3000, income = 5e20 },
+	},
+	-- Models from assets/models/build_midnight_carnival_monsters.py (dino_<id>): the fair's attractions, all teeth.
+	MidnightCarnival = {
+		{ id = "JackSnap",      name = "Jack Snap",      chance = 2,    income = 1e20 },
+		{ id = "PopcornFiend",  name = "Popcorn Fiend",  chance = 4,    income = 3e20 },
+		{ id = "Twisty",        name = "Twisty",         chance = 12,   income = 1e21 },
+		{ id = "NightmareMare", name = "Nightmare Mare", chance = 60,   income = 4e21 },
+		{ id = "Grinmaster",    name = "Grinmaster",     chance = 400,  income = 2e22 },
+		{ id = "BigTopTerror",  name = "Big Top Terror", chance = 3000, income = 5e22 },
+	},
 	-- Models from assets/models/build_clockwork_citadel_monsters.py (their keys, saw, drill and gear sail turn
 	-- on Key, Drill and Cog bones: DinoLifeController SPIN).
 	ClockworkCitadel = {
@@ -112,5 +130,15 @@ return {
 		{ id = "Sporantula",    name = "Sporantula",    chance = 60,   income = 4e27 },
 		{ id = "Gillotine",     name = "Gillotine",     chance = 400,  income = 2e28 },
 		{ id = "Shroomageddon", name = "Shroomageddon", chance = 3000, income = 5e28 },
+	},
+	-- Models from assets/models/build_weeping_dark_monsters.py (they lunge and weep: a Drip bone turns on
+	-- DinoLifeController RAGE and DRIP). Endless Grief is the thing behind the Last Door.
+	WeepingDark = {
+		{ id = "TeddyWrecks",  name = "Teddy Wrecks",  chance = 2,    income = 1e28 },
+		{ id = "GoodBoy",      name = "Good Boy",      chance = 4,    income = 3e28 },
+		{ id = "CasketCase",   name = "Casket Case",   chance = 12,   income = 1e29 },
+		{ id = "WailingWidow", name = "Wailing Widow", chance = 60,   income = 4e29 },
+		{ id = "DeathKnell",   name = "Death Knell",   chance = 400,  income = 2e30 },
+		{ id = "EndlessGrief", name = "Endless Grief", chance = 3000, income = 5e30 },
 	},
 }

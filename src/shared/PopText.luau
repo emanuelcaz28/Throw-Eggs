@@ -274,4 +274,10 @@ function PopText.punch(label: GuiObject)
 	end)
 end
 
+-- The building blocks, for one-off big moments built elsewhere (PerfectMoment): an outlined word with its hard
+-- shadow, fading a word, and reading a keyframe track ({ time, value, ease? }, ...) at a time.
+PopText.word = word
+PopText.setOpacity = setOpacity
+PopText.sample = sample
+
 return PopText

@@ -189,7 +189,7 @@ Small exact edits, one per file:
 | `Config/Decor` `corridor` | The same lists as `DECOR` in the script: `floor` (with `extras`), `rim`, `overhead`, `walls`, `spots`. A spot can have `face = "middle"` (turned towards the corridor) or `face = "along"` (down it). |
 | `Config/PropMotion` | The same as `MOTION`. |
 | `shared/Roles.luau` | New glowing roles in `glowing`. |
-| `IndexController` `CARD_COLOURS` | The world's two card colours (used once it has monsters). |
+| `Config/Index` `mapPictures` | The world's picture on its Index card: an in-game shot cropped to 628x553 (`design/index/cards`), uploaded to Roblox. Its colour there is the biome's `color`. |
 
 Then check that the script and the game agree; it catches every drift we've had:
 
@@ -255,7 +255,7 @@ bigger: build them bigger, or `grow(m, 1.3)` at the end. Commons are about 3 to 
 | `Drip`, `DripB` | tears falling for ever: `weeping(m, spots, ground)` in `build_weeping_dark_monsters.py`, spaced 0.6 or 1.6 apart. A monster with either bone also **rages**: it lunges, bites, claws and charges (`DinoLifeController` `RAGE`, `rage_of` in the script). For the most aggressive maps. Built before a `grow(m, k)`, pass `grown=k` so the gap comes out right |
 | `PalmL`, `PalmR` | hands held to the face that pull away in the roar and the lunge (Endless Grief): turn on the upright, pivot behind the wrist |
 | `Vent<n>` | spore clouds rising for ever out of a vent: `vent(m, n, base, parent, ...)` in `build_spore_hollow_monsters.py`, made by its `finish(m, k)` after the grow so the clouds stay 0.6 apart. A monster with these also **pounces** every 4 seconds: rears back, then lunges, jaw flung open, arms raking (`DinoLifeController` `POUNCE` and `VENT`, `pounce_of` in the script). A step below `RAGE` |
-| `MandL`, `MandR` | side jaws (mandibles, pincers, a mouth that opens four ways): `gill_maw(..., mandibles=dict(...))` in `build_spore_hollow_monsters.py`. They gnash, spread when the monster rears and fling open in the roar, turning on the upright |
+| `MandL`, `MandR` | side jaws (mandibles, pincers, a mouth that opens four ways): `rot_maw(..., mandibles=dict(...))` in `build_spore_hollow_monsters.py`. They gnash, spread when the monster rears and fling open in the roar, turning on the upright |
 
 **Spare eyes** use the role `Slit` for their pupils, not `Pupil`: the reveal aims at the middle of the `Pupil` parts, so an eye on a stalk would drag it away from the face. **Jaw** must sit in front of `Tail1` (or the `Spine` if there's no tail): that's how the game reads which way a monster faces.
 
@@ -323,3 +323,10 @@ once they're imported and tidied (step 8), list them in `Config/Dinos` (ids neve
   turned its rage on. A bone the game looks for must carry something, and check the bones in Studio after an import.
 - **`about = "self"` turns round the bounding box's middle.** Give a gear or a wheel an even number of teeth and
   spokes so that middle is its axle, or it wobbles.
+- **Monsters meant to be scary that came out as toys** (map 14's first six; the owner rejected them, 2026-11-06). What read
+  cute: a flat bar of a pupil across a round glowing eye (sleepy), big round glowing orbs (googly), red caps with spots
+  (a game's power-up), a cone or dome cap on a head (a witch's or a bowler hat), a thick flat-topped upper jaw (a box or a
+  treasure chest), straight thick legs (a table), small mouths and upright poses. What read scary: small burning eyes with a
+  thin upright slit in a black socket under a brow slanting hard to the nose, no white; a mouth that is most of the face,
+  hanging open on long needle teeth; dark bodies with bone-pale teeth, claws and spikes; heads low and thrust forward,
+  limbs reaching. `build_spore_hollow_monsters.py` (`rot_eye`, `rot_maw`) and `build_weeping_dark_monsters.py` have both.

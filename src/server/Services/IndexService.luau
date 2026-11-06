@@ -1,9 +1,6 @@
--- The Dino Index: which dinos a player has ever caught, and the permanent bonuses for
--- completing a biome. Bonuses are worked out from the saved list, so changing the
--- numbers in Config/Index also applies to existing players.
+-- The Dino Index: which dinos a player has ever caught, and the timed XP boost for completing a world.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Index = require(ReplicatedStorage.Shared.Config.Index)
 local PlayerData = require(script.Parent.PlayerData)
@@ -25,16 +22,6 @@ local function biomeComplete(data, biomeId: string): boolean
 	return true
 end
 
-local function completedCount(data): number
-	local count = 0
-	for _, biome in Biomes do
-		if biomeComplete(data, biome.id) then
-			count += 1
-		end
-	end
-	return count
-end
-
 -- Whether the player has ever caught anything from this biome (the new-map gift, Config/Hooks).
 function IndexService.hasCaughtIn(data, biomeId: string): boolean
 	for _, dino in Dinos[biomeId] or {} do
@@ -45,16 +32,7 @@ function IndexService.hasCaughtIn(data, biomeId: string): boolean
 	return false
 end
 
-function IndexService.cashMultiplier(data): number
-	return 1 + completedCount(data) * Index.cashBonusPerBiome
-end
-
-function IndexService.luckMultiplier(data): number
-	return 1 + completedCount(data) * Index.luckBonusPerBiome
-end
-
 local function publish(player: Player, data)
-	player:SetAttribute("IndexLuck", IndexService.luckMultiplier(data))
 	changedRemote:FireClient(player, data.discovered)
 end
 
@@ -66,7 +44,24 @@ function IndexService.discover(player: Player, dinoId: string, biome): (boolean,
 	end
 	data.discovered[dinoId] = true
 	publish(player, data)
-	return true, if biomeComplete(data, biome.id) then biome.name else nil
+	if not biomeComplete(data, biome.id) then
+		return true, nil
+	end
+	-- The world's x2 XP (Config/Index xpBoost), added to any that's still running.
+	data.xpBoostEndsAt = math.max(data.xpBoostEndsAt, os.time()) + Index.xpBoost.seconds
+	IndexService.publishXpBoost(player, data)
+	return true, biome.name
+end
+
+-- Training XP multiplier from completing a world, while it runs.
+function IndexService.xpMultiplier(data): number
+	return if os.time() < data.xpBoostEndsAt then Index.xpBoost.multiplier else 1
+end
+
+-- XpBoostEndsAt on the player, in server time (workspace:GetServerTimeNow), so the client can count it down.
+function IndexService.publishXpBoost(player: Player, data)
+	local left = data.xpBoostEndsAt - os.time()
+	player:SetAttribute("XpBoostEndsAt", if left > 0 then workspace:GetServerTimeNow() + left else nil)
 end
 
 local function onLoaded(player: Player, data)
@@ -75,6 +70,7 @@ local function onLoaded(player: Player, data)
 		data.discovered[entry.id] = true
 	end
 	publish(player, data)
+	IndexService.publishXpBoost(player, data)
 end
 
 function IndexService.start()

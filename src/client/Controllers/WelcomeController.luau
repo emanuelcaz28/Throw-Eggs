@@ -12,6 +12,9 @@ local player = Players.LocalPlayer
 local WelcomeController = {}
 
 local COUNT_UP_SECONDS = 1.2
+local NO_EARNINGS_GRACE = 2 -- seconds past the server's delay before deciding there's no pop-up
+
+local done = false
 
 local function awayText(seconds: number): string
 	local hours = seconds // 3600
@@ -32,6 +35,7 @@ local function buildGui()
 
 	local panel = UiKit.panel(gui, { name = "WelcomePanel", width = 620, height = 500, header = "gold", title = "Welcome back!" })
 	panel.close.Visible = false -- the only way out is CLAIM
+	panel.keepOpen = true -- other panels opening don't close it (UiKit.openPanel)
 
 	local line = UiKit.muted(panel.body, "Your dinos kept earning while you were away", 24)
 	line.Position = UDim2.fromOffset(0, 18)
@@ -75,7 +79,21 @@ function WelcomeController.start()
 	hud.claim.Activated:Connect(function()
 		remotes.ClaimOffline:FireServer()
 		UiKit.closePanel(hud.panel)
+		done = true
 	end)
+	-- The server sends the earnings a few seconds after joining (Plot.offlinePayoutDelay), or not at all.
+	task.delay(Plot.offlinePayoutDelay + NO_EARNINGS_GRACE, function()
+		if not hud.panel.frame.Visible then
+			done = true
+		end
+	end)
+end
+
+-- Waits until the Welcome back pop-up has been claimed, or it's clear none is coming (DailyController opens after).
+function WelcomeController.waitUntilDone()
+	while not done do
+		task.wait(0.2)
+	end
 end
 
 return WelcomeController

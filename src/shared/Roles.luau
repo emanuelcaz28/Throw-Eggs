@@ -136,6 +136,14 @@ Roles.glowing = {
 	RippleB = true,
 	Sweep = true,
 	Leader = true,
+	-- The Egg Shop's eggs (assets/models/build_eggs.py): lava cracks, lure dots, stars, gems, bulbs, roses, the halo, and
+	-- the glowing yolk of the dearer eggs. Every part of an egg's top half ends in Lid (EggModel), so each has a twin.
+	EggGlow = true,
+	EggGlowLid = true,
+	EggGlowB = true,
+	EggGlowBLid = true,
+	YolkGlow = true,
+	YolkGlowLid = true,
 }
 
 -- Glowing roles you can see through, by how far: a beam of light.

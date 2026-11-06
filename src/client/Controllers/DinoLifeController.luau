@@ -711,7 +711,9 @@ local function step(dt: number)
 		state.frame += 1
 		local carrier = state.carrier
 		local distance = ((if carrier then carrier.Position else state.position) - cameraPosition).Magnitude
-		local skip = if distance > DinoLife.farDistance
+		local shown = state.shown
+		local skip = if shown then (if shown() then 1 else math.huge)
+			elseif distance > DinoLife.farDistance
 			then DinoLife.farFrameSkip
 			elseif distance > DinoLife.nearDistance then DinoLife.midFrameSkip
 			else 1
@@ -726,6 +728,21 @@ local function step(dt: number)
 			pose(state, elapsed)
 		end
 	end
+end
+
+-- A monster shown in the UI (the Shop's ViewportFrames): it plays its own idle where it stands, for ever (swimmers
+-- hover, thrashers thrash, ragers bite), every frame while shown() says it's on screen, and is dropped when destroyed.
+function DinoLifeController.showcase(model: Model, shown: () -> boolean)
+	model:SetAttribute("Stay", true)
+	add(model)
+	local state = dinos[model]
+	if not state then
+		return
+	end
+	state.shown = shown
+	model.Destroying:Connect(function()
+		dinos[model] = nil
+	end)
 end
 
 function DinoLifeController.start()

@@ -20,7 +20,7 @@ local Hub = {
 	sellStall = {
 		-- Front left of the arena seen from the platform, out in the open ground, its counter and pad facing the
 		-- bases, where players come from (it used to face the front wall, showing them its back).
-		position = Vector3.new(96, 0, 40),
+		position = Vector3.new(64, 0, 30), -- beside the throw platform, where a leaderboard stood (2026-11-05)
 		facing = Vector3.new(0, 0, 1),
 		title = "SELL",
 		stripes = { Color3.fromRGB(220, 50, 50), Color3.fromRGB(240, 240, 240) },

@@ -14,6 +14,11 @@ local ThrowCinematic = {}
 
 local CORRIDOR_LOOK = 30 -- studs ahead the camera aims when it looks down the corridor
 local CHEST = Vector3.new(0, 1.5, 0) -- from the root, where the camera looks when it faces the thrower
+local STANDARD_BODY = 4 -- a standard avatar's hip height plus its root's height, in studs
+
+-- The thrower's size against a standard avatar (1). The aim and wind-up camera keep this much further out, so a
+-- big avatar doesn't fill the screen; smaller ones keep the standard framing.
+local body = 1
 
 local function smooth(u: number): number
 	u = math.clamp(u, 0, 1)
@@ -48,6 +53,12 @@ function ThrowCinematic.throwSpot(root: BasePart, humanoid: Humanoid): CFrame
 	return CFrame.lookAt(position, position + lane.direction)
 end
 
+function ThrowCinematic.setThrower(character: Model)
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	body = if humanoid and root then math.clamp((humanoid.HipHeight + root.Size.Y) / STANDARD_BODY, 1, 3) else 1
+end
+
 -- The camera round the thrower at a time after the tap (Config/Throw windup.camera). Before the tap it holds the
 -- first key, the aim framing.
 function ThrowCinematic.windupCamera(spot: CFrame, elapsed: number): CFrame
@@ -61,10 +72,10 @@ function ThrowCinematic.windupCamera(spot: CFrame, elapsed: number): CFrame
 	local u = if b.time > a.time then smooth((elapsed - a.time) / (b.time - a.time)) else 1
 	local yaw = math.rad(lerp(a.yaw, b.yaw, u))
 	local orbit = spot * CFrame.Angles(0, -yaw, 0) -- clockwise seen from above
-	local eye = orbit:PointToWorldSpace(Vector3.new(lerp(a.side, b.side, u), lerp(a.height, b.height, u), lerp(a.distance, b.distance, u)))
+	local eye = orbit:PointToWorldSpace(Vector3.new(lerp(a.side, b.side, u), lerp(a.height, b.height, u), lerp(a.distance, b.distance, u)) * body)
 
 	-- Turns between looking at the thrower and looking down the corridor, the short way round.
-	local chestHeading, chestPitch = headingOf(spot.Position + CHEST - eye)
+	local chestHeading, chestPitch = headingOf(spot.Position + CHEST * body - eye)
 	local laneHeading, lanePitch = headingOf(spot.LookVector)
 	lanePitch += math.rad(Throw.aim.cameraPitch)
 	local look = lerp(a.look, b.look, u)
@@ -167,11 +178,13 @@ end
 -- The luck panel at the top of the screen in flight: the luck number in a see-through rounded panel tinted for the
 -- world the egg is over, and under it a dark strip with that world's name in its colour.
 function ThrowCinematic.buildLuckPanel(gui: ScreenGui)
+	-- Plain text, no panel [Owner, 2026-11-06]: the luck number big, LUCK under it, then the world's name
+	-- in its colour. Thick dark outlines keep it readable over any world.
 	local holder = Instance.new("Frame")
 	holder.Name = "LuckPanel"
 	holder.AnchorPoint = Vector2.new(0.5, 0)
-	holder.Position = UDim2.new(0.5, 0, 0, 14)
-	holder.Size = UDim2.fromOffset(460, 150)
+	holder.Position = UDim2.new(0.5, 0, 0, 10)
+	holder.Size = UDim2.fromOffset(640, 210)
 	holder.BackgroundTransparency = 1
 	holder.Visible = false
 	holder.Parent = gui
@@ -180,48 +193,29 @@ function ThrowCinematic.buildLuckPanel(gui: ScreenGui)
 	scale.Parent = holder
 
 	local panel = Instance.new("Frame")
-	panel.Name = "Panel"
-	panel.AnchorPoint = Vector2.new(0.5, 0)
-	panel.Position = UDim2.fromScale(0.5, 0)
-	panel.Size = UDim2.fromOffset(300, 100)
-	panel.BackgroundColor3 = Biomes[1].color
-	panel.BackgroundTransparency = 0.35
+	panel.Name = "Texts"
+	panel.Size = UDim2.fromScale(1, 1)
+	panel.BackgroundTransparency = 1
 	panel.Parent = holder
-	UiKit.corner(panel, 26)
 	local pop = Instance.new("UIScale")
 	pop.Parent = panel
 
-	local number = UiKit.text(panel, "1.00X", 54, UiKit.TEXT)
-	number.Position = UDim2.fromOffset(0, 4)
-	number.Size = UDim2.new(1, 0, 0, 62)
+	local number = UiKit.text(panel, "1.00X", 92, UiKit.TEXT)
+	number.Size = UDim2.new(1, 0, 0, 100)
+	number:FindFirstChildOfClass("UIStroke").Thickness = 8
 	local tint = Instance.new("UIGradient")
 	tint.Rotation = 90
 	tint.Parent = number
 
-	local word = UiKit.text(panel, "LUCK", 24, UiKit.TEXT)
-	word.Position = UDim2.fromOffset(0, 62)
-	word.Size = UDim2.new(1, 0, 0, 28)
+	local word = UiKit.text(panel, "LUCK", 32, UiKit.TEXT)
+	word.Position = UDim2.fromOffset(0, 92)
+	word.Size = UDim2.new(1, 0, 0, 38)
+	word:FindFirstChildOfClass("UIStroke").Thickness = 5
 
-	local strip = Instance.new("Frame")
-	strip.Name = "WorldStrip"
-	strip.AnchorPoint = Vector2.new(0.5, 0)
-	strip.Position = UDim2.new(0.5, 0, 0, 104)
-	strip.Size = UDim2.new(1, 0, 0, 40)
-	strip.BackgroundColor3 = Color3.new(0, 0, 0)
-	strip.BackgroundTransparency = 0.45
-	strip.BorderSizePixel = 0
-	strip.Parent = holder
-	local fade = Instance.new("UIGradient")
-	fade.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 1),
-		NumberSequenceKeypoint.new(0.25, 0),
-		NumberSequenceKeypoint.new(0.75, 0),
-		NumberSequenceKeypoint.new(1, 1),
-	})
-	fade.Parent = strip
-
-	local world = UiKit.text(strip, "", 30, Biomes[1].color)
-	world.Size = UDim2.fromScale(1, 1)
+	local world = UiKit.text(panel, "", 58, Biomes[1].color)
+	world.Position = UDim2.fromOffset(0, 136)
+	world.Size = UDim2.new(1, 0, 0, 66)
+	world:FindFirstChildOfClass("UIStroke").Thickness = 7
 
 	local current = nil
 	local luckPanel = {}
@@ -233,7 +227,7 @@ function ThrowCinematic.buildLuckPanel(gui: ScreenGui)
 
 	-- Without a biome only the number changes.
 	function luckPanel.set(luck: number, biome)
-		-- Two decimals while it's small, then 1.5K, 2.5M, 10B as it climbs.
+		-- Two decimals while it's small, then 1.5K once a lucky throw takes it past a thousand.
 		number.Text = if luck < 1000 then string.format("%.2fX", luck) else `{Format.short(luck)}X`
 		if biome == nil or biome == current then
 			return
@@ -241,13 +235,11 @@ function ThrowCinematic.buildLuckPanel(gui: ScreenGui)
 		current = biome
 		local color = biome.color
 		world.Text = biome.name
-		world.TextColor3 = color:Lerp(Color3.new(1, 1, 1), 0.35)
-		local light = color:Lerp(Color3.new(1, 1, 1), 0.75)
-		tint.Color = ColorSequence.new(Color3.new(1, 1, 1), light)
-		TweenService:Create(panel, TweenInfo.new(0.25), { BackgroundColor3 = color:Lerp(Color3.new(1, 1, 1), 0.25) }):Play()
+		world.TextColor3 = color:Lerp(Color3.new(1, 1, 1), 0.3)
+		tint.Color = ColorSequence.new(Color3.new(1, 1, 1), color:Lerp(Color3.new(1, 1, 1), 0.6))
 		-- A quick pop each time the egg crosses into a new world.
-		pop.Scale = 1.15
-		TweenService:Create(pop, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+		pop.Scale = 1.2
+		TweenService:Create(pop, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
 	end
 
 	-- Fades it away (the landing's cut to black) and hides it.
@@ -260,8 +252,6 @@ function ThrowCinematic.buildLuckPanel(gui: ScreenGui)
 				TweenService:Create(object, info, { Transparency = 1 }):Play()
 			end
 		end
-		TweenService:Create(panel, info, { BackgroundTransparency = 1 }):Play()
-		TweenService:Create(strip, info, { BackgroundTransparency = 1 }):Play()
 		task.delay(seconds, function()
 			holder.Visible = false
 			for _, object in holder:GetDescendants() do
@@ -271,8 +261,6 @@ function ThrowCinematic.buildLuckPanel(gui: ScreenGui)
 					object.Transparency = 0
 				end
 			end
-			panel.BackgroundTransparency = 0.35
-			strip.BackgroundTransparency = 0.45
 		end)
 	end
 
@@ -284,6 +272,7 @@ function ThrowCinematic.buildFade(parent: Instance): Frame
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "ThrowFade"
 	gui.IgnoreGuiInset = true
+	gui.ScreenInsets = Enum.ScreenInsets.None -- black edge to edge, past a phone's notch too
 	gui.ResetOnSpawn = false
 	gui.DisplayOrder = 50
 	gui.Parent = parent

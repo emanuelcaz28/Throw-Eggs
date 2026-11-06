@@ -11,21 +11,22 @@ return {
 	counterMinOneIn = 1000,
 
 	-- Lucky catches (the ones with the counter) take their time (the owner's wish, 2026-11-04): the counter climbs for
-	-- minClimb seconds at counterMinOneIn up to maxClimb at rarestOneIn (evenly on a log scale), and pauses holdTime
-	-- on each luck label it reaches, so 1 in 1,000 takes about 6 seconds and the rarest about 14. Meanwhile the camera
-	-- rises slowly from the egg and the feet to the whole monster, ending with the last number (closeUp slowHold).
+	-- minClimb seconds at counterMinOneIn up to maxClimb at rarestOneIn (evenly on a log scale), never stopping: each
+	-- luck label slams onto the screen as it's passed while the numbers keep going [Owner, 2026-11-06]. The whole monster is
+	-- in view all the while [Owner, 2026-11-06]: the camera pulls back to it early, then creeps slowly in on it to the
+	-- last number (closeUp push), while its luck aura builds up round it (aura).
 	lucky = {
-		minClimb = 4.5,
-		maxClimb = 9,
+		minClimb = 5,
+		maxClimb = 11,
 		rarestOneIn = 100000000000,
-		holdTime = 0.8,
+		holdTime = 0.8, -- how long a slammed label stays where it lands before flying up to the top
 		-- Each new label slams in huge in the middle of the screen, then flies up to its place at the top.
-		slamScale = 2.3, -- its size in the middle, against its size at the top...
+		slamScale = 1.6, -- its size where it lands, against its size in its place over the counter...
 		slamFrom = 4, -- ...starting this big and see-through, landing in slamIn seconds
 		slamIn = 0.28,
 		slamFly = 0.3, -- the flight to the top, at the end of the pause
-		slamY = 0.5, -- where it lands, as a share of the screen's height
-		flash = 0.55, -- a flash in the label's colour as it lands: how strong (0 = solid, 1 = none)...
+		slamY = 0.6, -- where it lands, as a share of the screen's height: under the monster, over the counter
+		flash = 0.82, -- a flash in the label's colour as it lands: how strong (0 = solid, 1 = none)...
 		flashTime = 0.35, -- ...and how fast it fades
 		-- The camera jolts as it lands: degrees, by the label (LUCKY! first), dying away over joltTime.
 		jolt = { 0.4, 0.6, 0.9, 1.2, 1.6, 2 },
@@ -44,9 +45,9 @@ return {
 	-- rays burst out behind the monster (rays, below). The middle of the screen stays clear, so the monster keeps its
 	-- own colours.
 	washTime = 1,
-	washTransparency = 0.72, -- how strongly the colour covers the top and bottom edges
+	washTransparency = 0.84, -- how strongly the colour covers the top and bottom edges (was 0.72: too strong)
 	finalGlow = 0.3, -- the luck tier's edge glow fades down to at most this strength at the end (0 to 1)
-	flashTransparency = 0.3, -- how strong the white flash is at its peak...
+	flashTransparency = 0.45, -- how strong the white flash is at its peak...
 	flashTime = 0.45, -- ...and how fast it fades
 	namePop = 1.35, -- the name lands this big and settles back to normal size
 
@@ -129,9 +130,9 @@ return {
 
 		-- How long the walk lasts: minTime for the commonest, maxTime for the rarest, plus up to bigExtraTime for
 		-- the biggest (their steps are slow). The pace eases off as it nears the egg, by slowDown (0 = steady).
-		minTime = 2.6,
-		maxTime = 4.6,
-		bigExtraTime = 0.8,
+		minTime = 2,
+		maxTime = 3.2, -- [Owner, 2026-11-06] the monster should be in view more: was 4.6
+		bigExtraTime = 0.6,
 		slowDown = 0.5,
 
 		-- It comes along the corridor from the thrower's side, a random few degrees off the middle, and from the
@@ -232,14 +233,15 @@ return {
 		eggGap = 0.3,
 		-- Then the egg lies a clear gap further ahead, this share of the monster's length, so the two never look stuck
 		-- together (the owner's wish, 2026-11-04).
-		aheadShare = 0.5,
+		aheadShare = 0.3, -- [Owner, 2026-11-06: the monster looked small] was 0.5: the egg widened the framing
 		maxAhead = 15, -- but never more than this many egg heights
 		aheadAngle = 60, -- degrees off straight ahead, away from the camera's side
-		-- On lucky catches the close-up holds only slowHold seconds, then the camera rises and pulls back over the whole
-		-- rest of the climb, ending with the last number.
-		slowHold = 0.8,
-		slowAcross = 0.3, -- share of the pull back spent turning from the egg to the monster's feet
-		slowRise = 1.6, -- how late the view climbs up the body (1 = evenly; higher = the head comes later)
+		-- On lucky catches the close-up holds only luckyHold seconds, then pulls back as usual, to push times further
+		-- back than the final framing, so the whole monster is in view early [Owner, 2026-11-06: before, the camera
+		-- crept up from its feet and the head came last]. Over the rest of the climb it creeps slowly in to the final
+		-- framing, landing with the last number. Straight in: no circling.
+		luckyHold = 0.5,
+		push = 0.22,
 		-- How long the close-up holds: holdShare of the climb (the name filling in and the counter climbing), but
 		-- between minHold and maxHold.
 		holdShare = 0.3,
@@ -255,9 +257,10 @@ return {
 		-- Where it ends: the monster and the egg fill the screen with margin to spare, from far enough back that
 		-- depthShare of their length is in front of the camera too, looking down from endElevation. It always ends
 		-- at least minPullBack times further back than the close-up, so tiny monsters still pull back.
-		margin = 1.15,
+		margin = 1.05,
 		depthShare = 0.15,
-		endElevation = 4, -- low, looking up at the monster a little, so it towers and the egg shows above the text
+		endElevation = 4, -- low, looking up at the monster a little, so it towers and the egg shows above the text...
+		bigEndElevation = 14, -- ...but the biggest are looked down on a little, so the corridor's floor can't hide them
 		-- They're framed in the part of the screen the final text leaves free, topGap design pixels under the top bar,
 		-- and never in less than minBand of the screen's height.
 		topGap = 12,
@@ -269,10 +272,34 @@ return {
 		minHaze = 0.12,
 		minPullBack = 1.5,
 		-- Once the pull back is over the camera holds still, with no circling (the owner's wish, 2026-11-04).
-		-- Below the corridor's rim the camera keeps wallMargin studs inside its walls; each stud above the rim lets it
-		-- go overWalls studs further out, so it rises clear of them smoothly.
+		-- The camera keeps wallMargin studs inside the corridor's walls. Each stud above the rim lets it go overWalls
+		-- studs further out; 0 keeps it inside the corridor at any height [Owner, 2026-11-06: a giant seen from out over
+		-- a wall was hidden behind the wall's top].
 		wallMargin = 4,
-		overWalls = 2,
+		overWalls = 0,
+	},
+
+	-- The luck building up round the monster on lucky catches, in view the whole time (RevealAura). Each pair goes from
+	-- the first luck label (LUCKY!) to the rarest; labels' colours are their own (tiers, below).
+	aura = {
+		outline = { 0.55, 0.05 }, -- the glowing outline round the monster: how see-through (0 = solid)...
+		fill = { 1, 0.8 }, -- ...and the tint over it
+		breatheRate = 0.8, -- it breathes this many times a second...
+		flashTime = 0.6, -- ...and flashes bright for this long when a label lands
+		motes = { 6, 45 }, -- lights rising off the ground round its feet, per second
+		burst = { 15, 70 }, -- lights bursting up when a label lands
+		light = { 0.8, 4 }, -- a light on the monster in the label's colour
+		ringPieces = 32, -- the shockwave ring racing out along the ground when a label lands...
+		ringTime = 0.8, -- ...in this long...
+		ringReach = 3, -- ...out to this many times the monster's width
+		lightningFrom = 5, -- from this label on (GODLY!), lightning strikes round it...
+		lightningEvery = { 0.7, 0.35 }, -- ...about this often...
+		lightningTime = 0.18, -- ...each bolt fading in this long...
+		lightningSteps = 7, -- ...zigzagging this many times...
+		lightningSpread = 2.2, -- ...within this many times its width
+		rainbowFrom = 6, -- from this label on (IMPOSSIBLE!), it all cycles through the rainbow...
+		rainbowSpeed = 0.35, -- ...this many times a second
+		vignette = { 0.7, 0.35 }, -- the screen's edges darken so the monster stands out: see-through (0 = solid)
 	},
 
 	-- Each label appears when the counter passes minOneIn. Lowest first. glow is how strongly the
@@ -285,7 +312,7 @@ return {
 			minOneIn = 100,
 			label = "LUCKY!",
 			color = Color3.fromRGB(255, 226, 110),
-			glow = 0.35,
+			glow = 0.22,
 			sparkles = 15,
 			sticker = { label = "LUCKY!", colors = { "#fff1a8", "#ffc21a" } },
 			panel = { "#fff1a8", "#ffc21a" },
@@ -294,7 +321,7 @@ return {
 			minOneIn = 1000,
 			label = "SUPER LUCKY!",
 			color = Color3.fromRGB(255, 110, 150),
-			glow = 0.42,
+			glow = 0.26,
 			sparkles = 40,
 			sticker = { label = "SUPER LUCKY!", colors = { "#ffc2d4", "#ff6e96" } },
 			panel = { "#ffc2d4", "#ff6e96" },
@@ -303,7 +330,7 @@ return {
 			minOneIn = 10000,
 			label = "INSANE!",
 			color = Color3.fromRGB(90, 235, 235),
-			glow = 0.5,
+			glow = 0.3,
 			sparkles = 80,
 			sticker = { label = "INSANE LUCK!", colors = { "#e6ffff", "#5aebeb" } },
 			panel = { "#c9fdfd", "#3fd6d6" },
@@ -312,7 +339,7 @@ return {
 			minOneIn = 100000,
 			label = "LEGENDARY!",
 			color = Color3.fromRGB(255, 120, 220),
-			glow = 0.58,
+			glow = 0.34,
 			sparkles = 140,
 			sticker = { label = "LEGENDARY LUCK!!", colors = { "#ffe8f9", "#ff78dc" } },
 			panel = { "#ffd3f3", "#ff6fd2" },
@@ -321,17 +348,17 @@ return {
 			minOneIn = 1000000,
 			label = "GODLY!",
 			color = Color3.fromRGB(190, 255, 120),
-			glow = 0.66,
+			glow = 0.38,
 			sparkles = 240,
 			sticker = { label = "GODLY LUCK!!!", colors = { "#f4ffe6", "#beff78" } },
 			panel = { "#ff8f8f", "#ffd36b", "#b4ff7a", "#6fe3ff", "#c58bff" },
 		},
-		-- Above a billion: what a x500 lucky throw's banger reaches (Config/LuckyOutcomes).
+		-- Above a billion: a map's rarest monster with a rare colour and a big size, all at once.
 		{
 			minOneIn = 1000000000,
 			label = "IMPOSSIBLE!",
 			color = Color3.fromRGB(255, 90, 220),
-			glow = 0.8,
+			glow = 0.44,
 			sparkles = 400,
 			sticker = { label = "IMPOSSIBLE LUCK!!!!", colors = { "#ffe6fb", "#ff5adc" } },
 			panel = { "#ff5adc", "#ff8f8f", "#ffd36b", "#b4ff7a", "#6fe3ff", "#c58bff" },

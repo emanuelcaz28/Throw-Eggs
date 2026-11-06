@@ -1,7 +1,7 @@
 -- Tidies a map's freshly imported models in Studio (docs/MAP_RECIPE.md step 8); studio_tidy.py fills in
 -- WORLD, COLOURS and NOSTUDS and runs it. Unwraps each import, moves its pivot (the Blender origin) to the world
 -- origin, names parts by bare role, colours them, SmoothPlastic, anchored, the Studs material except on glowing
--- and face parts, then puts props in Assets.Maps.<WORLD>.Props and monsters in Assets.Dinos.
+-- and face parts, then puts props in Assets.Maps.<WORLD>.Props, monsters in Assets.Dinos and eggs in Assets.Eggs.
 local RS = game:GetService("ReplicatedStorage")
 local assets = RS.Assets
 -- Studs come from the shared "Studs" MaterialVariant in MaterialService (the Creator Store "Studs" image,
@@ -30,6 +30,7 @@ for name, roles in COLOURS do
 	end
 	model:PivotTo(CFrame.new())
 	local isDino = name:match("^dino_") ~= nil
+	local isEgg = name:match("^egg_") ~= nil -- the Egg Shop's eggs (build_eggs.py): their pivot, the world origin, is their foot
 	local parts = 0
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
@@ -46,7 +47,7 @@ for name, roles in COLOURS do
 				table.insert(log, name .. ": no colour for " .. role)
 			end
 			part.Material = Enum.Material.SmoothPlastic
-			if isDino then
+			if isDino or isEgg then
 				part.CanCollide = false
 			end
 			for _, old in part:GetChildren() do
@@ -58,7 +59,13 @@ for name, roles in COLOURS do
 			parts += 1
 		end
 	end
-	local dest = if isDino then assets.Dinos else propsFolder
+	local eggs = assets:FindFirstChild("Eggs")
+	if isEgg and not eggs then
+		eggs = Instance.new("Folder")
+		eggs.Name = "Eggs"
+		eggs.Parent = assets
+	end
+	local dest = if isDino then assets.Dinos elseif isEgg then eggs else propsFolder
 	local old = dest:FindFirstChild(name)
 	if old then old:Destroy() end
 	model.Parent = dest
