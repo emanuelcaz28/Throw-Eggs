@@ -111,7 +111,7 @@ local function buildGui()
 	local panel = UiKit.panel(gui, { name = "IndexPanel", width = PANEL_SIZE.X, height = PANEL_SIZE.Y, header = "berry", title = "Dino Index", icon = "📖", iconKey = "book" })
 
 	-- How many of every map's monsters you've found, in the header beside the close button.
-	local totalHolder = frame(panel.frame, "TotalFound", 718, 19, 250, 50)
+	local totalHolder = frame(panel.frame, "TotalFound", PANEL_SIZE.X - panel.closeInset - 18 - 250, 19, 250, 50)
 	totalHolder.ZIndex = 4
 	local total = progressBar(totalHolder, 0, 0, 250, 50, 24)
 

@@ -588,25 +588,31 @@ function UiKit.panel(gui: ScreenGui, options)
 	if image then
 		image.ZIndex = 2
 	end
-	local title = UiKit.text(header, (options.icon and not image and options.icon .. " " or "") .. options.title, 46, nil, Enum.TextXAlignment.Left)
+	local title = UiKit.text(header, (options.icon and not image and options.icon .. " " or "") .. options.title, options.titleSize or 46, nil, Enum.TextXAlignment.Left)
 	title.Position = UDim2.fromOffset(image and 96 or 26, 14)
 	title.Size = UDim2.new(1, image and -184 or -120, 0, 58)
 	title.ZIndex = 2
 
-	local close = UiKit.button(frame, "X", "red", 58, 58, 30)
+	-- On phones the X fills the header, so it's still a finger-sized target once the panel is scaled down.
+	local bigClose = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+	local close = UiKit.button(frame, "X", "red", if bigClose then 84 else 58, if bigClose then 84 else 58, if bigClose then 46 else 30)
 	close.Name = "Close"
 	close.AnchorPoint = Vector2.new(1, 0)
-	close.Position = UDim2.new(1, -16, 0, 14)
+	close.Position = if bigClose then UDim2.new(1, -6, 0, 2) else UDim2.new(1, -16, 0, 14)
 	close.ZIndex = 4
 
 	local body = Instance.new("Frame")
 	body.Name = "Body"
 	body.BackgroundTransparency = 1
 	body.Position = UDim2.fromOffset(0, 92)
+	if bigClose then
+		title.Size += UDim2.fromOffset(-8, 0)
+	end
 	body.Size = UDim2.new(1, 0, 1, -92)
 	body.Parent = frame
 
-	local panel = { frame = frame, body = body, close = close, scale = scale, header = header }
+	-- closeInset: how far the X reaches in from the panel's right edge, for anything placed beside it in the header.
+	local panel = { frame = frame, body = body, close = close, closeInset = if bigClose then 90 else 74, scale = scale, header = header }
 	close.Activated:Connect(function()
 		UiKit.closePanel(panel)
 	end)

@@ -1289,7 +1289,9 @@ The walking reveal and the flight camera are a separate job, after the world. Th
     still loading made the HUD full size. The hotbar shrinks to fit between the cash/power and the same margin on
     the right; its $/s stays readable.
   - While aiming, throwing and in the reveal the phone's joystick and jump button are hidden, and a tap anywhere
-    throws (before, only a tap on the meter did). Full-screen layers (the throw's bars, the fades, the PERFECT! edges)
+    throws (before, only a tap on the meter did). **[Built] [Owner, 2026-11-07]** The jump button still showed
+    on a phone and a jump over the throw platform left the player stuck, so `ThrowController.lockJumping` now also hides
+    the jump button and turns Jumping off while the player is over the platform or in a throw. Full-screen layers (the throw's bars, the fades, the PERFECT! edges)
     reach past the notch. The aim camera pulls back for big avatars (`ThrowCinematic.setThrower`).
   - **Tap or click one of your monsters on your base to pick it up** (on a computer it's outlined while the mouse is
     over it), as well as PICK UP in My Dinos. A drag turns the camera without dropping a carried monster.

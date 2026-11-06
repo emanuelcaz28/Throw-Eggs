@@ -86,18 +86,19 @@ local function buildGui()
 	income.AnchorPoint = Vector2.new(0, 1)
 	HudStyle.outline(income, 2 * scale)
 
-	local open = HudStyle.iconButton(gui, "🐾", "Dinos", "paw")
+	local open = HudStyle.iconButton(gui, "🐾", "Monsters", "paw")
 	open.Name = "OpenDinos"
 	open.AnchorPoint = Vector2.new(1, 0.5)
 	open.Position = UDim2.new(1, -16, HudStyle.COLUMN_CENTER, 0)
 
-	-- My Dinos docks on the right, like a side drawer.
+	-- My Monsters docks on the right, like a side drawer.
 	local panel = UiKit.panel(gui, {
 		name = "DinoPanel",
 		width = PANEL_SIZE.X,
 		height = PANEL_SIZE.Y,
 		header = "jungle",
-		title = "My Dinos",
+		title = "My Monsters",
+		titleSize = 44,
 		icon = "🐾",
 		iconKey = "paw",
 		anchor = Vector2.new(1, 0.5),
@@ -428,8 +429,8 @@ function PlotController.start()
 		for name, button in hud.tabs do
 			UiKit.restyle(button, button.Text, if name == tab then "green" else "dark")
 		end
-		hud.empty.Text = if #dinos == 0 then "No dinos yet. Throw an egg to catch one!"
-			elseif order == 0 then (if tab == "plot" then "Nothing on your plot. Equip a dino and click your plot." else "Your backpack is empty.")
+		hud.empty.Text = if #dinos == 0 then "No monsters yet. Throw an egg to catch one!"
+			elseif order == 0 then (if tab == "plot" then "Nothing on your plot. Equip a monster and click your plot." else "Your backpack is empty.")
 			else ""
 		hud.empty.Visible = order == 0
 		task.defer(showVisibleTiles)
@@ -628,7 +629,7 @@ function PlotController.start()
 		if not player:GetAttribute("PlotIndex") then
 			hud.hint.Text = "You don't have a plot in this server"
 		elseif not room then
-			hud.hint.Text = `Plot full ({slots}/{slots}): pick a dino up first`
+			hud.hint.Text = `Plot full ({slots}/{slots}): pick a monster up first`
 		elseif not spot then
 			hud.hint.Text = `Go to your plot to place {dino.name}`
 		elseif not spot.inBounds then

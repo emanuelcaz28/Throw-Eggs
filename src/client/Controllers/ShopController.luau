@@ -499,7 +499,12 @@ local function buildGui()
 	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, (HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) / 2 * HudStyle.scale())
 	open.Name = "OpenShop"
 
-	local timer = UiKit.text(gui, "", 24, UiKit.CASH)
+	-- In its own layer under every panel: it shares the top right corner with their close buttons and mustn't hide them.
+	local timerGui = Instance.new("ScreenGui")
+	timerGui.Name = "LuckTimerHud"
+	timerGui.ResetOnSpawn = false
+	timerGui.Parent = player:WaitForChild("PlayerGui")
+	local timer = UiKit.text(timerGui, "", 24, UiKit.CASH)
 	timer.Name = "ServerLuckTimer"
 	timer.AnchorPoint = Vector2.new(1, 0)
 	timer.Position = UDim2.new(1, -16, 0, 16)
@@ -524,7 +529,7 @@ local function buildGui()
 	local giftButton = UiKit.button(panel.frame, "🎁 GIFT", "berry", 150, 58, 26)
 	giftButton.Name = "Gift"
 	giftButton.AnchorPoint = Vector2.new(1, 0)
-	giftButton.Position = UDim2.new(1, -88, 0, 14)
+	giftButton.Position = UDim2.new(1, -panel.closeInset - 14, 0, 14)
 	giftButton.ZIndex = 4
 
 	local order = 0

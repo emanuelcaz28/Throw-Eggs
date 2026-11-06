@@ -330,11 +330,38 @@ local function boughtLuck(): number
 end
 
 -- The reveal has the screen to itself. While aiming and flying, only Throw Power stays
+-- True while a throw is aiming, flying or revealing: no jump button then.
+local throwBusy = false
+
+-- Phones: the jump button is hidden and jumping is switched off while the player is over the throw platform or
+-- in a throw. GuiService.TouchControlsEnabled alone wasn't enough: the button still showed up there, and a jump
+-- in the throw area left the player stuck. The platform check is the same one the server uses.
+local function lockJumping()
+	local character = Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local locked = throwBusy or (root ~= nil and Throw.onPlatform(root.Position))
+	if humanoid then
+		if locked then
+			humanoid.Jump = false
+		end
+		if humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping) == locked then
+			humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, not locked)
+		end
+	end
+	local touchGui = Players.LocalPlayer.PlayerGui:FindFirstChild("TouchGui")
+	local jumpButton = touchGui and touchGui:FindFirstChild("JumpButton", true)
+	if jumpButton and jumpButton:IsA("GuiObject") and jumpButton.Visible == locked then
+		jumpButton.Visible = not locked
+	end
+end
+
 -- (keepPower), so the meter and the luck number aren't crowded.
 local function setHudsEnabled(enabled: boolean, keepPower: boolean?)
 	-- A phone's thumbstick and jump button go too: the thrower can't move, and the jump button sat on the meter.
 	GuiService.TouchControlsEnabled = enabled
-	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud", "ShopHud", "EventHud", "DailyHud", "GoalHud" } do
+	throwBusy = not enabled
+	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud", "ShopHud", "LuckTimerHud", "EventHud", "DailyHud", "GoalHud" } do
 		if keepPower and name == "TrainingHud" then
 			continue
 		end
@@ -348,6 +375,7 @@ end
 function ThrowController.start()
 	local remotes = ReplicatedStorage:WaitForChild("ThrowRemotes")
 	local hud = buildGui()
+	RunService.Heartbeat:Connect(lockJumping)
 
 	-- Downloaded now, so even the first throw spins: a clip still loading plays nothing.
 	task.spawn(function()
