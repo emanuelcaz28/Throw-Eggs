@@ -1,7 +1,7 @@
 -- Builds a squat rack and an XP upgrade pad at every base, and runs training. Stepping on your own
 -- rack's pad locks you in under the bar; reps come automatically until you press STOP. Everyone sees
 -- every rack, but only the base's owner trains there. The orange button in front of it sells more XP
--- per rep, and while training a bubble now and then offers a double rep. The rack and the button are
+-- per rep, and while training a bubble every few seconds offers a double rep. The rack and the button are
 -- Blender models (BaseKit), and each base shows the rack its owner's upgrades have earned (Config/Training rackModels). Everything is decided here on the server; the client reads the Player attributes set in
 -- publish and can only ask through TrainingRemotes (StopTraining, TapBubble).
 local Players = game:GetService("Players")
@@ -34,7 +34,6 @@ local bubbleCount = 0
 local rackBarParts: { [number]: { BasePart } } = {} -- per base
 local shownRacks: { [number]: Model } = {} -- the rack standing at each base
 local FACING = Vector3.new(0, 0, -1) -- out of the base, the way the lifter looks
-local rng = Random.new()
 
 local function makeRemotes()
 	local folder = Instance.new("Folder")
@@ -185,16 +184,11 @@ local function showRack(plotIndex: number, upgrades: number)
 	end
 end
 
-local function scheduleBubble(player: Player)
-	local bubble = Training.bubble
-	nextBubbleAt[player] = os.clock() + rng:NextNumber(bubble.minDelay, bubble.maxDelay)
-end
-
 -- Puts the player under the bar, facing out, and holds them there.
 local function startTraining(player: Player, plotIndex: number, root: BasePart, humanoid: Humanoid)
 	training[player] = plotIndex
 	repProgress[player] = 0
-	scheduleBubble(player)
+	nextBubbleAt[player] = os.clock() + Training.bubble.interval
 	local spot = Training.rackPosition(plotIndex) + Vector3.new(0, PAD_TOP + humanoid.HipHeight + root.Size.Y / 2, 0)
 	player.Character:PivotTo(CFrame.lookAt(spot, spot + FACING))
 	root.AssemblyLinearVelocity = Vector3.zero
@@ -288,10 +282,11 @@ local function step(dt: number)
 				local bubble = activeBubble[player]
 				if bubble and os.clock() > bubble.expires then
 					activeBubble[player] = nil
-					scheduleBubble(player)
 				elseif not bubble and os.clock() >= (nextBubbleAt[player] or math.huge) then
+					-- A steady beat: counted from the last bubble's slot, whether or not it was tapped.
+					nextBubbleAt[player] += Training.bubble.interval
 					bubbleCount += 1
-					activeBubble[player] = { id = bubbleCount, expires = os.clock() + Training.bubble.lifetime }
+					activeBubble[player] = { id = bubbleCount, expires = os.clock() + Training.bubble.lifetime + Training.bubble.tapGrace }
 					remotes.BubbleShown:FireClient(player, bubbleCount)
 				end
 			end
@@ -312,10 +307,10 @@ local function onTapBubble(player: Player, id: any)
 		return
 	end
 	activeBubble[player] = nil
-	scheduleBubble(player)
-	addXp(player, data, xpPerRep(player, data) * Training.bubble.multiplier)
+	local gained = xpPerRep(player, data) * Training.bubble.multiplier
+	addXp(player, data, gained)
 	publish(player, data)
-	remotes.Boosted:FireAllClients(player)
+	remotes.Boosted:FireAllClients(player, gained)
 end
 
 -- The server's copy of a player's Throw Power, for the throw system to use.

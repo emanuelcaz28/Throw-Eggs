@@ -11,8 +11,8 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
 
 1. **Train** — step into the squat rack's dashed circle (every base has one, right of its gate; only its owner trains there): the character is locked in under the bar and squats with it
    on their shoulders; auto-reps give XP until STOP. Level-ups raise **Throw Power** ("LEVEL UP! Throw Power +20").
-   The round orange button in front of the rack sells more XP per rep for cash. Now and then an x2 bubble pops up; tapping
-   it gives a double rep and a purple glow. The level bar and STOP only show while training (`Config/Training`).
+   The round orange button in front of the rack sells more XP per rep for cash. Every 3 seconds an x2 bubble pops up; tapping
+   it gives a double rep and the 2X XP moment (`BoostMoment`). The level bar and STOP only show while training (`Config/Training`).
 2. **Throw** — step onto the orange platform in the arena's front wall → egg meter: a marker swings up and down a vertical tube with 10 levels
    and slows near the top. Level 10, the top step, is PERFECT and gives the biggest throw.
    The equipped **egg** flies down one long corridor, below the arena, through biomes and lands on its floor. Distance = Throw Power × the level's bonus.

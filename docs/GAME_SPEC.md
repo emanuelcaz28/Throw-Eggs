@@ -233,7 +233,10 @@ reveal; your own catch appears once you've tapped through it. Limit and timings 
 - **[Built]** Step onto the rack's spot: the character locks in under the bar and squats automatically until STOP.
 - **[Built]** Each rep gives XP. Level-ups raise Throw Power with a big "LEVEL UP! Throw Power +20".
 - **[Built]** The orange pad buys more XP per rep with cash.
-- **[Built]** An x2 bubble pops up now and then. Tapping it gives a double rep and a purple glow.
+- **[Owner, 2026-11-06]** An x2 bubble pops up every 3 seconds while training, tapped or not (`Config/Training` `bubble`),
+  and stays 2 seconds. Tapping it gives a double rep and the 2X XP moment (`BoostMoment`), when the server confirms it: the
+  bubble bursts, "2X XP!" slams in over a purple sunburst with the XP gained, and orbs fly into the level bar, which flashes.
+  About a second, so it's over before the next bubble. Everyone nearby sees the lifter flash purple, with sparks and a ring on the ground.
 - **[Built]** The level bar and STOP only show while training.
 
 ### Throw
@@ -1305,7 +1308,7 @@ The walking reveal and the flight camera are a separate job, after the world. Th
 where each motion plays) and built in `PopText` with its looks and timings in `Config/Pop`. No panel behind any of it,
 just a thick ink outline and a hard shadow:
 - **Float:** a red "-$X" beside the cash when spending, a green "+$X" for other gains (not the income ticking in every
-  second), "+$X/s" when income rises, "+XP" over the training bar and "x2!" from the bubble.
+  second), "+$X/s" when income rises, "+XP" over the training bar.
 - **Shout:** LEVEL UP!, an event starting (in its colour) and a world completed in the Index (after the reveal), big
   and gold in the upper middle.
 - **Notice:** server messages above the hotbar, gold when something worked, red with a shake when it didn't.
@@ -1319,14 +1322,47 @@ just a thick ink outline and a hard shadow:
 **[Owner]** Numbers start small, but after a few minutes of play things change. The goal is for players to stay,
 feel powerful and compete; how big the numbers get doesn't matter.
 
-**[Built]** Worked out with a play simulation (a player who trains 40 s, throws 4 times, then buys the cheapest
-thing they can, no Robux) that runs the game's own code (2026-11-06, median of 5 runs):
+**[Owner, 2026-11-07]** A little bit of easy progress early to mid game, then harder. Late game means map 10 and up: it
+shouldn't be easy, but it shouldn't be a hard grind or impossible either.
+
+**[Built]** Worked out with a play simulation (`tools/pace_sim.luau`: a player who trains 40 s, throws 4 times, then buys
+the cheapest thing they can, no Robux, tapping 70% of the x2 bubbles) that runs the game's own Config (2026-11-07, median of
+7 runs). Run on the old numbers it gave map 15 at 30.3 h, against 30 h from the 2026-11-06 simulation it replaces.
 
 | Map | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Reached after | 3 min | 9 min | 16 min | 29 min | 42 min | 65 min | 1.7 h | 2.6 h | 3.9 h | 5.6 h | 8.5 h | 13 h | 20 h | 30 h |
-| With x2 Training or x2 Power | 1 min | 6 min | 9 min | 16 min | 25 min | 36 min | 54 min | 1.4 h | 2.1 h | 2.9 h | 4.4 h | 7 h | 10.5 h | 16 h |
-| With both passes | 1 min | 3 min | 7 min | 10 min | 16 min | 21 min | 31 min | 47 min | 70 min | 1.7 h | 2.5 h | 3.8 h | 5.9 h | 8.6 h |
+| Reached after | 4 min | 9 min | 13 min | 21 min | 26 min | 37 min | 51 min | 1.1 h | 1.6 h | 2.3 h | 3.6 h | 5.6 h | 8.6 h | 12 h |
+| With x2 Training or x2 Power | 2 min | 5 min | 8 min | 12 min | 18 min | 23 min | 32 min | 41 min | 54 min | 1.3 h | 2 h | 3 h | 4.6 h | 6.5 h |
+| With both passes | 1 min | 3 min | 6 min | 8 min | 13 min | 16 min | 19 min | 25 min | 32 min | 46 min | 1.1 h | 1.7 h | 2.6 h | 3.6 h |
+| Squats per bar on arrival | 3 | 5 | 5 | 7 | 9 | 13 | 18 | 20 | 30 | 71 | 83 | 123 | 149 | 216 |
+
+Tapping every bubble gets to map 15 in about 10.7 h, tapping none in about 17 h. The way there: `xpPerMap` 2.03 made power
+"way too hard" at map 10 (80 squats for +25 power), and 1.8 for every map was "way too fast" (25 squats), so one growth
+number for all maps couldn't do it. Now the bars grow gently before map 10, jump once across map 10 and grow steadily
+after, so each late map takes a bit longer than the last with no wall at the end.
+
+**[Built]** Every kind of player (`tools/pace_sim.luau`, 2026-11-07, median of 9 runs, a session a day, with offline earnings
+and the daily reward). Hours are time played; the Index's x2 XP boost and bought lucky throws aren't counted.
+
+| Player | Map 5 | Map 10 | Map 15 | Days to map 15 | Longest late map |
+|---|---|---|---|---|---|
+| Free: casual (20 min a day) | 29 min | 2.3 h | 16.5 h | 48 | 5 h |
+| Free: average (1 h a day) | 19 min | 1.5 h | 10.8 h | 11 | 3.1 h |
+| Free: keen (3 h a day) | 14 min | 1.2 h | 8.7 h | 3 | 2.5 h |
+| Free: grinder (6 h a day) | 11 min | 57 min | 6.3 h | 2 | 1.8 h |
+| Free: leaves it squatting (2 h a day) | 34 min | 1.6 h | 8.7 h | 5 | 2.4 h |
+| Free: loves throwing (1 h a day, 10 s of squats per 8 throws) | 60 min | 5.5 h | 44 h | 44 | 13.7 h |
+| Free: bad at the meter | 33 min | 1.9 h | 12 h | 12 | 3.3 h |
+| Free: never taps bubbles | 24 min | 2 h | 15.3 h | 16 | 4.6 h |
+| Free: never buys rack upgrades | 1.2 h | 47.7 h | never (map 12 at 279 h) | never | 166 h |
+| Free: only buys rack upgrades | 18 min | 1.5 h | 11.2 h | 12 | 3.4 h |
+| x2 Cash | 19 min | 1.4 h | 10.6 h | 11 | 3.2 h |
+| x2 Training or x2 Power | 11 min | 53 min | 6 h | 6 | 1.7 h |
+| Both of those | 6 min | 33 min | 3.4 h | 4 | 57 min |
+| All 3 passes, keen | 6 min | 24 min | 2.5 h | 1 | 43 min |
+
+**[Owner, 2026-11-07]** The passes stay full x2 on every map, as the shop promises ("forever"), even though both together
+reach map 15 in about 3.4 h. Making late rack upgrades dearer doesn't help: it slows free players just as much.
 
 **[Owner, 2026-11-06]** The owner's friends reached far maps far too easily. Two causes, both fixed:
 1. Each rack upgrade had started multiplying XP per rep by 1.25 (`xpPerRepGrowth`) while a bar's XP only grew 1.1%
@@ -1342,17 +1378,20 @@ thing they can, no Robux) that runs the game's own code (2026-11-06, median of 5
   **10** after 3 upgrades, **20** after 4 more, then each tier is one upgrade longer and gives 25% more (25, 31, 39...).
   Upgrades cost $50, ×50 each (`Config/Training`), and each also gives 25% more XP per rep (the pad shows
   "+X XP / rep", like the reference's bars). **The XP a bar needs follows how far your Throw Power reaches**, like
-  the reference ("XP per level grows with distance down the lane"): 2 XP at the throw line, about 2x more for every
-  map a PERFECT throw passes (`baseXp`, `xpPerMap` 2.03, `Training.xpForNextBar`). Power from packs counts too. So
+  the reference ("XP per level grows with distance down the lane"): 2 XP at the throw line, 1.8x more for every
+  map a PERFECT throw passes up to map 9, 3.2x across map 10, then 1.85x a map (`baseXp`, `xpPerMap`, `hardFromMap`,
+  `hardMapStep`, `xpPerLateMap`, `Training.xpForNextBar`). Power from packs counts too. So
   x2 Power and x2 Training each make training exactly 2x faster, and a power pack skips just the bars it replaces.
-  Early bars fill in seconds; a bar takes about 30 s at map 8, 3 minutes at map 13 and 9 minutes at map 15. That,
-  more than money, makes the later maps take hours; money gates the rack upgrades (each costs minutes of income
+  Early bars fill in seconds; a bar takes about 18 squats at map 8, 30 at map 10, 123 at map 13 and 216 at map 15. That,
+  with money, makes the later maps take longer; money gates the rack upgrades (each costs minutes of income
   early on, hours later). A full bar floats "+5 ⚡ POWER"; the bar shows the power per bar.
 - **Throw Power packs (Robux) [Owner]:** power put straight into your stats, small amounts at small prices so
   everything looks cheap: +100, +500, +1,000 (`Config/Shop` `powerPacks`).
 - **x2 Power (Game Pass) [Owner]:** every full bar on the squat rack gives double power, forever. Its card sits under
   x2 Cash and x2 Training in the shop; it shows SOON until its pass id is in `Config/Shop` `doublePower`.
-- **Base upgrades** $1,000, ×10 each (`Config/Plot`).
+- **Base upgrades** (`Config/Plot`): 10 spots, +2 an upgrade, 20 at most. **[Owner, 2026-11-06]** At $1,000 ×10 each
+  the base was maxed 3 minutes in; it should be late game. Now $500K ×1,000,000 each ($500K, $500B, $500Qa, $500Sx,
+  $500No): the play simulation buys them around maps 2, 5, 8, 10 and 13, maxed about 14 hours into the game.
 - **One egg per map** (`Config/Eggs`), each 100x the one before: Dirty (free), Spotted ($500), Golden ($50K), Lava
   ($5M), Frost ($500M), Shadow ($50B), Abyss ($5T), Cosmic ($500T), Eclipse ($50Qa), Forbidden ($5Qi), Carnival
   ($500Qi), Clockwork ($50Sx), Thorn ($5Sp), Spore ($500Sp), Weeping ($50Oc); luck ×1 to ×17. **[Built], [Owner,

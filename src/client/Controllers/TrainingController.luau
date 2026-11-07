@@ -1,10 +1,11 @@
 -- Shows Throw Power at all times, and while training the level/XP bar, the STOP button, the
--- x2 bubble and the pop-ups (+XP, x2!, LEVEL UP!). Also writes the price on the XP upgrade pad. Display and
+-- x2 bubble and the pop-ups (+XP, LEVEL UP!, the 2X XP moment). Also writes the price on the XP upgrade pad. Display and
 -- requests only: every value is read from attributes the server sets on the local player.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local BoostMoment = require(script.Parent.BoostMoment)
 local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Pop = require(ReplicatedStorage.Shared.Config.Pop)
@@ -155,6 +156,7 @@ function TrainingController.start()
 	local lastXp: number? = nil
 	local lastPower: number? = nil
 	local bubbleId: number? = nil
+	local tappedAt = Vector2.zero -- the middle of the bubble last tapped, for the moment when the server confirms it
 
 	local function render()
 		local power = player:GetAttribute("ThrowPower")
@@ -207,8 +209,14 @@ function TrainingController.start()
 		if bubbleId then
 			remotes.TapBubble:FireServer(bubbleId)
 			bubbleId = nil
-			PopText.float(`x{Training.bubble.multiplier}!`, Pop.colors.boost, PopText.above(hud.bubble))
+			tappedAt = hud.bubble.AbsolutePosition + hud.bubble.AbsoluteSize / 2
 			hud.bubble.Visible = false
+		end
+	end)
+	-- The server has the last word on a tap: the moment plays when it says the double rep landed.
+	remotes.Boosted.OnClientEvent:Connect(function(booster: Player, gained: number)
+		if booster == player then
+			BoostMoment.play(tappedAt, hud.bar, Training.bubble.multiplier, Format.short(gained))
 		end
 	end)
 

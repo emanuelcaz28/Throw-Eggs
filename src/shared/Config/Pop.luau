@@ -8,7 +8,6 @@ return {
 		cash = Color3.fromRGB(141, 255, 90), -- cash and $/s coming in
 		spent = Color3.fromRGB(255, 91, 79),
 		xp = Color3.new(1, 1, 1),
-		boost = Color3.fromRGB(212, 166, 255), -- the training x2
 		good = Color3.fromRGB(255, 224, 102), -- a notice when something worked
 		bad = Color3.fromRGB(255, 107, 94), -- and when it didn't
 	},

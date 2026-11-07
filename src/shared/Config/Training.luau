@@ -16,10 +16,14 @@ local Training = {
 	-- are, not on how many bars you've filled, so the x2 Power and x2 Training passes make training exactly 2x
 	-- faster and a power pack skips just the bars it replaces. (When it grew with the bar count, x2 Power skipped
 	-- the most expensive bars and finished the game in under an hour.) Early bars fill in seconds, late ones in
-	-- minutes: that paces the game (docs/GAME_SPEC.md section 12, a play simulation on the game's code,
-	-- 2026-11-06: map 2 at ~3 min, map 8 at ~1.8 h, map 15 at ~30 h).
+	-- minutes: that paces the game (docs/GAME_SPEC.md section 12).
+	-- [Owner, 2026-11-07] A little easy early to mid game, then harder from map 10, but never a hard grind. So bars grow
+	-- gently through the maps before hardFromMap, jump once across that map, then grow steadily again.
 	baseXp = 2,
-	xpPerMap = 2.03,
+	xpPerMap = 1.8, -- each map before hardFromMap
+	hardFromMap = 10, -- the game's turn: late game starts here
+	hardMapStep = 3.2, -- across that one map
+	xpPerLateMap = 1.85, -- each map after it
 
 	startPower = 100, -- Throw Power before any bar
 
@@ -59,11 +63,12 @@ local Training = {
 		priceGrowth = 50,
 	},
 
-	-- While training, a bubble pops up now and then; tapping it gives one rep worth multiplier reps.
+	-- [Owner] While training, a bubble pops up every 3 seconds, tapped or not; tapping it gives one rep worth
+	-- multiplier reps. Keep lifetime + tapGrace under interval, so one bubble is gone before the next.
 	bubble = {
-		minDelay = 6, -- seconds between bubbles
-		maxDelay = 12,
-		lifetime = 3, -- seconds it stays tappable
+		interval = 3, -- seconds from one bubble appearing to the next
+		lifetime = 2, -- seconds it shows on screen
+		tapGrace = 0.3, -- extra seconds the server still accepts a tap, for one made at the last moment on a slow connection
 		multiplier = 2,
 	},
 }
@@ -89,7 +94,12 @@ end
 
 -- The XP the next bar needs at this Throw Power (power packs included): see xpPerMap.
 function Training.xpForNextBar(power: number): number
-	return math.floor(Training.baseXp * Training.xpPerMap ^ mapsPassed(power * Throw.meter.perfectMultiplier))
+	local passed = mapsPassed(power * Throw.meter.perfectMultiplier)
+	local turn = Training.hardFromMap - 1 -- maps passed when that map starts
+	local early = math.min(passed, turn)
+	local step = math.clamp(passed - turn, 0, 1)
+	local late = math.max(passed - turn - 1, 0)
+	return math.floor(Training.baseXp * Training.xpPerMap ^ early * Training.hardMapStep ^ step * Training.xpPerLateMap ^ late)
 end
 
 -- Each upgrade at the sign also multiplies XP per rep by xpPerRepGrowth (the pad shows "+X XP / rep", like the
