@@ -229,6 +229,10 @@ Copy `assets/models/build_eclipse_temple_monsters.py` (map 9) to `build_<map>_mo
 `monster_stage.py` (renders, lineup, Gold lineup, walk-and-roar video, saves the `.blend`) and `face_kit.py`
 (`classic_mouth`: jaws on a Jaw bone, teeth, a gold tooth, a tongue).
 
+**Each map's 7th and 8th** (owner, 2026-11-06: 8 a map, two more each, 6 at a time, a prompt each): one script a map,
+`build_<map>_monsters_7_8.py`, on `rare_kit.py` instead of this template. See the note at the top of `rare_kit.py`.
+In `Config/Dinos` they carry `prize = true`, with chances about 4 and 13 times the 6th's and income 3 and 10 times its.
+
 **Design.** Six per map, most common first. Style per map: GAME_SPEC section 8a and memory
 `later-maps-weirder-monsters`. From map 2 the common ones are silly (goofy names, derpy faces) and the rarest
 fierce, the last one a boss, both a step stronger each map; map 8 was calm on purpose. Give the map **one shared
@@ -256,6 +260,28 @@ bigger: build them bigger, or `grow(m, 1.3)` at the end. Commons are about 3 to 
 | `PalmL`, `PalmR` | hands held to the face that pull away in the roar and the lunge (Endless Grief): turn on the upright, pivot behind the wrist |
 | `Vent<n>` | spore clouds rising for ever out of a vent: `vent(m, n, base, parent, ...)` in `build_spore_hollow_monsters.py`, made by its `finish(m, k)` after the grow so the clouds stay 0.6 apart. A monster with these also **pounces** every 4 seconds: rears back, then lunges, jaw flung open, arms raking (`DinoLifeController` `POUNCE` and `VENT`, `pounce_of` in the script). A step below `RAGE` |
 | `MandL`, `MandR` | side jaws (mandibles, pincers, a mouth that opens four ways): `rot_maw(..., mandibles=dict(...))` in `build_spore_hollow_monsters.py`. They gnash, spread when the monster rears and fling open in the roar, turning on the upright |
+| `Sway<n>a`, `b`, `c` (n up to 8) | slow waves down a chain: feathers, cloth, sails, moss. `chain(m, "Sway", n, points, ...)` in `rare_kit.py`, or one `Sway<n>a` for a stiff feather. `Wriggle<n>a`, `b`, `c` is the same but fast and wide: a worm lure (`DinoLifeController` `SWAY`, `sway_of` in `rare_kit.py`, for all the bones in the rows below too) |
+| `PinchL`, `PinchR` | a pincer's moving outer finger: eases open, snaps shut every 2 seconds, one half a beat after the other, flung open in the roar. Pivot at the finger's root |
+| `Sting` | a scorpion's stinger, the last bone of the tail: draws back, then stabs, every 4 seconds |
+| `Flick` | a forked tongue, under the Jaw: darts out twice every 2 seconds |
+| `Slither1` to `Slither8` | a snake's body, each the child of the one before, from the Spine down to the tail tip: a wave runs down them, gently at rest and wide on the move. No legs needed: with these the reveal's walk glides like a swimmer's |
+| `Strike` | between the Spine and the Neck: rears back and lunges every 4 seconds, and the Jaw bites along with it. The most a map-3 monster does |
+| `Spit1` to `Spit6` | fire: `fireball(m, n, at, size)` in `build_volcano_monsters_7_8.py`, parked inside the head and thrown out one after the other as the `Strike` lunges (jaw held wide, `MandL`, `MandR` snapping, wings beating). Map 4 |
+| `Step<n>` | a centipede's legs, one bone for each `Slither<n>`, its child: a ripple down the sides, wide on the move |
+| `Kick1` to `Kick4` | snow off the hooves: `chunk(m, "Kick", ...)` in `build_frozen_peaks_monsters_7_8.py`, parked in the belly on `Root`. With these it **charges**: paws, sinks back, throws its whole body forward head down. Map 5 |
+| `Shard1` to `Shard6` | ice off the ground, the same on `Root`. With these it **smashes**: both `ArmL`, `ArmR` up over its head, then down. The arms must reach the ground from the rest pose. Map 5 |
+| `Stab`, `BuzzL`, `BuzzR` | a needle that stabs twice every 4 seconds as the body dips and the `FrontL`, `FrontR` reach in; wings that blur. Map 6 |
+| `Curl1` to `Curl4`, `Thumb` | a hand's fingers, each `Curl` the middle joint under a `Front` or `Back` bone: drums them one by one, then rears and **grabs**. Map 6 |
+| `PunchL`, `PunchR`, `ClubL`, `ClubR`, `Shock1`, `Shock2`, `Bubble1` to `Bubble4` | a folded arm that snaps out, one side then the other, a ring of shock flying off each: `punch_arm` and `shock_ring` in `build_abyss_monsters_7_8.py`. Map 7 |
+| `SeizeL1` to `5`, `SeizeR1` to `5` | long arms held up in a curve that unroll straight, strike and drag back: `hunting_arm` in the same script. `SEIZE_TURN` is how far each joint turns, worked out from `SEIZE_PATH`, so change the two together. Map 7 |
+| `Spout1` to `Spout6`, `Fall1` to `Fall6` | stars out of a blowhole; meteors down the `METEOR` line (`rare_kit.py`), their tails built pointing back up it. Calm, for map 8: the face doesn't change, only the sky does |
+| `Orbit` | turns round the upright, once in 8 seconds, on `DinoLifeController` `SPIN`: a moon built off to one side of a bone in the middle of the monster |
+| `ArmL`, `ArmR`, `ScytheL`, `ScytheR`, `Crescent1`, `Crescent2` | scythes up and down, and blades thrown out and back: `to` equals `from` and the arc is a Vector3, so it flies out along it and returns, spinning. Map 9 |
+| `Maul` | between the Spine and the Neck, on a piece of the chest: maps 10 to 12's bare monsters. Every 2 seconds the whole front lunges, the Jaw bites three times, Neck and Head shake, arms rake, legs drive. `beast_head` in `rare_kit.py` is the shared head: mostly mouth, small slit eyes, no glow. Check the jaw reaches no lower than the floor: a long head needs a small `gape` |
+| `Whirl`, `Gore`, `Gulp`, `Bounce`, `Pummel`, `Reach1` | maps 13 to 15's bare monsters, the most aggressive of all, one attack each (`WHIRLER` and friends, built from `beat`, `wave`, `hop` and `stacked`, line for line in both files). `Whirl`: the waist, top half spins twice; build the top as its own round piece turning in a bowl of hips, never one skin, or it twists shut. `Gore`: the chest, with `Quill1` to `8` (thorns that stand up, negative pitch when they lie back). `Gulp`: the throat; `Head` flings back, so `Jaw` must turn the other way or it goes up with it. `Bounce`: the chest, with `HockL`, `HockR` (the lower hind legs). `Pummel`: the chest, with `ForeL`, `ForeR`; fists must reach the ground at rest. `Reach1` to `12`: a neck with a bone for every ring, each sliding 1.7; fewer bones stretch into stairs |
+| `Ring1` to `Ring4` | rings of sound, with `Swim`, `WingL`, `WingR`, `WingTipL`, `WingTipR`: wings beat, it climbs, screams, folds them and drops. `Swim` makes it a flyer: no feet, and the reveal glides. Map 9 |
+
+`Spit1`, `Kick1`, `Shard1`, `Stab`, `Curl1`, `Whirl`, `Gore`, `Gulp`, `Bounce`, `Pummel`, `Reach1` and `Strike` are **markers**: a monster with one has the rest of its body moved by that bone's table (`MARKED` in `DinoLifeController` and `rare_kit.py`, which must stay equal). Thrown bits are in `FLING` / `fling`: parked out of sight, they jump to `from`, fly to `to` and snap back, so `to` should end below the ground. Their numbers are per bone name, not per monster, so a new thrower with different feet or fists needs new bone names.
 
 **Spare eyes** use the role `Slit` for their pupils, not `Pupil`: the reveal aims at the middle of the `Pupil` parts, so an eye on a stalk would drag it away from the face. **Jaw** must sit in front of `Tail1` (or the `Spine` if there's no tail): that's how the game reads which way a monster faces.
 
@@ -319,6 +345,24 @@ once they're imported and tidied (step 8), list them in `Config/Dinos` (ids neve
     while a reveal is on, for a monster of any size.
   - The Studio pane can be very wide and short. To check a dark map: anchor the player near the spot on the Server, hide
     the GUI, and set a Scriptable camera on the Client (it resets when the script ends, but holds for the capture).
+- **Rare monsters that read as the wrong animal** (the first Therizinosaurus, 2026-11-06). White body and orange legs and bill: a
+  goose. Upright pink crest and a beak: a rooster. The fix was never more detail. Check the render for "what is this at a
+  glance", then change the colours and the part that says the wrong animal: a soft muzzle instead of a bill, feathers swept
+  back instead of up. A round ball eye with `cap()` irises and skin `lid()`s sets the mood far better than flat square plates.
+- **Check monsters for flicker before exporting:** `Blender -b --python assets/models/check_flicker_monsters.py -- build_<map>_monsters_7_8`. `check_flicker.py` only finds flat faces in the same plane; monsters shimmer on curves too. The usual causes: layers of an eye too close (`slit_eye`'s `layer` keeps them 0.04 apart), teeth grazing a mouth plate (root them in the jaw, keep the plate narrower), a body's end cap showing inside an open mouth, a flat bump lying along a body (make it stand up), a claw running along the end of a limb (start it wider).
+- **Build a body as one sweep from rump to skull,** with a bone per ring. Separate blocks for chest and neck leave steps at every joint, and `beast_head`'s skin at the corners of the mouth is what stops the jaw looking bolted on.
+- **The reveal meets a monster head on.** Every catch ends looking straight at its face, so judge a render from the front as well as the three-quarter view. Eyes on the sides of a whale's head left a blue ball in the reveal (2026-11-06): set them forward and give it a line of mouth, however unlike the real animal. In a play test, end a reveal with Space and make a new egg and move the player back each time: the reveal eats the egg and sends the player home.
+- **Smooth it before you add detail.** `sweep_fine` and `fine` (`rare_kit.py`) put more rings on a smooth curve, `ring_round` makes rims, `sheet` makes real wings and fins. A stack of `sweep`s reads as boxes; flat `poly` fins read as cardboard. Straight legs read as a table: give every leg a bend, a thin wrist and a real foot. Keep the bones and the joints thrown bits aim at where they are and the attacks don't change.
+- **A preview that adds to a pose needs a pose to add to.** `sway` adds a marker's move to what the walk and idle set, so a bone they don't set builds up frame by frame. A flyer's wings drifted into a cloak in the video (2026-11-06); the game was never wrong. If a preview looks mad, check it against the numbers before changing the model.
+- **Park thrown bits on the bone that carries the body.** Parked on `Root`, a monster that really moves leaves them hanging in mid air: the bat's rings stayed behind when it dived, so theirs are on `Swim`. `Root` is fine when the body only leans. And a meteor's or a star's whole length has to fit inside the body when parked, or it pokes out of the monster's back.
+- **Heads from a table, teeth round the front** (maps 13 to 15's pairs, 2026-11-06). All six on `beast_head` came out as one rat head on six bodies, and head on its teeth were two white curtains: rows that stop short of the tip are seen end on. `fierce_head` in `fierce_kit.py` takes a skull table per monster and runs the teeth right round the jaw on a gum. `beast_head` stays for maps 10 to 12. Bigger eyes need their socket to stop short of the iris and a bigger `layer`; a big head's jaw needs its lowest point measured, not just the `gape` guessed. Pale bumps on a dome read as a sesame bun: use bone spikes.
+- **A face is a surface.** Features placed by eye on a new head can land inside it (the Constellion's did, twice). Work out the surface from the rings, and for a lion keep the skull short with the mane right round it, or it reads as a capybara.
+- **A `sweep` of one short piece picks its own frame.** Plates along a long body twisted at random until each was given `up=` the body's own normal from `frames_along`.
+- **An eye sunk in a `Socket` egg vanishes.** The socket must stop short of the eye's front, or you get a black ball. And a ring of fur round a face runs straight through an open mouth: skip the spikes where the mouth opens.
+- **Scales or feathers in a ring stripe if they alternate colour** (`scallop`): flaps overlap, so only a sliver of each shows. One
+  colour a ring, alternating ring by ring.
+- **A squashed `cap` dips under the one below it** between its corners, so a slit pupil comes out jagged: lift it a few percent
+  and cut it finer (`slit_eye` does).
 - **The importer drops a bone with no mesh on it.** Endless Grief's empty marker bone vanished, and with it the thing that
   turned its rage on. A bone the game looks for must carry something, and check the bones in Studio after an import.
 - **`about = "self"` turns round the bounding box's middle.** Give a gear or a wheel an even number of teeth and

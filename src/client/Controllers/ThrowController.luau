@@ -15,7 +15,7 @@ local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local PopText = require(ReplicatedStorage.Shared.PopText)
 local LuckBoosts = require(ReplicatedStorage.Shared.LuckBoosts)
-local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
+local LuckOfferController = require(script.Parent.LuckOfferController)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
@@ -329,7 +329,6 @@ local function boughtLuck(): number
 	return LuckBoosts.multiplier(player, workspace:GetServerTimeNow())
 end
 
--- The reveal has the screen to itself. While aiming and flying, only Throw Power stays
 -- True while a throw is aiming, flying or revealing: no jump button then.
 local throwBusy = false
 
@@ -356,12 +355,13 @@ local function lockJumping()
 	end
 end
 
+-- The reveal has the screen to itself. While aiming and flying, only Throw Power stays
 -- (keepPower), so the meter and the luck number aren't crowded.
 local function setHudsEnabled(enabled: boolean, keepPower: boolean?)
 	-- A phone's thumbstick and jump button go too: the thrower can't move, and the jump button sat on the meter.
 	GuiService.TouchControlsEnabled = enabled
 	throwBusy = not enabled
-	for _, name in { "TrainingHud", "PlotHud", "EggShopHud", "IndexHud", "ShopHud", "LuckTimerHud", "EventHud", "DailyHud", "GoalHud" } do
+	for _, name in { "TrainingHud", "PlotHud", "DailyButtonHud", "EggShopHud", "IndexHud", "ShopHud", "BoostHud", "BoostCardHud", "DailyHud", "GoalHud" } do
 		if keepPower and name == "TrainingHud" then
 			continue
 		end
@@ -372,10 +372,19 @@ local function setHudsEnabled(enabled: boolean, keepPower: boolean?)
 	end
 end
 
+-- Back to Plot (HomeController) shows only while the meter is up, so the meter can always be left.
+local function setHomeButton(shown: boolean)
+	local home = player.PlayerGui:FindFirstChild("HomeHud")
+	if home then
+		home.Enabled = shown
+	end
+end
+
 function ThrowController.start()
+	LuckOfferController.start()
+	RunService.Heartbeat:Connect(lockJumping)
 	local remotes = ReplicatedStorage:WaitForChild("ThrowRemotes")
 	local hud = buildGui()
-	RunService.Heartbeat:Connect(lockJumping)
 
 	-- Downloaded now, so even the first throw spins: a clip still loading plays nothing.
 	task.spawn(function()
@@ -422,6 +431,7 @@ function ThrowController.start()
 	-- Stops taking taps. The meter stays on screen until hideMeter.
 	local function stopAiming()
 		aiming = false
+		LuckOfferController.hide()
 		ContextActionService:UnbindAction(TAP_ACTION)
 	end
 
@@ -441,10 +451,11 @@ function ThrowController.start()
 	end
 
 	local function tap()
-		if aiming and os.clock() - aimStartedAt >= Throw.meter.minTime then
+		if aiming and os.clock() - aimStartedAt >= Throw.meter.minTime and not LuckOfferController.blocksThrow() then
+			local lucky = LuckOfferController.chosen() -- read before stopAiming hides the offer
 			stopAiming()
 			showResult(markerHeight)
-			remotes.Tap:FireServer(markerHeight)
+			remotes.Tap:FireServer(markerHeight, lucky)
 		end
 	end
 
@@ -493,11 +504,13 @@ function ThrowController.start()
 		camera.CameraType = Enum.CameraType.Scriptable
 		camera.CFrame = ThrowCinematic.windupCamera(spot, 0)
 		setHudsEnabled(false, true)
+		setHomeButton(true)
 		placeMarker(0)
 		hud.meter.Visible = true
 		task.wait(aim.black)
 		aiming = true
 		aimStartedAt = os.clock()
+		LuckOfferController.show(equipped.id)
 		-- Taken over while aiming so Space throws instead of jumping.
 		ContextActionService:BindAction(TAP_ACTION, function(_, inputState)
 			if inputState == Enum.UserInputState.Begin then
@@ -509,6 +522,7 @@ function ThrowController.start()
 	end)
 
 	remotes.MeterCancel.OnClientEvent:Connect(function()
+		setHomeButton(false)
 		hideMeter()
 		releaseCharacter()
 		if heldEgg then
@@ -533,8 +547,6 @@ function ThrowController.start()
 		local duration = Throw.flightTime(distance)
 		local arc = math.min(distance * flight.arcPerStud, flight.maxArc)
 		local eggConfig = DinoStats.findOption(Eggs, eggId) or Eggs[1]
-		-- The lucky throw the server will use up when this egg lands (the biggest owned).
-		local luckyThrow = if isMine then LuckyThrows.nextOf(player) or 1 else 1
 		-- The egg's share of the luck shown, against the egg made for the world it lands in (Luck.eggFactor).
 		local eggLuck = Luck.eggFactor(eggConfig.luckBonus, distance)
 		local egg = if isMine and heldEgg then heldEgg else makeEgg(eggConfig)
@@ -551,6 +563,7 @@ function ThrowController.start()
 
 		if isMine then
 			stopAiming()
+			setHomeButton(false)
 			task.delay(RESULT_HOLD, function()
 				if not aiming then
 					hud.meter.Visible = false
@@ -576,10 +589,11 @@ function ThrowController.start()
 		end
 
 		local startedAt = os.clock()
+		local burstThrough = false
 		while true do
 			local elapsed = os.clock() - startedAt
 			local t = math.min(elapsed / duration, 1)
-			local share = Throw.travelled(t)
+			local share = Throw.flightShare(elapsed, distance)
 			local travelled = distance * share
 			-- Drops from the hand to the corridor floor, plus a hill that peaks at arc halfway.
 			local height = releasedAt.Y + (landY - releasedAt.Y) * t + arc * 4 * t * (1 - t)
@@ -593,8 +607,12 @@ function ThrowController.start()
 			egg.CFrame = CFrame.new(position) * tumble * heldTurn
 			if isMine and cameraFrom then
 				camera.CFrame = ThrowCinematic.flightCamera(cameraFrom, position, elapsed, duration)
-				local luck = Luck.at(travelled) * eggLuck * boughtLuck() * luckyThrow
+				local luck = Luck.at(travelled) * eggLuck * boughtLuck() -- a lucky throw's x isn't shown [Owner, 2026-11-06]
 				hud.luckPanel.set(luck, Luck.biomeAt(travelled))
+				if travelled >= Throw.lastDoorAt and not burstThrough then
+					burstThrough = true
+					ThrowCinematic.doorBurst()
+				end
 			end
 			if t >= 1 then
 				break
@@ -634,6 +652,13 @@ function ThrowController.start()
 			egg:Destroy()
 			camera.CameraType = Enum.CameraType.Custom
 			setHudsEnabled(true)
+		end
+		-- Still over the platform means the walk home didn't happen (the reveal failed, or there is no plot): put the
+		-- player back on their plot, so they can walk away instead of being sent to the meter again.
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root and Throw.onPlatform(root.Position) then
+			RevealController.returnHome()
 		end
 		remotes.RevealDone:FireServer()
 	end)

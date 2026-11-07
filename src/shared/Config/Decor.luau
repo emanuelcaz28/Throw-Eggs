@@ -1219,6 +1219,82 @@ return {
 				{ name = "prop_TearPool", distance = 1670, x = 2, on = "floor", yaw = 350, scale = 1.3, face = "along" },
 			},
 		},
+		DeepEnd = {
+			seed = 161,
+
+			-- The Last Door stands in the first 52 studs, so nothing starts before 70.
+			floor = {
+				firstDistance = 70,
+				gap = { 12, 20 },
+				side = { 23, 34 },
+				props = {
+					{ name = "prop_DepthGauge", weight = 13, scale = { 1.3, 1.7 } },
+					{ name = "prop_GiantRib", weight = 8, scale = { 1.1, 1.4 } },
+					{ name = "prop_StoneFang", weight = 10, scale = { 1.2, 1.7 } },
+					{ name = "prop_FallenBlock", weight = 7, scale = { 1, 1.3 } },
+					{ name = "prop_HangingChain", weight = 7, scale = { 1.2, 1.5 } },
+					{ name = "prop_TitanTooth", weight = 3, scale = { 1.2, 1.5 } },
+				},
+				extras = {
+					chance = 0.7,
+					spread = 8,
+					props = {
+						{ name = "prop_GlowMoss", weight = 5, scale = { 0.9, 1.4 } },
+					},
+				},
+			},
+
+			rim = {
+				firstDistance = 70,
+				gap = { 9, 15 },
+				chance = 0.95,
+				side = { 60, 104 },
+				props = {
+					{ name = "prop_RockSpire", weight = 9, scale = { 1.6, 2.6 } },
+					{ name = "prop_StoneFang", weight = 3, scale = { 2, 2.8 } },
+					{ name = "prop_DepthGauge", weight = 2, scale = { 2, 2.4 } },
+					{ name = "prop_GlowMoss", weight = 2, scale = { 2.2, 2.8 } },
+				},
+			},
+
+			overhead = {
+				{ name = "prop_ChainSpan", distance = 340, yaw = 0, scale = 1 },
+				{ name = "prop_ChainSpan", distance = 800, yaw = 0, scale = 1 },
+				{ name = "prop_ChainSpan", distance = 1260, yaw = 0, scale = 1 },
+			},
+
+			walls = {
+				{ name = "prop_DeepSeep", distance = 120, side = 1 },
+				{ name = "prop_DeepSeep", distance = 290, side = -1 },
+				{ name = "prop_DeepSeep", distance = 460, side = 1 },
+				{ name = "prop_DeepSeep", distance = 630, side = -1 },
+				{ name = "prop_DeepSeep", distance = 800, side = 1 },
+				{ name = "prop_DeepSeep", distance = 970, side = -1 },
+				{ name = "prop_DeepSeep", distance = 1140, side = 1 },
+				{ name = "prop_DeepSeep", distance = 1310, side = -1 },
+				{ name = "prop_DeepSeep", distance = 1470, side = 1 },
+			},
+
+			spots = {
+				{ name = "prop_ShaftColumn", distance = 210, x = -84, on = "rim", yaw = 0, scale = 1.6, face = "middle" },
+				{ name = "prop_ShaftColumn", distance = 560, x = 84, on = "rim", yaw = 0, scale = 1.7, face = "middle" },
+				{ name = "prop_ShaftColumn", distance = 920, x = -84, on = "rim", yaw = 0, scale = 1.6, face = "middle" },
+				{ name = "prop_ShaftColumn", distance = 1290, x = 84, on = "rim", yaw = 0, scale = 1.7, face = "middle" },
+				{ name = "prop_TitanSkull", distance = 400, x = 84, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_TitanSkull", distance = 760, x = -84, on = "rim", yaw = 0, scale = 1.6, face = "middle" },
+				{ name = "prop_TitanSkull", distance = 1130, x = 84, on = "rim", yaw = 0, scale = 1.5, face = "middle" },
+				{ name = "prop_BottomFace", distance = 1552, x = 0, on = "rim", yaw = 180, scale = 1, face = "along" },
+				{ name = "prop_SeepPool", distance = 130, x = -3, on = "floor", yaw = 10, scale = 1.3, face = "along" },
+				{ name = "prop_SeepPool", distance = 300, x = 4, on = "floor", yaw = 350, scale = 1.3, face = "along" },
+				{ name = "prop_SeepPool", distance = 470, x = -4, on = "floor", yaw = 20, scale = 1.3, face = "along" },
+				{ name = "prop_SeepPool", distance = 640, x = 3, on = "floor", yaw = 340, scale = 1.3, face = "along" },
+				{ name = "prop_SeepPool", distance = 810, x = -2, on = "floor", yaw = 5, scale = 1.3, face = "along" },
+				{ name = "prop_SeepPool", distance = 980, x = 4, on = "floor", yaw = 15, scale = 1.3, face = "along" },
+				{ name = "prop_SeepPool", distance = 1150, x = 2, on = "floor", yaw = 10, scale = 1.3, face = "along" },
+				{ name = "prop_SeepPool", distance = 1320, x = -4, on = "floor", yaw = 355, scale = 1.3, face = "along" },
+				{ name = "prop_SeepPool", distance = 1450, x = 3, on = "floor", yaw = 25, scale = 1.3, face = "along" },
+			},
+		},
 	},
 
 	-- Real light from a prop, for the worlds too dark for Neon alone, which lights nothing round it. By prop: the role it
@@ -1236,6 +1312,10 @@ return {
 		prop_HollowHouse = { role = "Window", color = Color3.fromRGB(226, 220, 196), range = 18, brightness = 0.9 },
 		prop_LastLighthouse = { role = "Beacon", color = Color3.fromRGB(230, 230, 230), range = 40, brightness = 1.1 },
 		prop_LastDoor = { role = "Stare", color = Color3.fromRGB(255, 26, 26), range = 60, brightness = 2.4 },
+		prop_FallenBlock = { role = "SeamGlow", color = Color3.fromRGB(143, 248, 224), range = 24, brightness = 1 },
+		prop_ShaftColumn = { role = "ColumnRing", color = Color3.fromRGB(143, 248, 224), range = 40, brightness = 1.1 },
+		prop_TitanSkull = { role = "DeepEye", color = Color3.fromRGB(143, 248, 224), range = 40, brightness = 1.4 },
+		prop_BottomFace = { role = "DeepEye", color = Color3.fromRGB(143, 248, 224), range = 90, brightness = 2.6 },
 	},
 
 	-- The arena's props, from the first biome's folder.

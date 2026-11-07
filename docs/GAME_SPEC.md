@@ -273,8 +273,9 @@ reveal; your own catch appears once you've tapped through it. Limit and timings 
 ### Flight
 - **[Built]** The camera follows the egg down the corridor through the worlds. The luck multiplier climbs live at the
   top of the screen, with the current world's name.
-- **[Owner]** Flight time depends on how far the throw goes. About 6 seconds is what a throw to the **last map** takes,
-  so throws to the first maps must be over faster than that, and always smooth.
+- **[Owner]** Flight time depends on how far the throw goes. Throws to the first maps must be over faster than a throw to
+  the last map, and always smooth. **[Owner, 2026-11-07]** A little longer than the first 6 seconds, so players get to see
+  the worlds: `Config/Throw` `flight`, 2 seconds at the shortest, 8 to the end of the last map (about 3 s to the Forest's end). Past the Last Door the egg slows and takes 3 more seconds (`deepTime`), so players get to see The Deep End.
 - **[Seen]** The bars and Throw Power go away as it starts. The camera begins low, climbs high behind the item
   looking down the valley, then drops low again as it comes down.
 - **[Seen]** A thin white line trails along the floor behind the item, and white lines cross the floor at intervals.
@@ -301,6 +302,55 @@ reveal; your own catch appears once you've tapped through it. Limit and timings 
 ### Landing and arrival: the animal walks to the egg
 **[Owner]** Pay special attention to this part. The animal walking towards what you threw is the key moment, then its
 name shows up slowly.
+
+**[Owner, 2026-11-07] The reveal is the soul of the game, and this is how it works.** It's why people buy x100 and x500. It
+must never feel like wasted time, and a huge catch may take as long as it wants, up to about 40 seconds. Where anything
+further down this section disagrees, this wins. **[Built]** (`RevealWalk`, `RevealCloseUp`, `RevealOpening`, `RevealDrama`,
+`RevealSound`, `Config/Reveal`; text designed in Figma "Throw Eggs - Reveal Text",
+https://www.figma.com/design/GkAQPam3aVAIkfHi8uUWfI):
+
+1. **The walk is slow and goes all the way.** 4 seconds for a common catch up to 13 for the rarest, plus up to 8 for the
+   biggest, braking all the way to the egg. Over the last of it the monster lowers its head to the egg, so even a Unit of Doom
+   ends with its face at it instead of stopping hundreds of studs short. Each footfall has a sound, heavier the bigger it is.
+2. **The "1 in X" shows on the walk**, big, from catches of 1 in 100 up (`counterMinOneIn`, was 1,000: the owner's own example is
+   a 1 in 900). Its being there is how you know you got something. **[Owner, 2026-11-07, replacing the lock on "1 in 1"]** It
+   starts on a random number that depends on how rare the catch is: 11 to 24 for a catch that's not that rare, rising to 58 to
+   89 for the rarest, never ending in 0 or 5 (`tease`). It stays locked there for 2 to 3 seconds, then creeps up just a little,
+   never past 97, so no luck label lands before the camera switches.
+3. **The camera switches to the feet. This is the most important part.** One continuous, very slow zoom out runs while the
+   numbers go up for real, starting on one front foot from ground level, with the ground under the feet held in the same place
+   on the screen. More and more of the body comes into view, but never all of it: by the last number it has stopped short of
+   the eyes (`closeUp`). The numbers start slowly and run away at the end, growing and trembling, and each luck label slams in
+   above them. Rare catches get strings rising to a peak on the last number. **[Owner, 2026-11-07] More shaking and instant
+   zooms for rarer monsters** (`impact`, `lucky` `jolt`, `shake`): the switch to the feet lands like a stomp; each luck label
+   snaps the view in and jolts the camera, harder the rarer the label; the camera trembles from the first label on, more and
+   more as the numbers run away; on rare and big catches smaller snaps land on a beat that speeds up. Common catches get none
+   of this.
+4. **Only when the numbers finish is the whole monster revealed.** On rare catches the last number snaps the view in and it all
+   goes still and quiet for a moment. Then a flash, a boom and a roar: the view snaps wide at once, showing the whole monster,
+   and the camera whips back with its biggest shake, its head roaring, as the final text lands. The camera ends low, looking
+   up. It holds still there, with no circling.
+5. **Monsters are alive on camera**, playing their own idle and roaring at the unveil (`DinoLifeController.reveal`).
+6. **Rare and big catches set a mood from the first step of the walk:** the eyelids stay narrower, the world dims, a drone and
+   a heartbeat build. The monster's colours sink a little until the unveil, but stay readable: a gold foot is a hint. Common
+   catches get the same shape with no numbers, about 7 seconds in all.
+7. **No flashy effects round the monster [Owner, 2026-11-07].** The glowing outline, star sparkles, rising lights, shockwave rings,
+   lightning and rainbow are gone (`RevealAura` deleted). The only thing round the monster now is plain ground dust when something
+   big lands (`RevealDust`, `dust`), and the screen's coloured edges are half as strong. The light rays behind it at the final
+   moment stay.
+8. **Big monsters get room [Owner: the corridor's walls covered them].** A monster too wide for the corridor opens it: on the
+   catcher's screen only, behind the first cut to black, the walls and everything on their rims slide apart, the floor widens
+   with them and the props spanning the corridor hide, so the real map stays as it is for everyone else. The walls open to 1.5
+   times the monster's width (`opening`). A real wider map wasn't enough: a Unit of Doom on the last map is over 400 studs wide,
+   past the island's edge, against an 88-stud corridor.
+
+**[Owner, 2026-11-07, tested on a phone]** The eyes closing, the cuts to black and every other full-screen cover reach the screen's
+real edges, past a phone's notch and round corners. They live on their own layers (`RevealBehind`, `RevealInFront`), and the text
+stays on `RevealHud` inside the safe area, so it's never cut off.
+
+Checked on all 124 monsters at normal size and at Unit of Doom: the camera never passes through a body, the whole monster
+is in the last frame, and the eyes stay hidden until the last number but for two giants (Clockodile, Spiral Gary), whose
+heads sit too low to hide.
 
 **[Seen]** From the owner's video. Times are seconds after the item touches the ground; the whole thing takes about 7 seconds.
 
@@ -340,7 +390,7 @@ name shows up slowly.
 - **[Owner, 2026-11-04] No rings, and luck only when it's really lucky.** The old rings round the monster looked cheap
   and made the animal feel unimportant. The "1 in X" showed on nearly every catch (a common monster with a common size
   is already "1 in 160"), so it meant nothing. And the clover icon and box round the odds looked ugly. **[Built]** now:
-  - **Luck only from 1 in 1,000:** rarer catches get the counter, the luck labels, the tier sticker, the "1 in X" and
+  - **Luck only from 1 in 1,000 (1 in 100 since 2026-11-07, see the top of this section):** rarer catches get the counter, the luck labels, the tier sticker, the "1 in X" and
     the tier sticker. Commoner ones show none of that (`Config/Reveal` `counterMinOneIn`).
   - **The final moment:** a quick white flash, then light rays in the rarity's colour burst out from behind the monster
     and turn slowly, two layers turning opposite ways (`RevealRays`, `Config/Reveal` `rays`). Rarer luck labels get
@@ -379,7 +429,7 @@ name shows up slowly.
   last; a giant seen from out over a wall was hidden behind the wall's top), the slowed camera moved badly, and the
   "1 in X" stopped on every label. **[Built]** (`RevealAura`, `RevealCloseUp`, `Config/Reveal` `aura`, `closeUp`
   `luckyHold`/`push`; previews in `design/reveal/v2/`):
-  - **Always in view:** after the walk (now 2 to 3.2 seconds, was up to 4.6) a short close-up on the egg, then the
+  - **Always in view (replaced 2026-11-07: the owner now wants the body hidden until the last number, see the top of this section):** after the walk (now 2 to 3.2 seconds, was up to 4.6) a short close-up on the egg, then the
     camera pulls back to the whole monster in about 1.5 to 2.5 seconds on every catch. On lucky ones it pulls back a
     little further, then creeps straight in on the monster over the count, landing with the last number. No
     circling. It stays inside the corridor at any height, so the walls can't hide a giant, and looks down a little
@@ -389,7 +439,7 @@ name shows up slowly.
     counter as it's passed, then settles over the counter, while the numbers keep climbing. The label and counter sit
     at the bottom, just above the name's letters, so the monster has the top of the screen; the final text takes the
     same space, so the monster doesn't move when it comes.
-  - **Luck building up round the monster** (from the first label): a glowing outline in the label's colour that
+  - **Luck building up round the monster (removed 2026-11-07, see the top of this section)** (from the first label): a glowing outline in the label's colour that
     breathes and flashes as each label lands, lights rising off the ground round its feet, a light on it, a shockwave
     ring racing out along the ground at each label, the screen's edges darkening (vignette) so the monster stands out;
     from GODLY! lightning striking round it, and on IMPOSSIBLE! everything cycling through the rainbow. At the final
@@ -401,6 +451,13 @@ name shows up slowly.
     round chances multiplied together. So it never comes out round: a Gold Thicc Pteranodon is 1 in 483,422, a Shadow
     Planet-Sized Volcano King 1 in 51,177,829,002. The rarest colour and size have odd chances (Ghost 1 in 19,683,
     Unit of Doom 1 in 9,787) for the same reason. None of the 5,311 catches that show a "1 in X" ends in 000.
+- **[Replaced 2026-11-07, the same day: the owner said it still wasn't it, see the top of this section]** A first try at the
+  mood (`RevealDrama`): catches from 1 in 1,000, or Chonker and up, arrived as a **shadow**: a black shape with only its eyes and glowing parts lit, inside the
+  aura's glowing edge, while the world dims and a drone and speeding heartbeat build. The name's letters hold back until late.
+  Mega Chonk and up also shake the ground every 1.5 seconds. At the last number all goes black and quiet for 0.7 to 1.4 seconds (the
+  hush), then a full flash, a boom, and the monster bursts into colour. Three levels (1 in 1,000, 1 in a million, 1 in 100 million, or the
+  sizes Chonker, Mega Chonk, Planet-Sized) go darker, hush longer and boom louder. Giants end seen head on and closer (`bigFill`).
+  Common catches stay as before. These are the game's first sounds, from Roblox's licensed libraries.
 - **[Owner]** The walk depends on the catch: a very rare monster starts far from the egg, and a very big one starts way
   above the map. It simulates the POV of each monster. Made in-game, not in Blender: it changes with every catch's
   rarity and size and with where the egg landed, so a camera script works it out on the spot.
@@ -412,11 +469,11 @@ name shows up slowly.
   - **Eyes:** the camera sits at the monster's real eye height (the middle of its model's pupils) times its real size
     (its map's standard size × its size mutation). A first-map Compy sees from under 3 studs; a Unit of Doom Star
     Sovereign on Starfall Crater sees from about 400 studs up, with the whole map a strip far below.
-  - **Start and end:** set by how far below its eyes it sees the egg. The commonest catch starts with the egg 8° down
+  - **Start and end (the end replaced 2026-11-07: it goes right to the egg now):** set by how far below its eyes it sees the egg. The commonest catch starts with the egg 8° down
     (19 studs away for a Compy); the rarest (1 in 10 million and rarer) 1.8° down (about 85 studs for a Compy). Bigger
     monsters look down by up to 22° more, so a giant starts high up looking down at a tiny egg (about 900 studs away for
     that Star Sovereign). It stops with the egg 22° down (52° for the biggest), where the cut to black comes.
-  - **Time:** 2.6 seconds for the commonest up to 4.6 for the rarest, plus up to 0.8 for the biggest. It slows a little
+  - **Time (replaced 2026-11-07, see the top of this section):** 2.6 seconds for the commonest up to 4.6 for the rarest, plus up to 0.8 for the biggest. It slows a little
     as it nears the egg.
   - **Steps:** each footfall dips the view, swings it side to side, tilts the horizon (3° each way, 6° for the biggest)
     and turns the head a little. A step covers about one eye height, so big monsters take slow steps (down to about one
@@ -429,7 +486,7 @@ name shows up slowly.
     reveal. Built from shapes and a built-in Roblox image, so nothing had to be uploaded (`Config/Reveal` `walk.eyes`,
     `walk.glow`).
   - **Far eggs:** when the egg is a speck (under 10 pixels tall), a small glowing dot marks it so it can still be found.
-- **[Built]** The close-up and pull back after the walk (`RevealCloseUp`, numbers in `Config/Reveal` `closeUp`).
+- **[Replaced 2026-11-07 by the shot from the feet, see the top of this section]** The close-up and pull back after the walk (`RevealCloseUp`, numbers in `Config/Reveal` `closeUp`).
   Previews in `design/reveal/closeup/`.
   - **The monster is simply there:** behind the black after the walk, the caught monster stands still where its walk
     ended, at its real size (its map's standard size × its size mutation), facing the way it walked. It never pops out
@@ -458,6 +515,8 @@ name shows up slowly.
 - **[Built]** Hotbar of carried dinos on keys 1 to 0, best first. Holding one shows a see-through preview over your
   base (green = OK, red = not); clicking places it.
 - **[Built]** Equip Best, Pick Up and Sell in the My Dinos panel.
+- **[Owner, 2026-11-07]** EQUIP BEST always says what happened: "Best monsters equipped! +$X/s", or "Your best monsters are already on
+  your base", and then nothing moves.
 - **[Owner, 2026-11-05] The carried monster sits on your head at its real size and plays its animation.** **[Built]**
   Equipping a monster (hotbar key, slot or EQUIP) or picking one up off the base (PICK UP, which also puts it in the
   backpack) sits it on top of the player's head at the size it has on a base: its map's standard size times its size
@@ -589,6 +648,31 @@ Each map's standard size is about 1.05x the previous map's, reaching 2x at map 1
 | 13 | Thorn Kingdom | 1.81x | Bramble Brat, Grandma Gnash, Sir Skewer, Hart Attack, Hydrangry, Wrathorn |
 | 14 | Spore Hollow | 1.9x | Toad Rage, Morel Panic, Antagonist, Sporantula, Gillotine, Shroomageddon |
 | 15 | The Weeping Dark | 2x | Teddy Wrecks, Good Boy, Casket Case, Wailing Widow, Death Knell, Endless Grief |
+
+**[Owner, 2026-11-06] 8 monsters a map, not 6:** two more each, made in Blender and animated, nicer than the ones before and
+more aggressive map by map, 6 at a time, a prompt each. **[Built]** in Blender, `DinoLifeController` (`SWAY`) and `Config/Dinos`. Their
+rarities are **ANCIENT** and **SECRET** **[Owner]** (`UiKit.RARITY_ORDER`), after Mythic; special monsters stay Mythic. They're each
+map's prizes (`prize = true`): the rarest about 1 in 20,000, luck reaches them (a x500 throw at a far end gives the 7th about
+half the time, the 8th about 1 in 7), but the pity rules and the new map gift count from the 6th, so they're never handed out.
+Income carries on the same steps: 1,500 and 5,000 on the Forest, times 100 a map. So far, rarest last:
+
+| Map | 7th | 8th | What's new in how they move |
+|---|---|---|---|
+| Forest | Therizinosaurus: a violet fluffball with huge golden scythe claws, carefully holding a daisy | Amargasaurus: a sweet blue long-neck with a rippling sunset sail | Only sways: gentle giants |
+| Desert | Scorchion: a truck-sized scorched scorpion | Rexhotep: a mummified T-Rex with a gold death mask, royal headcloth, pharaoh's beard, and a tiny crook and flail in its tiny arms | Pincers snap, the sting stabs |
+| Swamp | Mossmaw: a giant snapping turtle with a bog on its back and a worm lure in its open beak | Titanoboa: a hooded giant snake, reared up, fangs out | The neck lunges and the jaw bites; the snake slithers |
+| Volcano | Magmapede: a street-long centipede of black glass, lava showing between its plates, its front third reared up on red-hot sickle fangs | Cinderdrake: a black dragon cracked with lava, wings raised, a furnace for a throat | They rear back, lunge and spit fire; Magmapede's legs ripple, Cinderdrake's wings beat |
+| Frozen Peaks | Ramvalanche: a mountain ram gone wrong, great curled horns of blue ice, crystals out of its back, fangs no ram should have | Abominator: a huge hunched yeti, a bare dark face that's mostly mouth, ice tusks, crystals growing out of its shoulders | The whole body attacks: Ramvalanche paws the ground and charges, Abominator smashes both fists down and ice flies |
+| Shadow Bog | Skeeterror: a mosquito the size of a house, a skull for a head, a bone needle longer than its body, its swollen belly glowing | Manhandler: a giant hand of tar walking on its fingers, a mouth across the palm, its forearm dragging behind | Skeeterror's wings blur and it stabs twice; Manhandler drums its fingers one by one, then rears up and grabs |
+| The Abyss | Shrimpact: a neon mantis shrimp, club fists folded under its chin | Kraken: a huge dark squid, a ring of hooked arms round a beak, two long hunting arms held up over its head | They hit from across the base: Shrimpact's punches crack the water and rings of shock fly off them; the Kraken's arms shoot out straight and drag back |
+| Starfall Crater | Moonwhale: a whale of night sky with a crater on its back and a little moon going round it | Constellion: a lion of night sky with a constellation on its flanks and a mane like the sun | **[Owner]** faces stay calm here (no teeth, level lids). They don't attack, the sky does: Moonwhale breathes out a fountain of stars, Constellion lifts its head and sings, and meteors fall round it |
+| Eclipse Temple | Praying Menace: a temple mantis in a gold mask, obsidian scythes folded as if in prayer | Batastrophe: a giant bat in a gold mask, wings wider than a temple, a mouth that's most of its face | They come through the air: Praying Menace throws two spinning crescents of jade that come back to its hands; Batastrophe climbs, screams rings of sound, folds its wings and drops |
+| Forbidden Library | Bookworm: a giant ink-black worm, its front a round hole lined with needles | Papercut: a gaunt thing the colour of old paper, razor claws, a mouth too wide | **[Owner] maps 10 to 12: "simple yet very very aggressive", no accessories, no auras.** Bare bodies, nothing glowing or thrown. Every 2 seconds they throw themselves forward, bite three times and shake what they caught, arms raking (`Maul`) |
+| Midnight Carnival | Last Laugh: a hyena with a grin round its head | Unbearable: a huge bear, head as big as a barrel | The same |
+| Clockwork Citadel | Tick-Tock: a bloated bronze tick on eight hooked legs, all jaws | Clockodile: a long heavy iron crocodile, a third of it jaw | The same |
+| Thorn Kingdom | Thornado: a lean black thing with four thorned arms and a waist that turns right round | Thorn to Bits: a boar-backed brute, a hill of shoulder, a back of thorns, hooked tusks | **[Owner] maps 13 to 15: "very very aggressive", "the most aggressive", unique animations.** Bare again, each its own attack, faster than the Maul. Thornado spins twice on its own hips, arms flung out, and falls forward biting; Thorn to Bits stands every thorn on end, rams and hooks upward three times |
+| Spore Hollow | Mouth Breather: a body that's nothing but a mouth, on four short claws | Spore Loser: a gaunt thing on folded hopper's legs that can't keep still | Mouth Breather leaps every second, skull flung right back, and lands jaws first; Spore Loser ricochets twice a second, left, right, ahead and home, biting each time it lands |
+| The Weeping Dark | Inconsolable: a hunched colossus, arms like tree trunks, a mouth open in one long scream | Last Breath: the last monster of all, a starved thing on stilts with a neck that shouldn't stretch and does | Black, ash and bone, red only for eyes. Inconsolable hammers the ground with both fists, four blows a second, and never stops; every second Last Breath's neck stretches twice its length, left, ahead, right, and snaps shut |
 
 ### The style as you advance
 **[Owner]** Keep the same chunky stud style, but as the maps go on, add absurd, funny models and names alongside
@@ -780,6 +864,10 @@ good-looking, aggressive dinos.
 monster so they stay. The luck number climbing during the flight should be big and exciting, and a 100x luck boost
 should feel huge.
 
+**[Owner, 2026-11-07]** A game that finishes in a few hours of play isn't good: if a free player can complete it in half a
+day, it will die quickly. The game needs a hook that keeps players for a long time and brings them back every day. Not
+designed yet; the build plan is in `docs/RETENTION_PLAN.md`.
+
 - **[Built] The number on screen climbs from 1x to 50x across the whole game** (**[Owner, 2026-11-06]**: billions
   were useless; 50x is the most without boosts). Each map ends at: Forest 3, Desert 5, Swamp 7, Volcano 9, Frozen
   Peaks 11, Shadow Bog 14, Abyss 17, Starfall 20, Eclipse 24, Forbidden 28, Carnival 32, Clockwork 36, Thorn 40, Spore
@@ -849,6 +937,29 @@ should feel huge.
   - **x500:** "Luck x500" (3728240108) at R$ 39.
   - Prices are set on the Creator Dashboard; the shop reads them from Roblox. Server Luck x2 stays a timed boost for
     the whole server.
+- **[Owner, 2026-11-06] Lucky throws are a guaranteed massive hit.** Playing with friends, x500 gave "very weak
+  monsters, 1 in 1k+" and x100 was worse: plain luck mostly picked the map's top monsters but with no colour or size,
+  and their honest "1 in X" is only about 1 in 2,000. **[Built]** (`Config/Catch` `luckyHits`, `DinoRoll.rollCatch`):
+  the monster is still rolled with the throw's luck, then its colour and size are picked among every combination
+  that makes the catch at least **1 in 100 million (x500), 1 in a million (x100), 1 in 100,000 (x50)**, each as likely
+  as it really is, so results vary (simulated: x500 is IMPOSSIBLE! about 7% of the time). The luck number in flight
+  no longer includes the lucky throw's x. Shop text: "Next throw: a guaranteed 1 in 100M+ catch" / "1 in 1M+".
+- **[Built] Luck offer, [Owner, 2026-11-06]** (`LuckOfferController`, Figma "Throw Eggs - Shop" Luck offer v2, from the
+  owner's recording of the reference): while aiming, and only then, two glowing pills in the top left sell x100 and x500
+  (rainbow rim, halo, rays, shine, sparkles, clover bob), with the R$ 3 deal on x100 until it's used. Prices come from
+  Roblox. They leave the moment the egg is thrown. Top left is the one corner clear of the meter and Throw Power, and far
+  from the throw tap. A player who owns a lucky throw sees a green READY chip instead. Width: 375 HUD pixels, at most 300.
+  **DETAILS** shows every chance, normal against lucky, for this player: a perfect throw with their egg and boosts now.
+  Lucky chances change with the map and the landing, so they're worked out live by `CatchOdds`, the same code DinoRoll
+  rolls with, and never typed in. No throw goes while Details is open. "Next egg", never "this egg": the throw is used at
+  landing, but flights can be 1.5 s, shorter than a Robux prompt.
+- **[Built] Use x100 and x500 when you want, [Owner, 2026-11-07]** (`LuckyThrows.isPicked`, `LuckOfferController`
+  `chosen`, `ThrowService` `lucky`): bought x100s and x500s (and the day 7 x500) are no longer spent on the next throw by
+  themselves. On the throw meter an owned pill shows a green **USE n** instead of its price; tapping it picks that luck
+  for this throw (gold **ON**, ON THIS THROW! sticker), tapping again un-picks it. Each meter starts with none picked.
+  The pick goes to the server with the tap, which checks it's owned; it's used up only when the egg lands, so going
+  back to the plot or leaving the game on the platform or mid-flight keeps it (it's in the save). The daily x50 still
+  goes on the next throw by itself, unless an x100 or x500 is picked (one per throw); its READY chip sits under the pills.
 - **[Built] Pity** (`Config/Hooks`): after 25 throws in a row without one of the map's 3 rarest monsters, the next
   throw is guaranteed one. It says so after the reveal ("LUCKY STREAK!").
 - **[Built] Jackpot pity** (`Config/Hooks` jackpotPity, **[Owner, 2026-11-05]**): after 250 throws in a row without the
@@ -859,10 +970,12 @@ should feel huge.
 - **[Built] So close:** landing within 60 studs of the next map shows "SO CLOSE! 23 studs short of Swamp".
 - **[Built] Daily reward with a streak** (`Config/Daily`, `DailyService`, `DailyController`): **[Owner]** days 1 to 6
   give a **x50 lucky throw** and day 7 a **x500 lucky throw** ("seems absurd but trust me"), kept until used like
-  the bought ones. One claim per UTC day; the next day continues the
-  streak, a missed day starts again at day 1, and after day 7 it goes back to day 1. The panel opens by itself 3
-  seconds after joining when a claim is waiting, and a 🎁 button under Shop opens it any time, with a red dot while a
-  claim waits.
+  the bought ones. One claim per UTC day. **[Owner, 2026-11-07]** A missed day only pauses the streak, and after day 7 it
+  goes back to day 1. The panel opens by itself 3 seconds after joining when a claim is waiting, and a 🎁 Daily button above
+  Monsters opens it any time, with a red dot while a claim waits.
+- **[Built, 2026-11-07] Daily tasks** (`Config/Daily` `tasks`, `DailyTasks`, shown in the Daily panel): hit 5 PERFECTs, tap 25 x2
+  bubbles, catch 10 monsters. They start again each UTC day, and finishing all three gives x2 XP for 15 minutes, once a day, the
+  same timed boost as completing a world in the Index. **[Owner]** No lasting rewards.
 - The "1 in X" shown on a catch stays the normal odds, even when a boost or a guarantee helped.
 
 ## 9. Worlds
@@ -1260,6 +1373,23 @@ The walking reveal and the flight camera are a separate job, after the world. Th
 
 ---
 
+### The Deep End, after the last world [Owner, 2026-11-07]
+**[Owner]** The game needs something that doesn't end. **[Built]** (`Config/DeepEnd`, `docs/RETENTION_PLAN.md` step 3) Behind the Last
+Door, at 16,500 to 18,000 studs, is The Deep End, the 16th entry in `Config/Biomes`. An egg strong enough bursts through the door
+with a flash (`ThrowCinematic.doorBurst`). The door itself is unchanged.
+- **Depth:** distance stops being a place and becomes a number. The egg always lands on the same floor (`Throw.farthestLanding`), and the
+  real distance (Throw Power x the meter) gives its Depth: Depth 1 at 16,950 studs, each step 1.38x longer than the last. There's no
+  last one. Each Depth makes rare colours and sizes x0.5 likelier on that throw, so x2 at Depth 2. The first time you reach a Depth
+  it shouts "DEPTH 2!". FARTHEST THROW shows the real distance, and bars stop getting dearer past the last world.
+- **Catches:** it has no monsters of its own and no Index card. Its eggs roll `Dinos.DeepPool`, the 40 monsters of worlds 11 to 15, and a
+  catch counts for its own world in the Index. The luck offer's Details shows these real odds, Depth included.
+- **The world** (`assets/models/build_deep_end.py`, renders in `design/world/models_deep_end/`): a shock of colour after the blackest
+  map: teal stone, old bone and mint light at the bottom of a colossal shaft. Something giant fell here: its ribs, teeth and skulls
+  lie about, and Depth Gauges, the signature, measure a depth nobody found the bottom of. Chains hang from too high to see. At
+  the end the Bottom Face glares back up the corridor, with a working jaw: past Depth 2 every egg lands in front of it.
+
+---
+
 ## 10. How it looks
 
 **[Owner]** Studs on everything.
@@ -1325,41 +1455,32 @@ feel powerful and compete; how big the numbers get doesn't matter.
 **[Owner, 2026-11-07]** A little bit of easy progress early to mid game, then harder. Late game means map 10 and up: it
 shouldn't be easy, but it shouldn't be a hard grind or impossible either.
 
-**[Built]** Worked out with a play simulation (`tools/pace_sim.luau`: a player who trains 40 s, throws 4 times, then buys
-the cheapest thing they can, no Robux, tapping 70% of the x2 bubbles) that runs the game's own Config (2026-11-07, median of
-7 runs). Run on the old numbers it gave map 15 at 30.3 h, against 30 h from the 2026-11-06 simulation it replaces.
-
-| Map | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Reached after | 4 min | 9 min | 13 min | 21 min | 26 min | 37 min | 51 min | 1.1 h | 1.6 h | 2.3 h | 3.6 h | 5.6 h | 8.6 h | 12 h |
-| With x2 Training or x2 Power | 2 min | 5 min | 8 min | 12 min | 18 min | 23 min | 32 min | 41 min | 54 min | 1.3 h | 2 h | 3 h | 4.6 h | 6.5 h |
-| With both passes | 1 min | 3 min | 6 min | 8 min | 13 min | 16 min | 19 min | 25 min | 32 min | 46 min | 1.1 h | 1.7 h | 2.6 h | 3.6 h |
-| Squats per bar on arrival | 3 | 5 | 5 | 7 | 9 | 13 | 18 | 20 | 30 | 71 | 83 | 123 | 149 | 216 |
-
-Tapping every bubble gets to map 15 in about 10.7 h, tapping none in about 17 h. The way there: `xpPerMap` 2.03 made power
-"way too hard" at map 10 (80 squats for +25 power), and 1.8 for every map was "way too fast" (25 squats), so one growth
-number for all maps couldn't do it. Now the bars grow gently before map 10, jump once across map 10 and grow steadily
-after, so each late map takes a bit longer than the last with no wall at the end.
-
-**[Built]** Every kind of player (`tools/pace_sim.luau`, 2026-11-07, median of 9 runs, a session a day, with offline earnings
-and the daily reward). Hours are time played; the Index's x2 XP boost and bought lucky throws aren't counted.
+**[Built]** Worked out with a play simulation (`tools/pace_sim.luau`: each kind of player trains, throws and shops in their
+own way, a session a day, with offline earnings and the daily reward) that runs the game's own Config (2026-11-07, median of 9
+runs). Run on the numbers of 2026-11-06 it gave map 15 at 30.3 h, against 30 h from the simulation it replaces. Hours are
+time played; the Index's x2 XP boost and bought lucky throws aren't counted.
 
 | Player | Map 5 | Map 10 | Map 15 | Days to map 15 | Longest late map |
 |---|---|---|---|---|---|
-| Free: casual (20 min a day) | 29 min | 2.3 h | 16.5 h | 48 | 5 h |
-| Free: average (1 h a day) | 19 min | 1.5 h | 10.8 h | 11 | 3.1 h |
-| Free: keen (3 h a day) | 14 min | 1.2 h | 8.7 h | 3 | 2.5 h |
-| Free: grinder (6 h a day) | 11 min | 57 min | 6.3 h | 2 | 1.8 h |
-| Free: leaves it squatting (2 h a day) | 34 min | 1.6 h | 8.7 h | 5 | 2.4 h |
-| Free: loves throwing (1 h a day, 10 s of squats per 8 throws) | 60 min | 5.5 h | 44 h | 44 | 13.7 h |
-| Free: bad at the meter | 33 min | 1.9 h | 12 h | 12 | 3.3 h |
-| Free: never taps bubbles | 24 min | 2 h | 15.3 h | 16 | 4.6 h |
-| Free: never buys rack upgrades | 1.2 h | 47.7 h | never (map 12 at 279 h) | never | 166 h |
-| Free: only buys rack upgrades | 18 min | 1.5 h | 11.2 h | 12 | 3.4 h |
-| x2 Cash | 19 min | 1.4 h | 10.6 h | 11 | 3.2 h |
-| x2 Training or x2 Power | 11 min | 53 min | 6 h | 6 | 1.7 h |
-| Both of those | 6 min | 33 min | 3.4 h | 4 | 57 min |
-| All 3 passes, keen | 6 min | 24 min | 2.5 h | 1 | 43 min |
+| Free: casual (20 min a day) | 36 min | 3 h | 30.6 h | 90 | 11.3 h |
+| Free: average (1 h a day) | 22 min | 2 h | 20.6 h | 21 | 7.7 h |
+| Free: keen (3 h a day) | 17 min | 1.5 h | 16.3 h | 6 | 5.8 h |
+| Free: grinder (6 h a day) | 15 min | 1.1 h | 10.9 h | 2 | 3.9 h |
+| Free: leaves it squatting (2 h a day) | 23 min | 1.7 h | 14.3 h | 7 | 4.6 h |
+| Free: loves throwing (1 h a day, 10 s of squats per 8 throws) | 1.2 h | 7.7 h | 90 h | 88 | 33.7 h |
+| Free: bad at the meter | 32 min | 2.4 h | 22.7 h | 23 | 7.9 h |
+| Free: never taps bubbles | 28 min | 2.7 h | 28.4 h | 28 | 9.9 h |
+| Free: never buys rack upgrades | 1.5 h | 67.5 h | never | never | 102 h |
+| Free: only buys rack upgrades | 22 min | 1.9 h | 20.6 h | 21 | 7.7 h |
+| x2 Cash | 23 min | 1.9 h | 19.9 h | 20 | 7.2 h |
+| x2 Training or x2 Power | 16 min | 1.1 h | 11.4 h | 12 | 4.1 h |
+| Both of those | 11 min | 41 min | 6.1 h | 7 | 2.2 h |
+| All 3 passes, keen | 6 min | 29 min | 4.7 h | 2 | 1.6 h |
+
+The way there: `xpPerMap` 2.03 made power "way too hard" at map 10 (80 squats for +25 power), and 1.8 for every map was "way too
+fast" (25 squats). That mixed up how long a bar takes and how long a map takes, so they're now separate (`docs/RETENTION_PLAN.md`
+step 1): the maps' numbers set the XP each point of power costs, and `barSquats` cuts every bar to about 22 squats, each giving
+its share of the power. An average player's bar gives +20 power at map 8, +7 at map 11 and +2 at map 15.
 
 **[Owner, 2026-11-07]** The passes stay full x2 on every map, as the shop promises ("forever"), even though both together
 reach map 15 in about 3.4 h. Making late rack upgrades dearer doesn't help: it slows free players just as much.
@@ -1378,12 +1499,13 @@ reach map 15 in about 3.4 h. Making late rack upgrades dearer doesn't help: it s
   **10** after 3 upgrades, **20** after 4 more, then each tier is one upgrade longer and gives 25% more (25, 31, 39...).
   Upgrades cost $50, ×50 each (`Config/Training`), and each also gives 25% more XP per rep (the pad shows
   "+X XP / rep", like the reference's bars). **The XP a bar needs follows how far your Throw Power reaches**, like
-  the reference ("XP per level grows with distance down the lane"): 2 XP at the throw line, 1.8x more for every
-  map a PERFECT throw passes up to map 9, 3.2x across map 10, then 1.85x a map (`baseXp`, `xpPerMap`, `hardFromMap`,
-  `hardMapStep`, `xpPerLateMap`, `Training.xpForNextBar`). Power from packs counts too. So
+  the reference ("XP per level grows with distance down the lane"): 2 XP at the throw line, 1.85x more for every
+  map a PERFECT throw passes up to map 9, 3.5x across map 10, then 2.1x a map (`baseXp`, `xpPerMap`, `hardFromMap`,
+  `hardMapStep`, `xpPerLateMap`, `Training.xpForNextBar`). That's a full bar: players fill bars of about 22 squats, each with its
+  share of the power (`barSquats`, `Training.barFor`). Power from packs counts too. So
   x2 Power and x2 Training each make training exactly 2x faster, and a power pack skips just the bars it replaces.
-  Early bars fill in seconds; a bar takes about 18 squats at map 8, 30 at map 10, 123 at map 13 and 216 at map 15. That,
-  with money, makes the later maps take longer; money gates the rack upgrades (each costs minutes of income
+  Early bars fill in seconds, and from about map 8 every bar takes about 22 squats. Later maps take longer because each
+  bar gives less of the way there; money gates the rack upgrades (each costs minutes of income
   early on, hours later). A full bar floats "+5 ⚡ POWER"; the bar shows the power per bar.
 - **Throw Power packs (Robux) [Owner]:** power put straight into your stats, small amounts at small prices so
   everything looks cheap: +100, +500, +1,000 (`Config/Shop` `powerPacks`).
@@ -1415,6 +1537,14 @@ reach map 15 in about 3.4 h. Making late rack upgrades dearer doesn't help: it s
   (one per base, not one per monster: the owner asked for no labels heaped over monsters; the monster tags show
   only on the 3 nearest, see section 4).
 
+### Feeding [Owner, 2026-11-07]
+**[Owner]** Feeding makes a monster bigger, beyond what its size mutation gives. It's the game's joke made into a goal.
+**[Built]** (`Config/Chonk`, `PlotService` feed, `SellPanel`) My Monsters shows FEED on each monster on the base, in place of SELL (it's sold
+from the backpack, or here once it's at the top level). FEED opens the Sell Stand's grid on the backpack: pick monsters, then FEED and a
+second tap. Each is 1 food, 3 if it's the same kind, and costs 30 seconds of the fed monster's income. Each level needs one more food
+than the last, up to Chonk 50: +5% income and +2% size a level, added up, so x3.5 and x2 at the top. Passes' special monsters can't be fed,
+and a monster that's been fed, or the carried one, can't be eaten. No training bonus, so it doesn't change how fast worlds come.
+
 ### Competition [Owner, 2026-11-04]
 - **Server ranking** in the top left: the 5 players by $/s, you highlighted, a crown on #1.
 - **Crown:** the server's #1 by $/s wears a glowing gold crown. The top three bases glow gold, silver and bronze
@@ -1443,7 +1573,7 @@ reach map 15 in about 3.4 h. Making late rack upgrades dearer doesn't help: it s
   Weeping Dark's RAGE on top: every 4 seconds it lunges and bites, snapping between, its tail cracking.
 - **Prism Egg [Built], [Owner, 2026-11-05]:** a Robux egg (Developer Product) bought again and again, like the
   reference's Rainbow Egg, on a card under the pass monsters. It hatches at once, rolled on the server, into one of
-  three special monsters of Gloomfin's dark family: **Duskeel** 150% (70%), **Umbray** 300% (25%), **Dreadlure** 900%
+  three special monsters of Gloomfin's dark family: **Duskeel** 150% (70%), **Umbray** 300% (25%), **Dreadlure** 700%
   (5%) (`Config/Shop` prismEgg, `Config/Specials`). The card shows each one turning with its odds, its share and what
   it would earn now (Roblox wants odds shown before buying). A hatch gets a shout. Like Gloomfin they never count as
   "best", but they can be sold, since another egg can always be bought; pass monsters still can't.
@@ -1476,13 +1606,13 @@ reach map 15 in about 3.4 h. Making late rack upgrades dearer doesn't help: it s
   its "1 in X" and its name; unseen ones are black silhouettes named "???" with their rarity and odds still shown.
   The total found sits in the header, the map's reward under its monsters. It opens on the farthest map you've
   found anything in. **[Owner, 2026-11-06]** Completing a world gives only
-  x2 training XP for 15 minutes (`Config/Index` xpBoost; shown in the top-right panel): no cash or luck from the Index.
+  x2 training XP for 15 minutes (`Config/Index` xpBoost; shown in the boost row at the bottom): no cash or luck from the Index.
 - **Timed events [Built], [Owner, 2026-11-05]:** every 15 minutes one starts and runs 5 minutes, taking turns:
   Double Luck (2x luck) and Ghost Rush (GHOST 10x likelier) (`Config/Events`, from the server clock, the same on
   every server). A shout when one starts and an icon at the bottom right with the time left; hover (PC) or tap
   (phone) for what it does. The older Meteor Shower / Growth Spurt / Gold Rush were removed before this.
 - **Server best catch [Built], [Owner, 2026-11-05]:** the rarest catch of the server's life stands on a pedestal at
-  the arena's front-left, against the wall, off every walking path (`Config/BestCatch`, `BestCatchService`) at its map's standard size, never its size mutation's.
+  the arena's front-left, against the wall, off every walking path (`Config/BestCatch`, `BestCatchService`). [Owner, 2026-11-07] Every monster on it stands at the same size, its longest side `monsterSize` studs, whatever its map, size mutation or feeding.
   A sign in front, part of the map (not a floating label), shows mutation, size, name, odds, income, world and
   who caught it. Pedestal: `build_best_catch.py` > `fbx/01_Forest/Arena/prop_BestCatchPedestal.fbx`.
 - **No rebirth [Owner].** The reference game has none.

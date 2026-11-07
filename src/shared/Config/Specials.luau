@@ -35,7 +35,7 @@ return {
 		id = "Dreadlure",
 		name = "Dreadlure",
 		egg = "PrismEgg",
-		share = 9, -- 900%
+		share = 7, -- 700%
 		minimumIncome = 100,
 		description = "A hulking anglerfish that is mostly mouth",
 	},

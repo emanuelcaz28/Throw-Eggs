@@ -31,7 +31,7 @@ local Shop = {
 	prismEgg = {
 		productId = 3728638816, -- "Prism Egg"
 		name = "Prism Egg",
-		description = "Up to 900% of your best monster!",
+		description = "Up to 700% of your best monster!",
 		hatches = {
 			{ id = "Duskeel", chance = 70 },
 			{ id = "Umbray", chance = 25 },
@@ -41,7 +41,9 @@ local Shop = {
 	serverLuck = {
 		productId = 3728242175, -- "Server Luck x2", R$ 29
 		name = "Server Luck x2",
-		description = "2x luck for everyone here for 15 minutes",
+		-- Roblox wants a luck boost's effect in numbers before buying: x2 luck doubles a rare monster's weight in the roll, and
+		-- 2 ^ Catch.luckPower is about 1.3.
+		description = "15 min for everyone: rare monsters about 2x likelier, colours and sizes 1.3x",
 		multiplier = 2,
 		seconds = 15 * 60, -- buying again while active adds more time
 		settleEvery = 5, -- seconds between updates of each buyer's saved time left
@@ -59,13 +61,13 @@ local Shop = {
 			productId = 3728190780, -- "Luck x100"
 			dealProductId = 3728190387, -- "ONE TIME DEAL LUCK x100"
 			dealTag = "ONE TIME DEAL!",
-			description = "Next throw: 100x luck, rare monsters far likelier",
+			description = "Any throw you pick: a guaranteed 1 in 1M+ catch",
 			colours = { "#e0a8ff", "#8a3fd6" },
 		},
 		{
 			multiplier = 500,
 			productId = 3728240108, -- "Luck x500", R$ 39
-			description = "Next throw: 500x luck, the map's top monsters",
+			description = "Any throw you pick: a guaranteed 1 in 100M+ catch",
 			colours = { "#fff1a8", "#ffb21a" },
 		},
 	},

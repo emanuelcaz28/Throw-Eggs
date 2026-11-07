@@ -1,6 +1,6 @@
 -- The server's best monster (Config/BestCatch): the highest-$/s monster on the base of anyone in the server, on the
--- pedestal beside the leaderboards. The monster stands on the cushion at twice its map's standard size whatever
--- its size mutation, with a card of its stats at its side (Figma "Throw Eggs - Pop-up Text", "Best monster stats"). It changes whenever a base changes or its owner leaves; a title with
+-- pedestal beside the leaderboards. The monster stands on the cushion at one fixed size (BestCatch.monsterSize)
+-- whatever its map, size mutation or feeding, with a card of its stats at its side (Figma "Throw Eggs - Pop-up Text", "Best monster stats"). It changes whenever a base changes or its owner leaves; a title with
 -- the owner's headshot floats over it.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -235,27 +235,46 @@ local function faceForward(statue: Model)
 	statue:PivotTo(standPoint * (if headAhead then CFrame.Angles(0, math.pi, 0) else CFrame.identity))
 end
 
+-- What to build this monster at so its longest side is BestCatch.monsterSize. Measured from the model, because the
+-- models themselves differ so much that no multiple of a map's standard size suits them all.
+local function pedestalScale(dinoId: string): number
+	local probe = DinoModel.build(dinoId, nil, Vector3.zero, 1)
+	local _, size = DinoModel.visibleBox(probe)
+	probe:Destroy()
+	local longest = math.max(size.X, size.Y, size.Z)
+	return if longest > 0 then BestCatch.monsterSize / longest else 1
+end
+
+-- Sets the statue's middle over the cushion's and its lowest point on it (a model's pivot can be well off its
+-- middle), and gives back its size.
+local function centre(statue: Model): Vector3
+	local middle, size = DinoModel.visibleBox(statue)
+	statue:PivotTo(statue:GetPivot() * CFrame.new(-middle.X, size.Y / 2 - middle.Y, -middle.Z))
+	return size
+end
+
 local function show(player: Player, entry, stats)
 	if best and best.statue then
 		best.statue:Destroy()
 	end
-	local statue = DinoModel.build(entry.id, entry.mutation, Vector3.zero, DinoStats.standardScale(entry.id) * BestCatch.monsterScale)
+	local statue = DinoModel.build(entry.id, entry.mutation, Vector3.zero, pedestalScale(entry.id))
 	statue.Name = "BestMonster"
 	statue.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	faceForward(statue)
+	local size = centre(statue)
 	statue:SetAttribute("Stay", true) -- DinoLifeController: idles and roars in place
 	CollectionService:AddTag(statue, DinoLife.tag)
 	statue.Parent = folder
 	best = { player = player, entry = entry, statue = statue }
 
 	local mutation = DinoStats.findOption(Catch.mutations, entry.mutation)
-	local size = DinoStats.findOption(Catch.sizes, entry.size)
+	local sizeOption = DinoStats.findOption(Catch.sizes, entry.size)
 	local words = {}
 	if mutation then
 		table.insert(words, `<font color="#{mutation.color:ToHex()}">{mutation.name}</font>`)
 	end
-	if size then
-		table.insert(words, size.name)
+	if sizeOption then
+		table.insert(words, sizeOption.name)
 	end
 	face.extras.Text = table.concat(words, " · ")
 	face.extras.Visible = #words > 0
@@ -265,12 +284,10 @@ local function show(player: Player, entry, stats)
 	local biome = biomeOf[entry.id]
 	face.world.Text = if biome then biome.name else "?"
 
-	-- The title floats just over the monster's head.
 	-- The title floats just over the monster's head; the card stands at its right as you face it (the standPoint's
 	-- -X), its foot on the cushion.
-	local _, bounds = statue:GetBoundingBox()
-	title.panel.CFrame = standPoint * CFrame.new(0, bounds.Y + title.gui.Size.Y.Scale / 2 + BestCatch.titleGap, 0)
-	local half = bounds.X / 2 -- its width as you face it (the pedestal faces +Z)
+	title.panel.CFrame = standPoint * CFrame.new(0, size.Y + title.gui.Size.Y.Scale / 2 + BestCatch.titleGap, 0)
+	local half = size.X / 2 -- its width as you face it (the pedestal faces +Z)
 	face.panel.CFrame = standPoint * CFrame.new(-(half + face.panel.Size.X / 2 + BestCatch.statsGap), face.panel.Size.Y / 2, 0)
 	face.gui.Enabled = true
 	title.owner.Text = player.DisplayName

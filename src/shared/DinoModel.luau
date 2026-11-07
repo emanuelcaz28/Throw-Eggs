@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BlockModel = require(script.Parent.BlockModel)
 local Catch = require(script.Parent.Config.Catch)
+local Chonk = require(script.Parent.Config.Chonk)
 local DinoLife = require(script.Parent.Config.DinoLife)
 local DinoStats = require(script.Parent.DinoStats)
 local Roles = require(script.Parent.Roles)
@@ -40,10 +41,10 @@ function DinoModel.color(name: string, mutationId: string?): Color3
 end
 
 -- How big a dino stands on a plot and in the reveal: its biome's standard size, times its size
--- mutation if it has one.
-function DinoModel.statueScale(dinoId: string, sizeId: string?): number
+-- mutation if it has one, times how far it's been fed (Config/Chonk).
+function DinoModel.statueScale(dinoId: string, sizeId: string?, chonk: number?): number
 	local size = DinoStats.findOption(Catch.sizes, sizeId)
-	return DinoStats.standardScale(dinoId) * (if size then size.scale else 1)
+	return DinoStats.standardScale(dinoId) * (if size then size.scale else 1) * Chonk.scaleMultiplier(chonk)
 end
 
 local SKIN_ROLES = { Body = true, Accent = true, Belly = true, Claw = true }

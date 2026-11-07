@@ -19,11 +19,16 @@ local Training = {
 	-- minutes: that paces the game (docs/GAME_SPEC.md section 12).
 	-- [Owner, 2026-11-07] A little easy early to mid game, then harder from map 10, but never a hard grind. So bars grow
 	-- gently through the maps before hardFromMap, jump once across that map, then grow steadily again.
+	-- These set how long a map takes (docs/RETENTION_PLAN.md step 1: about 20 h to map 15 for an average free player).
 	baseXp = 2,
-	xpPerMap = 1.8, -- each map before hardFromMap
+	xpPerMap = 1.85, -- each map before hardFromMap
 	hardFromMap = 10, -- the game's turn: late game starts here
-	hardMapStep = 3.2, -- across that one map
-	xpPerLateMap = 1.85, -- each map after it
+	hardMapStep = 3.5, -- across that one map
+	xpPerLateMap = 2.1, -- each map after it
+	-- How long a bar takes is separate: a "full bar" (the numbers above, and the rack's power) is cut into smaller
+	-- bars of about this many squats, each giving its share of the power (barFor). So bars stay quick while maps
+	-- take longer, and the XP each point of power costs doesn't change.
+	barSquats = 22,
 
 	startPower = 100, -- Throw Power before any bar
 
@@ -84,6 +89,7 @@ end
 
 -- How many maps a throw this far has passed: 0 at the throw line, 1.5 halfway through the second map, and so on.
 local function mapsPassed(distance: number): number
+	distance = math.min(distance, Throw.maxDistance()) -- past the last world bars stop growing: Config/DeepEnd paces that
 	for index, biome in Biomes do
 		if distance <= biome.endDist then
 			return index - 1 + math.clamp((distance - biome.startDist) / (biome.endDist - biome.startDist), 0, 1)
@@ -92,7 +98,7 @@ local function mapsPassed(distance: number): number
 	return #Biomes
 end
 
--- The XP the next bar needs at this Throw Power (power packs included): see xpPerMap.
+-- The XP a full bar needs at this Throw Power (power packs included): see xpPerMap. Players fill smaller bars: barFor.
 function Training.xpForNextBar(power: number): number
 	local passed = mapsPassed(power * Throw.meter.perfectMultiplier)
 	local turn = Training.hardFromMap - 1 -- maps passed when that map starts
@@ -143,10 +149,22 @@ function Training.powerPerBar(upgrades: number): number
 	return tierPower((Training.tierOf(upgrades)))
 end
 
--- How many more upgrades until the next tier, and what that tier gives per bar.
-function Training.nextTier(upgrades: number): (number, number)
-	local tier, into, length = Training.tierOf(upgrades)
-	return length - into, tierPower(tier + 1)
+-- The bar a player fills at this power and upgrades, before passes: the whole power it gives and the XP it needs.
+-- It's the share of a full bar that barSquats squats reach, so power stays a whole number and each point costs the
+-- same XP however the bar is cut, which keeps x2 Training and x2 Power exactly double. Early on a full bar takes fewer
+-- squats than that, and stays whole.
+function Training.barFor(power: number, upgrades: number): (number, number)
+	local fullPower = Training.powerPerBar(upgrades)
+	local fullXp = Training.xpForNextBar(power)
+	local share = Training.barSquats * Training.xpPerRepFor(upgrades) / fullXp
+	local gain = math.clamp(math.floor(fullPower * share + 0.5), 1, fullPower)
+	return gain, math.max(math.floor(fullXp * gain / fullPower), 1)
+end
+
+-- How many more upgrades until the next tier.
+function Training.upgradesToNextTier(upgrades: number): number
+	local _, into, length = Training.tierOf(upgrades)
+	return length - into
 end
 
 function Training.xpUpgradePrice(upgrades: number): number

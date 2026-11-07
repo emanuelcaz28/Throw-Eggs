@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BaseKit = require(ReplicatedStorage.Shared.BaseKit)
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
+local Chonk = require(ReplicatedStorage.Shared.Config.Chonk)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local DinoLife = require(ReplicatedStorage.Shared.Config.DinoLife)
@@ -260,7 +261,7 @@ local function attachHeldModel(player: Player, entry)
 	if not root or not head or not DinoStats.describe(entry) then
 		return
 	end
-	local model = DinoModel.build(entry.id, entry.mutation, Vector3.zero, DinoModel.statueScale(entry.id, entry.size))
+	local model = DinoModel.build(entry.id, entry.mutation, Vector3.zero, DinoModel.statueScale(entry.id, entry.size, entry.chonk))
 	model.Name = "HeldDino"
 	local centre = DinoModel.visibleBox(model)
 	local sink = math.min((DinoModel.legHeight(model) or 0) * DinoLife.carry.sink, DinoLife.carry.maxSink)
@@ -325,7 +326,7 @@ local function rebuildStatues(player: Player, data)
 		local stats = DinoStats.describe(entry)
 		if stats then
 			local position = spotPosition(plotIndex, entry.x, entry.z)
-			local statue = DinoModel.build(entry.id, entry.mutation, position, DinoModel.statueScale(entry.id, entry.size))
+			local statue = DinoModel.build(entry.id, entry.mutation, position, DinoModel.statueScale(entry.id, entry.size, entry.chonk))
 			-- What its floating tag shows (MonsterTagController draws it, on the few monsters nearest each player).
 			statue:SetAttribute("TagName", stats.name)
 			statue:SetAttribute("TagIncome", stats.income)
@@ -361,6 +362,8 @@ local function publish(player: Player, data)
 				oneIn = stats.oneIn,
 				onPlot = entry.onPlot,
 				sellPrice = sellPrice(entry),
+				chonk = entry.chonk or 0,
+				food = entry.food or 0,
 			})
 		end
 	end
@@ -405,14 +408,27 @@ local function backpackCount(data): number
 	return #data.dinos - #plotted(data)
 end
 
-local function equipBest(data)
+-- Puts the best monsters on the base and says what happened. When they're already there nothing moves, so monsters
+-- that earn the same aren't swapped around for nothing.
+local function equipBest(player: Player, data)
 	local sorted = table.clone(data.dinos)
 	table.sort(sorted, function(a, b)
 		return incomeOf(a) > incomeOf(b)
 	end)
+	local now, best = 0, 0
+	for rank, entry in sorted do
+		now += if entry.onPlot then incomeOf(entry) else 0
+		best += if rank <= capacityOf(data) then incomeOf(entry) else 0
+	end
+	if best <= now * (1 + 1e-9) then -- a hair over, as adding up in another order can differ in the last digits
+		remotes.Notice:FireClient(player, "Your best monsters are already on your base")
+		return
+	end
 	for rank, entry in sorted do
 		entry.onPlot = rank <= capacityOf(data)
 	end
+	changed(player, data)
+	remotes.Notice:FireClient(player, `Best monsters equipped! +{Format.cash(best - now)}/s`)
 end
 
 -- Saves from before the bases shrank can hold more dinos than the base now fits, or spots outside
@@ -466,6 +482,59 @@ local function sellMany(player: Player, data, keys: any)
 	end
 end
 
+-- Feeds backpack monsters with these keys to a monster, for cash (Config/Chonk). Only what it takes to reach the top level
+-- is used. The carried monster and ones already fed stay out of it, and passes' monsters can't be fed or eaten.
+local function feed(player: Player, data, target, keys: any)
+	if typeof(keys) ~= "table" or #keys > Plot.backpackSize or DinoStats.special(target.id) then
+		return
+	end
+	local level, food = target.chonk or 0, target.food or 0
+	if level >= Chonk.maxLevel then
+		return
+	end
+	local wanted = {}
+	for _, key in keys do
+		if typeof(key) == "number" and key == key then -- key ~= key is only true for NaN
+			wanted[key] = true
+		end
+	end
+	local price = Chonk.priceOf(incomeOf(target))
+	local eaten = {}
+	for _, entry in data.dinos do
+		if level >= Chonk.maxLevel then
+			break
+		end
+		if wanted[entry.key] and entry ~= target and not entry.onPlot and entry.key ~= held[player]
+			and DinoStats.sellable(entry.id) and (entry.chonk or 0) == 0 then
+			eaten[entry] = true
+			level, food = Chonk.grow(level, food, Chonk.foodOf(target.id, entry.id))
+		end
+	end
+	local amount = 0
+	for _ in eaten do
+		amount += 1
+	end
+	if amount == 0 then
+		return
+	end
+	if data.cash < price * amount then
+		remotes.Notice:FireClient(player, `You need {Format.cash(price * amount)} to feed these`, true)
+		return
+	end
+	data.cash -= price * amount
+	player:SetAttribute("Cash", data.cash)
+	for index = #data.dinos, 1, -1 do
+		if eaten[data.dinos[index]] then
+			table.remove(data.dinos, index)
+		end
+	end
+	local before = target.chonk or 0
+	target.chonk, target.food = level, food
+	changed(player, data)
+	local name = DinoStats.describe(target).name
+	remotes.Notice:FireClient(player, if level > before then `{name} grew to Chonk {level}!` else `{name} ate {amount}!`)
+end
+
 local function onAction(player: Player, action: any, key: any, x: any, z: any)
 	local data = PlayerData.get(player)
 	if not data then
@@ -473,8 +542,7 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 	end
 
 	if action == "equipBest" then
-		equipBest(data)
-		changed(player, data)
+		equipBest(player, data)
 		return
 	elseif action == "unequip" then
 		setHeld(player, data, nil)
@@ -511,6 +579,8 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 			changed(player, data)
 			setHeld(player, data, entry.key)
 		end
+	elseif action == "feed" then
+		feed(player, data, entry, x)
 	elseif action == "sell" and DinoStats.sellable(entry.id) then
 		earn(player, data, sellPrice(entry))
 		table.remove(data.dinos, index)

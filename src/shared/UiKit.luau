@@ -50,8 +50,9 @@ UiKit.GRADIENTS = {
 	unseen = { "#d9dce3", "#9aa1ae" },
 }
 
--- One tier per monster of a map, most common first; the map's boss is mythic (Figma "Throw Eggs - Index & Inventory").
-UiKit.RARITY_ORDER = { "common", "uncommon", "rare", "epic", "legendary", "mythic" }
+-- One tier per monster of a map, most common first (Figma "Throw Eggs - Index & Inventory"). The first six monsters end at
+-- mythic; a map's two prizes (Config/Dinos) are ancient and secret.
+UiKit.RARITY_ORDER = { "common", "uncommon", "rare", "epic", "legendary", "mythic", "ancient", "secret" }
 UiKit.RARITY = {
 	common = { "#e6e9ef", "#a9b1bf" },
 	uncommon = { "#b4f59c", "#52c43f" },
@@ -59,6 +60,8 @@ UiKit.RARITY = {
 	epic = { "#dcb0ff", "#9150e8" },
 	legendary = { "#ffe58a", "#ff9a1f" },
 	mythic = { "#ff9ec4", "#e8265a" },
+	ancient = { "#f2b98c", "#a8552a" },
+	secret = { "#4a3596", "#150c33" },
 }
 -- A dino's name written in its rarity (reveal, lucky catch banner, My Dinos).
 UiKit.RARITY_TEXT = {
@@ -68,6 +71,8 @@ UiKit.RARITY_TEXT = {
 	epic = "#d4a6ff",
 	legendary = "#ffcf3f",
 	mythic = "#ff7aa8",
+	ancient = "#ff9d5c",
+	secret = "#e6ff4a",
 }
 
 local DESIGN = Vector2.new(1280, 720)
@@ -481,10 +486,10 @@ end
 -- Which rarity tier a dino is: its place in its biome's list, most common first.
 function UiKit.rarityOf(dinoId: string): string
 	if DinoStats.special(dinoId) then
-		return UiKit.RARITY_ORDER[#UiKit.RARITY_ORDER]
+		return "mythic"
 	end
-	for _, list in Dinos do
-		for index, dino in list do
+	for key, list in Dinos do
+		for index, dino in if key == "DeepPool" then {} else list do -- a mix of worlds: places in it mean nothing
 			if dino.id == dinoId then
 				return UiKit.RARITY_ORDER[math.min(index, #UiKit.RARITY_ORDER)]
 			end
@@ -600,14 +605,14 @@ function UiKit.panel(gui: ScreenGui, options)
 	close.AnchorPoint = Vector2.new(1, 0)
 	close.Position = if bigClose then UDim2.new(1, -6, 0, 2) else UDim2.new(1, -16, 0, 14)
 	close.ZIndex = 4
+	if bigClose then
+		title.Size += UDim2.fromOffset(-8, 0)
+	end
 
 	local body = Instance.new("Frame")
 	body.Name = "Body"
 	body.BackgroundTransparency = 1
 	body.Position = UDim2.fromOffset(0, 92)
-	if bigClose then
-		title.Size += UDim2.fromOffset(-8, 0)
-	end
 	body.Size = UDim2.new(1, 0, 1, -92)
 	body.Parent = frame
 

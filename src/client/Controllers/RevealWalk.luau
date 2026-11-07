@@ -1,7 +1,8 @@
 -- The monster's walk to the egg, seen through its own eyes (docs/GAME_SPEC.md section 7, "The walk"). After the
 -- landing the screen cuts to black and opens on the view from the caught monster's eyes, already walking up the
 -- corridor to the egg, each step swaying the view and tilting the horizon; then it cuts to black again for the
--- close-up. No monster and no text show: it's the camera doing the walking.
+-- shot from its feet. No monster shows: it's the camera doing the walking. [Owner, 2026-11-07] It's slow and goes all
+-- the way: over the last of the walk the monster lowers its head to the egg, so even the biggest ends with its face at it.
 -- How it looks depends on the catch: rarer catches start further from the egg, bigger monsters see from higher up
 -- (their real eye height at their real size) and take slower, heavier steps, swimmers glide, and a colour mutation
 -- glows round the screen's edges in its colour. It opens and ends with a blink. Display only: the server has already rolled the catch.
@@ -21,6 +22,7 @@ local RevealWalk = {}
 
 local settings = Reveal.walk
 local EGG_MIDDLE = 1.5 -- studs above the ground the camera aims at, the egg's middle
+local EGG_HEIGHT = 3 -- studs, about
 local FALLBACK_EYE_SHARE = 0.85 -- of its height, for a model with no Pupil parts
 local SWIM_PACE = 0.5 -- swimmers sway at this share of a walker's step rate
 local MARKER_LIFT = 0.3 -- share of the way from the egg to the eyes the far-egg dot hangs
@@ -40,8 +42,9 @@ local function tween(instance: Instance, time: number, goal)
 	return created
 end
 
--- Each monster's eye height at its model's own size (the middle of its Pupil parts, above its feet) and whether
--- it swims (a Swim bone), measured once from its model.
+-- Each monster's eye height at its model's own size (the middle of its Pupil parts, above its feet), how wide it is,
+-- and whether it has no feet to step on (a swimmer's Swim bone, a snake's Slither1), so it glides, measured once from
+-- its model.
 local bodies = {}
 local function bodyOf(dinoId: string)
 	local body = bodies[dinoId]
@@ -54,23 +57,25 @@ local function bodyOf(dinoId: string)
 		if item:IsA("BasePart") and Roles.of(item) == "Pupil" then
 			total += item.Position.Y
 			count += 1
-		elseif item:IsA("Bone") and item.Name == "Swim" then
+		elseif item:IsA("Bone") and (item.Name == "Swim" or item.Name == "Slither1") then
 			swims = true
 		end
 	end
 	local eye = total / math.max(count, 1)
+	local box, size = model:GetBoundingBox()
 	if count == 0 then
-		local box, size = model:GetBoundingBox()
 		eye = (box.Position.Y + size.Y / 2) * FALLBACK_EYE_SHARE
 	end
 	model:Destroy()
-	body = { eye = math.max(eye, 0.5), swims = swims }
+	body = { eye = math.max(eye, 0.5), swims = swims, width = size.X }
 	bodies[dinoId] = body
 	return body
 end
 
 export type Plan = {
 	eye: number, -- studs above the ground
+	lowest: number, -- how far above the ground its head ends, lowered to the egg
+	width: number, -- studs across, at its real size
 	ground: Vector3, -- under the egg
 	start: Vector3, -- on the ground, under the eyes at the start
 	finish: Vector3, -- on the ground, under the eyes at the end
@@ -93,8 +98,8 @@ function RevealWalk.plan(catch, ground: Vector3, color: Color3?, random: Random?
 
 	-- How far away it starts and stops, from how far below its eyes it sees the egg.
 	local startAngle = math.rad(lerp(settings.nearAngle, settings.farAngle, rarity) + settings.bigAngle * bigness)
-	local endAngle = math.rad(lerp(settings.endAngle, settings.bigEndAngle, bigness))
-	local endDistance = math.max(eye / math.tan(endAngle), settings.minEndDistance)
+	local lowest = math.min(eye, EGG_HEIGHT * settings.bowEggs + eye * settings.bowEye)
+	local endDistance = math.max(lowest * settings.endReach, settings.minEndDistance)
 	local shortest = endDistance * (1 + settings.minWalkShare)
 	local startDistance = math.max(math.min(eye / math.tan(startAngle), settings.maxStartDistance), shortest)
 
@@ -124,6 +129,8 @@ function RevealWalk.plan(catch, ground: Vector3, color: Color3?, random: Random?
 
 	return {
 		eye = eye,
+		lowest = lowest,
+		width = body.width * scale,
 		ground = ground,
 		start = Vector3.new(start.X, ground.Y, start.Z),
 		finish = ground - approach * endDistance,
@@ -136,24 +143,32 @@ function RevealWalk.plan(catch, ground: Vector3, color: Color3?, random: Random?
 	}
 end
 
--- The share of the way walked at u (0 to 1 of the walk's time), easing off near the egg, and how fast that share
--- grows per unit of u.
+-- The share of the way walked at u (0 to 1 of the walk's time), braking all the way to the egg, and how fast that
+-- share grows per unit of u.
 local function walked(u: number): (number, number)
 	u = math.clamp(u, 0, 1)
-	local s = settings.slowDown
-	return lerp(u, math.sin(u * math.pi / 2), s), (1 - s) + s * math.pi / 2 * math.cos(u * math.pi / 2)
+	local power = settings.slowPower
+	return 1 - (1 - u) ^ power, power * (1 - u) ^ (power - 1)
 end
 
--- The eyes at a moment of the walk: `share` of the way walked, `steps` taken so far (a footfall at each whole
--- number) and `sinceFootfall` seconds since the last one.
-function RevealWalk.cameraAt(plan: Plan, share: number, steps: number, sinceFootfall: number): CFrame
-	local eye = plan.eye
-	local swing = math.sin(math.pi * steps) -- one way on one step, the other way on the next
-	local lift = if plan.swims then 0.5 * math.sin(2 * math.pi * steps) else math.abs(swing) - 0.5 -- lowest at a footfall
+local function smoother(u: number): number
+	u = math.clamp(u, 0, 1)
+	return u * u * u * (u * (u * 6 - 15) + 10)
+end
+
+-- The eyes at a moment of the walk, `u` of the way through its time: `share` of the way walked, `steps` taken so far (a
+-- footfall at each whole number) and `sinceFootfall` seconds since the last one. Near the end the head goes down to the
+-- egg and the sway dies away.
+function RevealWalk.cameraAt(plan: Plan, u: number, share: number, steps: number, sinceFootfall: number): CFrame
+	local bowed = smoother((u - settings.bowFrom) / (1 - settings.bowFrom))
+	local calm = 1 - smoother((u - settings.calmFrom) / (1 - settings.calmFrom))
+	local eye = lerp(plan.eye, plan.lowest, bowed)
+	local swing = math.sin(math.pi * steps) * calm -- one way on one step, the other way on the next
+	local lift = (if plan.swims then 0.5 * math.sin(2 * math.pi * steps) else math.abs(swing) - 0.5) * calm -- lowest at a footfall
 	-- A footfall jolts the view down, then it shakes and settles.
 	local jolt = 0
 	if not plan.swims and sinceFootfall < settings.thudTime * 2 then
-		jolt = math.exp(-4 * sinceFootfall / settings.thudTime) * math.cos(sinceFootfall * 45)
+		jolt = math.exp(-4 * sinceFootfall / settings.thudTime) * math.cos(sinceFootfall * 45) * calm
 	end
 
 	local across = plan.approach:Cross(Vector3.yAxis)
@@ -166,8 +181,8 @@ function RevealWalk.cameraAt(plan: Plan, share: number, steps: number, sinceFoot
 	local heading = math.atan2(-toEgg.X, -toEgg.Z)
 	local down = math.atan2(-toEgg.Y, flatDistance)
 	local pitch = down - math.min(down * settings.aimBelow, math.rad(settings.maxAimBelow))
-	pitch += jolt * math.rad(lerp(settings.thudAngle, settings.bigThudAngle, plan.bigness))
-	heading += math.rad(settings.turn) * math.sin(math.pi * steps - 0.6)
+	pitch += jolt * math.rad(lerp(settings.thudAngle, settings.bigThudAngle, plan.bigness) + settings.rareThudAngle * plan.rarity)
+	heading += math.rad(settings.turn) * math.sin(math.pi * steps - 0.6) * calm
 	local roll = math.rad(lerp(settings.tilt, settings.bigTilt, plan.bigness)) * swing
 	return CFrame.new(position) * CFrame.Angles(0, heading, 0) * CFrame.Angles(-pitch, 0, 0) * CFrame.Angles(0, 0, roll)
 end
@@ -271,13 +286,19 @@ function RevealWalk.buildGlow(parent: Instance): Frame
 	return holder
 end
 
+-- The size of the screen the eyes are drawn on: their own layer's, so they always fit what they have to cover.
+local function screenOf(holder: Frame): Vector2
+	local size = holder.AbsoluteSize
+	return if size.X > 1 and size.Y > 1 then size else workspace.CurrentCamera.ViewportSize
+end
+
 -- Where the lids sit to cover `cover` of the screen's height each in the middle; shut, they reach past the middle
 -- by as much as their edges curve up at the corners, so no gap shows.
 local function lidsAt(holder: Frame, cover: number?): ({ [Instance]: UDim2 })
-	local viewport = workspace.CurrentCamera.ViewportSize
+	local viewport = screenOf(holder)
 	local radius = settings.eyes.curve * viewport.X / 2
 	local lift = radius - math.sqrt(radius ^ 2 - (viewport.X / 2) ^ 2)
-	local reach = if cover then cover * viewport.Y else viewport.Y / 2 + lift + 4
+	local reach = if cover then cover * viewport.Y else viewport.Y / 2 + lift + 8
 	return {
 		[holder.LidTop] = UDim2.new(0.5, 0, 0, reach),
 		[holder.LidBottom] = UDim2.new(0.5, 0, 1, -reach),
@@ -297,7 +318,7 @@ end
 function RevealWalk.showGlow(holder: Frame, color: Color3?)
 	local glow = settings.glow
 	holder.Visible = true
-	local viewport = workspace.CurrentCamera.ViewportSize
+	local viewport = screenOf(holder)
 	local diameter = settings.eyes.curve * viewport.X
 	for lid, position in lidsAt(holder, nil) do
 		lid.Size = UDim2.fromOffset(diameter, diameter)
@@ -362,9 +383,9 @@ function RevealWalk.showGlow(holder: Frame, color: Color3?)
 	end)
 end
 
--- The blink open, to thin lids resting at the top and bottom.
-function RevealWalk.openEyes(holder: Frame): Tween
-	return moveLids(holder, settings.eyes.rest, settings.eyes.open)
+-- The blink open, to thin lids resting at the top and bottom (`rest` of the screen's height each, if given).
+function RevealWalk.openEyes(holder: Frame, rest: number?): Tween
+	return moveLids(holder, rest or settings.eyes.rest, settings.eyes.open)
 end
 
 -- The eyes shutting: the cut to black at the end of the walk.
@@ -405,9 +426,16 @@ local function buildMarker(egg: BasePart): BillboardGui
 	return marker
 end
 
--- Plays the walk: a cut to black, the walk, a cut to black. It returns with the screen black, for the close-up on
--- the egg to fade in on. Once skipped() says yes, it cuts to black straight away.
-function RevealWalk.play(plan: Plan, egg: BasePart, black: Frame, glow: Frame, skipped: () -> boolean)
+export type Hooks = {
+	onBlack: (() -> ())?, -- once the screen is black, before the eyes open: changes the player can't see happen
+	onFrame: ((elapsed: number, u: number, footfall: boolean) -> ())?, -- every frame of the walk; `footfall` as a step lands
+	lids: number?, -- how far the eyelids stay down
+}
+
+-- Plays the walk: a cut to black, the walk, a cut to black. It returns with the screen black, for the shot from the
+-- monster's feet to fade in on. Once skipped() says yes, it cuts to black straight away.
+function RevealWalk.play(plan: Plan, egg: BasePart, black: Frame, glow: Frame, skipped: () -> boolean, hooks: Hooks?)
+	hooks = hooks or {}
 	local camera = workspace.CurrentCamera
 	task.wait(settings.cutDelay)
 	tween(black, settings.cutIn, { BackgroundTransparency = 0 }).Completed:Wait()
@@ -416,12 +444,15 @@ function RevealWalk.play(plan: Plan, egg: BasePart, black: Frame, glow: Frame, s
 	camera.CameraType = Enum.CameraType.Scriptable
 	camera.FieldOfView = settings.fieldOfView
 	local steps = 0.5 -- mid-stride, so the first footfall comes soon
-	camera.CFrame = RevealWalk.cameraAt(plan, 0, steps, math.huge)
+	camera.CFrame = RevealWalk.cameraAt(plan, 0, 0, steps, math.huge)
 	RevealWalk.showGlow(glow, plan.color)
+	if hooks.onBlack then
+		hooks.onBlack()
+	end
 	task.wait(settings.blackHold)
 	-- The shut eyelids take over from the black, then blink open.
 	black.BackgroundTransparency = 1
-	RevealWalk.openEyes(glow)
+	RevealWalk.openEyes(glow, hooks.lids)
 
 	local marker = buildMarker(egg)
 	local eggHeight = egg.Size.Y
@@ -440,14 +471,19 @@ function RevealWalk.play(plan: Plan, egg: BasePart, black: Frame, glow: Frame, s
 		local share, pace = walked(u)
 		local speed = distance / plan.duration * pace
 		local rate = math.clamp(speed / stride, settings.minStepRate, settings.maxStepRate) * (if plan.swims then SWIM_PACE else 1)
+		rate *= 1 - smoother((u - settings.calmFrom) / (1 - settings.calmFrom)) -- the last step lands before the egg
 		local before = steps
 		steps += rate * (now - last)
 		last = now
-		if math.floor(steps) > math.floor(before) then
+		local footfall = math.floor(steps) > math.floor(before) and not plan.swims
+		if footfall then
 			lastFootfall = now
 		end
 		camera.CameraType = Enum.CameraType.Scriptable -- in case anything else took the camera back
-		camera.CFrame = RevealWalk.cameraAt(plan, share, steps, now - lastFootfall)
+		camera.CFrame = RevealWalk.cameraAt(plan, u, share, steps, now - lastFootfall)
+		if hooks.onFrame then
+			hooks.onFrame(now - startedAt, u, footfall)
+		end
 		-- How tall the egg looks on screen, in pixels.
 		local eggDistance = (egg.Position - camera.CFrame.Position).Magnitude
 		local pixels = eggHeight / eggDistance / math.tan(math.rad(camera.FieldOfView) / 2) * camera.ViewportSize.Y / 2

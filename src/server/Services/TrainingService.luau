@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Training = require(ReplicatedStorage.Shared.Config.Training)
 local BaseKit = require(ReplicatedStorage.Shared.BaseKit)
+local DailyTasks = require(script.Parent.DailyTasks)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Roles = require(ReplicatedStorage.Shared.Roles)
@@ -110,12 +111,6 @@ local function passMultiplier(player: Player): number
 	return pass * (if data then IndexService.xpMultiplier(data) else 1)
 end
 
--- Power each full bar gives: the rack's tier, doubled by the x2 Power pass.
-local function powerPerBar(player: Player, data): number
-	local pass = if player:GetAttribute("HasDoublePower") then Shop.doublePower.multiplier else 1
-	return Training.powerPerBar(data.xpUpgrades) * pass
-end
-
 local function xpPerRep(player: Player, data): number
 	return Training.xpPerRepFor(data.xpUpgrades) * passMultiplier(player)
 end
@@ -125,29 +120,38 @@ local function throwPower(data): number
 	return Training.startPower + data.trainedPower + data.bonusPower
 end
 
+-- The power a bar gives and the XP it needs (Training.barFor), the power doubled by the x2 Power pass. upgrades: to
+-- ask about a later rack upgrade.
+local function barOf(player: Player, data, upgrades: number?): (number, number)
+	local pass = if player:GetAttribute("HasDoublePower") then Shop.doublePower.multiplier else 1
+	local gain, xp = Training.barFor(throwPower(data), upgrades or data.xpUpgrades)
+	return gain * pass, xp
+end
+
 local function publish(player: Player, data: { [string]: any })
 	player:SetAttribute("ThrowPower", throwPower(data))
 	player:SetAttribute("TrainingLevel", data.trainingLevel)
 	player:SetAttribute("TrainingXp", data.trainingXp)
-	player:SetAttribute("TrainingXpNeeded", Training.xpForNextBar(throwPower(data)))
+	local gain, needed = barOf(player, data)
+	player:SetAttribute("TrainingXpNeeded", needed)
 	player:SetAttribute("XpPerRep", xpPerRep(player, data))
 	player:SetAttribute("NextXpPerRep", Training.xpPerRepFor(data.xpUpgrades + 1) * passMultiplier(player))
 	player:SetAttribute("XpUpgradePrice", Training.xpUpgradePrice(data.xpUpgrades))
-	local upgradesLeft, nextPower = Training.nextTier(data.xpUpgrades)
-	player:SetAttribute("PowerPerBar", powerPerBar(player, data))
-	player:SetAttribute("NextPowerPerBar", nextPower * (powerPerBar(player, data) / Training.powerPerBar(data.xpUpgrades)))
+	local upgradesLeft = Training.upgradesToNextTier(data.xpUpgrades)
+	player:SetAttribute("PowerPerBar", gain)
+	player:SetAttribute("NextPowerPerBar", (barOf(player, data, data.xpUpgrades + upgradesLeft)))
 	player:SetAttribute("UpgradesToNextTier", upgradesLeft)
 end
 
--- Each full bar gives the rack's power per bar. The next bar's XP follows the power reached (Training.xpForNextBar).
+-- Each full bar gives its power (Training.barFor). The next bar's XP follows the power reached.
 local function addXp(player: Player, data, amount: number)
 	data.trainingXp += amount
-	local needed = Training.xpForNextBar(throwPower(data))
+	local gain, needed = barOf(player, data)
 	while data.trainingXp >= needed do
 		data.trainingXp -= needed
 		data.trainingLevel += 1
-		data.trainedPower += powerPerBar(player, data)
-		needed = Training.xpForNextBar(throwPower(data))
+		data.trainedPower += gain
+		gain, needed = barOf(player, data)
 	end
 end
 
@@ -224,20 +228,21 @@ local function tryBuyXpUpgrade(player: Player, data)
 		PlotService.notify(player, `You need {Format.cash(price)} for this upgrade`, true)
 		return
 	end
-	local before = powerPerBar(player, data)
+	local before = barOf(player, data)
 	local rackBefore = Training.rackFor(data.xpUpgrades)
 	data.cash -= price
 	data.xpUpgrades += 1
 	player:SetAttribute("Cash", data.cash)
 	publish(player, data)
-	local now = powerPerBar(player, data)
+	local now = barOf(player, data)
 	-- One notice: a second would replace it on screen.
 	local rack = Training.rackFor(data.xpUpgrades)
 	local opening = if rack ~= rackBefore then `New rack: {rack.name}!` else "Upgraded!"
 	if now > before then
 		PlotService.notify(player, `{opening} Every full bar now gives {Format.short(now)} power`)
 	else
-		local left, nextPower = Training.nextTier(data.xpUpgrades)
+		local left = Training.upgradesToNextTier(data.xpUpgrades)
+		local nextPower = barOf(player, data, data.xpUpgrades + left)
 		PlotService.notify(player, `{opening} {left} more for {Format.short(nextPower)} power per bar`)
 	end
 end
@@ -311,6 +316,12 @@ local function onTapBubble(player: Player, id: any)
 	addXp(player, data, gained)
 	publish(player, data)
 	remotes.Boosted:FireAllClients(player, gained)
+	DailyTasks.count(player, "bubbles")
+end
+
+-- Lets a training player go where they stand (the Back to Plot button moves them on). Does nothing if they aren't training.
+function TrainingService.stop(player: Player)
+	stopTraining(player, false)
 end
 
 -- The server's copy of a player's Throw Power, for the throw system to use.

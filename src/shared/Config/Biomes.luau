@@ -20,4 +20,6 @@ return {
 	{ id = "ThornKingdom", name = "Thorn Kingdom", startDist = 11400, endDist = 13000, luck = 40, standardScale = 1.81, color = Color3.fromRGB(236, 72, 104) },
 	{ id = "SporeHollow", name = "Spore Hollow", startDist = 13000, endDist = 14700, luck = 45, standardScale = 1.9, color = Color3.fromRGB(176, 236, 64) },
 	{ id = "WeepingDark", name = "The Weeping Dark", startDist = 14700, endDist = 16500, luck = 50, standardScale = 2, color = Color3.fromRGB(216, 228, 244) },
+	-- Not a world of its own monsters: Config/DeepEnd. rollFrom is the list in Config/Dinos its eggs roll.
+	{ id = "DeepEnd", name = "The Deep End", startDist = 16500, endDist = 18000, luck = 50, standardScale = 2, rollFrom = "DeepPool", color = Color3.fromRGB(150, 235, 215) },
 }

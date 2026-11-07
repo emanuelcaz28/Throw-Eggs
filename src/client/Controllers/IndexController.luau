@@ -121,7 +121,11 @@ local function buildGui()
 	list.BorderSizePixel = 0
 	list.Position = UDim2.fromOffset(LIST.x, LIST.y)
 	list.Size = UDim2.fromOffset(LIST.width, LIST.height)
-	list.CanvasSize = UDim2.fromOffset(0, #Biomes * MAP_PITCH - (MAP_PITCH - CARD_SIZE.Y))
+	local maps = 0 -- worlds with their own monsters: The Deep End has none
+	for _, biome in Biomes do
+		maps += if Dinos[biome.id] then 1 else 0
+	end
+	list.CanvasSize = UDim2.fromOffset(0, maps * MAP_PITCH - (MAP_PITCH - CARD_SIZE.Y))
 	list.ScrollBarThickness = 8
 	list.ScrollBarImageColor3 = Color3.fromRGB(91, 74, 140)
 	list.ScrollingDirection = Enum.ScrollingDirection.Y
@@ -368,7 +372,9 @@ function IndexController.start()
 			local found, count = countFound(biome, discovered)
 			seen += found
 			total += count
-			table.insert(rows, mapRow(hud.list, biome, number, discovered))
+			if count > 0 then -- The Deep End has no monsters of its own, so no card
+				table.insert(rows, mapRow(hud.list, biome, number, discovered))
+			end
 		end
 		hud.total(seen, total, `{seen} / {total} found`)
 		stale = false

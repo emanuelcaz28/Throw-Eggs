@@ -4,11 +4,33 @@ return {
 	landingHold = 0.8, -- time to read the distance before the reveal starts
 	counterRate = 1.25, -- the "1 in X" counter grows this much per step...
 	counterStepTime = 0.125, -- ...every this many seconds, until it hits the real number
-	minClimbTime = 1.5, -- shortest time before the final card, even for common catches
+	minClimbTime = 2.4, -- shortest time before the final card, even for common catches
 	maxClimbTime = 9,
 	-- Catches more common than this show nothing about luck: no counter, no luck label, no "1 in X", no tier sticker
-	-- (the owner's wish, 2026-11-04: seeing "1 in 160" on every catch made none of them special).
-	counterMinOneIn = 1000,
+	-- (the owner's wish, 2026-11-04: seeing "1 in 160" on every catch made none of them special). [Owner, 2026-11-07] Like
+	-- the reference, the counter showing up on the walk is how you know you got something: "1 in 900" is one of the
+	-- owner's own examples, so the line came down from 1,000. A plain catch is about 1 in 2 now, so it still shows nothing.
+	counterMinOneIn = 100,
+	maxTotal = 38, -- [Owner, 2026-11-07] a reveal may take its time, but not past about 40 seconds: walk, climb and hush
+
+	-- The "1 in X" on the walk [Owner, 2026-11-07]. It shows big as the eyes open, already on a random number that depends on
+	-- how rare the catch is: a catch that's not that rare starts around 1 in 17, a luckier one higher. It stays locked there
+	-- for a while, then creeps up just a little. The numbers only go up for real once the camera has switched to the feet.
+	tease = {
+		lock = { 2, 3 }, -- seconds locked on the first number, picked at random
+		-- The first number is picked at random between these two: `common` at counterMinOneIn, `rarest` at rarestOneIn or
+		-- rarer, evenly on a log scale between. It never ends in 0 or 5, so it never looks round.
+		common = { 11, 24 },
+		rarest = { 58, 89 },
+		rarestOneIn = 1000000000,
+		rise = { 1.15, 1.5 }, -- on the walk it creeps up to this many times the first number, picked at random...
+		most = 97, -- ...never past this, so no luck label lands before the camera switches
+		riseEnd = 0.92, -- it reaches its number at this share of the walk
+		size = 1.2, -- the counter's size on the walk, with no monster to keep clear of...
+		above = 56, -- ...and how many design pixels it sits above the screen's bottom, below the egg
+		pop = 1.16, -- each step up pops the number this big
+		popTime = 0.16,
+	},
 
 	-- Lucky catches (the ones with the counter) take their time (the owner's wish, 2026-11-04): the counter climbs for
 	-- minClimb seconds at counterMinOneIn up to maxClimb at rarestOneIn (evenly on a log scale), never stopping: each
@@ -16,23 +38,69 @@ return {
 	-- in view all the while [Owner, 2026-11-06]: the camera pulls back to it early, then creeps slowly in on it to the
 	-- last number (closeUp push), while its luck aura builds up round it (aura).
 	lucky = {
-		minClimb = 5,
-		maxClimb = 11,
+		minClimb = 6,
+		maxClimb = 18,
 		rarestOneIn = 100000000000,
+		climbPower = 1.5, -- the numbers start slowly and run away at the end: they follow progress ^ this
+		grow = 0.3, -- the counter grows by this share over the climb...
+		shake = 1.4, -- ...and trembles by up to this many degrees
 		holdTime = 0.8, -- how long a slammed label stays where it lands before flying up to the top
 		-- Each new label slams in huge in the middle of the screen, then flies up to its place at the top.
 		slamScale = 1.6, -- its size where it lands, against its size in its place over the counter...
 		slamFrom = 4, -- ...starting this big and see-through, landing in slamIn seconds
 		slamIn = 0.28,
 		slamFly = 0.3, -- the flight to the top, at the end of the pause
-		slamY = 0.6, -- where it lands, as a share of the screen's height: under the monster, over the counter
+		slamY = 0.44, -- where it lands, as a share of the screen's height: over the counter
 		flash = 0.82, -- a flash in the label's colour as it lands: how strong (0 = solid, 1 = none)...
 		flashTime = 0.35, -- ...and how fast it fades
 		-- The camera jolts as it lands: degrees, by the label (LUCKY! first), dying away over joltTime.
-		jolt = { 0.4, 0.6, 0.9, 1.2, 1.6, 2 },
-		joltTime = 0.45,
+		jolt = { 1.4, 2, 2.8, 3.6, 4.6, 5.8 },
+		joltTime = 0.65,
+		vignette = { 0.7, 0.35 }, -- the screen's edges darken as the labels go up: see-through (0 = solid), first to rarest
 	},
 	skipDelay = 0.4, -- ignore taps this soon, so the throw tap can't skip the reveal
+
+	-- The mood of rare and big catches (RevealDrama). [Owner, 2026-11-07] The reveal is the soul of the game. A catch reaches
+	-- a level by its "1 in X" or its size mutation's scale, whichever is higher. It starts on the walk, so you feel it
+	-- coming. dim: how much of the world's light is left (it multiplies, so the darkest worlds keep their shapes). hush:
+	-- seconds of held breath after the last number. minClimb: shortest climb. boom: the unveil's volume. lids: how far the
+	-- walk's eyelids stay down (a narrower, meaner look).
+	drama = {
+		levels = {
+			{ oneIn = 1000, scale = 2.2, dim = 0.8, hush = 0.6, minClimb = 9, boom = 0.6, lids = 0.09 },
+			{ oneIn = 1000000, scale = 3.2, dim = 0.68, hush = 0.9, minClimb = 13, boom = 0.8, lids = 0.12 },
+			{ oneIn = 100000000, scale = 5, dim = 0.56, hush = 1.3, minClimb = 16, boom = 1, lids = 0.15 },
+		},
+		darkenTime = 2.5, -- slowly, over the first steps of the walk
+		shadow = 0.45, -- how far the monster's colours sink towards black until the unveil, on top of the world's dimming
+		hushDim = 0.3, -- how much light is left while the world holds its breath
+		letterPower = 3, -- the name's letters hold back: they fill in at progress ^ this
+		heartSpeed = { 0.8, 1.7 }, -- the heartbeat's speed from the walk to the last number
+		heartVolume = 0.7,
+		droneVolume = 0.5,
+		riseVolume = 0.55, -- strings climbing with the numbers, peaking on the last one...
+		riseLength = 19.4, -- ...how long that sound is
+		sounds = {
+			drone = "rbxassetid://9125485274", -- "Deep Synth Drone Modulating Sub Rumble", Pro Sound Effects
+			heart = "rbxassetid://6202853067", -- "Heartbeat (loop)"
+			boom = "rbxassetid://9048829865", -- "Doom Maker End Hit", APM
+			rise = "rbxassetid://9039693546", -- "Styx Riser", APM
+		},
+	},
+
+	-- Sounds of every reveal (RevealSound).
+	sounds = {
+		step = "rbxassetid://9114036511", -- "Deep Impacts 7", Pro Sound Effects: the walk's footfalls
+		stepVolume = { 0.06, 0.75 }, -- from the smallest monster to the biggest...
+		stepSpeed = { 1.25, 0.55 }, -- ...lower and slower
+		tick = "rbxasset://sounds/clickfast.wav", -- built into Roblox: the counter stepping up
+		tickVolume = 0.22,
+		tickEvery = 0.07, -- never more often than this, while the numbers fly
+		tickSpeed = { 0.9, 1.9 }, -- its pitch from the walk to the last number
+		roar = "rbxassetid://9113980319", -- "Creature Mix Giant Crab Monster Roar", Pro Sound Effects: the unveil
+		roarVolume = { 0.35, 1 }, -- from a first-label catch to the biggest...
+		roarSpeed = { 1.15, 0.7 }, -- ...deeper the bigger it is
+	},
 
 	-- The server frees the player for the next throw once they finish the reveal,
 	-- but never sooner than this.
@@ -78,8 +146,44 @@ return {
 
 	-- The camera shakes at the final moment on lucky catches: degrees, by the catch's luck label (none for the first
 	-- ones), dying away over shakeTime.
-	shake = { 0, 0, 0.35, 0.7, 1.1, 1.6, 2.2 },
-	shakeTime = 0.9,
+	shake = { 0, 1.2, 2, 3, 4, 5.2, 6.8 },
+	shakeTime = 1.7,
+
+	-- [Owner, 2026-11-07] A rare catch has to hit hard: the camera shakes more the rarer it is, and instant zooms land on the
+	-- big moments. Nothing here touches common catches.
+	impact = {
+		-- The camera never stops trembling once a label is up: degrees by the label (LUCKY! first), half that at the climb's
+		-- start growing to all of it on the last number.
+		rumble = { 0.3, 0.5, 0.75, 1.05, 1.4, 1.8 },
+		rumbleSpeed = 22, -- how fast it trembles
+		-- An instant zoom in as each label lands: the field of view is multiplied by this, by the label...
+		zoom = { 0.88, 0.84, 0.8, 0.76, 0.72, 0.68 },
+		zoomIn = 0.05, -- ...snapping in this fast...
+		zoomHold = 0.12, -- ...holding for this long...
+		zoomOut = 0.55, -- ...and easing back in this long
+		-- Smaller instant zooms on a beat that speeds up with the numbers, on rare and big catches: by Config drama level...
+		beat = { 0.975, 0.96, 0.945 },
+		beatEvery = { 2.3, 0.65 }, -- ...seconds between them, from the climb's start to the last number
+		beatJolt = 1, -- degrees of camera jolt on each
+		arrive = 0.86, -- the switch to the feet lands like a stomp: an instant zoom...
+		arriveJolt = 3, -- ...with this many degrees of jolt, dust and a thud
+		lastNumber = 0.74, -- the last number snaps in and holds through the held breath...
+		-- ...then the unveil snaps wide, showing the whole monster at once, and eases to the final view: the field of view
+		-- is multiplied by this, from a catch with no label to the rarest.
+		unveilWide = { 1.12, 1.55 },
+	},
+
+	-- The dust thrown up when something big lands (RevealDust). Sizes are shares of the monster.
+	dust = {
+		color = Color3.fromRGB(214, 204, 188),
+		size = 0.16, -- a puff's size against the monster's height or width...
+		smallest = 1.6, -- ...at least this many studs
+		speed = { 0.05, 0.22 }, -- how fast it flies, against the monster's height
+		drag = 3,
+		life = { 0.7, 1.5 },
+		thickest = 0.5, -- how see-through it starts (0 = solid)
+		puffs = { 12, 60 }, -- how many, from a small hit to the biggest
+	},
 	-- After the final tap: fade to white, hold, then fade into the player's base.
 	whiteIn = 0.3,
 	whiteHold = 0.5,
@@ -96,8 +200,17 @@ return {
 		maxQueue = 5, -- a busy server drops the most common waiting catches past this
 	},
 
+	-- [Owner, 2026-11-07: the corridor's walls covered big monsters] A monster too wide for the corridor gets more room: on
+	-- the catcher's screen only, behind the first cut to black, the walls and everything on them slide apart and the floor
+	-- widens with them, until the reveal is over (RevealOpening). Nothing changes for anyone else.
+	opening = {
+		room = 1.5, -- the walls open until the monster's width times this fits between them
+		minGap = 6, -- studs a side: less than this and they stay where they are
+		wallBack = 8, -- the new floor reaches this far under the walls
+	},
+
 	-- The monster's walk to the egg, seen through its own eyes (RevealWalk, docs/GAME_SPEC.md section 7). It plays
-	-- between the landing and the close-up on the egg. Angles are in degrees, times in seconds.
+	-- between the landing and the shot from its feet. Angles are in degrees, times in seconds.
 	walk = {
 		cutDelay = 0.2, -- after the luck panel starts fading out...
 		cutIn = 0.1, -- ...a quick cut to black...
@@ -110,8 +223,8 @@ return {
 		commonOneIn = 2,
 		rarestOneIn = 10000000,
 		-- How big the monster is: its map's standard size times its size mutation (DinoModel.statueScale). 0 at the
-		-- first map's standard size, 1 at bigScale (a Unit of Doom on the last map is 50x), evenly on a log scale.
-		bigScale = 50,
+		-- first map's standard size, 1 at bigScale (a Unit of Doom on the last map is 16x), evenly on a log scale.
+		bigScale = 16,
 
 		-- Where the walk starts, as how far below its eyes the monster sees the egg: a shallow angle is far away.
 		-- The commonest catches start at nearAngle and the rarest at farAngle, then bigger monsters look down by up
@@ -121,19 +234,25 @@ return {
 		farAngle = 1.8,
 		bigAngle = 22,
 		maxStartDistance = 1500, -- studs, a cap for the very biggest and rarest
-		-- Where it stops: the egg this far below its eyes, from endAngle for the smallest to bigEndAngle for the
-		-- biggest, never closer than minEndDistance studs. The cut to black comes there.
-		endAngle = 22,
-		bigEndAngle = 52,
+		-- Where it stops [Owner, 2026-11-07: it must get literally to the egg]. Over the last of the walk it lowers its head
+		-- to the egg, from bowFrom of the walk's time on: down to bowEggs egg heights plus bowEye of its own eye height
+		-- above the ground, so even the biggest ends with its face at the egg. It stops with the egg endReach times that
+		-- far ahead, never closer than minEndDistance studs. The cut comes there.
+		bowFrom = 0.55,
+		bowEggs = 2,
+		bowEye = 0.03,
+		endReach = 1.1,
 		minEndDistance = 4,
 		minWalkShare = 0.3, -- it always walks at least this share of where it stops, so a walk never stands still
 
-		-- How long the walk lasts: minTime for the commonest, maxTime for the rarest, plus up to bigExtraTime for
-		-- the biggest (their steps are slow). The pace eases off as it nears the egg, by slowDown (0 = steady).
-		minTime = 2,
-		maxTime = 3.2, -- [Owner, 2026-11-06] the monster should be in view more: was 4.6
-		bigExtraTime = 0.6,
-		slowDown = 0.5,
+		-- How long the walk lasts [Owner, 2026-11-07: way slower]: minTime for the commonest, maxTime for the rarest,
+		-- plus up to bigExtraTime for the biggest. It slows all the way to the egg, stopping there: slowPower 1 is steady,
+		-- higher brakes harder. The steps and the sway die away from calmFrom of the walk on.
+		minTime = 4,
+		maxTime = 13,
+		bigExtraTime = 8,
+		slowPower = 1.7,
+		calmFrom = 0.8,
 
 		-- It comes along the corridor from the thrower's side, a random few degrees off the middle, and from the
 		-- far side when there's no room behind the egg. It stays sideMargin studs inside the corridor's walls.
@@ -144,7 +263,7 @@ return {
 		-- The camera keeps the egg below the middle of the screen: by aimBelow of the angle down to it, but never
 		-- more than maxAimBelow degrees. fieldOfView is the camera's while walking.
 		aimBelow = 0.35,
-		maxAimBelow = 14,
+		maxAimBelow = 7,
 		fieldOfView = 74,
 		-- From far away or high up the egg is a speck, so a small glowing dot marks it while it's under markerFrom
 		-- pixels tall on screen, fully shown at markerFull pixels and below. markerSize is the dot's own size in
@@ -167,7 +286,8 @@ return {
 		turn = 1.5, -- degrees the head turns each way with the sway
 		-- Heavy footfalls: the view jolts down and shakes, more the bigger the monster.
 		thudAngle = 0.6, -- degrees for the smallest...
-		bigThudAngle = 4, -- ...and the biggest
+		bigThudAngle = 4, -- ...and the biggest...
+		rareThudAngle = 2.5, -- ...plus up to this for the rarest catch
 		thudDrop = 0.02, -- share of eye height the view drops on a big footfall (times bigness)
 		thudTime = 0.35, -- how quickly a jolt dies away
 		-- Swimmers (models with a Swim bone, The Abyss on) glide instead: no footfalls, a slow smooth sway.
@@ -210,57 +330,52 @@ return {
 		markerRing = "rbxasset://textures/ui/Input/Ring_padded.png", -- the faint ring round the far-egg dot
 	},
 
-	-- After the walk: a close-up of the egg on the ground with the monster's feet already standing behind it, then the
-	-- camera pulls back and up until the whole monster stands over the egg (RevealCloseUp, docs/GAME_SPEC.md
-	-- section 7). Angles are in degrees, times in seconds.
+	-- [Owner, 2026-11-07] THE shot, the most important part of the reveal. The walk ends, the camera switches to the monster's
+	-- feet, and one continuous, very slow zoom out runs while the numbers climb: the body comes into view bit by bit but
+	-- never all of it. Only when the numbers finish does the camera whip back to the whole monster (RevealCloseUp, docs/
+	-- GAME_SPEC.md section 7). Angles are in degrees, times in seconds.
 	closeUp = {
-		-- The close-up: the camera this many egg heights from the egg's middle (as close as nearest for a monster
-		-- hardly bigger than the egg), looking down at it from elevation for the smallest monsters and bigElevation
-		-- for the biggest (low, so their legs tower up behind the egg, over the corridor's walls), this far round
-		-- from straight in front of the monster (to one side or the other, at random).
-		distance = 2.4,
-		nearest = 1.2,
-		elevation = 20,
-		bigElevation = 4,
-		yaw = 12,
-		-- Where the egg lies: between the monster's front feet, far enough ahead of them for both feet to stand in
-		-- the close-up (at least feetBehind times their distance to the side, behind the camera), and further ahead
-		-- when the monster is too low there to stand over it. A monster under besideBelow egg heights tall would
-		-- hide behind the egg, so the egg lies beside its front feet instead (a first-map Compy is about 1.2).
+		-- Where the egg lies: between the monster's front feet, as near as fits. A monster under besideBelow egg heights
+		-- tall would hide behind the egg, so the egg lies beside its front feet instead (a first-map Compy is about 1.2).
 		-- eggGap studs are kept clear round the egg.
-		feetBehind = 1.5,
 		besideBelow = 2.5,
 		eggGap = 0.3,
-		-- Then the egg lies a clear gap further ahead, this share of the monster's length, so the two never look stuck
-		-- together (the owner's wish, 2026-11-04).
-		aheadShare = 0.3, -- [Owner, 2026-11-06: the monster looked small] was 0.5: the egg widened the framing
-		maxAhead = 15, -- but never more than this many egg heights
+		-- Then the egg lies a little further ahead, this share of the monster's length, so the two never look stuck
+		-- together (the owner's wish, 2026-11-04), but never more than maxAhead egg heights.
+		aheadShare = 0.15,
+		maxAhead = 15,
 		aheadAngle = 60, -- degrees off straight ahead, away from the camera's side
-		-- On lucky catches the close-up holds only luckyHold seconds, then pulls back as usual, to push times further
-		-- back than the final framing, so the whole monster is in view early [Owner, 2026-11-06: before, the camera
-		-- crept up from its feet and the head came last]. Over the rest of the climb it creeps slowly in to the final
-		-- framing, landing with the last number. Straight in: no circling.
-		luckyHold = 0.5,
-		push = 0.22,
-		-- How long the close-up holds: holdShare of the climb (the name filling in and the counter climbing), but
-		-- between minHold and maxHold.
-		holdShare = 0.3,
-		minHold = 0.4,
-		maxHold = 2.5,
-		-- The pull back takes pullTime for the first map's standard size, up to bigPullTime for the biggest (at
-		-- walk.bigScale), which have much further to go. It's cut short to end with the climb, but never to under
-		-- minPullShare of its time. A tap to skip finishes it in skipTime.
-		pullTime = 1.4,
-		bigPullTime = 2.4,
-		minPullShare = 0.6,
+		-- The zoom out. The ground under the feet sits feetAt of the way down the screen, above the counter and the letters,
+		-- and the camera stays low, looking up (elevation below zero: under what it looks at).
+		feetAt = 0.58,
+		startWindow = 0.16, -- it opens on this share of the monster's height...
+		minWindow = 1.6, -- ...at least this many studs of it...
+		countWindow = 0.72, -- ...and when the last number lands this share is in view...
+		belowEyes = 0.85, -- ...but never past this share of the height of its eyes, so the face waits for the very end
+		startElevation = -8,
+		-- Which way it looks from: this far round from straight in front of the monster, starting more from the side, where
+		-- a foot stands clear of the head, and turning to the final view as it goes. If the camera would pass through the
+		-- monster or show its eyes early, it starts further round, in steps of yawStep, up to yawTries times, either side.
+		startYaw = 38,
+		endYaw = 16,
+		yawStep = 24,
+		yawTries = 5,
+		backStep = 1.3, -- with no way in from any side, it starts this much further back, up to backTries times
+		backTries = 6,
+		floorGap = 0.8, -- the camera stays this many studs above the ground
+		creep = 1.2, -- the zoom eases into motion: it follows progress ^ this
+		hold = 0.25, -- seconds on the feet before it starts moving
+		-- The final move: from wherever the count left it to the whole monster, in this long. A tap to skip finishes in skipTime.
+		whipTime = 1.1,
+		bigWhipTime = 1.6,
 		skipTime = 0.5,
 		-- Where it ends: the monster and the egg fill the screen with margin to spare, from far enough back that
-		-- depthShare of their length is in front of the camera too, looking down from endElevation. It always ends
-		-- at least minPullBack times further back than the close-up, so tiny monsters still pull back.
-		margin = 1.05,
+		-- depthShare of their length is in front of the camera too, looking down from endElevation.
+		margin = 1.2, -- room over the head for its roar
 		depthShare = 0.15,
 		endElevation = 4, -- low, looking up at the monster a little, so it towers and the egg shows above the text...
-		bigEndElevation = 14, -- ...but the biggest are looked down on a little, so the corridor's floor can't hide them
+		bigEndElevation = 1, -- ...and the biggest from right down on the ground, towering: no walls in the way now
+		bigFill = 0.7, -- the biggest end this much closer than a perfect fit, so they fill the screen
 		-- They're framed in the part of the screen the final text leaves free, topGap design pixels under the top bar,
 		-- and never in less than minBand of the screen's height.
 		topGap = 12,
@@ -270,36 +385,20 @@ return {
 		-- over the distance, down to minHaze (SkyController HazeScale), so a giant seen from far off stays clear.
 		clearDistance = 250,
 		minHaze = 0.12,
-		minPullBack = 1.5,
-		-- Once the pull back is over the camera holds still, with no circling (the owner's wish, 2026-11-04).
-		-- The camera keeps wallMargin studs inside the corridor's walls. Each stud above the rim lets it go overWalls
-		-- studs further out; 0 keeps it inside the corridor at any height [Owner, 2026-11-06: a giant seen from out over
-		-- a wall was hidden behind the wall's top].
+		-- Once it has landed the camera holds still, with no circling (the owner's wish, 2026-11-04). It keeps wallMargin
+		-- studs inside the corridor's walls, where they stand for this reveal.
 		wallMargin = 4,
-		overWalls = 0,
 	},
 
-	-- The luck building up round the monster on lucky catches, in view the whole time (RevealAura). Each pair goes from
-	-- the first luck label (LUCKY!) to the rarest; labels' colours are their own (tiers, below).
-	aura = {
-		outline = { 0.55, 0.05 }, -- the glowing outline round the monster: how see-through (0 = solid)...
-		fill = { 1, 0.8 }, -- ...and the tint over it
-		breatheRate = 0.8, -- it breathes this many times a second...
-		flashTime = 0.6, -- ...and flashes bright for this long when a label lands
-		motes = { 6, 45 }, -- lights rising off the ground round its feet, per second
-		burst = { 15, 70 }, -- lights bursting up when a label lands
-		light = { 0.8, 4 }, -- a light on the monster in the label's colour
-		ringPieces = 32, -- the shockwave ring racing out along the ground when a label lands...
-		ringTime = 0.8, -- ...in this long...
-		ringReach = 3, -- ...out to this many times the monster's width
-		lightningFrom = 5, -- from this label on (GODLY!), lightning strikes round it...
-		lightningEvery = { 0.7, 0.35 }, -- ...about this often...
-		lightningTime = 0.18, -- ...each bolt fading in this long...
-		lightningSteps = 7, -- ...zigzagging this many times...
-		lightningSpread = 2.2, -- ...within this many times its width
-		rainbowFrom = 6, -- from this label on (IMPOSSIBLE!), it all cycles through the rainbow...
-		rainbowSpeed = 0.35, -- ...this many times a second
-		vignette = { 0.7, 0.35 }, -- the screen's edges darken so the monster stands out: see-through (0 = solid)
+	-- The look of the "1 in X" and the luck labels (Figma "Throw Eggs - Reveal Text"): three layers of the same text, a hard
+	-- shadow, a rim in the tier's deep colour (rim, below), and the lit text in its dark outline. Sizes in design pixels.
+	text = {
+		number = { size = 116, ink = 10, rim = 16, drop = 8 },
+		lead = { size = 54, ink = 7, rim = 11, drop = 5, raise = 18 }, -- the "1 in", raised to sit on the number's baseline
+		label = { size = 46, ink = 6, rim = 10, drop = 4 },
+		slam = { size = 84, ink = 9, rim = 14, drop = 7 },
+		walkTop = Color3.fromRGB(255, 255, 255), -- the plain number on the walk...
+		walkBottom = Color3.fromRGB(217, 223, 242),
 	},
 
 	-- Each label appears when the counter passes minOneIn. Lowest first. glow is how strongly the
@@ -311,45 +410,45 @@ return {
 		{
 			minOneIn = 100,
 			label = "LUCKY!",
+			rim = Color3.fromRGB(184, 106, 0),
 			color = Color3.fromRGB(255, 226, 110),
-			glow = 0.22,
-			sparkles = 15,
+			glow = 0.1,
 			sticker = { label = "LUCKY!", colors = { "#fff1a8", "#ffc21a" } },
 			panel = { "#fff1a8", "#ffc21a" },
 		},
 		{
 			minOneIn = 1000,
 			label = "SUPER LUCKY!",
+			rim = Color3.fromRGB(168, 15, 79),
 			color = Color3.fromRGB(255, 110, 150),
-			glow = 0.26,
-			sparkles = 40,
+			glow = 0.12,
 			sticker = { label = "SUPER LUCKY!", colors = { "#ffc2d4", "#ff6e96" } },
 			panel = { "#ffc2d4", "#ff6e96" },
 		},
 		{
 			minOneIn = 10000,
 			label = "INSANE!",
+			rim = Color3.fromRGB(6, 122, 140),
 			color = Color3.fromRGB(90, 235, 235),
-			glow = 0.3,
-			sparkles = 80,
+			glow = 0.14,
 			sticker = { label = "INSANE LUCK!", colors = { "#e6ffff", "#5aebeb" } },
 			panel = { "#c9fdfd", "#3fd6d6" },
 		},
 		{
 			minOneIn = 100000,
 			label = "LEGENDARY!",
+			rim = Color3.fromRGB(151, 16, 138),
 			color = Color3.fromRGB(255, 120, 220),
-			glow = 0.34,
-			sparkles = 140,
+			glow = 0.16,
 			sticker = { label = "LEGENDARY LUCK!!", colors = { "#ffe8f9", "#ff78dc" } },
 			panel = { "#ffd3f3", "#ff6fd2" },
 		},
 		{
 			minOneIn = 1000000,
 			label = "GODLY!",
+			rim = Color3.fromRGB(47, 138, 20),
 			color = Color3.fromRGB(190, 255, 120),
-			glow = 0.38,
-			sparkles = 240,
+			glow = 0.18,
 			sticker = { label = "GODLY LUCK!!!", colors = { "#f4ffe6", "#beff78" } },
 			panel = { "#ff8f8f", "#ffd36b", "#b4ff7a", "#6fe3ff", "#c58bff" },
 		},
@@ -357,9 +456,9 @@ return {
 		{
 			minOneIn = 1000000000,
 			label = "IMPOSSIBLE!",
+			rim = Color3.fromRGB(91, 22, 201),
 			color = Color3.fromRGB(255, 90, 220),
-			glow = 0.44,
-			sparkles = 400,
+			glow = 0.2,
 			sticker = { label = "IMPOSSIBLE LUCK!!!!", colors = { "#ffe6fb", "#ff5adc" } },
 			panel = { "#ff5adc", "#ff8f8f", "#ffd36b", "#b4ff7a", "#6fe3ff", "#c58bff" },
 		},

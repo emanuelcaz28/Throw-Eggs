@@ -20,10 +20,29 @@ type Prop = { pivot: CFrame, scale: number, phase: number, movers: { Mover }, dr
 
 local props: { Prop } = {}
 local seen: { [Instance]: boolean } = {}
+local propOf: { [Instance]: Prop } = {}
 
 -- The same prop doesn't move in step with its copies: each starts at a different point in its cycle.
 local function phaseOf(position: Vector3): number
 	return math.abs(position.X * 0.137 + position.Z * 0.071) % 1
+end
+
+-- Moves a prop and its motion together: the motion writes its parts' places every frame, so moving the model alone
+-- would leave them behind. RevealOpening slides the corridor's rims apart for a reveal with this, and back after.
+function PropMotionController.shift(model: Instance, offset: Vector3)
+	local prop = propOf[model]
+	if not prop then
+		return
+	end
+	prop.pivot += offset
+	for _, mover in prop.movers do
+		mover.base += offset
+	end
+	if prop.drift then
+		for index, base in prop.drift.bases do
+			prop.drift.bases[index] = base + offset
+		end
+	end
 end
 
 local function add(model: Instance)
@@ -37,6 +56,7 @@ local function add(model: Instance)
 	seen[model] = true
 	local pivot = model:GetPivot()
 	local prop: Prop = { pivot = pivot, scale = model:GetScale(), phase = phaseOf(pivot.Position), movers = {}, drift = nil }
+	propOf[model] = prop
 	local parts = {}
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then

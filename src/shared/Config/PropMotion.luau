@@ -896,5 +896,43 @@ return {
 			FlameB = { pulse = 0.55, period = 1.3 },
 			Lamp = { pulse = 0.7, period = 2.1 },
 		},
+		prop_DepthGauge = {
+			GaugeMark = { bob = 3.2, period = 9 },
+			GaugeTick = { pulse = 0.55, period = 3 },
+		},
+		prop_StoneFang = {
+			FangTip = { pulse = 0.6, period = 2.6 },
+		},
+		prop_FallenBlock = {
+			SeamGlow = { pulse = 0.5, period = 2.2 },
+		},
+		prop_HangingChain = {
+			Links = { swing = 3, period = 9, axis = "across", height = 40 },
+			Shackle = { swing = 3, period = 9, axis = "across", height = 40 },
+		},
+		prop_GlowMoss = {
+			DeepSpore = { pulse = 0.5, period = 2.9 },
+		},
+		prop_SeepPool = {
+			SeepRing = { pulse = 0.45, period = 2.4 },
+		},
+		prop_ShaftColumn = {
+			ColumnRing = { pulse = 0.45, period = 3.2 },
+		},
+		prop_TitanSkull = {
+			DeepEye = { pulse = 0.6, period = 3.6 },
+			Mandible = { swing = 7, period = 6, axis = "across", height = 6 },
+		},
+		prop_DeepSeep = {
+			SeepDrop = { fall = 6, period = 1.8 },
+			SeepFall = { pulse = 0.6, period = 3.1 },
+		},
+		prop_ChainSpan = {
+			Shackle = { bob = 0.5, period = 7 },
+		},
+		prop_BottomFace = {
+			DeepEye = { pulse = 0.65, period = 4.2 },
+			Mandible = { bob = 2.4, period = 6.5 },
+		},
 	},
 }

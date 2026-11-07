@@ -40,6 +40,7 @@ local Training = load(ROOT .. "/Config/Training")
 local Throw = load(ROOT .. "/Config/Throw")
 local Luck = load(ROOT .. "/Config/Luck")
 local Biomes = load(ROOT .. "/Config/Biomes")
+local DeepEnd = load(ROOT .. "/Config/DeepEnd")
 local Dinos = load(ROOT .. "/Config/Dinos")
 local Catch = load(ROOT .. "/Config/Catch")
 local Plot = load(ROOT .. "/Config/Plot")
@@ -47,6 +48,8 @@ local Eggs = load(ROOT .. "/Config/Eggs")
 local Hooks = load(ROOT .. "/Config/Hooks")
 local CatchOdds = load(ROOT .. "/CatchOdds")
 local DinoStats = load(ROOT .. "/DinoStats")
+
+local LAST_WORLD = 15 -- the last world with its own monsters; The Deep End comes after it
 
 local function mapsPassed(d)
 	for i, b in Biomes do
@@ -61,22 +64,23 @@ local function rollExtra(options, boost)
 	end
 end
 
-local function rollCatch(biome, luck, minRank, recent)
-	local dinos = Dinos[biome.id]
-	local odds = CatchOdds.monsters(biome.id, luck, minRank, recent)
+local function rollCatch(biome, luck, minRank, recent, extraBoost)
+	local pool = biome.rollFrom or biome.id
+	local dinos = Dinos[pool]
+	local odds = CatchOdds.monsters(pool, luck, minRank, recent)
 	local pick, rank = math.random(), #dinos
 	for r in dinos do
 		pick -= odds[r]
 		if odds[r] > 0 and pick <= 0 then rank = r break end
 	end
-	local boost = math.max(luck, 1) ^ Catch.luckPower
+	local boost = math.max(luck, 1) ^ Catch.luckPower * (extraBoost or 1)
 	local m, s = rollExtra(Catch.mutations, boost), rollExtra(Catch.sizes, boost)
 	local income = dinos[rank].income * (m and m.incomeMultiplier or 1) * (s and s.incomeMultiplier or 1)
 	return dinos[rank], rank, income
 end
 
 local function rarest(biome, count)
-	local dinos = Dinos[biome.id]
+	local dinos = Dinos[biome.rollFrom or biome.id]
 	local last = #dinos
 	while last > 1 and dinos[last].prize do last -= 1 end
 	return last - count + 1
@@ -95,7 +99,7 @@ local function luckyCatch(biome, luck, multiplier, recent)
 	local minOneIn = CatchOdds.hitFor(multiplier)
 	local options, total = CatchOdds.hitOptions(dino.id, minOneIn)
 	if #options == 0 then
-		local dinos = Dinos[biome.id]
+		local dinos = Dinos[biome.rollFrom or biome.id]
 		dino, rank = dinos[#dinos], #dinos
 		options, total = CatchOdds.hitOptions(dino.id, minOneIn)
 	end
@@ -113,7 +117,6 @@ local function play(opts)
 	local s = { t = 0, day = 1, left = (opts.session or 60) * 60, lucky = 50, power = Training.startPower, xp = 0, ups = 0, cash = 0, plot = {}, plotUps = 0, egg = 1, recent = {}, sinceRare = 0, sinceTop = 0, caught = {}, income = 0 }
 	local reached = { [1] = { t = 0, day = 1 } }
 	s.power += (opts.packs or 0) * 1000 -- the first day's packs
-	local xpFor = opts.xpFor or Training.xpForNextBar
 	local passXp, passPower, passCash = opts.passXp or 1, opts.passPower or 1, opts.passCash or 1
 	local capH = opts.capHours or 300
 
@@ -140,11 +143,11 @@ local function play(opts)
 	end
 	local function addXp(amount)
 		s.xp += amount
-		local need = xpFor(s.power)
+		local gain, need = Training.barFor(s.power, s.ups)
 		while s.xp >= need do
 			s.xp -= need
-			s.power += Training.powerPerBar(s.ups) * passPower
-			need = xpFor(s.power)
+			s.power += gain * passPower
+			gain, need = Training.barFor(s.power, s.ups)
 		end
 	end
 	local function buy()
@@ -160,7 +163,12 @@ local function play(opts)
 	end
 
 	local sinceBubble = 0
-	while s.t < capH * 3600 and not reached[#Biomes] do
+	local depths = {}
+	local depthGoal = opts.depthGoal or 0
+	local function finished()
+		return reached[LAST_WORLD] and (depthGoal == 0 or depths[depthGoal])
+	end
+	while s.t < capH * 3600 and not finished() do
 		if s.left <= 0 then nextDay() end
 		-- train
 		local train = opts.trainSeconds or 40
@@ -175,8 +183,9 @@ local function play(opts)
 		end
 		tick(8) -- walk to the throw pad
 		for _ = 1, opts.throws or 4 do
-			local distance = math.min(s.power * meterMultiplier(opts), Throw.maxDistance())
-			tick(2 + Throw.releaseDelay() + Throw.flightTime(distance) + 5) -- meter, wind-up, flight, reveal and back
+			local reach = s.power * meterMultiplier(opts)
+			local distance = math.min(reach, Throw.farthestLanding())
+			tick(2 + Throw.releaseDelay() + Throw.flightTime(distance) + 8) -- meter, wind-up, flight, reveal, then home and the walk back (about 3 s at walkSpeed 32)
 			local biome = Luck.biomeAt(distance)
 			local index = table.find(Biomes, biome)
 			local minRank
@@ -189,7 +198,7 @@ local function play(opts)
 				dino, rank, income = luckyCatch(biome, luck, s.lucky, s.recent)
 				s.lucky = nil
 			else
-				dino, rank, income = rollCatch(biome, luck, minRank, s.recent)
+				dino, rank, income = rollCatch(biome, luck, minRank, s.recent, DeepEnd.boostAt(reach))
 			end
 			s.sinceRare = if rank >= rarest(biome, Hooks.pity.rarest) then 0 else s.sinceRare + 1
 			s.sinceTop = if rank >= rarest(biome, Hooks.jackpotPity.rarest) then 0 else s.sinceTop + 1
@@ -197,15 +206,19 @@ local function play(opts)
 			s.caught[biome.id] = true
 			table.insert(s.plot, income)
 			recount()
-			for m = 2, index do
+			for depth = 1, DeepEnd.depthAt(reach) do
+				depths[depth] = depths[depth] or s.t
+			end
+			for m = 2, math.min(index, LAST_WORLD) do
 				if not reached[m] then
-					reached[m] = { t = s.t, day = s.day, ups = s.ups, need = xpFor(s.power), perRep = Training.xpPerRepFor(s.ups) * passXp, perBar = Training.powerPerBar(s.ups) * passPower, power = s.power, income = s.income, cash = s.cash }
+					reached[m] = { t = s.t, day = s.day, ups = s.ups, need = select(2, Training.barFor(s.power, s.ups)), perRep = Training.xpPerRepFor(s.ups) * passXp, perBar = Training.barFor(s.power, s.ups) * passPower, power = s.power, income = s.income, cash = s.cash }
 				end
 			end
 			buy()
 		end
 		tick(8)
 	end
+	reached.depths = depths
 	return reached
 end
 
@@ -244,17 +257,17 @@ local function report(label, opts)
 	local gaps, spread, squats = {}, {}, {}
 	for _, run in all do
 		local worst = 0
-		for m = 11, #Biomes do
+		for m = 11, LAST_WORLD do
 			if run[m] and run[m - 1] then worst = math.max(worst, run[m].t - run[m - 1].t) end
 		end
 		table.insert(gaps, worst)
-		table.insert(spread, at(run, #Biomes))
-		local e = run[#Biomes] or run[12]
+		table.insert(spread, at(run, LAST_WORLD))
+		local e = run[LAST_WORLD] or run[12]
 		if e then table.insert(squats, e.need / e.perRep) end
 	end
 	table.sort(spread)
 	local shownSpread = if spread[#spread] == math.huge then "-" else `{fmt(spread[1])}-{fmt(spread[#spread])}`
-	print(`| {label} | {table.concat(cells, " | ")} | {days(10)} | {days(#Biomes)} | {fmt(median(gaps))} | {shownSpread} |`)
+	print(`| {label} | {table.concat(cells, " | ")} | {days(10)} | {days(LAST_WORLD)} | {fmt(median(gaps))} | {shownSpread} |`)
 end
 
 -- Every kind of player. session = minutes a day; the rest is how they spend it.
@@ -283,6 +296,35 @@ local TYPES = {
 	{ "Paid: all passes + a pack a day", with({ session = 180, trainSeconds = 60, tap = 0.9, perfect = 0.25, lowLevel = 6, passXp = 2, passPower = 2, passCash = 2, packs = 1 }) },
 }
 
+do
+	local run = play(AVERAGE)
+	local cells = {}
+	for m = 2, LAST_WORLD do
+		local e = run[m]
+		table.insert(cells, if e then string.format("w%d %.0f sq +%d", m, e.need / e.perRep, e.perBar) else `w{m} -`)
+	end
+	print("Average player's bar on arriving at each world: " .. table.concat(cells, ", "))
+end
+-- The Deep End: play time to reach each Depth, for those who'd keep at it.
+local GOAL = 10
+print(`Play time to Depth 1 to {GOAL}, median of 5 runs, capped at 900 h.`)
+for _, entry in TYPES do
+	local name = entry[1]
+	if name:find("average") or name:find("keen") or name:find("grinder") or name:find("casual") or name:find("all 3") then
+		local opts = table.clone(entry[2])
+		opts.depthGoal, opts.capHours = GOAL, 900
+		local all = {}
+		for r = 1, 5 do all[r] = play(opts) end
+		local cells = {}
+		for depth = 1, GOAL do
+			local ts = {}
+			for _, run in all do table.insert(ts, run.depths[depth] or math.huge) end
+			local t = median(ts)
+			table.insert(cells, if t == math.huge then "-" else fmt(t))
+		end
+		print(`| {name} | {table.concat(cells, " | ")} |`)
+	end
+end
 print(`Play time to reach each map, median of {RUNS} runs, capped at 300 h of play.`)
 print(`| Player | m{table.concat(SHOWN, " | m")} | days to m10 | days to m15 | longest late map | m15 fastest-slowest |`)
 for _, entry in TYPES do

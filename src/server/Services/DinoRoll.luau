@@ -5,6 +5,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
+local CatchOdds = require(ReplicatedStorage.Shared.CatchOdds)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Events = require(ReplicatedStorage.Shared.Config.Events)
@@ -13,39 +14,8 @@ local DinoRoll = {}
 
 local rng = Random.new()
 
--- Each monster's chance of hatching, most common first; they add up to 1. luck is counted from the map's par
--- (Config/Luck forRoll) with every boost multiplied in. recent: the ids of the last catches, newest first.
-function DinoRoll.odds(biomeId: string, luck: number, minRank: number?, recent: { string }?): { number }
-	local dinos = Dinos[biomeId]
-	local pick = Catch.pick
-	local count = #dinos
-	local lowest = math.clamp(minRank or 1, 1, count)
-
-	-- The aim: the commonest monster's odds times the luck, stopped part of the way to the rarest.
-	local commonest = dinos[1].chance
-	local top = if count > 1 then dinos[count - 1].chance ^ (1 - pick.topAim) * dinos[count].chance ^ pick.topAim else commonest
-	local aim = math.clamp(commonest * luck, commonest, math.max(top, commonest))
-
-	local weights, total = {}, 0
-	for rank, dino in dinos do
-		local weight = 0
-		if rank >= lowest then
-			weight = math.min(dino.chance / aim, aim / dino.chance) ^ pick.falloff
-			for index, id in recent or {} do
-				if id == dino.id then
-					weight /= pick.repeatPenalty[index] or 1
-					break
-				end
-			end
-		end
-		weights[rank] = weight
-		total += weight
-	end
-	for rank, weight in weights do
-		weights[rank] = weight / total
-	end
-	return weights
-end
+-- Each monster's chance of hatching, most common first (CatchOdds, which the luck offer's Details panel reads too).
+DinoRoll.odds = CatchOdds.monsters
 
 function DinoRoll.roll(biomeId: string, luck: number, minRank: number?, recent: { string }?)
 	local dinos = Dinos[biomeId]
@@ -72,16 +42,46 @@ local function rollExtra(options, boost: number, perOption: { [string]: number }
 	return nil
 end
 
--- A full catch: the monster plus its mutation and size, and what they add up to. The same luck makes the
--- mutation and size likelier too, more gently (Catch.luckPower), on top of any event boost.
--- The "1 in X" shown is always the normal odds, even when luck or a guarantee helped.
-function DinoRoll.rollCatch(biomeId: string, luck: number, minRank: number?, recent: { string }?)
-	local dino, rank = DinoRoll.roll(biomeId, luck, minRank, recent)
-	local luckBoost = math.max(luck, 1) ^ Catch.luckPower
-	local mutation = rollExtra(Catch.mutations, luckBoost, Events.mutationBoosts())
-	local size = rollExtra(Catch.sizes, luckBoost)
+-- A colour and size for this monster that make the whole catch at least 1 in `minOneIn`, each combination as likely
+-- as it really is (1 / its "1 in X"), or nil when none does.
+local function hitExtras(dinoId: string, minOneIn: number): (string?, string?, boolean)
+	local options, total = CatchOdds.hitOptions(dinoId, minOneIn)
+	local pick = rng:NextNumber() * total
+	for _, option in options do
+		pick -= option.weight
+		if pick <= 0 then
+			return option.entry.mutation, option.entry.size, true
+		end
+	end
+	local last = options[#options]
+	return if last then last.entry.mutation else nil, if last then last.entry.size else nil, last ~= nil
+end
 
-	local entry = { id = dino.id, mutation = mutation and mutation.id, size = size and size.id }
+-- The "1 in X" a lucky throw of this multiplier guarantees (Config/Catch luckyHits), or nil.
+DinoRoll.hitFor = CatchOdds.hitFor
+
+-- A full catch: the monster plus its mutation and size, and what they add up to. The same luck makes the
+-- mutation and size likelier too, more gently (Catch.luckPower), on top of any event boost. `minOneIn` (lucky
+-- throws): the colour and size are instead picked so the catch is at least that rare (Config/Catch luckyHits).
+-- The "1 in X" shown is always the catch's real odds (DinoStats.describe). extraBoost: The Deep End's Depth (Config/DeepEnd).
+function DinoRoll.rollCatch(biomeId: string, luck: number, minRank: number?, recent: { string }?, minOneIn: number?, extraBoost: number?)
+	local dino, rank = DinoRoll.roll(biomeId, luck, minRank, recent)
+	local entry
+	if minOneIn then
+		local mutationId, sizeId, found = hitExtras(dino.id, minOneIn)
+		if not found then
+			-- No colour and size get this monster there: the map's rarest always can.
+			local dinos = Dinos[biomeId]
+			dino, rank = dinos[#dinos], #dinos
+			mutationId, sizeId = hitExtras(dino.id, minOneIn)
+		end
+		entry = { id = dino.id, mutation = mutationId, size = sizeId }
+	else
+		local luckBoost = math.max(luck, 1) ^ Catch.luckPower * (extraBoost or 1)
+		local mutation = rollExtra(Catch.mutations, luckBoost, Events.mutationBoosts())
+		local size = rollExtra(Catch.sizes, luckBoost)
+		entry = { id = dino.id, mutation = mutation and mutation.id, size = size and size.id }
+	end
 	local stats = DinoStats.describe(entry)
 
 	return {

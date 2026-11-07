@@ -42,6 +42,7 @@ return {
 		rarestOneIn = 0, -- the "1 in X" of the rarest catch ever
 		peakIncome = 0, -- the highest $/s ever (events counted)
 		farthestThrow = 0, -- studs, the farthest egg ever
+		deepestDepth = 0, -- the deepest Depth reached in The Deep End (Config/DeepEnd)
 		statsStarted = false, -- set once the stats above have been filled in for this save
 		receipts = {}, -- Robux purchases already granted, by purchase id
 		throwsSinceRare = 0, -- throws in a row without a rare monster, for pity (Config/Hooks)
@@ -53,6 +54,9 @@ return {
 		specialsGiven = {}, -- special monsters already given for their Game Pass, by id (Config/Specials)
 		giftedPasses = {}, -- Game Passes another player gifted, by Config/Shop key ("doubleCash" = true)
 		serverLuckLeft = 0, -- seconds of bought Server Luck not used yet; they come back on the next join
+		dailyTaskDay = -1, -- the UTC day number the daily tasks below belong to (DailyTasks)
+		dailyTaskCounts = {}, -- how far each is today, by task id
+		dailyTasksDone = false, -- whether today's x2 XP has been given
 		dailyStreak = 0, -- the last daily reward day claimed, 1 to 7 (Config/Daily)
 		dailyLastDay = -1, -- the UTC day number (os.time() // 86400) of the last daily claim
 	},

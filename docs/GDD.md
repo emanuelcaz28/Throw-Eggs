@@ -91,8 +91,10 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
 8. Robux shop: x2 Cash, x2 Training, Server Luck x2, four cash packs (10 min to 30 h of the plot's $/s
    without events, each with a minimum), four Throw Power packs (+100 to +10,000 power, saved on top of the
    training level) and a free starter dino (`Config/Shop`).
+   While aiming, the luck offer sells the x100 and x500 throws, with DETAILS showing the real chances (`LuckOfferController`, `CatchOdds`).
 9. Timed events: one every 15 minutes for 5 minutes, taking turns: Double Luck (2x luck) and Ghost Rush (GHOST 10x
    likelier), from the server clock (`Config/Events`); an icon at the bottom right explains it on hover or tap.
+   After the last world: The Deep End behind the Last Door, with endless Depth (`Config/DeepEnd`, `docs/GAME_SPEC.md` section 9).
 10. Arena leaderboards (along the right-hand wall, seen from the platform): MOST DINOS (dinos caught), TOP MONEY (money earned) and LUCKIEST CATCH (rarest
     "1 in X"), top 10 across all servers, refreshed every minute (`Config/Leaderboards`).
 11. Offline earnings: on rejoin, the plot pays 50% of its $/s for the time away (up to 8 hours, events not
@@ -155,7 +157,8 @@ Exact formulas aren't visible in the recordings, so numbers are readings from th
 - The biome name sits under the luck number. The landing raises a dust puff, then the screen dims.
 
 ### Reveal
-Our step 4 target. In order:
+What's built now is at the top of "Landing and arrival" in `GAME_SPEC.md` section 7 (2026-11-07). These are the notes from
+the reference. In order:
 1. Camera orbits the landed item. "tap to skip" shows on catches without a counter. (Corrected in
    `GAME_SPEC.md`: that "orbit" is the animal's walking view, and the full timing is there. Ours is built:
    `RevealWalk`, numbers in `Config/Reveal` `walk`, described in `GAME_SPEC.md` section 7.)
@@ -191,6 +194,7 @@ Mutations seen: Gold, Diamond, Emerald. Sizes seen: Big, Large, Monstrous, Huge.
 - The plot is fenced in with wooden fences. The upgrade sign stands at the plot's entrance:
   paw icon, "18 > 20" and a dark price bar "▲ $5Sp".
 - After a catch, the player reappears inside their own plot, next to the exit.
+- While the throw meter is up, a wide blue BACK TO PLOT button at the bottom middle puts the player out in front of their own gate (`Config/Plot` homeButton, HomeService). Pressing it calls the meter off; the server also refuses it from the tap until the reveal is done.
 - "My Animals" (the Animals button) slides in on the right side of the screen, not the centre: purple
   header with "18/18" in a paw badge, "ON YOUR PLOT 18/18", one row per animal (icon on a rarity-coloured
   tile, mutation above the name, size under it, $/s in green, blue PICK UP and red SELL), and a big

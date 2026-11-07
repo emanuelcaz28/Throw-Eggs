@@ -2,6 +2,8 @@
 -- section 7): the dip to black onto the throw spot, the camera whipping round the thrower, the flight camera that
 -- climbs high behind the egg and drops low at the end, the white streak behind the egg, the luck panel, and the
 -- white ring and dust where it lands. Timings and positions live in Config/Throw. ThrowController drives it.
+local Debris = game:GetService("Debris")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
@@ -119,6 +121,24 @@ function ThrowCinematic.addTrail(egg: BasePart): Trail
 	trail.Enabled = false
 	trail.Parent = egg
 	return trail
+end
+
+-- The egg bursts through the Last Door into The Deep End: the screen flashes mint-white, which also hides the camera
+-- passing through the door, then clears on the world behind it.
+function ThrowCinematic.doorBurst()
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "DoorBurst"
+	gui.IgnoreGuiInset = true
+	gui.ScreenInsets = Enum.ScreenInsets.None
+	gui.DisplayOrder = 5
+	local flash = Instance.new("Frame")
+	flash.BorderSizePixel = 0
+	flash.BackgroundColor3 = Color3.fromRGB(214, 255, 244)
+	flash.Size = UDim2.fromScale(1, 1)
+	flash.Parent = gui
+	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	TweenService:Create(flash, TweenInfo.new(0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { BackgroundTransparency = 1 }):Play()
+	Debris:AddItem(gui, 0.6)
 end
 
 -- A flat white ring flashing out on the ground, then a puff of dust.

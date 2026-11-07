@@ -10,6 +10,7 @@ local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
+local Chonk = require(ReplicatedStorage.Shared.Config.Chonk)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
@@ -220,6 +221,52 @@ function PlotController.start()
 		send("sellMany", keys)
 	end)
 
+	-- The Feed panel: the Sell Stand's grid, picking food for one monster on the base (Config/Chonk). The server checks it all.
+	local feedKey: number? = nil
+	local function feedTarget()
+		for _, dino in dinos do
+			if dino.key == feedKey then
+				return dino
+			end
+		end
+		return nil
+	end
+	local feedPanel = SellPanel.new(hud.gui, function(keys)
+		send("feed", feedKey, keys)
+	end, {
+		accepts = function(dino)
+			return dino.chonk == 0
+		end,
+		tileText = function(dino)
+			local target = feedTarget()
+			return `+{if target then Chonk.foodOf(target.id, dino.id) else Chonk.food} food`
+		end,
+		summary = function(picked)
+			local target = feedTarget()
+			if not target then
+				return "", ""
+			end
+			if #picked == 0 then
+				return `CHONK {target.chonk}: {target.food} / {Chonk.foodFor(target.chonk)} FOOD`, ""
+			end
+			local level, food = target.chonk, target.food
+			local used = 0
+			for _, dino in picked do
+				if level < Chonk.maxLevel then
+					level, food = Chonk.grow(level, food, Chonk.foodOf(target.id, dino.id))
+					used += 1
+				end
+			end
+			return `CHONK {target.chonk} TO {level}`, `-{Format.cash(Chonk.priceOf(target.income) * used)}`
+		end,
+	})
+	local function openFeed(dino)
+		feedKey = dino.key
+		feedPanel.setTitle(`Feed {dino.name}`)
+		UiKit.closePanel(hud.panel)
+		feedPanel.open()
+	end
+
 	-- Backpack dinos in hotbar order (the list arrives best first).
 	local function backpack()
 		local list = {}
@@ -338,7 +385,8 @@ function PlotController.start()
 		end
 
 		local size = DinoStats.findOption(Catch.sizes, dino.size)
-		local tier = UiKit.text(row, string.upper(rarity), 14, Color3.fromHex(UiKit.RARITY_TEXT[rarity]), Enum.TextXAlignment.Left)
+		local chonkWord = if dino.chonk > 0 then `  CHONK {dino.chonk}` else ""
+		local tier = UiKit.text(row, string.upper(rarity) .. chonkWord, 14, Color3.fromHex(UiKit.RARITY_TEXT[rarity]), Enum.TextXAlignment.Left)
 		tier.Position = UDim2.fromOffset(104, 8)
 		tier.Size = UDim2.fromOffset(176, 18)
 		local name = UiKit.text(row, dino.name, 24, nil, Enum.TextXAlignment.Left)
@@ -386,7 +434,18 @@ function PlotController.start()
 
 		local sell = UiKit.button(row, if confirmKey == dino.key then "SURE?" else `SELL {Format.cash(dino.sellPrice)}`, "red", 124, 38, 17)
 		sell.Name = "Sell"
-		sell.Visible = DinoStats.sellable(dino.id) -- a pass gives its monster only once
+		-- On the base the second button feeds it; it's sold from the backpack, or here once it can't grow.
+		local feedable = dino.onPlot and not DinoStats.special(dino.id) and dino.chonk < Chonk.maxLevel
+		sell.Visible = DinoStats.sellable(dino.id) and not feedable -- a pass gives its monster only once
+		if feedable then
+			local feed = UiKit.button(row, "FEED", "purple", 124, 38, 18)
+			feed.Name = "Feed"
+			feed.AnchorPoint = Vector2.new(1, 0)
+			feed.Position = UDim2.new(1, -12, 0, 52)
+			feed.Activated:Connect(function()
+				openFeed(dino)
+			end)
+		end
 		sell.AnchorPoint = Vector2.new(1, 0)
 		sell.Position = UDim2.new(1, -12, 0, 52)
 		sell.Activated:Connect(function()
@@ -485,6 +544,7 @@ function PlotController.start()
 		renderList()
 		renderHotbar()
 		sellPanel.setDinos(newDinos)
+		feedPanel.setDinos(newDinos)
 	end)
 	remotes.Notice.OnClientEvent:Connect(function(text: string, bad: boolean?)
 		PopText.notice(text, not bad)
@@ -493,11 +553,12 @@ function PlotController.start()
 	-- The open My Dinos panel stands where the hotbar's right end is, and lists the same monsters, so the hotbar
 	-- steps aside for it too, and for the Sell Stand.
 	local function renderHotbarVisible()
-		hud.hotbar.Visible = player:GetAttribute("IsTraining") ~= true and not hud.panel.frame.Visible and not sellPanel.panel.frame.Visible
+		hud.hotbar.Visible = player:GetAttribute("IsTraining") ~= true and not feedPanel.panel.frame.Visible and not hud.panel.frame.Visible and not sellPanel.panel.frame.Visible
 	end
 	player:GetAttributeChangedSignal("IsTraining"):Connect(renderHotbarVisible)
 	hud.panel.frame:GetPropertyChangedSignal("Visible"):Connect(renderHotbarVisible)
 	sellPanel.panel.frame:GetPropertyChangedSignal("Visible"):Connect(renderHotbarVisible)
+	feedPanel.panel.frame:GetPropertyChangedSignal("Visible"):Connect(renderHotbarVisible)
 	renderHotbarVisible()
 	player:GetAttributeChangedSignal("HeldDino"):Connect(function()
 		renderList()
@@ -532,7 +593,7 @@ function PlotController.start()
 			return ghost
 		end
 		clearGhost()
-		local model = DinoModel.build(dino.id, dino.mutation, Vector3.zero, DinoModel.statueScale(dino.id, dino.size))
+		local model = DinoModel.build(dino.id, dino.mutation, Vector3.zero, DinoModel.statueScale(dino.id, dino.size, dino.chonk))
 		model.Name = "PlacementGhost"
 		for _, part in model:GetDescendants() do
 			if part:IsA("BasePart") and part.Transparency < 1 then
@@ -609,13 +670,18 @@ function PlotController.start()
 	hover.Enabled = false
 	hover.Parent = workspace
 
+	local function isTraining(): boolean
+		return player:GetAttribute("IsTraining") == true
+	end
+
 	RunService.RenderStepped:Connect(function()
 		local dino = heldDino()
-		if not dino then
+		-- Training pauses placing: the hint would sit right on the STOP button, and it comes back on stopping.
+		if not dino or isTraining() then
 			clearGhost()
 			aim = nil
 			hud.hint.Visible = false
-			local hovered = if UserInputService.MouseEnabled then statueAt(UserInputService:GetMouseLocation()) else nil
+			local hovered = if not dino and UserInputService.MouseEnabled then statueAt(UserInputService:GetMouseLocation()) else nil
 			hover.Adornee = hovered
 			hover.Enabled = hovered ~= nil
 			return
@@ -690,7 +756,7 @@ function PlotController.start()
 			return
 		end
 		local spot = spotAt(point)
-		if spot and spot.inBounds and plotHasRoom() then
+		if spot and spot.inBounds and plotHasRoom() and not isTraining() then
 			send("placeAt", dino.key, spot.x, spot.z)
 		end
 	end)

@@ -16,8 +16,8 @@ local SellPanel = {}
 
 local PANEL_SIZE = Vector2.new(800, 618)
 local TILE_SIZE = Vector2.new(140, 166)
-local CHIP_SIZE = Vector2.new(104, 44)
-local CHIP_STEP = 110
+local CHIP_SIZE = Vector2.new(80, 44) -- nine across the panel: ALL and the eight rarities
+local CHIP_STEP = 85
 local FOOTER_HEIGHT = 100
 local CONFIRM_TIME = 3 -- seconds the SURE? button waits for a second tap
 local HELD_FADE = 0.55 -- how see-through the carried monster's picture is
@@ -82,16 +82,18 @@ local function makeTick(parent: Instance): Frame
 	return disc
 end
 
--- send(keys) asks the server to sell those monsters.
-function SellPanel.new(gui: ScreenGui, send: ({ number }) -> ())
+-- send(keys) asks the server to sell those monsters. feeding: the same panel to pick monsters to feed instead, with
+-- { accepts(dino), tileText(dino), summary(picked) -> (count line, total line) } (PlotController).
+function SellPanel.new(gui: ScreenGui, send: ({ number }) -> (), feeding)
+	local verb = if feeding then "FEED" else "SELL"
 	local panel = UiKit.panel(gui, {
-		name = "SellPanel",
+		name = if feeding then "FeedPanel" else "SellPanel",
 		width = PANEL_SIZE.X,
 		height = PANEL_SIZE.Y,
-		header = "red",
-		title = "Sell Stand",
-		icon = "💵",
-		iconKey = "cash",
+		header = if feeding then "purple" else "red",
+		title = if feeding then "Feed" else "Sell Stand",
+		icon = if feeding then "🍖" else "💵",
+		iconKey = if feeding then nil else "cash",
 	})
 	local body = panel.body
 
@@ -140,7 +142,7 @@ function SellPanel.new(gui: ScreenGui, send: ({ number }) -> ())
 	total.Name = "Total"
 	total.Position = UDim2.fromOffset(24, 42)
 	total.Size = UDim2.fromOffset(320, 46)
-	local sell = UiKit.button(footer, "SELL", "grey", 420, 72, 32)
+	local sell = UiKit.button(footer, verb, "grey", 420, 72, 32)
 	sell.Name = "SellButton"
 	sell.AnchorPoint = Vector2.new(1, 0.5)
 	sell.Position = UDim2.new(1, -22, 0.5, 0)
@@ -148,7 +150,7 @@ function SellPanel.new(gui: ScreenGui, send: ({ number }) -> ())
 	local emptyTitle = UiKit.text(body, "Your backpack is empty.", 34)
 	emptyTitle.Name = "Empty"
 	emptyTitle.Position = UDim2.fromOffset(0, 190)
-	local emptyHint = UiKit.muted(body, "Throw more eggs, then come back to sell.", 22)
+	local emptyHint = UiKit.muted(body, `Throw more eggs, then come back to {string.lower(verb)}.`, 22)
 	emptyHint.Name = "EmptyHint"
 	emptyHint.Position = UDim2.fromOffset(0, 244)
 
@@ -186,9 +188,13 @@ function SellPanel.new(gui: ScreenGui, send: ({ number }) -> ())
 	local function render()
 		local held = heldKey()
 		local amount, cash = 0, 0
+		local chosen = {}
 		for _, dino in list do
 			if dino.key == held then
 				picked[dino.key] = nil
+			end
+			if picked[dino.key] then
+				table.insert(chosen, dino)
 			end
 			local tile = tiles[dino.key]
 			local isPicked = picked[dino.key] == true
@@ -201,6 +207,9 @@ function SellPanel.new(gui: ScreenGui, send: ({ number }) -> ())
 			tile.tick.Visible = isPicked
 			tile.holding.Visible = dino.key == held
 			tile.price.Visible = dino.key ~= held
+			if feeding then
+				tile.price.Text = feeding.tileText(dino)
+			end
 			tile.fade = if dino.key == held then HELD_FADE else 0
 			local view = tile.art:FindFirstChildOfClass("ViewportFrame")
 			if view then
@@ -217,9 +226,12 @@ function SellPanel.new(gui: ScreenGui, send: ({ number }) -> ())
 		if amount == 0 then
 			confirming = false
 		end
-		count.Text = if amount == 0 then "TAP MONSTERS TO SELL" elseif amount == 1 then "1 MONSTER" else `{amount} MONSTERS`
+		count.Text = if amount == 0 then `TAP MONSTERS TO {verb}` elseif amount == 1 then "1 MONSTER" else `{amount} MONSTERS`
 		total.Text = if amount == 0 then "" else `+{Format.cash(cash)}`
-		UiKit.restyle(sell, if confirming then "SURE? TAP AGAIN" elseif amount == 0 then "SELL" else `SELL {amount}`, if confirming then "yellow" elseif amount == 0 then "grey" else "red")
+		if feeding then
+			count.Text, total.Text = feeding.summary(chosen)
+		end
+		UiKit.restyle(sell, if confirming then "SURE? TAP AGAIN" elseif amount == 0 then verb else `{verb} {amount}`, if confirming then "yellow" elseif amount == 0 then "grey" elseif feeding then "purple" else "red")
 
 		local empty = #list == 0
 		emptyTitle.Visible = empty
@@ -313,8 +325,13 @@ function SellPanel.new(gui: ScreenGui, send: ({ number }) -> ())
 	end
 
 	for index, name in { "all", table.unpack(UiKit.RARITY_ORDER) } do
-		local chip = UiKit.button(body, string.upper(name), if name == "all" then "dark" else name, CHIP_SIZE.X, CHIP_SIZE.Y, 15)
+		local chip = UiKit.button(body, string.upper(name), if name == "all" then "dark" else name, CHIP_SIZE.X, CHIP_SIZE.Y, 13)
 		chip.Name = `Chip_{name}`
+		if name == "secret" then
+			-- A button's gradient tints its text too, and this one is so dark the word vanished: one flat colour instead.
+			chip:FindFirstChildOfClass("UIGradient"):Destroy()
+			chip.BackgroundColor3 = Color3.fromHex(UiKit.RARITY.secret[1])
+		end
 		chip.Position = UDim2.fromOffset(18 + (index - 1) * CHIP_STEP, 8)
 		chips[name] = chip
 		chip.Activated:Connect(function()
@@ -365,7 +382,7 @@ function SellPanel.new(gui: ScreenGui, send: ({ number }) -> ())
 		table.clear(list)
 		local present = {}
 		for _, dino in dinos do
-			if not dino.onPlot and DinoStats.sellable(dino.id) then
+			if not dino.onPlot and DinoStats.sellable(dino.id) and (not feeding or feeding.accepts(dino)) then
 				table.insert(list, dino)
 				present[dino.key] = true
 			end
@@ -402,6 +419,15 @@ function SellPanel.new(gui: ScreenGui, send: ({ number }) -> ())
 		render()
 		UiKit.openPanel(panel)
 		task.defer(showVisibleTiles)
+	end
+
+	-- The header's words, for the monster being fed.
+	function sellPanel.setTitle(text: string)
+		for _, child in panel.header:GetChildren() do
+			if child:IsA("TextLabel") then
+				child.Text = text
+			end
+		end
 	end
 
 	function sellPanel.close()

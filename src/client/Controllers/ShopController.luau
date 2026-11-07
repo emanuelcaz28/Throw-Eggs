@@ -1,4 +1,4 @@
--- The Robux shop panel and the luck timer, built from Figma "Throw Eggs - Shop" (2026-11-06). Display and prompts only:
+-- The Robux shop panel, built from Figma "Throw Eggs - Shop" (2026-11-06). Display and prompts only:
 -- Roblox handles the payment, and the server decides what it grants. Sections: Special Monsters (a featured card per
 -- pass monster, then the Prism Egg), Boosts (lucky throws, Server Luck), Packs (cash, Throw Power), Passes (x2 Cash,
 -- x2 Training, x2 Power) and Free (the starter monster). The GIFT buttons open the Gift panel (GiftController).
@@ -14,9 +14,7 @@ local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 local GiftController = require(script.Parent.GiftController)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
-local LuckBoosts = require(ReplicatedStorage.Shared.LuckBoosts)
 local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
-local Index = require(ReplicatedStorage.Shared.Config.Index)
 local PopText = require(ReplicatedStorage.Shared.PopText)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local Specials = require(ReplicatedStorage.Shared.Config.Specials)
@@ -29,7 +27,6 @@ local ShopController = {}
 local PANEL_SIZE = Vector2.new(1064, 690)
 local LIST_WIDTH = 1008
 local GAP = 16
-local TIMER_LINE = 46 -- the luck timer grows a line for Server Luck and one for lucky throws
 local RAINBOW = { "#ff4f6d", "#ffb21a", "#fff15a", "#5aff8a", "#4fc8ff", "#9a6bff", "#ff4fd8" }
 -- The Prism Egg's tiers, most common first: card colour, light colour.
 local TIERS = { { "#2f8fe6", "#9ad9ff" }, { "#9150e8", "#dcb0ff" }, { "#e8265a", "#ffd23f" } }
@@ -499,27 +496,6 @@ local function buildGui()
 	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, (HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) / 2 * HudStyle.scale())
 	open.Name = "OpenShop"
 
-	-- In its own layer under every panel: it shares the top right corner with their close buttons and mustn't hide them.
-	local timerGui = Instance.new("ScreenGui")
-	timerGui.Name = "LuckTimerHud"
-	timerGui.ResetOnSpawn = false
-	timerGui.Parent = player:WaitForChild("PlayerGui")
-	local timer = UiKit.text(timerGui, "", 24, UiKit.CASH)
-	timer.Name = "ServerLuckTimer"
-	timer.AnchorPoint = Vector2.new(1, 0)
-	timer.Position = UDim2.new(1, -16, 0, 16)
-	timer.Size = UDim2.fromOffset(0, TIMER_LINE)
-	timer.AutomaticSize = Enum.AutomaticSize.X
-	local timerPad = Instance.new("UIPadding")
-	timerPad.PaddingLeft = UDim.new(0, 16)
-	timerPad.PaddingRight = UDim.new(0, 16)
-	timerPad.Parent = timer
-	timer.BackgroundColor3 = UiKit.PANEL
-	timer.BackgroundTransparency = 0.05
-	timer.Visible = false
-	UiKit.corner(timer, 16)
-	UiKit.stroke(timer, 4)
-
 	local panel = UiKit.panel(gui, { name = "ShopPanel", width = PANEL_SIZE.X, height = PANEL_SIZE.Y, header = "sun", title = "Shop", icon = "🛍️", iconKey = "shop" })
 	local list = UiKit.scrollList(panel.body, UDim2.fromOffset(16, 4), UDim2.new(1, -24, 1, -16), 30)
 	local pad = list:FindFirstChildOfClass("UIPadding")
@@ -612,7 +588,6 @@ local function buildGui()
 
 	return {
 		open = open,
-		timer = timer,
 		panel = panel,
 		luckButton = luckButton,
 		luckState = luckState,
@@ -629,6 +604,12 @@ local function buildGui()
 	}
 end
 
+-- A paid random item the policy doesn't allow where this player is (ShopService): grey, and no price.
+local function markUnavailable(button: TextButton)
+	button:SetAttribute("Unavailable", true)
+	UiKit.restyle(button, "UNAVAILABLE", "grey")
+end
+
 -- Shows the Robux price once Roblox tells us; items without an id stay "SOON". prefix goes before it ("BUY 1 ").
 local function showPrice(button: TextButton, id: number, infoType: Enum.InfoType, prefix: string?)
 	if id == 0 then
@@ -638,7 +619,7 @@ local function showPrice(button: TextButton, id: number, infoType: Enum.InfoType
 		local ok, info = pcall(function()
 			return MarketplaceService:GetProductInfo(id, infoType)
 		end)
-		if ok and info.PriceInRobux and button.Text ~= "OWNED" then
+		if ok and info.PriceInRobux and button.Text ~= "OWNED" and not button:GetAttribute("Unavailable") then
 			UiKit.restyle(button, `{prefix or ""}R$ {info.PriceInRobux}`, "green")
 			UiKit.pulse(button)
 		end
@@ -699,7 +680,7 @@ function ShopController.start()
 	local prismEgg = Shop.prismEgg
 	hud.prism.button.Activated:Connect(function()
 		if prismEgg.productId ~= 0 then
-			MarketplaceService:PromptProductPurchase(player, prismEgg.productId)
+			remotes.BuyRandom:FireServer(prismEgg.productId) -- the server checks the policy, then prompts
 		end
 	end)
 	showPrice(hud.prism.button, prismEgg.productId, Enum.InfoType.Product, "BUY 1  ")
@@ -739,6 +720,19 @@ function ShopController.start()
 		end
 	end)
 
+	-- Paid random items the policy doesn't allow here say UNAVAILABLE (the server refuses their prompts too).
+	local function renderRestriction()
+		if player:GetAttribute("PaidRandomBlocked") then
+			markUnavailable(hud.prism.button)
+			markUnavailable(hud.luckButton)
+			for _, card in hud.luckyCards do
+				markUnavailable(card.button)
+			end
+		end
+	end
+	player:GetAttributeChangedSignal("PaidRandomBlocked"):Connect(renderRestriction)
+	renderRestriction()
+
 	-- Lucky throws: a card with a deal sells the deal until it's used, then the regular product.
 	-- Each card says how many of that throw you own.
 	for _, card in hud.luckyCards do
@@ -758,7 +752,7 @@ function ShopController.start()
 		end
 		card.button.Activated:Connect(function()
 			if product() ~= 0 then
-				MarketplaceService:PromptProductPurchase(player, product())
+				remotes.BuyRandom:FireServer(product()) -- the server checks the policy, then prompts
 			end
 		end)
 		player:GetAttributeChangedSignal("LuckDealBought"):Connect(renderDeal)
@@ -768,7 +762,7 @@ function ShopController.start()
 	end
 	hud.luckButton.Activated:Connect(function()
 		if Shop.serverLuck.productId ~= 0 then
-			MarketplaceService:PromptProductPurchase(player, Shop.serverLuck.productId)
+			remotes.BuyRandom:FireServer(Shop.serverLuck.productId) -- the server checks the policy, then prompts
 		end
 	end)
 	for _, row in { { hud.cashPacks, Shop.cashPacks }, { hud.powerPacks, Shop.powerPacks } } do
@@ -825,9 +819,7 @@ function ShopController.start()
 		UiKit.togglePanel(hud.panel)
 	end)
 
-	-- The panel in the top right: a line while Server Luck runs, one while the x2 XP from completing a world runs,
-	-- and one for the lucky throw the next throw will use (and how many are owned in all). Server events have their
-	-- own icon at the bottom right (EventController).
+	-- What's active shows in the row at the bottom (BoostRowController); the Shop only says so on the Server Luck card.
 	local function clock(seconds: number): string
 		return string.format("%d:%02d", seconds // 60, seconds % 60)
 	end
@@ -835,24 +827,6 @@ function ShopController.start()
 		local now = workspace:GetServerTimeNow()
 		local remaining = (ReplicatedStorage:GetAttribute("ServerLuckEndsAt") or 0) - now
 		hud.luckState.Text = if remaining > 0 then `Active · {clock(remaining)} left` else `+{Shop.serverLuck.seconds // 60} min`
-		local lines = {}
-		for _, boost in LuckBoosts.active(player, now) do
-			if not boost.event then -- events have their own icon at the bottom right (EventController)
-				table.insert(lines, `🍀 {boost.name:upper()} x{boost.multiplier}  {clock(boost.endsAt - now)}`)
-			end
-		end
-		local xpBoostEndsAt = player:GetAttribute("XpBoostEndsAt")
-		if xpBoostEndsAt and xpBoostEndsAt > now then
-			table.insert(lines, `⚡ x{Index.xpBoost.multiplier} XP  {clock(xpBoostEndsAt - now)}`)
-		end
-		local nextThrow = LuckyThrows.nextOf(player)
-		if nextThrow then
-			local total = LuckyThrows.total(player)
-			table.insert(lines, `🍀 NEXT THROW x{nextThrow}` .. (if total > 1 then `  ({total} lucky throws)` else ""))
-		end
-		hud.timer.Visible = #lines > 0
-		hud.timer.Text = table.concat(lines, "\n")
-		hud.timer.Size = UDim2.fromOffset(0, TIMER_LINE * math.max(#lines, 1))
 	end)
 end
 

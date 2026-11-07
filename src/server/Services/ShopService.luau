@@ -3,6 +3,7 @@
 -- purchase until told it was granted, so each receipt is saved with the player's data
 -- before saying so. That way a purchase is never lost or given twice.
 local MarketplaceService = game:GetService("MarketplaceService")
+local PolicyService = game:GetService("PolicyService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -34,7 +35,8 @@ local function makeRemotes()
 	local folder = Instance.new("Folder")
 	folder.Name = "ShopRemotes"
 	-- Gift: client asks to gift (productId, receiver's UserId). Shout: server shows a big moment (title, detail).
-	for _, name in { "ClaimStarter", "StarterClaimed", "Gift", "Shout" } do
+	-- BuyRandom: client asks to buy a paid random item (productId); the server checks the policy, then prompts.
+	for _, name in { "ClaimStarter", "StarterClaimed", "Gift", "Shout", "BuyRandom" } do
 		local remote = Instance.new("RemoteEvent")
 		remote.Name = name
 		remote.Parent = folder
@@ -107,11 +109,17 @@ function ShopService.addLuckyThrows(player: Player, data, multiplier: number, am
 	publishLuckyThrows(player, data)
 end
 
--- Uses up the biggest lucky throw owned and returns its multiplier, or 1 with none.
-function ShopService.takeLuckyThrow(player: Player, data): number
+-- Uses up the lucky throw the player picked (if they still own it), else the biggest owned that goes by itself (the
+-- daily x50; LuckyThrows), and returns its multiplier, or 1 with none.
+function ShopService.takeLuckyThrow(player: Player, data, picked: number?): number
+	if picked and LuckyThrows.isPicked(picked) and (data.luckyThrows[tostring(picked)] or 0) > 0 then
+		data.luckyThrows[tostring(picked)] -= 1
+		publishLuckyThrows(player, data)
+		return picked
+	end
 	for _, multiplier in LuckyThrows.tiers do
 		local key = tostring(multiplier)
-		if (data.luckyThrows[key] or 0) > 0 then
+		if not LuckyThrows.isPicked(multiplier) and (data.luckyThrows[key] or 0) > 0 then
 			data.luckyThrows[key] -= 1
 			publishLuckyThrows(player, data)
 			return multiplier
@@ -348,6 +356,59 @@ local function restoreGifted(player: Player, data)
 	end
 end
 
+-- PAID RANDOM ITEMS: the Prism Egg, lucky throws and Server Luck, a paid luck boost (Config/Shop). Roblox's policy can restrict them in a player's
+-- region, and then they must not be offered. PolicyService is asked once per player when their data loads. Until
+-- it answers, and if it never does, they count as restricted (not sold).
+local PAID_RANDOM_ATTRIBUTE = "PaidRandomBlocked" -- on the player, so the shop's buttons can say UNAVAILABLE
+local policyAllowed: { [Player]: boolean } = {}
+
+local function isPaidRandom(productId: number): boolean
+	if productId == Shop.prismEgg.productId or productId == Shop.serverLuck.productId then
+		return true
+	end
+	for _, item in Shop.luckyThrows do
+		if productId == item.productId or productId == item.dealProductId then
+			return true
+		end
+	end
+	return false
+end
+
+local function checkPaidRandomPolicy(player: Player)
+	local blocked = true
+	for attempt = 1, 3 do
+		local ok, result = pcall(function()
+			return PolicyService:GetPolicyInfoForPlayerAsync(player)
+		end)
+		if ok then
+			blocked = result.ArePaidRandomItemsRestricted == true
+			break
+		end
+		warn(`[ShopService] Couldn't check the paid random item policy for {player.Name} (try {attempt}): {result}`)
+		if attempt == 3 or not player.Parent then
+			break
+		end
+		task.wait(2 * attempt)
+	end
+	if not player.Parent then
+		return
+	end
+	policyAllowed[player] = not blocked
+	player:SetAttribute(PAID_RANDOM_ATTRIBUTE, blocked)
+end
+
+-- The client asks to buy a paid random item. The server checks the policy before it shows the prompt.
+local function onBuyRandom(player: Player, productId: unknown)
+	if typeof(productId) ~= "number" or productId == 0 or not isPaidRandom(productId) then
+		return
+	end
+	if policyAllowed[player] ~= true then
+		PlotService.notify(player, "Not available in your area", true)
+		return
+	end
+	MarketplaceService:PromptProductPurchase(player, productId)
+end
+
 -- GIFT: a player asks to gift a product to another player here. Checked, remembered, then the server shows the
 -- purchase prompt, so the receipt can be matched to the receiver.
 local function onGift(player: Player, productId: unknown, receiverId: unknown)
@@ -361,6 +422,10 @@ local function onGift(player: Player, productId: unknown, receiverId: unknown)
 	end
 	if item.ownedAttribute and receiver:GetAttribute(item.ownedAttribute) then
 		PlotService.notify(player, `{receiver.DisplayName} already has {item.name}`, true)
+		return
+	end
+	if isPaidRandom(productId) and policyAllowed[player] ~= true then
+		PlotService.notify(player, "Not available in your area", true)
 		return
 	end
 	pendingGifts[player] = { productId = productId, to = receiver, at = os.clock() }
@@ -427,6 +492,7 @@ local function giveSpecialGifts(player: Player, data)
 end
 
 local function onLoaded(player: Player, data)
+	task.spawn(checkPaidRandomPolicy, player)
 	resumeServerLuck()
 	remotes.StarterClaimed:FireClient(player, data.starterClaimed)
 	publishLuckyThrows(player, data)
@@ -444,8 +510,10 @@ function ShopService.start()
 	MarketplaceService.PromptProductPurchaseFinished:Connect(onProductPromptFinished)
 	remotes.ClaimStarter.OnServerEvent:Connect(onClaimStarter)
 	remotes.Gift.OnServerEvent:Connect(onGift)
+	remotes.BuyRandom.OnServerEvent:Connect(onBuyRandom)
 	Players.PlayerRemoving:Connect(function(player)
 		pendingGifts[player] = nil
+		policyAllowed[player] = nil
 	end)
 	PlayerData.onLoaded(onLoaded)
 	task.spawn(function()

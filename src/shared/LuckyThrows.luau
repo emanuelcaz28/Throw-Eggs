@@ -1,5 +1,8 @@
 -- Lucky throws: one throw with a big luck multiplier, bought in the Shop (Config/Shop luckyThrows) or
--- given by the daily reward (Config/Daily). A player can own several; the next throw uses the biggest.
+-- given by the daily reward (Config/Daily). A player can own several. The Shop's multipliers (x100, x500) are kept
+-- until the player picks one with USE on the throw meter (LuckOfferController) [Owner, 2026-11-07]; the others (the
+-- daily x50) go on the next throw by themselves. One is used up only when its egg lands, so leaving the throw area or
+-- the game before that keeps it.
 -- The server keeps the counts in the save and mirrors each one to a player attribute
 -- (LuckyThrows100 = 2), which clients read to show them.
 local Daily = require(script.Parent.Config.Daily)
@@ -28,6 +31,16 @@ do
 	end)
 end
 
+-- The multipliers a player picks themselves: the ones sold in the Shop.
+local picked: { [number]: boolean } = {}
+for _, item in Shop.luckyThrows do
+	picked[item.multiplier] = true
+end
+
+function LuckyThrows.isPicked(multiplier: number): boolean
+	return picked[multiplier] == true
+end
+
 function LuckyThrows.attribute(multiplier: number): string
 	return `LuckyThrows{multiplier}`
 end
@@ -36,10 +49,11 @@ function LuckyThrows.count(player: Player, multiplier: number): number
 	return player:GetAttribute(LuckyThrows.attribute(multiplier)) or 0
 end
 
--- The multiplier the next throw will use (the biggest owned), or nil with none.
+-- The multiplier the next throw uses by itself when none is picked (the biggest owned that isn't picked by hand),
+-- or nil with none.
 function LuckyThrows.nextOf(player: Player): number?
 	for _, multiplier in LuckyThrows.tiers do
-		if LuckyThrows.count(player, multiplier) > 0 then
+		if not picked[multiplier] and LuckyThrows.count(player, multiplier) > 0 then
 			return multiplier
 		end
 	end

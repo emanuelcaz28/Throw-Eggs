@@ -4,8 +4,11 @@ local Plot = {
 	slots = 10, -- dinos that can earn at once, before any upgrades
 	upgradeSlots = 2, -- each upgrade at the plot's sign adds this many
 	maxSlots = 20,
-	upgradeBasePrice = 1000, -- the first upgrade; each one after costs upgradePriceGrowth times more
-	upgradePriceGrowth = 10,
+	-- The first upgrade; each one after costs upgradePriceGrowth times more: $500K, $500B, $500Qa, $500Sx, $500No.
+	-- [Owner, 2026-11-06] the plot was maxed 3 minutes in; it should be late game. A play simulation on the game's code
+	-- (2026-11-06) buys them around maps 2, 5, 8, 10 and 13: maxed about 14 hours into a 30-hour game.
+	upgradeBasePrice = 500000,
+	upgradePriceGrowth = 1000000,
 	backpackSize = 100, -- dinos held off the plot; a catch with no room is sold automatically
 	sellSeconds = 60, -- a dino sells for this many seconds of its own income
 	offlineRate = 0.5, -- share of the plot's $/s paid for time away (events don't count)
@@ -30,6 +33,10 @@ local Plot = {
 	color = Color3.fromRGB(110, 190, 90),
 	ownColor = Color3.fromRGB(226, 142, 58), -- edge of the plot that belongs to you
 	homeInset = 6, -- after a catch you land this far inside the plot's front edge (its exit)
+	-- The Back to Plot button (HomeController, HomeService) puts you this far out in front of your gate, facing in.
+	-- Straight out from the gate is clear: the squat rack and XP pad stand to one side, the egg stall to the other
+	-- (Config/Training, Config/Hub), so you never land on a pad.
+	homeButton = { outFromGate = 10, cooldown = 1 },
 	gateWidth = 12, -- the gap in the fence at the middle of the front edge
 	fenceSection = 6, -- studs between fence posts: the Blender rails' length (BaseKit base_FenceRails)
 
@@ -90,6 +97,12 @@ function Plot.homeCFrame(plotIndex: number): CFrame
 	local position = Plot.positions[plotIndex]
 	local home = position + Vector3.new(0, Plot.size.Y, -Plot.size.Z / 2 + Plot.homeInset)
 	return CFrame.lookAt(home, home + Vector3.new(0, 0, 1))
+end
+
+-- Where the Back to Plot button puts you: out in front of your gate, on the ground, facing into the plot.
+function Plot.frontCFrame(plotIndex: number): CFrame
+	local spot = Plot.gatePosition(plotIndex) - Vector3.new(0, 0, Plot.homeButton.outFromGate)
+	return CFrame.lookAt(spot, spot + Vector3.new(0, 0, 1))
 end
 
 -- The middle of a plot's gate, on the ground. Its shop, rack and XP pad are placed from here

@@ -3,6 +3,7 @@
 -- only shows what the catch says.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local DeepEnd = require(ReplicatedStorage.Shared.Config.DeepEnd)
 local Hooks = require(ReplicatedStorage.Shared.Config.Hooks)
 local PopText = require(ReplicatedStorage.Shared.PopText)
 local RevealController = require(script.Parent.RevealController)
@@ -21,6 +22,10 @@ function HookMessages.start()
 			table.insert(messages, { "JACKPOT STREAK!", `{Hooks.jackpotPity.throws} throws without this world's rarest, so here it is` })
 		elseif catch.guarantee == "pity" then
 			table.insert(messages, { "LUCKY STREAK!", `{Hooks.pity.throws} throws without a rare, so this one was guaranteed` })
+		end
+		if catch.newDepth then
+			local boost = 1 + DeepEnd.boostPerDepth * catch.newDepth
+			table.insert(messages, { `DEPTH {catch.newDepth}!`, `Rare colours and sizes x{boost} on throws this deep` })
 		end
 		if catch.almostThere then
 			table.insert(messages, { "SO CLOSE!", `{catch.almostThere.studs} studs short of {catch.almostThere.name}` })

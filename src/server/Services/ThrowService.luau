@@ -5,11 +5,14 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
+local DeepEnd = require(ReplicatedStorage.Shared.Config.DeepEnd)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Hooks = require(ReplicatedStorage.Shared.Config.Hooks)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
+local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
+local DailyTasks = require(script.Parent.DailyTasks)
 local DinoRoll = require(script.Parent.DinoRoll)
 local CompetitionService = require(script.Parent.CompetitionService)
 local EggService = require(script.Parent.EggService)
@@ -26,9 +29,21 @@ local TICK = 0.1
 local MARKER_COLOR = Color3.new(1, 1, 1)
 local MARKER_LIFT = 0.05 -- just above the corridor floor, so the two don't flicker
 
-type ThrowState = { phase: "idle" | "aiming" | "flying" | "revealing", aimStartedAt: number, revealStartedAt: number }
+type ThrowState = {
+	phase: "idle" | "aiming" | "flying" | "revealing",
+	aimStartedAt: number,
+	revealStartedAt: number,
+	mustLeave: boolean?,
+	lucky: number?, -- the lucky throw picked with USE for the egg in the air, used up when it lands
+}
 
 local states: { [Player]: ThrowState } = {}
+local homeBiome = {} -- by monster id
+for _, biome in Biomes do
+	for _, dino in Dinos[biome.id] or {} do
+		homeBiome[dino.id] = biome
+	end
+end
 local remotes: { [string]: RemoteEvent } = {}
 
 local function makeRemotes()
@@ -88,7 +103,7 @@ local function isOnPad(player: Player): boolean
 	return root ~= nil and humanoid ~= nil and humanoid.Health > 0 and Throw.onPlatform(root.Position)
 end
 
-local function onTap(player: Player, height: any)
+local function onTap(player: Player, height: any, lucky: any)
 	local state = states[player]
 	if not state or state.phase ~= "aiming" then
 		return
@@ -106,13 +121,23 @@ local function onTap(player: Player, height: any)
 	end
 
 	height = math.clamp(height, 0, 1)
-	local maxDistance = Throw.maxDistance()
-	local distance = math.min(power * Throw.multiplier(height), maxDistance)
+	-- reach is how far the throw really goes; past the last world the egg lands on The Deep End's floor (Config/DeepEnd).
+	local reach = power * Throw.multiplier(height)
+	local distance = math.min(reach, Throw.farthestLanding())
 
 	-- The egg in hand when it leaves counts, even if the player swaps mid-flight.
 	local egg = EggService.equipped(player)
 
 	state.phase = "flying"
+	-- The lucky throw picked on the meter, if it's one picked by hand and the player owns it. Nothing is used up yet:
+	-- leaving before the egg lands keeps it.
+	local data = PlayerData.get(player)
+	local owned = data and typeof(lucky) == "number" and (data.luckyThrows[tostring(lucky)] or 0) > 0
+	state.lucky = if owned and LuckyThrows.isPicked(lucky) then lucky else nil
+	state.mustLeave = true -- the next meter waits until this player has stepped off the platform
+	if Throw.isPerfect(height) then
+		DailyTasks.count(player, "perfects")
+	end
 	remotes.Launched:FireAllClients(player, distance, Throw.isPerfect(height), egg.id)
 
 	task.delay(Throw.releaseDelay() + Throw.flightTime(distance), function()
@@ -122,40 +147,64 @@ local function onTap(player: Player, height: any)
 		local data = PlayerData.get(player)
 		local timedLuck = ShopService.luckMultiplier(player)
 		local biome = Luck.biomeAt(distance)
-		-- The lowest rank among the map's `count` rarest monsters (Config/Hooks counts from the rarest).
+		local pool = biome.rollFrom or biome.id
+		local deep = biome.rollFrom ~= nil
+		-- The lowest rank among the map's `count` rarest monsters (Config/Hooks counts from the rarest), not counting its
+		-- prizes (Config/Dinos): luck reaches those, a guarantee never picks them out.
 		local function rarest(count: number): number
-			return #Dinos[biome.id] - count + 1
+			local dinos = Dinos[pool]
+			local last = #dinos
+			while last > 1 and dinos[last].prize do
+				last -= 1
+			end
+			return last - count + 1
 		end
 
 		-- Guarantees (Config/Hooks): the first catch in a new biome, or too many throws without a rare one.
 		local minRank, reason = nil, nil
-		if data and not IndexService.hasCaughtIn(data, biome.id) then
+		if data and not IndexService.hasCaughtIn(data, pool) then
 			minRank, reason = rarest(Hooks.newMapGift.rarest), "newMap"
 		elseif data and data.throwsSinceRarest + 1 >= Hooks.jackpotPity.throws then
 			minRank, reason = rarest(Hooks.jackpotPity.rarest), "jackpot"
 		elseif data and data.throwsSinceRare + 1 >= Hooks.pity.throws then
 			minRank, reason = rarest(Hooks.pity.rarest), "pity"
 		end
-		-- A lucky throw (bought or from the daily reward) is used up here, when the egg lands. Its x number
-		-- really multiplies this throw's luck, in the roll as well as on screen.
-		local luckyThrow = if data then ShopService.takeLuckyThrow(player, data) else 1
+		-- A lucky throw (bought or from the daily reward) is used up here, when the egg lands. Its x number multiplies
+		-- the roll's luck, and the catch is guaranteed rare (below).
+		local luckyThrow = if data then ShopService.takeLuckyThrow(player, data, state.lucky) else 1
+		if luckyThrow > 1 then
+			-- Already a guaranteed hit, and its odds must stay what its Details panel showed before buying (CatchOdds).
+			minRank, reason = nil, nil
+		end
 
 		-- The big number is what players see; the roll counts luck from the biome's par (Luck.forRoll).
 		local rollLuck = Luck.forRoll(distance, egg.luckBonus) * timedLuck * luckyThrow
-		local catch = DinoRoll.rollCatch(biome.id, rollLuck, minRank, data and data.recentCatches)
-		catch.luck = Luck.at(distance) * Luck.eggFactor(egg.luckBonus, distance) * timedLuck * luckyThrow
+		-- A lucky throw is a guaranteed hit (Config/Catch luckyHits). The luck shown leaves its x out [Owner, 2026-11-06].
+		local hit = if luckyThrow > 1 then DinoRoll.hitFor(luckyThrow) else nil
+		local depth = if deep then DeepEnd.depthAt(reach) else 0
+		local catch = DinoRoll.rollCatch(pool, rollLuck, minRank, data and data.recentCatches, hit, DeepEnd.boostAt(reach))
+		catch.luck = Luck.at(distance) * Luck.eggFactor(egg.luckBonus, distance) * timedLuck
 		catch.guarantee = reason
 		if data then
 			data.throwsSinceRare = if catch.rank >= rarest(Hooks.pity.rarest) then 0 else data.throwsSinceRare + 1
 			data.throwsSinceRarest = if catch.rank >= rarest(Hooks.jackpotPity.rarest) then 0 else data.throwsSinceRarest + 1
 			data.recentCatches = { catch.id, data.recentCatches[1] }
-			data.farthestThrow = math.max(data.farthestThrow, math.floor(distance))
+			data.farthestThrow = math.max(data.farthestThrow, math.floor(reach))
+			if depth > data.deepestDepth then
+				data.deepestDepth = depth
+				catch.newDepth = depth
+			end
 		end
 		CompetitionService.landedIn(player, biome)
 
 		-- Just short of the next biome: the client shows how close it was.
 		local nextBiome = Biomes[table.find(Biomes, biome) + 1]
-		if nextBiome and nextBiome.startDist - distance <= Hooks.almostThere.studs and distance < Throw.maxDistance() then
+		if deep then
+			local nextDepth = DeepEnd.distanceOf(depth + 1)
+			if nextDepth - reach <= Hooks.almostThere.studs then
+				catch.almostThere = { name = `Depth {depth + 1}`, studs = math.max(math.ceil(nextDepth - reach), 1) }
+			end
+		elseif nextBiome and nextBiome.startDist - distance <= Hooks.almostThere.studs then
 			catch.almostThere = { name = nextBiome.name, studs = math.max(math.ceil(nextBiome.startDist - distance), 1) }
 		end
 		catch.newBest = data ~= nil and catch.income > data.bestIncome
@@ -166,8 +215,10 @@ local function onTap(player: Player, height: any)
 			data.totalCaught += 1
 			data.rarestOneIn = math.max(data.rarestOneIn, catch.oneIn)
 		end
-		catch.isNew, catch.completedBiome = IndexService.discover(player, catch.id, biome)
+		-- The world the monster belongs to, which isn't The Deep End's: a Deep End catch can complete it.
+		catch.isNew, catch.completedBiome = IndexService.discover(player, catch.id, homeBiome[catch.id] or biome)
 		catch.storedIn = PlotService.addCatch(player, catch)
+		DailyTasks.count(player, "catches")
 
 		state.phase = "revealing"
 		state.revealStartedAt = os.clock()
@@ -209,7 +260,12 @@ end
 local function step()
 	for player, state in states do
 		local onPad = isOnPad(player)
-		if state.phase == "idle" and onPad and TrainingService.getThrowPower(player) then
+		-- Back on the platform right after a throw (the walk home didn't happen) must not start the meter again and
+		-- trap the player: they step off first, then back on to throw.
+		if not onPad then
+			state.mustLeave = false
+		end
+		if state.phase == "idle" and onPad and not state.mustLeave and TrainingService.getThrowPower(player) then
 			state.phase = "aiming"
 			state.aimStartedAt = os.clock()
 			remotes.MeterStart:FireClient(player)
@@ -222,6 +278,13 @@ end
 
 local function addPlayer(player: Player)
 	states[player] = { phase = "idle", aimStartedAt = 0, revealStartedAt = 0 }
+end
+
+-- True from the tap until the reveal is done: the egg is in the air or the catch is showing, and nothing may move
+-- the thrower. While only aiming they may leave (the meter is called off once they're off the platform).
+function ThrowService.isThrowing(player: Player): boolean
+	local state = states[player]
+	return state ~= nil and (state.phase == "flying" or state.phase == "revealing")
 end
 
 function ThrowService.start()

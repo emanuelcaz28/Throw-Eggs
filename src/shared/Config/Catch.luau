@@ -35,6 +35,17 @@ return {
 	-- No single mutation or size is ever likelier than this, however much luck and event boost.
 	maxChance = 0.5,
 
+	-- Lucky throws are a guaranteed hit [Owner, 2026-11-06: "500x must be a guaranteed massive HIT", plain luck gave
+	-- 1 in 1k catches]. The monster is rolled with the throw's luck as usual, then its colour and size are picked from
+	-- every combination that makes the whole catch at least this rare ("1 in X", DinoStats.describe), each as likely as
+	-- it really is, so the result varies: usually just past the line, now and then far past it. Biggest first; a
+	-- throw uses the first line its multiplier reaches.
+	luckyHits = {
+		{ multiplier = 500, minOneIn = 100000000 }, -- 1 in 100 million or rarer: GODLY!, sometimes IMPOSSIBLE!
+		{ multiplier = 100, minOneIn = 1000000 }, -- 1 in a million or rarer: GODLY!
+		{ multiplier = 50, minOneIn = 100000 }, -- the daily reward's: 1 in 100,000 or rarer, LEGENDARY!
+	},
+
 	-- Which monster comes (DinoRoll, docs/GAME_SPEC.md section 8b). Luck aims at a "1 in X": the map's
 	-- commonest monster's odds times the roll's luck (Config/Luck forRoll), so 50x luck on the Forest
 	-- (commonest 1 in 2) aims at 1 in 100. A monster at the aim comes most; each one further away, rarer or

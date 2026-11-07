@@ -138,6 +138,12 @@ return {
 				lighting = { Brightness = 0.9, Ambient = Color3.fromRGB(110, 110, 120), OutdoorAmbient = Color3.fromRGB(165, 165, 176), ExposureCompensation = 0.3 },
 			},
 		},
+		-- The bottom of the shaft: night, but after The Weeping Dark it should feel like coming up for air, in teal mist.
+		DeepEnd = {
+			lighting = { ClockTime = 4, Brightness = 2.4, Ambient = Color3.fromRGB(130, 185, 178), OutdoorAmbient = Color3.fromRGB(170, 215, 208) },
+			atmosphere = { Color = Color3.fromRGB(120, 205, 192), Decay = Color3.fromRGB(90, 165, 155), Density = 0.14, Haze = 2 },
+			colorCorrection = { TintColor = Color3.fromRGB(240, 255, 252), Saturation = 0.15, Contrast = 0.06 },
+		},
 	},
 
 	-- Chunky block clouds drifting around the island, built on each player's screen only.

@@ -1,6 +1,6 @@
 -- Small rewards that keep a run going (docs/GAME_SPEC.md section 8b). Placeholder numbers; tune
 -- during playtesting. rarest counts from the end of a map's list in Config/Dinos (most common first), so
--- rarest = 3 means the map's 3 rarest monsters however many it has.
+-- rarest = 3 means the map's 3 rarest monsters however many it has, not counting its prizes (Config/Dinos).
 return {
 	-- Pity: after this many throws in a row without one of the map's rarest monsters, the next throw
 	-- is guaranteed one.

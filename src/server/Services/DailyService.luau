@@ -1,6 +1,6 @@
--- Daily reward (Config/Daily): one claim per UTC day gives a lucky throw (ShopService.addLuckyThrows). Claiming
--- on the day after the last claim moves the streak on (day 7 is the big one, then back to day 1);
--- missing a day starts again at day 1. The client only asks to claim; the server checks the day.
+-- Daily reward (Config/Daily): one claim per UTC day gives a lucky throw (ShopService.addLuckyThrows). Each claim
+-- moves the streak on (day 7 is the big one, then back to day 1), and a missed day only pauses it.
+-- The client only asks to claim; the server checks the day.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -21,9 +21,7 @@ end
 -- The day the next claim gives (1 to 7), and whether it can be claimed now.
 local function nextClaim(data): (number, boolean)
 	local day = today()
-	local continues = data.dailyLastDay >= day - 1
-	local nextDay = if continues then data.dailyStreak % #Daily.days + 1 else 1
-	return nextDay, data.dailyLastDay < day
+	return data.dailyStreak % #Daily.days + 1, data.dailyLastDay < day
 end
 
 -- What the client shows: DailyDay is the day the next claim gives, or the one claimed today.

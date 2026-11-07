@@ -114,6 +114,11 @@ local Map = {
 			Dirt = Color3.fromRGB(24, 24, 28), -- black walls: the darkest in the game
 			Grass = Color3.fromRGB(74, 74, 80), -- grey ash on the rims, hanging over the walls. No colour anywhere
 		},
+		DeepEnd = {
+			Floor = Color3.fromRGB(44, 86, 84), -- deep teal stone: a shock of colour after the blackest world
+			Dirt = Color3.fromRGB(46, 78, 80), -- the shaft's walls: dark so the mint seeps show, but not black in the game's light
+			Grass = Color3.fromRGB(168, 174, 150), -- old bone-pale stone on the rims
+		},
 	},
 
 	-- The arena, built from plain parts with the same see-through checker and studs as the kit.

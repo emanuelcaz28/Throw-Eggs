@@ -5,7 +5,8 @@
 -- copying build_abyss_monsters.py). Monsters with Lash bones thrash on top of it all (THRASH, copying
 -- build_thorn_kingdom_monsters.py), and ones with a Drip bone attack too, crying as they do (RAGE and DRIP, copying
 -- build_weeping_dark_monsters.py). Monsters with Vent bones pour spores and pounce (VENT and POUNCE, copying
--- build_spore_hollow_monsters.py). Dinos without bones still walk, stiffly.
+-- build_spore_hollow_monsters.py). Each map's 7th and 8th monsters add SWAY on top: swaying feathers, snapping pincers, a
+-- stabbing sting, a slithering body, a lunging neck (copying assets/models/rare_kit.py). Dinos without bones still walk, stiffly.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -96,6 +97,7 @@ end
 local function roar(t: number): number
 	return ((1 - cos(t)) / 2) ^ 10 -- 0 most of the loop, up to 1 halfway through it
 end
+local ROAR_FROM = math.pi - 0.75 -- where in its idle loop a monster starts a roar, about a second before its peak
 
 WALK.Jaw = function(p)
 	return -0.08 * (0.5 + 0.5 * sin(2 * p)), 0, 0, 0
@@ -133,6 +135,12 @@ ROAR.MandL = function(t) -- Spore Hollow's side jaws fling open
 end
 ROAR.MandR = function(t)
 	return 0, 0, -0.6 * roar(t), 0
+end
+ROAR.PinchL = function(t) -- Scorchion's pincers fling open
+	return 0, 0, 0.55 * roar(t), 0
+end
+ROAR.PinchR = function(t)
+	return 0, 0, -0.55 * roar(t), 0
 end
 
 -- Monsters with a Swim bone (from The Abyss on) swim instead of walking: SWIM while they move and HOVER while
@@ -243,6 +251,7 @@ local SPIN = {
 	Key = { speed = math.pi, axis = "yaw" },
 	Drill = { speed = 4 * math.pi, axis = "roll" },
 	Cog = { speed = math.pi, axis = "pitch" },
+	Orbit = { speed = math.pi / 4, axis = "yaw" }, -- Moonwhale's little moon, going round it
 }
 
 -- Thorn Kingdom monsters (from map 13 on) never settle, whatever they're doing. A monster with Lash bones gets all of
@@ -499,6 +508,623 @@ local function idleTime(): number
 	return DinoLife.idleSeconds + (math.random() * 2 - 1) * DinoLife.idleJitter
 end
 
+-- Each map's 7th and 8th monsters: bones that move for ever on top of the walk and idle, whatever the monster is doing. Each
+-- takes seconds (repeating every 4) and how far it's walking (0 at rest, 1 on the move), and returns pitch, roll, yaw and how
+-- far the bone slides ahead, in studs at the first map's size. The same as sway_of in assets/models/rare_kit.py, number for
+-- number, whose previews move them alike:
+--   Sway<n>a, b, c     slow waves down a chain of up to three bones: feathers, cloth, sails, moss. n moves each chain's wave
+--                      along, so a row of them ripples. Wriggle<n>a, b, c is the same, faster and wider: a worm lure
+--   PinchL, PinchR     a pincer's moving finger: eases open and snaps shut every 2 seconds, one half a beat after the other
+--   Flick              a forked tongue: darts out twice and back every 2 seconds
+--   Sting              a scorpion's stinger: draws back, then stabs, every 4 seconds
+--   Slither<n>         a snake's body, bone after bone: a wave runs down it, gently at rest and wide on the move
+--   Strike             under the Neck: rears back and lunges every 4 seconds; the Jaw of a monster with one bites along with it
+--   Spit1 to 6         fire parked in the head, thrown out one after the other as the Strike lunges
+--   Step<n>            a centipede's legs, one set after the next: a ripple down its sides, wide on the move
+--   Kick1 to 4         snow flung off the hooves as it charges
+--   Shard1 to 6        ice flung off the ground as its fists land
+--   Stab               a needle that stabs twice every 4 seconds
+--   BuzzL, BuzzR       wings that blur
+--   Curl1 to 4, Thumb  a hand's fingers: taps them out one after the other, then grabs
+--   Shock1 and 2, Bubble1 to 4   rings of cracked water and bubbles off a punch (Punch, Club L and R)
+--   Spout1 to 6        a whale's fountain of stars
+--   Fall1 to 6         meteors, falling round a monster that sings
+--   Crescent1 and 2    blades that fly out spinning and come back (Arm, Scythe L and R)
+--   Ring1 to 4         rings of sound from a bat that climbs, screams and drops
+--   Maul               maps 10 to 12: nothing but the body, between the Spine and the Neck. Every 2 seconds it throws itself forward,
+--                      bites three times, shakes what it caught and drags back, arms raking, trembling all the time
+--   Whirl, Gore, Gulp, Bounce, Pummel, Reach1   maps 13 to 15: bare, the most aggressive of all, each with its own attack (see their tables)
+-- A monster with a marker bone (MARKED, below) has the rest of its body moved by that bone's table, on top of the walk and idle.
+-- They also return how far the bone rises and how far it slides to the monster's right.
+local SWAY = {}
+
+local function smooth(u: number): number
+	return u * u * (3 - 2 * u)
+end
+
+local function keys(u: number, points: { { number } }): number -- a smooth run through { u, value } pairs, u from 0 to 1
+	for i = 1, #points - 1 do
+		local a, b = points[i], points[i + 1]
+		if u <= b[1] then
+			return a[2] + (b[2] - a[2]) * smooth((u - a[1]) / (b[1] - a[1]))
+		end
+	end
+	return points[#points][2]
+end
+
+local function pinchOpen(u: number): number -- 0 to 1 over a cycle: eases open, holds, snaps shut, rests
+	u %= 1
+	if u < 0.55 then
+		return smooth(u / 0.55)
+	elseif u < 0.62 then
+		return 1
+	elseif u < 0.68 then
+		return 1 - smooth((u - 0.62) / 0.06)
+	end
+	return 0
+end
+
+local function bump(u: number, start: number, length: number): number -- a quick rise to 1 and back, 0 elsewhere
+	u = (u - start) % 1
+	return if u < length then sin(math.pi * u / length) else 0
+end
+
+for _, family in { { "Sway", 1, 0.1, 0.05 }, { "Wriggle", 3, 0.16, 0.08 } } do
+	local name, speed, firstReach, reachStep = family[1], family[2], family[3], family[4]
+	for n = 1, 8 do
+		for k, letter in { "a", "b", "c" } do
+			local phase = 0.8 * n - 0.9 * (k - 1)
+			local reach = firstReach + reachStep * (k - 1)
+			SWAY[name .. n .. letter] = function(s: number)
+				local v = speed * QUARTER * s
+				return reach * (sin(2 * v + phase) + 0.35 * sin(5 * v + 1.3 * phase)),
+					0.6 * reach * sin(3 * v + 2 * phase),
+					0.7 * reach * sin(2 * v + 0.7 * phase + 1),
+					0
+			end
+		end
+	end
+end
+SWAY.PinchL = function(s: number)
+	return 0, 0, 0.5 * pinchOpen(s / 2), 0
+end
+SWAY.PinchR = function(s: number)
+	return 0, 0, -0.5 * pinchOpen(s / 2 + 0.5), 0
+end
+SWAY.Flick = function(s: number)
+	local e = bump((s / 2) % 1, 0, 0.12) + bump((s / 2) % 1, 0.2, 0.12)
+	return 0.22 * e * sin(12 * QUARTER * s), 0, 0, 0.55 * e
+end
+local STING = { { 0, 0 }, { 0.3, 0.4 }, { 0.35, -0.8 }, { 0.44, -0.8 }, { 0.7, 0 }, { 1, 0 } }
+SWAY.Sting = function(s: number)
+	return keys((s / 4) % 1, STING), 0, 0, 0
+end
+local STRIKE = { { 0, 0 }, { 0.3, 1 }, { 0.345, -1 }, { 0.42, -1 }, { 0.7, 0 }, { 1, 0 } } -- 1 reared back, -1 lunged
+SWAY.Strike = function(s: number)
+	local e = keys((s / 4) % 1, STRIKE)
+	return 0.2 * e, 0, 0, -1.4 * e
+end
+for n = 1, 8 do
+	SWAY["Slither" .. n] = function(s: number, walking: number)
+		return 0, 0, (0.05 + 0.2 * walking) * sin(2 * QUARTER * s - 0.8 * n), 0
+	end
+end
+local STRIKE_JAW = { { 0, 0 }, { 0.3, -0.3 }, { 0.38, -0.3 }, { 0.43, 0.42 }, { 0.6, 0.42 }, { 0.75, 0 }, { 1, 0 } }
+
+-- Bits thrown out for a moment: when (seconds into the 4), how long, from and to (right, ahead, up from where they're parked,
+-- studs at the first map's size) and how high the arc (a number) or which way it bows (a Vector3). They jump to `from`, fly to
+-- `to`, and snap back out of sight. spin: how far they turn on the way, in radians.
+local function fling(start: number, seconds: number, from: Vector3, to: Vector3, arc: any, spin: number?)
+	local bow = if typeof(arc) == "number" then Vector3.new(0, 0, arc) else arc
+	return function(s: number)
+		local t = ((s - start) % 4) / seconds
+		if t >= 1 then
+			return 0, 0, 0, 0, 0, 0
+		end
+		local at = from:Lerp(to, t) + bow * (4 * t * (1 - t))
+		return 0, 0, (spin or 0) * t, at.Y, at.Z, at.X
+	end
+end
+for n = 1, 6 do
+	SWAY["Spit" .. n] = fling(1.38 + 0.07 * (n - 1), 0.62, Vector3.new(0, 2, -1.4), Vector3.new(0, 19, -16), 1)
+end
+SWAY.Kick1 = fling(1.2, 0.7, Vector3.new(-3.1, -5, -7.6), Vector3.new(-5.5, -13, -9), 3.2)
+SWAY.Kick2 = fling(1.2, 0.7, Vector3.new(3.1, -5, -7.6), Vector3.new(5.5, -13, -9), 3.2)
+SWAY.Kick3 = fling(1.28, 0.6, Vector3.new(-3, 4.6, -7.6), Vector3.new(-6.5, -3, -9), 2.4)
+SWAY.Kick4 = fling(1.28, 0.6, Vector3.new(3, 4.6, -7.6), Vector3.new(6.5, -3, -9), 2.4)
+SWAY.Shard1 = fling(1.34, 0.75, Vector3.new(-8.3, 8.4, -9.5), Vector3.new(-13.5, 15, -11.5), 6)
+SWAY.Shard2 = fling(1.34, 0.65, Vector3.new(-8.3, 8.4, -9.5), Vector3.new(-16, 7, -11.5), 4.5)
+SWAY.Shard3 = fling(1.38, 0.7, Vector3.new(-8.3, 8.4, -9.5), Vector3.new(-5, 17, -11.5), 5)
+SWAY.Shard4 = fling(1.34, 0.75, Vector3.new(8.3, 8.4, -9.5), Vector3.new(13.5, 15, -11.5), 6)
+SWAY.Shard5 = fling(1.34, 0.65, Vector3.new(8.3, 8.4, -9.5), Vector3.new(16, 7, -11.5), 4.5)
+SWAY.Shard6 = fling(1.38, 0.7, Vector3.new(8.3, 8.4, -9.5), Vector3.new(5, 17, -11.5), 5)
+SWAY.Shock1 = fling(1.26, 0.5, Vector3.new(-3.2, 14, -3.7), Vector3.new(-3.2, 44, -3.7), 0)
+SWAY.Shock2 = fling(2.26, 0.5, Vector3.new(3.2, 14, -3.7), Vector3.new(3.2, 44, -3.7), 0)
+SWAY.Bubble1 = fling(1.26, 0.9, Vector3.new(-3.2, 13, -3.7), Vector3.new(-5, 21, 2), 1.5)
+SWAY.Bubble2 = fling(1.32, 0.8, Vector3.new(-3.2, 13, -3.7), Vector3.new(-1.5, 19, 4), 1)
+SWAY.Bubble3 = fling(2.26, 0.9, Vector3.new(3.2, 13, -3.7), Vector3.new(5, 21, 2), 1.5)
+SWAY.Bubble4 = fling(2.32, 0.8, Vector3.new(3.2, 13, -3.7), Vector3.new(1.5, 19, 4), 1)
+SWAY.Crescent1 = fling(1.3, 1.3, Vector3.new(-3, 17, 6.2), Vector3.new(-3, 17, 6.2), Vector3.new(-9, 26, -2), 25)
+SWAY.Crescent2 = fling(1.4, 1.3, Vector3.new(3, 17, 6.2), Vector3.new(3, 17, 6.2), Vector3.new(9, 26, -2), -25)
+for n, spot in { { -7, 3 }, { 6, 8 }, { -3, -6 }, { 9, -2 }, { -10, -3 }, { 3, 5 } } do
+	SWAY["Spout" .. n] = fling(0.6 + 0.18 * (n - 1), 1.4, Vector3.new(0, 0.4, 2.6), Vector3.new(spot[1], spot[2], -12), 12, 3)
+end
+local METEOR = Vector3.new(0.22, 0.5, -1).Unit * 42 -- which way Constellion's meteors fall, and from how far up
+for n, spot in { { -12, 16 }, { 10, 20 }, { -4, 26 }, { 14, 8 }, { -16, 6 }, { 3, 14 } } do
+	local landing = Vector3.new(spot[1], spot[2], -11)
+	SWAY["Fall" .. n] = fling(0.9 + 0.28 * (n - 1), 0.55, landing - METEOR, landing, 0)
+end
+for n = 1, 4 do
+	SWAY["Ring" .. n] = fling(0.72 + 0.08 * (4 - n), 0.46, Vector3.new(0, 5.6, 3.4), Vector3.new(0, 46, -2), 0)
+end
+for n = 1, 8 do
+	SWAY["Step" .. n] = function(s: number, walking: number)
+		return (0.06 + 0.42 * walking) * sin(8 * QUARTER * s - 1.2 * n), 0, 0, 0
+	end
+end
+SWAY.BuzzL = function(s: number)
+	return 0, 0.1 + 0.26 * sin(32 * QUARTER * s), 0, 0
+end
+SWAY.BuzzR = function(s: number)
+	return 0, -(0.1 + 0.26 * sin(32 * QUARTER * s)), 0, 0
+end
+local STAB_NEEDLE = { { 0, 0 }, { 0.2, -1 }, { 0.26, 3.4 }, { 0.3, 3.4 }, { 0.38, -0.4 }, { 0.44, 3.4 }, { 0.48, 3.4 }, { 0.7, 0 }, { 1, 0 } }
+SWAY.Stab = function(s: number)
+	return 0, 0, 0, keys((s / 4) % 1, STAB_NEEDLE)
+end
+
+local function track(points: { { number } }, pitch: number?, delay: number?) -- a bone that pitches along points, over the 4 seconds
+	local scale, late = pitch or 1, delay or 0
+	return function(s: number)
+		return scale * keys((s / 4 - late) % 1, points), 0, 0, 0, 0, 0
+	end
+end
+local function rolled(points: { { number } }, sign: number)
+	return function(s: number)
+		return 0, sign * keys((s / 4) % 1, points), 0, 0, 0, 0
+	end
+end
+local function yawed(points: { { number } }, sign: number)
+	return function(s: number)
+		return 0, 0, sign * keys((s / 4) % 1, points), 0, 0, 0
+	end
+end
+local function plusPitch(move, points: { { number } }, sign: number?) -- a leg turned against the body's lean, so its foot stays down
+	local scale = sign or 1
+	return function(s: number)
+		local pitch, roll, yaw, ahead, rise, across = move(s)
+		return pitch + scale * keys((s / 4) % 1, points), roll, yaw, ahead, rise, across
+	end
+end
+
+-- The fire: wide jaws, side jaws thrown open then shut, wings up as it rears and beating down on the lunge.
+local SPIT_JAW = { { 0, 0 }, { 0.3, -0.3 }, { 0.345, -0.5 }, { 0.55, -0.5 }, { 0.75, 0 }, { 1, 0 } }
+local SPIT_MAND = { { 0, 0 }, { 0.3, 0.42 }, { 0.345, 0.42 }, { 0.4, -0.12 }, { 0.55, -0.12 }, { 0.75, 0 }, { 1, 0 } }
+local SPIT_WING = { { 0, 0 }, { 0.3, 0.36 }, { 0.345, -0.12 }, { 0.42, -0.12 }, { 0.7, 0 }, { 1, 0 } }
+local SPIT_TIP = { { 0, 0 }, { 0.32, 0.26 }, { 0.38, -0.2 }, { 0.46, -0.2 }, { 0.72, 0 }, { 1, 0 } }
+local SPITTER = {
+	Jaw = track(SPIT_JAW),
+	MandL = yawed(SPIT_MAND, 1),
+	MandR = yawed(SPIT_MAND, -1),
+	WingL = rolled(SPIT_WING, 1),
+	WingR = rolled(SPIT_WING, -1),
+	WingTipL = rolled(SPIT_TIP, 1),
+	WingTipR = rolled(SPIT_TIP, -1),
+}
+
+-- The charge: paw twice, sink back, throw the whole body forward head down, toss the head on impact, walk back.
+local CHARGE_AHEAD = { { 0, 0 }, { 0.2, 0 }, { 0.29, -1.2 }, { 0.345, 4.2 }, { 0.42, 4.2 }, { 0.78, 0 }, { 1, 0 } }
+local CHARGE_LEAN = { { 0, 0 }, { 0.2, 0 }, { 0.29, -0.06 }, { 0.345, -0.13 }, { 0.385, 0.08 }, { 0.46, 0.08 }, { 0.72, 0 }, { 1, 0 } }
+local CHARGE_NECK = { { 0, 0 }, { 0.12, -0.12 }, { 0.29, -0.42 }, { 0.345, -0.42 }, { 0.385, 0.2 }, { 0.46, 0.2 }, { 0.72, 0 }, { 1, 0 } }
+local CHARGE_HEAD = { { 0, 0 }, { 0.29, -0.2 }, { 0.345, -0.2 }, { 0.385, 0.24 }, { 0.46, 0.24 }, { 0.72, 0 }, { 1, 0 } }
+local CHARGE_JAW = { { 0, 0 }, { 0.29, 0.05 }, { 0.345, -0.1 }, { 0.385, -0.5 }, { 0.5, -0.5 }, { 0.72, 0 }, { 1, 0 } }
+local CHARGE_FRONT = { { 0, 0 }, { 0.29, -0.2 }, { 0.345, 0.55 }, { 0.42, 0.3 }, { 0.7, 0 }, { 1, 0 } }
+local CHARGE_BACK = { { 0, 0 }, { 0.29, 0.25 }, { 0.345, -0.55 }, { 0.42, -0.2 }, { 0.7, 0 }, { 1, 0 } }
+local CHARGE_TAIL = { { 0, 0 }, { 0.29, -0.2 }, { 0.345, 0.4 }, { 0.5, 0.2 }, { 0.7, 0 }, { 1, 0 } }
+local function paw(s: number)
+	local u = (s / 4) % 1
+	return 0.55 * (bump(u, 0.02, 0.09) + bump(u, 0.12, 0.09)), 0, 0, 0, 0, 0
+end
+local CHARGER = {
+	Spine = function(s: number)
+		local u = (s / 4) % 1
+		return keys(u, CHARGE_LEAN), 0, 0, keys(u, CHARGE_AHEAD), 0, 0
+	end,
+	Neck = track(CHARGE_NECK),
+	Head = track(CHARGE_HEAD),
+	Jaw = track(CHARGE_JAW),
+	Tail1 = track(CHARGE_TAIL),
+	FrontL = plusPitch(track(CHARGE_FRONT), CHARGE_LEAN, -1),
+	FrontR = plusPitch(plusPitch(paw, CHARGE_FRONT), CHARGE_LEAN, -1),
+	BackL = plusPitch(track(CHARGE_BACK), CHARGE_LEAN, -1),
+	BackR = plusPitch(track(CHARGE_BACK), CHARGE_LEAN, -1),
+}
+
+-- The smash: both arms up over the head, leaning back, then down with everything it has.
+local SLAM_ARM = { { 0, 0 }, { 0.19, 2.35 }, { 0.285, 2.55 }, { 0.335, 0.4 }, { 0.44, 0.4 }, { 0.72, 0 }, { 1, 0 } }
+local SLAM_LEAN = { { 0, 0 }, { 0.19, 0.2 }, { 0.285, 0.24 }, { 0.335, -0.36 }, { 0.44, -0.36 }, { 0.72, 0 }, { 1, 0 } }
+local SLAM_NECK = { { 0, 0 }, { 0.19, 0.18 }, { 0.285, 0.22 }, { 0.335, -0.05 }, { 0.44, -0.05 }, { 0.72, 0 }, { 1, 0 } }
+local SLAM_HEAD = { { 0, 0 }, { 0.19, 0.3 }, { 0.285, 0.34 }, { 0.335, 0.24 }, { 0.44, 0.24 }, { 0.72, 0 }, { 1, 0 } }
+local SLAM_JAW = { { 0, 0 }, { 0.19, -0.22 }, { 0.285, -0.22 }, { 0.335, 0.3 }, { 0.44, 0.3 }, { 0.72, 0 }, { 1, 0 } }
+local SLAMMER = {
+	Spine = track(SLAM_LEAN),
+	Neck = track(SLAM_NECK),
+	Head = track(SLAM_HEAD),
+	Jaw = track(SLAM_JAW),
+	ArmL = track(SLAM_ARM),
+	ArmR = track(SLAM_ARM),
+	LegL = track(SLAM_LEAN, -1),
+	LegR = track(SLAM_LEAN, -1),
+}
+
+-- The needle: rise, stab, draw back, stab again, the front legs reaching in to hold on.
+local STAB_HEAD = { { 0, 0 }, { 0.2, 0.12 }, { 0.26, -0.22 }, { 0.3, -0.22 }, { 0.38, 0.06 }, { 0.44, -0.22 }, { 0.48, -0.22 }, { 0.7, 0 }, { 1, 0 } }
+local STAB_LEAN = { { 0, 0 }, { 0.2, 0.06 }, { 0.26, -0.12 }, { 0.48, -0.12 }, { 0.7, 0 }, { 1, 0 } }
+local STAB_RISE = { { 0, 0 }, { 0.2, 0.6 }, { 0.26, -0.7 }, { 0.48, -0.7 }, { 0.7, 0 }, { 1, 0 } }
+local STAB_LEGS = { { 0, 0 }, { 0.2, 0.3 }, { 0.26, -0.25 }, { 0.48, -0.25 }, { 0.7, 0 }, { 1, 0 } }
+local STABBER = {
+	Spine = function(s: number)
+		local u = (s / 4) % 1
+		return keys(u, STAB_LEAN), 0, 0, 0, keys(u, STAB_RISE), 0
+	end,
+	Head = track(STAB_HEAD),
+	FrontL = track(STAB_LEGS),
+	FrontR = track(STAB_LEGS),
+}
+
+-- The hand: taps out its fingers twice, one after the other, rears up, then grabs.
+local GRAB_LEAN = { { 0, 0 }, { 0.42, 0 }, { 0.52, 0.42 }, { 0.57, -0.4 }, { 0.64, -0.4 }, { 0.9, 0 }, { 1, 0 } }
+local GRAB_AHEAD = { { 0, 0 }, { 0.42, 0 }, { 0.52, -1 }, { 0.57, 3.6 }, { 0.64, 3.6 }, { 0.9, 0 }, { 1, 0 } }
+local GRAB_RISE = { { 0, 0 }, { 0.42, 0 }, { 0.52, -1 }, { 0.57, 0.4 }, { 0.64, 0.4 }, { 0.9, 0 }, { 1, 0 } }
+local GRAB_JAW = { { 0, 0 }, { 0.42, 0 }, { 0.52, -0.5 }, { 0.565, -0.5 }, { 0.58, 0.14 }, { 0.64, 0.14 }, { 0.9, 0 }, { 1, 0 } }
+local GRAB_THUMB = { { 0, 0 }, { 0.42, 0 }, { 0.52, -0.5 }, { 0.57, 0.75 }, { 0.64, 0.75 }, { 0.9, 0 }, { 1, 0 } }
+local GRAB_CURL = { { 0, 0 }, { 0.42, 0 }, { 0.52, 0.5 }, { 0.57, -0.75 }, { 0.64, -0.75 }, { 0.9, 0 }, { 1, 0 } }
+local function curl(n: number)
+	return function(s: number)
+		local u = (s / 4) % 1
+		local tap = bump(u, 0.02 + 0.045 * n, 0.07) + bump(u, 0.22 + 0.045 * n, 0.07)
+		return 0.5 * tap + keys(u, GRAB_CURL), 0, 0, 0, 0, 0
+	end
+end
+local GRABBER = {
+	Spine = function(s: number)
+		local u = (s / 4) % 1
+		return keys(u, GRAB_LEAN), 0, 0, keys(u, GRAB_AHEAD), keys(u, GRAB_RISE), 0
+	end,
+	Jaw = track(GRAB_JAW),
+	Thumb = yawed(GRAB_THUMB, 1),
+	Tail1 = track(GRAB_LEAN, -1),
+	FrontL = track(GRAB_LEAN, -1),
+	FrontR = track(GRAB_LEAN, -1),
+	BackL = track(GRAB_LEAN, -1),
+	BackR = track(GRAB_LEAN, -1),
+	Curl1 = curl(0),
+	Curl2 = curl(1),
+	Curl3 = curl(2),
+	Curl4 = curl(3),
+}
+
+-- The punch: cocked, then out in an instant, one fist and a quarter of the way round the clock the other.
+local PUNCH_CLUB = { { 0, 0 }, { 0.27, -0.22 }, { 0.3, -0.22 }, { 0.315, 2.9 }, { 0.36, 2.9 }, { 0.5, 0 }, { 1, 0 } }
+local PUNCH_ARM = { { 0, 0 }, { 0.27, 0.15 }, { 0.3, 0.15 }, { 0.315, -0.2 }, { 0.36, -0.2 }, { 0.5, 0 }, { 1, 0 } }
+local PUNCH_JAW = { { 0, 0 }, { 0.27, -0.2 }, { 0.6, -0.2 }, { 0.75, 0 }, { 1, 0 } }
+local PUNCHER = {
+	ClubL = track(PUNCH_CLUB),
+	PunchL = track(PUNCH_ARM),
+	ClubR = track(PUNCH_CLUB, 1, 0.25),
+	PunchR = track(PUNCH_ARM, 1, 0.25),
+	Jaw = track(PUNCH_JAW),
+}
+
+-- The hunting arms: drawn back, unrolled straight in an instant, held, then dragged home, where the jaw snaps. 1 is straight.
+local SEIZE_REACH = { { 0, 0 }, { 0.25, -0.12 }, { 0.32, -0.12 }, { 0.365, 1 }, { 0.43, 1 }, { 0.62, 0.55 }, { 0.72, 0 }, { 1, 0 } }
+local SEIZE_AHEAD = { { 0, 0 }, { 0.32, 0 }, { 0.365, 6 }, { 0.43, 6 }, { 0.62, 2 }, { 0.72, 0 }, { 1, 0 } }
+local SEIZE_TURN = { -1.527, 0.48, 0.611, 0.703, 0.735 } -- how far each joint turns to lay the arm out straight
+local SEIZE_JAW = { { 0, 0 }, { 0.36, -0.1 }, { 0.45, -0.35 }, { 0.68, -0.35 }, { 0.72, 0.1 }, { 0.78, 0.1 }, { 0.9, 0 }, { 1, 0 } }
+local function seize(k: number, delay: number)
+	return function(s: number)
+		local u = (s / 4 - delay) % 1
+		return SEIZE_TURN[k] * keys(u, SEIZE_REACH), 0, 0, if k == 1 then keys(u, SEIZE_AHEAD) else 0, 0, 0
+	end
+end
+local SEIZER = { Jaw = track(SEIZE_JAW) }
+for k = 1, 5 do
+	SEIZER["SeizeL" .. k] = seize(k, 0)
+	SEIZER["SeizeR" .. k] = seize(k, 0.06)
+end
+
+-- The whale breathes out: its head lifts a little and its mouth parts.
+local SPOUT_HEAD = { { 0, 0 }, { 0.12, 0.06 }, { 0.5, 0.06 }, { 0.7, 0 }, { 1, 0 } }
+local SPOUT_JAW = { { 0, 0 }, { 0.12, -0.06 }, { 0.5, -0.06 }, { 0.7, 0 }, { 1, 0 } }
+local SPOUTER = { Head = track(SPOUT_HEAD), Jaw = track(SPOUT_JAW) }
+
+-- The lion lifts its head and sings.
+local FALL_NECK = { { 0, 0 }, { 0.16, 0.24 }, { 0.62, 0.24 }, { 0.8, 0 }, { 1, 0 } }
+local FALL_HEAD = { { 0, 0 }, { 0.16, 0.14 }, { 0.62, 0.14 }, { 0.8, 0 }, { 1, 0 } }
+local FALL_JAW = { { 0, 0 }, { 0.2, -0.2 }, { 0.6, -0.2 }, { 0.75, 0 }, { 1, 0 } }
+local CALLER = { Neck = track(FALL_NECK), Head = track(FALL_HEAD), Jaw = track(FALL_JAW) }
+
+-- The mantis: scythes up and open, flung down as the crescents fly, up again to catch them.
+local THROW_ARM = { { 0, 0 }, { 0.2, 0.7 }, { 0.3, 0.8 }, { 0.335, -0.1 }, { 0.4, -0.1 }, { 0.66, 0.5 }, { 0.72, 0.3 }, { 0.85, 0 }, { 1, 0 } }
+local THROW_SCYTHE = { { 0, 0 }, { 0.2, 1.7 }, { 0.3, 2 }, { 0.335, 0.5 }, { 0.4, 0.4 }, { 0.66, 1.4 }, { 0.72, 1 }, { 0.85, 0 }, { 1, 0 } }
+local THROW_NECK = { { 0, 0 }, { 0.2, 0.1 }, { 0.3, 0.12 }, { 0.335, -0.2 }, { 0.4, -0.2 }, { 0.8, 0 }, { 1, 0 } }
+local THROW_MAND = { { 0, 0 }, { 0.2, 0.4 }, { 0.3, 0.4 }, { 0.335, -0.1 }, { 0.4, -0.1 }, { 0.8, 0 }, { 1, 0 } }
+local THROW_JAW = { { 0, 0 }, { 0.2, -0.35 }, { 0.34, -0.35 }, { 0.42, 0 }, { 1, 0 } }
+local THROWER = {
+	ArmL = track(THROW_ARM),
+	ArmR = track(THROW_ARM),
+	ScytheL = track(THROW_SCYTHE),
+	ScytheR = track(THROW_SCYTHE),
+	Neck = track(THROW_NECK),
+	Jaw = track(THROW_JAW),
+	MandL = yawed(THROW_MAND, 1),
+	MandR = yawed(THROW_MAND, -1),
+}
+
+-- The bat: beats its wings, climbs, screams, folds them and drops on you, and climbs back.
+local DIVE_UP = { { 0, 0 }, { 0.16, 6 }, { 0.3, 6.4 }, { 0.36, 6.4 }, { 0.44, -2.5 }, { 0.5, -2.5 }, { 0.8, 0 }, { 1, 0 } }
+local DIVE_AHEAD = { { 0, 0 }, { 0.3, -2 }, { 0.36, -2 }, { 0.44, 11 }, { 0.5, 11 }, { 0.8, 0 }, { 1, 0 } }
+local DIVE_LEAN = { { 0, 0 }, { 0.3, 0.2 }, { 0.36, 0.25 }, { 0.44, -0.5 }, { 0.5, -0.5 }, { 0.72, 0 }, { 1, 0 } }
+local DIVE_FOLD = { { 0, 0 }, { 0.36, 0 }, { 0.4, 1 }, { 0.5, 1 }, { 0.6, 0 }, { 1, 0 } }
+local DIVE_HEAD = { { 0, 0 }, { 0.2, 0.1 }, { 0.3, 0.15 }, { 0.36, 0.15 }, { 0.44, 0.3 }, { 0.5, 0.3 }, { 0.72, 0 }, { 1, 0 } }
+local DIVE_JAW = { { 0, 0 }, { 0.2, -0.35 }, { 0.34, -0.35 }, { 0.44, -0.1 }, { 0.5, -0.2 }, { 0.7, 0 }, { 1, 0 } }
+local function diveWing(side: number, beat: number, lag: number, fold: number)
+	return function(s: number)
+		local f = keys((s / 4) % 1, DIVE_FOLD)
+		return 0, side * ((1 - f) * beat * sin(8 * QUARTER * s - lag) - fold * f), 0, 0, 0, 0
+	end
+end
+local DIVER = {
+	Swim = function(s: number)
+		local u = (s / 4) % 1
+		return keys(u, DIVE_LEAN), 0, 0, keys(u, DIVE_AHEAD), keys(u, DIVE_UP), 0
+	end,
+	Head = track(DIVE_HEAD),
+	Jaw = track(DIVE_JAW),
+	WingL = diveWing(1, 0.3, 0, 0.9),
+	WingR = diveWing(-1, 0.3, 0, 0.9),
+	WingTipL = diveWing(1, 0.22, 0.8, 1),
+	WingTipR = diveWing(-1, 0.22, 0.8, 1),
+}
+
+-- Maps 10 to 12: nothing but the body. Every 2 seconds it sinks back, throws itself forward, bites three times, shakes what it
+-- caught and drags itself back to go again, its arms raking one after the other, trembling all the time.
+local MAUL_AHEAD = { { 0, 0 }, { 0.26, -1.2 }, { 0.33, 3 }, { 0.5, 3 }, { 0.8, 0 }, { 1, 0 } }
+local MAUL_LEAN = { { 0, 0 }, { 0.26, 0.18 }, { 0.33, -0.18 }, { 0.5, -0.18 }, { 0.8, 0 }, { 1, 0 } }
+local MAUL_SURGE = { { 0, 0 }, { 0.26, -0.5 }, { 0.33, 1.6 }, { 0.5, 1.6 }, { 0.8, 0 }, { 1, 0 } }
+local MAUL_NECK = { { 0, 0 }, { 0.26, 0.2 }, { 0.33, -0.3 }, { 0.5, -0.2 }, { 0.8, 0 }, { 1, 0 } }
+local MAUL_HEAD = { { 0, 0 }, { 0.26, 0.1 }, { 0.33, 0.22 }, { 0.5, 0.12 }, { 0.8, 0 }, { 1, 0 } }
+local MAUL_JAW = { { 0, 0 }, { 0.26, -0.5 }, { 0.32, -0.5 }, { 0.345, 0.4 }, { 0.39, -0.2 }, { 0.42, 0.4 }, { 0.46, -0.2 }, { 0.49, 0.4 }, { 0.8, 0 }, { 1, 0 } }
+local MAUL_ARM = { { 0, 0 }, { 0.22, 1.5 }, { 0.33, -0.3 }, { 0.5, -0.3 }, { 0.8, 0 }, { 1, 0 } }
+local MAUL_FRONT = { { 0, 0 }, { 0.26, -0.2 }, { 0.33, 0.45 }, { 0.5, 0.3 }, { 0.8, 0 }, { 1, 0 } }
+local MAUL_BACK = { { 0, 0 }, { 0.26, 0.2 }, { 0.33, -0.4 }, { 0.5, -0.2 }, { 0.8, 0 }, { 1, 0 } }
+local function fast(points: { { number } }, delay: number?) -- a bone that pitches along points, over 2 seconds
+	local late = delay or 0
+	return function(s: number)
+		return keys((s / 2 - late) % 1, points), 0, 0, 0, 0, 0
+	end
+end
+local function maulShake(points: { { number } }, reach: number, roll: boolean) -- pitches, and shakes from side to side while it has hold
+	return function(s: number)
+		local u = (s / 2) % 1
+		local shake = reach * sin(32 * QUARTER * s) * bump(u, 0.34, 0.2)
+		return keys(u, points), if roll then shake else 0, if roll then 0 else shake, 0, 0, 0
+	end
+end
+local MAULER = {
+	Spine = function(s: number)
+		return 0.012 * sin(20 * QUARTER * s), 0, 0, keys((s / 2) % 1, MAUL_SURGE), 0, 0
+	end,
+	Maul = function(s: number)
+		local u = (s / 2) % 1
+		return keys(u, MAUL_LEAN), 0, 0, keys(u, MAUL_AHEAD), 0, 0
+	end,
+	Neck = maulShake(MAUL_NECK, 0.3, false),
+	Head = maulShake(MAUL_HEAD, 0.16, true),
+	Jaw = fast(MAUL_JAW),
+	ArmL = fast(MAUL_ARM),
+	ArmR = fast(MAUL_ARM, 0.5),
+	FrontL = fast(MAUL_FRONT),
+	FrontR = fast(MAUL_FRONT),
+	BackL = fast(MAUL_BACK),
+	BackR = fast(MAUL_BACK),
+	Tail1 = function(s: number)
+		return 0, 0, 0.34 * sin(8 * QUARTER * s), 0, 0, 0
+	end,
+}
+for n = 1, 8 do
+	MAULER["Slither" .. n] = function(s: number)
+		return 0, 0, 0.16 * sin(8 * QUARTER * s - 0.8 * n), 0, 0, 0
+	end
+end
+
+-- Maps 13 to 15, the last and worst: each has its own attack, all of them at least twice as often as the Maul. They're written with four small
+-- pieces, so the two files stay line for line: beat (a run of keys over some seconds), wave, hop (a bounce) and stacked (moves added up).
+local PITCH, ROLL, YAW, AHEAD, RISE, ACROSS = 1, 2, 3, 4, 5, 6
+local function slotted(slot: number, v: number)
+	if slot == PITCH then
+		return v, 0, 0, 0, 0, 0
+	elseif slot == ROLL then
+		return 0, v, 0, 0, 0, 0
+	elseif slot == YAW then
+		return 0, 0, v, 0, 0, 0
+	elseif slot == AHEAD then
+		return 0, 0, 0, v, 0, 0
+	elseif slot == RISE then
+		return 0, 0, 0, 0, v, 0
+	end
+	return 0, 0, 0, 0, 0, v
+end
+local function beat(points: { { number } }, seconds: number?, slot: number?, scale: number?, delay: number?)
+	local long, where, size, late = seconds or 2, slot or PITCH, scale or 1, delay or 0
+	return function(s: number)
+		return slotted(where, size * keys((s / long - late) % 1, points))
+	end
+end
+local function wave(speed: number, reach: number, slot: number?, phase: number?)
+	local where, late = slot or PITCH, phase or 0
+	return function(s: number)
+		return slotted(where, reach * sin(speed * QUARTER * s - late))
+	end
+end
+local function hop(speed: number, reach: number)
+	return function(s: number)
+		return slotted(RISE, reach * math.abs(sin(speed * QUARTER * s)))
+	end
+end
+local function stacked(...)
+	local moves = { ... }
+	return function(s: number)
+		local a, b, c, d, e, f = 0, 0, 0, 0, 0, 0
+		for _, move in moves do
+			local p, q, r, t, u, v = move(s)
+			a, b, c, d, e, f = a + p, b + q, c + r, d + t, e + u, f + v
+		end
+		return a, b, c, d, e, f
+	end
+end
+-- Thornado (Whirl, its waist): winds up, spins twice on its own hips with its four arms flung out, then falls forward biting. Every 2 seconds.
+local WHIRL_TURN = { { 0, 0 }, { 0.16, -0.8 }, { 0.24, -0.8 }, { 0.6, 4 * math.pi }, { 1, 4 * math.pi } }
+local WHIRL_LEAN = { { 0, 0 }, { 0.24, 0.16 }, { 0.62, 0.16 }, { 0.68, -0.34 }, { 0.8, -0.34 }, { 1, 0 } }
+local WHIRL_FLING = { { 0, 0 }, { 0.16, -0.3 }, { 0.24, -0.3 }, { 0.34, 1.35 }, { 0.52, 1.35 }, { 0.62, 0 }, { 1, 0 } }
+local WHIRL_RAKE = { { 0, 0 }, { 0.6, 0 }, { 0.64, 1.2 }, { 0.7, -0.3 }, { 0.8, -0.3 }, { 1, 0 } }
+local WHIRL_NECK = { { 0, 0 }, { 0.24, 0.25 }, { 0.62, 0.25 }, { 0.68, -0.3 }, { 0.8, -0.3 }, { 1, 0 } }
+local WHIRL_JAW = { { 0, 0 }, { 0.24, -0.4 }, { 0.66, -0.4 }, { 0.69, 0.45 }, { 0.73, -0.2 }, { 0.76, 0.45 }, { 0.85, 0.1 }, { 1, 0 } }
+local WHIRLER = {
+	Spine = wave(20, 0.012),
+	Whirl = stacked(beat(WHIRL_TURN, 2, YAW), beat(WHIRL_LEAN)),
+	Neck = beat(WHIRL_NECK),
+	Jaw = beat(WHIRL_JAW),
+	ArmL = stacked(beat(WHIRL_FLING, 2, ROLL), beat(WHIRL_RAKE)),
+	ArmR = stacked(beat(WHIRL_FLING, 2, ROLL, -1.0), beat(WHIRL_RAKE, 2, PITCH, 1.0, 0.03)),
+	WingL = beat(WHIRL_FLING, 2, ROLL, 0.8, 0.02),
+	WingR = beat(WHIRL_FLING, 2, ROLL, -0.8, 0.02),
+}
+
+-- Thorn to Bits (Gore, its chest): head down, every thorn on its back standing up, it rams and hooks upward three times, left, right and through.
+local GORE_SURGE = { { 0, 0 }, { 0.2, -2 }, { 0.3, 6 }, { 0.72, 6 }, { 0.92, 0 }, { 1, 0 } }
+local GORE_CHEST = { { 0, 0 }, { 0.2, 0.1 }, { 0.3, -0.16 }, { 0.36, -0.16 }, { 0.42, 0.2 }, { 0.5, -0.16 }, { 0.58, 0.2 }, { 0.66, -0.16 }, { 0.72, 0.26 }, { 0.92, 0 }, { 1, 0 } }
+local GORE_NECK = { { 0, 0 }, { 0.2, -0.3 }, { 0.3, -0.55 }, { 0.36, -0.55 }, { 0.42, 0.55 }, { 0.5, -0.55 }, { 0.58, 0.55 }, { 0.66, -0.55 }, { 0.72, 0.65 }, { 0.92, 0 }, { 1, 0 } }
+local GORE_HOOK = { { 0, 0 }, { 0.36, 0 }, { 0.42, 0.4 }, { 0.5, 0 }, { 0.58, -0.4 }, { 0.66, 0 }, { 1, 0 } }
+local GORE_JAW = { { 0, 0 }, { 0.2, -0.1 }, { 0.3, 0.2 }, { 0.36, -0.3 }, { 0.42, 0.3 }, { 0.5, -0.3 }, { 0.58, 0.3 }, { 0.66, -0.3 }, { 0.72, 0.35 }, { 0.92, 0 }, { 1, 0 } }
+local GORE_FRONT = { { 0, 0 }, { 0.2, -0.2 }, { 0.3, 0.6 }, { 0.72, 0.3 }, { 0.92, 0 }, { 1, 0 } }
+local GORE_BACK = { { 0, 0 }, { 0.2, 0.25 }, { 0.3, -0.6 }, { 0.72, -0.3 }, { 0.92, 0 }, { 1, 0 } }
+local GORE_QUILL = { { 0, 0 }, { 0.18, -0.9 }, { 0.72, -0.9 }, { 0.9, 0 }, { 1, 0 } }
+local GORER = {
+	Spine = beat(GORE_SURGE, 2, AHEAD),
+	Gore = beat(GORE_CHEST),
+	Neck = stacked(beat(GORE_NECK), beat(GORE_HOOK, 2, YAW)),
+	Jaw = beat(GORE_JAW),
+	FrontL = beat(GORE_FRONT),
+	FrontR = beat(GORE_FRONT),
+	BackL = beat(GORE_BACK),
+	BackR = beat(GORE_BACK),
+	Tail1 = wave(8, 0.4, YAW),
+}
+for n = 1, 8 do
+	GORER["Quill" .. n] = stacked(beat(GORE_QUILL, 2, PITCH, 1.0, 0.012 * n), wave(20, 0.1, PITCH, 0.7 * n))
+end
+
+-- Mouth Breather (Gulp, what little neck it has): all mouth on legs. Every second it leaps with its skull flung right back and comes down jaws first.
+local GULP_HEAD = { { 0, 0 }, { 0.32, 0.72 }, { 0.4, 0.72 }, { 0.47, -0.16 }, { 0.6, -0.16 }, { 1, 0 } }
+local GULP_JAW = { { 0, 0 }, { 0.32, -0.7 }, { 0.4, -0.7 }, { 0.47, 0.55 }, { 0.6, 0.55 }, { 1, 0 } }
+local GULP_THROAT = { { 0, 0 }, { 0.32, 0.2 }, { 0.47, -0.12 }, { 0.6, -0.12 }, { 1, 0 } }
+local GULP_RISE = { { 0, 0 }, { 0.3, 4 }, { 0.47, 0 }, { 1, 0 } }
+local GULP_AHEAD = { { 0, 0 }, { 0.3, 2 }, { 0.47, 5 }, { 0.6, 5 }, { 1, 0 } }
+local GULP_TUCK = { { 0, 0 }, { 0.3, 0.5 }, { 0.47, -0.2 }, { 0.6, 0 }, { 1, 0 } }
+local GULPER = {
+	Spine = stacked(beat(GULP_RISE, 1, RISE), beat(GULP_AHEAD, 1, AHEAD)),
+	Gulp = beat(GULP_THROAT, 1),
+	Head = beat(GULP_HEAD, 1),
+	Jaw = beat(GULP_JAW, 1),
+	FrontL = beat(GULP_TUCK, 1),
+	FrontR = beat(GULP_TUCK, 1),
+	BackL = beat(GULP_TUCK, 1, PITCH, -1.0),
+	BackR = beat(GULP_TUCK, 1, PITCH, -1.0),
+	Tail1 = wave(8, 0.3, YAW),
+}
+
+-- Spore Loser (Bounce, its chest): never touches the ground for long. Twice a second it springs, left, right, ahead and home, biting as it lands.
+local BOUNCE_ACROSS = { { 0, 0 }, { 0.25, -7 }, { 0.5, 7 }, { 0.75, 0 }, { 1, 0 } }
+local BOUNCE_AHEAD = { { 0, 0 }, { 0.25, 3 }, { 0.5, 3 }, { 0.75, 9 }, { 1, 0 } }
+local BOUNCE_TURN = { { 0, 0 }, { 0.25, 0.5 }, { 0.5, -0.5 }, { 0.75, 0 }, { 1, 0 } }
+local BOUNCE_HOCK = { { 0, -0.5 }, { 0.12, 0.8 }, { 0.3, 0.8 }, { 1, -0.5 } }
+local BOUNCE_THIGH = { { 0, 0.3 }, { 0.12, -0.7 }, { 0.3, -0.7 }, { 1, 0.3 } }
+local BOUNCE_CLAW = { { 0, -0.3 }, { 0.3, 0.9 }, { 0.6, 0.9 }, { 1, -0.3 } }
+local BOUNCE_JAW = { { 0, 0.35 }, { 0.2, -0.5 }, { 0.86, -0.5 }, { 1, 0.35 } }
+local BOUNCE_NECK = { { 0, -0.2 }, { 0.5, 0.3 }, { 1, -0.2 } }
+local BOUNCER = {
+	Spine = stacked(beat(BOUNCE_ACROSS, 2, ACROSS), beat(BOUNCE_AHEAD, 2, AHEAD), beat(BOUNCE_TURN, 2, YAW), hop(4, 6)),
+	Bounce = wave(8, 0.12, PITCH, 1.0),
+	Neck = beat(BOUNCE_NECK, 0.5),
+	Jaw = beat(BOUNCE_JAW, 0.5),
+	FrontL = beat(BOUNCE_CLAW, 0.5),
+	FrontR = beat(BOUNCE_CLAW, 0.5, PITCH, 1.0, 0.1),
+	BackL = beat(BOUNCE_THIGH, 0.5),
+	BackR = beat(BOUNCE_THIGH, 0.5),
+	HockL = beat(BOUNCE_HOCK, 0.5),
+	HockR = beat(BOUNCE_HOCK, 0.5),
+}
+
+-- Inconsolable (Pummel, its chest): never stops. Both fists hammer the ground in turn, four blows a second, its mouth wide in one long scream.
+local PUMMEL_ARM = { { 0, 0 }, { 0.45, 1.8 }, { 0.58, 1.85 }, { 0.72, -0.05 }, { 0.85, -0.05 }, { 1, 0 } }
+local PUMMEL_FORE = { { 0, 0 }, { 0.45, 0.7 }, { 0.58, 0.7 }, { 0.72, 0 }, { 1, 0 } }
+local PUMMELER = {
+	Spine = hop(8, 0.9),
+	Pummel = stacked(wave(8, 0.16, ROLL), wave(16, 0.05)),
+	Neck = stacked(wave(16, 0.1), wave(8, 0.12, ROLL, 1.0)),
+	Head = wave(32, 0.06, YAW),
+	Jaw = stacked(wave(24, 0.1), beat({ { 0, -0.3 }, { 1, -0.3 } })),
+	ArmL = beat(PUMMEL_ARM, 0.5),
+	ArmR = beat(PUMMEL_ARM, 0.5, PITCH, 1.0, 0.5),
+	ForeL = beat(PUMMEL_FORE, 0.5),
+	ForeR = beat(PUMMEL_FORE, 0.5, PITCH, 1.0, 0.5),
+	LegL = wave(8, 0.08),
+	LegR = wave(8, -0.08),
+}
+
+-- Last Breath (Reach1 to 12, its neck): the end of it all. Every second its neck stretches far past what a neck can, left, ahead, right, ahead, and snaps shut.
+local REACH = { { 0, 0 }, { 0.3, -0.12 }, { 0.42, 1 }, { 0.62, 1 }, { 1, 0 } }
+local REACH_FAN = { { 0, 0 }, { 0.25, 0.6 }, { 0.5, 0 }, { 0.75, -0.6 }, { 1, 0 } }
+local REACH_JAW = { { 0, 0 }, { 0.3, -0.45 }, { 0.42, -0.5 }, { 0.47, 0.4 }, { 0.62, 0.4 }, { 1, 0 } }
+local REACH_HEAD = { { 0, 0 }, { 0.3, 0.2 }, { 0.42, -0.1 }, { 0.62, -0.1 }, { 1, 0 } }
+local REACH_RAKE = { { 0, 0 }, { 0.3, 0.5 }, { 0.42, -0.3 }, { 0.62, -0.3 }, { 1, 0 } }
+local REACHER = {
+	Spine = wave(20, 0.012),
+	Reach1 = stacked(beat(REACH, 1, AHEAD, 1.7), beat(REACH, 1, RISE, -0.35), beat(REACH_FAN, 4, YAW)),
+	Head = beat(REACH_HEAD, 1),
+	Jaw = beat(REACH_JAW, 1),
+	FrontL = beat(REACH_RAKE, 1),
+	FrontR = beat(REACH_RAKE, 1, PITCH, 1.0, 0.5),
+}
+for n = 2, 12 do
+	REACHER["Reach" .. n] = stacked(beat(REACH, 1, AHEAD, 1.7), beat(REACH, 1, RISE, -0.35))
+end
+
+-- A monster with one of these bones has the rest of its body moved by that bone's table. Strike is the least of them: the
+-- Volcano's pair have it too, and spit instead of biting. The same as MARKED and marked_of in assets/models/rare_kit.py.
+local MARKED = {
+	Spit1 = SPITTER,
+	Kick1 = CHARGER,
+	Shard1 = SLAMMER,
+	Stab = STABBER,
+	Curl1 = GRABBER,
+	Shock1 = PUNCHER,
+	SeizeL1 = SEIZER,
+	Spout1 = SPOUTER,
+	Fall1 = CALLER,
+	Crescent1 = THROWER,
+	Ring1 = DIVER,
+	Maul = MAULER,
+	Whirl = WHIRLER,
+	Gore = GORER,
+	Gulp = GULPER,
+	Bounce = BOUNCER,
+	Pummel = PUMMELER,
+	Reach1 = REACHER,
+	Strike = { Jaw = track(STRIKE_JAW) }, -- flung wide, then bitten shut
+}
+
 local function add(model: Model)
 	-- A monster with Stay set (the server's best catch on its pedestal) idles where it is and never walks. One with
 	-- Carried set rides on a player's head (PlotService): it walks while they move and idles while they stand.
@@ -518,9 +1144,13 @@ local function add(model: Model)
 	local thrashes = false
 	local rages = false
 	local vents = false
+	local marked = nil
 	for _, bone in model:GetDescendants() do
 		if bone:IsA("Bone") then
 			roars = roars or bone.Name == "Jaw"
+			if MARKED[bone.Name] and (not marked or bone.Name ~= "Strike") then
+				marked = MARKED[bone.Name]
+			end
 			swims = swims or bone.Name == "Swim"
 			thrashes = thrashes or string.sub(bone.Name, 1, 4) == "Lash"
 			rages = rages or DRIP[bone.Name] ~= nil
@@ -558,6 +1188,7 @@ local function add(model: Model)
 				drip = DRIP[bone.Name],
 				pounce = if vents then POUNCE[bone.Name] else nil,
 				vent = string.sub(bone.Name, 1, 4) == "Vent",
+				sway = marked and marked[bone.Name] or SWAY[bone.Name],
 			})
 			if bone.Name == "LegL" or bone.Name == "FrontL" then
 				legHeight = bone.WorldPosition.Y - pivot.Y
@@ -700,6 +1331,15 @@ local function pose(state, dt: number)
 		if entry.vent then
 			transform = CFrame.new(entry.yaw * (VENT.gap * ((s / VENT.period) % 1) * state.scale)) * transform
 		end
+		local sway = entry.sway
+		if sway then
+			local ax, ay, az, ahead, up, across = sway(s, eased)
+			transform = CFrame.new((entry.roll * ahead + entry.yaw * (up or 0) + entry.pitch * (across or 0)) * state.scale)
+				* transform
+				* CFrame.fromAxisAngle(entry.pitch, ax)
+				* CFrame.fromAxisAngle(entry.roll, ay)
+				* CFrame.fromAxisAngle(entry.yaw, az)
+		end
 		entry.bone.Transform = transform
 	end
 end
@@ -743,6 +1383,20 @@ function DinoLifeController.showcase(model: Model, shown: () -> boolean)
 	model.Destroying:Connect(function()
 		dinos[model] = nil
 	end)
+end
+
+-- The monster in a reveal, alive on its spot: it breathes and sways through its own idle the whole time. Returns the
+-- function that makes it roar now, for the unveil. Monsters with no roar just carry on with their idle.
+function DinoLifeController.reveal(model: Model): () -> ()
+	DinoLifeController.showcase(model, function()
+		return model.Parent ~= nil
+	end)
+	local state = dinos[model]
+	return function()
+		if state then
+			state.idleClock = ROAR_FROM
+		end
+	end
 end
 
 function DinoLifeController.start()

@@ -126,6 +126,17 @@ Roles.glowing = {
 	-- Spore Hollow's monsters (assets/models/build_spore_hollow_monsters.py): the lilac light in Gillotine's wings. Their
 	-- eyes, gills, spores and mycelium threads use EyeGlow, GillGlow, Spore, Speck, Glow, Vein, Pit and HeartGlow.
 	Lilac = true,
+	-- The Deep End (assets/models/build_deep_end.py): the gauges, stone fang tips, seams, seeps and eyes.
+	ColumnRing = true,
+	DeepEye = true,
+	DeepSpore = true,
+	FangTip = true,
+	GaugeMark = true,
+	GaugeTick = true,
+	SeamGlow = true,
+	SeepDrop = true,
+	SeepFall = true,
+	SeepRing = true,
 	-- The Weeping Dark (assets/models/build_weeping_dark.py): tears and rings on the tear pools, the red of anything
 	-- looking at you, souls, the lighthouse's beam and the procession's lead lantern. Flame, FlameA, FlameB, Lamp, LampA,
 	-- Window, Stream, Beacon and Motes are above.

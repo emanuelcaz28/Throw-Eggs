@@ -80,8 +80,10 @@ local Throw = {
 	-- thrower, climbs high behind the egg looking down the valley, then drops low again as it comes down.
 	flight = {
 		spin = 8, -- the egg's tumble, in radians a second on average (fastest out of the hand)
-		minTime = 1.5, -- seconds, for the shortest throws
-		maxTime = 6, -- to the end of the last world
+		-- [Owner, 2026-11-07] A little longer than 1.5 and 6, so players get to see the worlds go by.
+		minTime = 2, -- seconds, for the shortest throws
+		maxTime = 8, -- to the end of the last world
+		deepTime = 3, -- [Owner, 2026-11-07] seconds past the Last Door, so players get to see The Deep End
 		slowDown = 0.4,
 		arcPerStud = 0.05, -- peak height as a share of the distance
 		maxArc = 18, -- stays inside the valley, under the rim
@@ -166,6 +168,12 @@ function Throw.onPlatform(position: Vector3): boolean
 		and offset.Y <= lane.zoneHeight
 end
 
+-- The farthest place an egg really lands: the far end of everything built, just short of the end wall. Past the last
+-- world's monsters, how far a throw would have gone is only a number (Config/DeepEnd).
+function Throw.farthestLanding(): number
+	return Biomes[#Biomes].endDist - 100
+end
+
 -- Seconds from the tap until the egg leaves the hand.
 function Throw.releaseDelay(): number
 	return Throw.windup.holdAfterTap + Throw.windup.releaseInClip
@@ -184,18 +192,36 @@ function Throw.maxDistance(): number
 	return farthest
 end
 
+-- Where the Last Door stands, from the throw line. Eggs going on to The Deep End burst through it (ThrowCinematic.doorBurst).
+Throw.lastDoorAt = 16526
+
 -- The flight's length: grows with the square root of the distance, so short throws are still a moment to watch and
--- the far end of the last world you can reach takes maxTime.
+-- the far end of the last world you can reach takes maxTime. Past the Last Door it takes deepTime more.
 function Throw.flightTime(distance: number): number
 	local flight = Throw.flight
 	local share = math.clamp(distance / Throw.maxDistance(), 0, 1)
-	return flight.minTime + (flight.maxTime - flight.minTime) * math.sqrt(share)
+	local time = flight.minTime + (flight.maxTime - flight.minTime) * math.sqrt(share)
+	return if distance > Throw.lastDoorAt then time + flight.deepTime else time
 end
 
 -- Share of the distance travelled at a share of the flight's time (both 0 to 1): fast at first, slowing down.
 function Throw.travelled(t: number): number
 	local slow = 1 - Throw.flight.slowDown
 	return (t - slow / 2 * t * t) / (1 - slow / 2)
+end
+
+-- Share of a throw's distance covered this many seconds into its flight. A throw into The Deep End flies to the Last Door
+-- as a throw that ends there would, then slows through the world behind it for flight.deepTime (the door's flash hides the change).
+function Throw.flightShare(elapsed: number, distance: number): number
+	if distance <= Throw.lastDoorAt then
+		return Throw.travelled(math.min(elapsed / Throw.flightTime(distance), 1))
+	end
+	local toDoor = Throw.flightTime(distance) - Throw.flight.deepTime
+	if elapsed < toDoor then
+		return Throw.travelled(elapsed / toDoor) * Throw.lastDoorAt / distance
+	end
+	local past = Throw.travelled(math.min((elapsed - toDoor) / Throw.flight.deepTime, 1))
+	return (Throw.lastDoorAt + (distance - Throw.lastDoorAt) * past) / distance
 end
 
 return Throw

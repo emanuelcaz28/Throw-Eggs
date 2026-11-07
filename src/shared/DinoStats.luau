@@ -2,6 +2,7 @@
 -- changing the configs later also applies to dinos players already own.
 local Biomes = require(script.Parent.Config.Biomes)
 local Catch = require(script.Parent.Config.Catch)
+local Chonk = require(script.Parent.Config.Chonk)
 local Dinos = require(script.Parent.Config.Dinos)
 local Specials = require(script.Parent.Config.Specials)
 
@@ -103,6 +104,7 @@ function DinoStats.describe(entry)
 	else
 		chance *= noSize
 	end
+	income *= Chonk.incomeMultiplier(entry.chonk)
 	return { name = dino.name, income = income, oneIn = math.max(math.floor(1 / chance + 0.5), 1) }
 end
 
