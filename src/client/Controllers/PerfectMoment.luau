@@ -1,13 +1,12 @@
 -- The PERFECT moment, on a PERFECT tap (Figma "Throw Eggs - Pop-up Text", frame "Perfect / Moment"): gold
 -- flashes in from the screen's edges, a sunburst opens and turns behind a big "PERFECT!" that slams in with a
--- small shake and camera punch, "x1.5 THROW" rises under it and sparkles twinkle round it. About a second, and
--- it never holds up the throw. Display only: the distance bonus is the meter's, as before.
+-- small shake and camera punch, "FULL POWER" rises under it and sparkles twinkle round it. About a second, and
+-- it never holds up the throw. Display only: the distance is the meter's (Config/Throw).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local PopText = require(ReplicatedStorage.Shared.PopText)
-local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local PerfectMoment = {}
@@ -126,7 +125,7 @@ local function build(root: Frame, scale: number)
 	title.Rotation = -4
 	local titleScale = Instance.new("UIScale")
 	titleScale.Parent = title
-	local detail = PopText.word(words, `x{Throw.meter.perfectMultiplier} THROW`, DETAIL, Color3.new(1, 1, 1))
+	local detail = PopText.word(words, "FULL POWER", DETAIL, Color3.new(1, 1, 1))
 	local detailY = (TITLE.size + DETAIL.size) / 2 + 8
 
 	local sparkles = {}

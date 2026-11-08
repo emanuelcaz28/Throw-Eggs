@@ -22,7 +22,7 @@ The answer has two halves: a longer climb that still feels quick, and something 
 |---|---|---|---|
 | Average free player reaches world 15 | 20.6 h of play, 21 days (built) | **About 20 h, 3 weeks** | Simulated, see step 1 |
 | Keen player has things to do after world 15 | Nothing | **Months** | To be tuned in step 3 |
-| Squats per bar, from about world 8 | 20 to 26 (built) | **15 to 30** | Gemini's idea, judged by feel in step 1 |
+| Squats per bar, from about world 8 | 20 to 26 (built); since 2026-11-08 every bar is +5 power and takes 2 to 5 squats to world 10, 11 to 44 after | **15 to 30** | Gemini's idea, judged by feel in step 1 |
 | Day 1 / day 7 / day 30 retention | Unknown, not launched | **20% / 8% / 4%** | Near GameAnalytics' top 1% of Roblox games (22% / 9% / 4.7%) |
 
 The retention numbers are something to measure against after launch, not a promise. Gemini's 42 to 50% for day 1 had no
@@ -105,7 +105,7 @@ First build the smallest version and test it:
 - Which monsters come from the Abyss, and their odds. Any bought luck must keep showing real odds.
 
 **Correction, 2026-11-07:** the earlier estimate here (tier 6 at about 200 h) is out of date. Since step 1, a bar at world 15 gives
-about +2 power, or roughly 150 power an hour of play. Doubling distance from there would take about 70 hours for the first tier
+about +2 power, or roughly 150 power an hour of play (2026-11-08: bars are a fixed +5 now and PERFECT is 1x, so power is distance; the hourly rate is about the same). Doubling distance from there would take about 70 hours for the first tier
 alone. So tiers can't be "each doubling of distance". Instead they need their own power steps, starting about 3 to 5 hours apart
 and growing by about a third each time, tuned in the simulation. Six to ten tiers then give a keen player months of goals.
 

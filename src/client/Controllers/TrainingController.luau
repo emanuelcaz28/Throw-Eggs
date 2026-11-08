@@ -142,7 +142,7 @@ local function buildPadSign(): (BillboardGui, TextLabel, TextLabel, TextLabel)
 	reward.Position = UDim2.fromScale(0, 0.46)
 	reward.Size = UDim2.fromScale(1, 0.27)
 	reward.TextStrokeTransparency = 0
-	-- Each upgrade also raises XP per squat (Training.xpPerRepGrowth): what it will be after this one.
+	-- Each upgrade raises XP per squat (Training.xpPerRepGrowth): what it will be after this one.
 	local xp = makeLabel(sign, Enum.Font.GothamBlack, UiKit.POWER, Enum.TextXAlignment.Center)
 	xp.Position = UDim2.fromScale(0, 0.73)
 	xp.Size = UDim2.fromScale(1, 0.27)
@@ -237,15 +237,15 @@ function TrainingController.start()
 		placeSign()
 		local function renderPad()
 			local cost = player:GetAttribute("XpUpgradePrice")
-			local left = player:GetAttribute("UpgradesToNextTier")
-			local nextPower = player:GetAttribute("NextPowerPerBar")
-			if not cost or not left or not nextPower then
+			local upgrades = player:GetAttribute("XpUpgrades")
+			if not cost or not upgrades then
 				return
 			end
 			price.Text = Format.cash(cost)
 			price.TextColor3 = if (player:GetAttribute("Cash") or 0) >= cost then AFFORD else TOO_PRICEY
-			-- Upgrades raise the power each full bar gives, a tier at a time (Config/Training).
-			reward.Text = if left == 1 then `{Format.short(nextPower)} ⚡ per bar!` else `{left} more: {Format.short(nextPower)} ⚡ per bar`
+			-- Upgrades only fill bars faster (Config/Training); every few, the rack itself changes.
+			local nextRack, left = Training.nextRack(upgrades)
+			reward.Text = if not nextRack then "Faster bars" elseif left == 1 then `{nextRack.name}!` else `{left} more: {nextRack.name}`
 			local nextXp = player:GetAttribute("NextXpPerRep") or 0
 			xpLine.Text = `+{if nextXp % 1 == 0 then nextXp else string.format("%.1f", nextXp)} XP per squat`
 		end

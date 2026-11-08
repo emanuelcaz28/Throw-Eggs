@@ -944,6 +944,7 @@ local function play(catch, egg: BasePart)
 	-- First the monster walks up to the egg, seen through its eyes (RevealWalk); a tap cuts it short.
 	local walking = true
 	local walkSkipped = false
+	local skipSounded = false -- the owner's skip sound plays once a reveal, on the first tap that skips
 
 	for _, glow in hud.glows do
 		glow.BackgroundTransparency = 1
@@ -1040,6 +1041,9 @@ local function play(catch, egg: BasePart)
 			drama.unveil()
 		end
 		RevealSound.bigReveal(catch.size)
+		if not finalTier and not skipSounded then
+			RevealSound.plainReveal()
+		end
 		RevealSound.unveilSlam(math.clamp((finalTierIndex or 0) / #Reveal.tiers, 0, 1))
 		if roarNow then
 			roarNow()
@@ -1100,6 +1104,10 @@ local function play(catch, egg: BasePart)
 		local now = os.clock()
 		if now - startedAt < Reveal.skipDelay then
 			return
+		end
+		if (walking or not cardShown) and not skipSounded then
+			skipSounded = true
+			RevealSound.skip()
 		end
 		if walking then
 			walkSkipped = true

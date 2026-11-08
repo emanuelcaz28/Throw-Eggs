@@ -9,26 +9,22 @@ local Training = {
 	xpPerRep = 1, -- every rep, before the x2 Training pass and the bubble
 	xpPerRepGrowth = 1.25, -- XP per rep is multiplied by this for each upgrade bought at the sign
 
-	-- Power works like the reference: XP fills a bar, and each full bar gives a fixed amount of Throw Power
-	-- (powerPerBar, raised by rack upgrades). The XP a bar needs grows with how far your Throw Power reaches, also
-	-- like the reference ("XP per level grows with distance down the lane"): baseXp at the throw line, times
-	-- xpPerMap for every map a PERFECT throw passes, smoothly in between (xpForNextBar). It depends on where you
-	-- are, not on how many bars you've filled, so the x2 Power and x2 Training passes make training exactly 2x
-	-- faster and a power pack skips just the bars it replaces. (When it grew with the bar count, x2 Power skipped
-	-- the most expensive bars and finished the game in under an hour.) Early bars fill in seconds, late ones in
-	-- minutes: that paces the game (docs/GAME_SPEC.md section 12).
+	-- [Owner, 2026-11-08] Like the reference: every full bar gives the same Throw Power, always (powerPerBar; the x2
+	-- Power pass doubles it). Rack upgrades never change it: they only give more XP per squat, so bars fill faster.
+	-- What gets harder is the XP a bar needs, which grows with how far your Throw Power reaches ("XP per level grows
+	-- with distance down the lane"): baseXp at the throw line, times xpPerMap for every map your power reaches,
+	-- smoothly in between (xpForNextBar). It depends on where you are, not on how many bars you've filled, so the x2
+	-- Power and x2 Training passes make training exactly 2x faster and a power pack skips just the bars it replaces.
+	-- So after an upgrade bars feel fast, then slowly get harder again as you move down the lane.
 	-- [Owner, 2026-11-07] A little easy early to mid game, then harder from map 10, but never a hard grind. So bars grow
 	-- gently through the maps before hardFromMap, jump once across that map, then grow steadily again.
 	-- These set how long a map takes (docs/RETENTION_PLAN.md step 1: about 20 h to map 15 for an average free player).
-	baseXp = 2,
-	xpPerMap = 1.85, -- each map before hardFromMap
+	powerPerBar = 5,
+	baseXp = 1,
+	xpPerMap = 1.6, -- each map before hardFromMap
 	hardFromMap = 10, -- the game's turn: late game starts here
 	hardMapStep = 3.5, -- across that one map
-	xpPerLateMap = 2.1, -- each map after it
-	-- How long a bar takes is separate: a "full bar" (the numbers above, and the rack's power) is cut into smaller
-	-- bars of about this many squats, each giving its share of the power (barFor). So bars stay quick while maps
-	-- take longer, and the XP each point of power costs doesn't change.
-	barSquats = 22,
+	xpPerLateMap = 2, -- each map after it
 
 	startPower = 100, -- Throw Power before any bar
 
@@ -59,11 +55,6 @@ local Training = {
 		offset = Vector3.new(-18, 0, -16), -- from the middle of the gate, like the rack
 		padRadius = 3,
 		padHeight = 8,
-		-- Rack upgrades raise the power each full bar gives, in tiers [Owner]: 5 power per bar, 10 after 3
-		-- upgrades, 20 after 4 more, then each tier is one upgrade longer and gives 25% more.
-		powerTiers = { 5, 10, 20 },
-		tierGrowth = 1.25,
-		firstTierLength = 3,
 		basePrice = 50, -- the first upgrade; each one after costs priceGrowth times more
 		priceGrowth = 50,
 	},
@@ -98,18 +89,18 @@ local function mapsPassed(distance: number): number
 	return #Biomes
 end
 
--- The XP a full bar needs at this Throw Power (power packs included): see xpPerMap. Players fill smaller bars: barFor.
+-- The XP a bar needs at this Throw Power (power packs included): see xpPerMap. A PERFECT throw goes as far as the power.
 function Training.xpForNextBar(power: number): number
 	local passed = mapsPassed(power * Throw.meter.perfectMultiplier)
 	local turn = Training.hardFromMap - 1 -- maps passed when that map starts
 	local early = math.min(passed, turn)
 	local step = math.clamp(passed - turn, 0, 1)
 	local late = math.max(passed - turn - 1, 0)
-	return math.floor(Training.baseXp * Training.xpPerMap ^ early * Training.hardMapStep ^ step * Training.xpPerLateMap ^ late)
+	return math.max(math.floor(Training.baseXp * Training.xpPerMap ^ early * Training.hardMapStep ^ step * Training.xpPerLateMap ^ late), 1)
 end
 
--- Each upgrade at the sign also multiplies XP per rep by xpPerRepGrowth (the pad shows "+X XP / rep", like the
--- reference's bars). Bars cost about 2x more XP a map against about 1.3x more XP a rep, so later maps take longer.
+-- Each upgrade at the sign multiplies XP per rep by xpPerRepGrowth (the pad shows "+X XP per squat", like the
+-- reference's bars). That's all an upgrade does: the power a bar gives never changes.
 function Training.xpPerRepFor(upgrades: number): number
 	return math.floor(Training.xpPerRep * Training.xpPerRepGrowth ^ upgrades * 10 + 0.5) / 10
 end
@@ -125,46 +116,19 @@ function Training.rackFor(upgrades: number)
 	return best
 end
 
--- After this many rack upgrades: the tier (0 = first), upgrades already into it, and the tier's length.
-function Training.tierOf(upgrades: number): (number, number, number)
-	local tier, length = 0, Training.xpUpgrade.firstTierLength
-	while upgrades >= length do
-		upgrades -= length
-		tier += 1
-		length += 1
+-- The next rack this many upgrades is working towards, and how many more upgrades it takes; nil after the last one.
+function Training.nextRack(upgrades: number)
+	for _, rack in Training.rackModels do
+		if rack.upgrades > upgrades then
+			return rack, rack.upgrades - upgrades
+		end
 	end
-	return tier, upgrades, length
+	return nil, 0
 end
 
-local function tierPower(tier: number): number
-	local tiers = Training.xpUpgrade.powerTiers
-	if tier < #tiers then
-		return tiers[tier + 1]
-	end
-	return math.floor(tiers[#tiers] * Training.xpUpgrade.tierGrowth ^ (tier - #tiers + 1))
-end
-
--- Throw Power each full bar gives after this many rack upgrades.
-function Training.powerPerBar(upgrades: number): number
-	return tierPower((Training.tierOf(upgrades)))
-end
-
--- The bar a player fills at this power and upgrades, before passes: the whole power it gives and the XP it needs.
--- It's the share of a full bar that barSquats squats reach, so power stays a whole number and each point costs the
--- same XP however the bar is cut, which keeps x2 Training and x2 Power exactly double. Early on a full bar takes fewer
--- squats than that, and stays whole.
-function Training.barFor(power: number, upgrades: number): (number, number)
-	local fullPower = Training.powerPerBar(upgrades)
-	local fullXp = Training.xpForNextBar(power)
-	local share = Training.barSquats * Training.xpPerRepFor(upgrades) / fullXp
-	local gain = math.clamp(math.floor(fullPower * share + 0.5), 1, fullPower)
-	return gain, math.max(math.floor(fullXp * gain / fullPower), 1)
-end
-
--- How many more upgrades until the next tier.
-function Training.upgradesToNextTier(upgrades: number): number
-	local _, into, length = Training.tierOf(upgrades)
-	return length - into
+-- The bar a player fills at this power, before passes: the power it gives (always powerPerBar) and the XP it needs.
+function Training.barFor(power: number): (number, number)
+	return Training.powerPerBar, Training.xpForNextBar(power)
 end
 
 function Training.xpUpgradePrice(upgrades: number): number

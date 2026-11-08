@@ -121,11 +121,10 @@ local function throwPower(data): number
 	return Training.startPower + data.trainedPower + data.bonusPower
 end
 
--- The power a bar gives and the XP it needs (Training.barFor), the power doubled by the x2 Power pass. upgrades: to
--- ask about a later rack upgrade.
-local function barOf(player: Player, data, upgrades: number?): (number, number)
+-- The power a bar gives and the XP it needs (Training.barFor), the power doubled by the x2 Power pass.
+local function barOf(player: Player, data): (number, number)
 	local pass = if player:GetAttribute("HasDoublePower") then Shop.doublePower.multiplier else 1
-	local gain, xp = Training.barFor(throwPower(data), upgrades or data.xpUpgrades)
+	local gain, xp = Training.barFor(throwPower(data))
 	return gain * pass, xp
 end
 
@@ -139,10 +138,7 @@ local function publish(player: Player, data: { [string]: any })
 	player:SetAttribute("NextXpPerRep", Training.xpPerRepFor(data.xpUpgrades + 1) * passMultiplier(player))
 	player:SetAttribute("XpUpgradePrice", Training.xpUpgradePrice(data.xpUpgrades))
 	player:SetAttribute("XpUpgrades", data.xpUpgrades) -- for the ready pop-up's next rack name (Config/ReadyPopup)
-	local upgradesLeft = Training.upgradesToNextTier(data.xpUpgrades)
 	player:SetAttribute("PowerPerBar", gain)
-	player:SetAttribute("NextPowerPerBar", (barOf(player, data, data.xpUpgrades + upgradesLeft)))
-	player:SetAttribute("UpgradesToNextTier", upgradesLeft)
 end
 
 -- Each full bar gives its power (Training.barFor). The next bar's XP follows the power reached.
@@ -230,23 +226,15 @@ local function tryBuyXpUpgrade(player: Player, data)
 		PlotService.notify(player, `You need {Format.cash(price)} for this upgrade`, true)
 		return
 	end
-	local before = barOf(player, data)
 	local rackBefore = Training.rackFor(data.xpUpgrades)
 	data.cash -= price
 	data.xpUpgrades += 1
 	player:SetAttribute("Cash", data.cash)
 	publish(player, data)
-	local now = barOf(player, data)
-	-- One notice: a second would replace it on screen.
+	-- One notice: a second would replace it on screen. Upgrades only speed up the bars (Config/Training).
 	local rack = Training.rackFor(data.xpUpgrades)
 	local opening = if rack ~= rackBefore then `New rack: {rack.name}!` else "Upgraded!"
-	if now > before then
-		PlotService.notify(player, `{opening} Every full bar now gives {Format.short(now)} power`)
-	else
-		local left = Training.upgradesToNextTier(data.xpUpgrades)
-		local nextPower = barOf(player, data, data.xpUpgrades + left)
-		PlotService.notify(player, `{opening} {left} more for {Format.short(nextPower)} power per bar`)
-	end
+	PlotService.notify(player, `{opening} Now {Format.short(xpPerRep(player, data))} XP per squat`)
 end
 
 local function step(dt: number)
@@ -350,7 +338,7 @@ function TrainingService.start()
 	makeRemotes()
 	buildRacks()
 	PlayerData.onLoaded(onLoaded)
-	-- The x2 Power pass can arrive after loading (bought, or checked late): refresh power per bar.
+	-- The x2 Power pass can arrive after loading (bought, or checked late): refresh the power a bar gives.
 	Players.PlayerAdded:Connect(function(player)
 		player:GetAttributeChangedSignal("HasDoublePower"):Connect(function()
 			local data = PlayerData.get(player)

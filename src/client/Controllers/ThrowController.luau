@@ -571,6 +571,9 @@ function ThrowController.start()
 		-- The egg lands on the corridor floor, which is lower than the platform, on the lane's middle line.
 		local landY = lane.floorY + EGG_SIZE.Y / 2
 		local landing = lane.origin + lane.direction * distance
+		-- It touches down a little short and bounces on to there (Config/Throw landing.bounce).
+		local run = math.min(Throw.landing.bounce.run, distance * 0.3)
+		local touchdown = landing - lane.direction * run
 		local camera = workspace.CurrentCamera
 
 		if isMine then
@@ -612,7 +615,7 @@ function ThrowController.start()
 			local travelled = distance * share
 			-- Drops from the hand to the corridor floor, plus a hill that peaks at arc halfway.
 			local height = releasedAt.Y + (landY - releasedAt.Y) * t + arc * 4 * t * (1 - t)
-			local along = releasedAt:Lerp(landing, share)
+			local along = releasedAt:Lerp(touchdown, share)
 			local position = Vector3.new(along.X, height, along.Z)
 			local grow = math.clamp(t / Throw.windup.eggBlend, 0, 1)
 			local eased = grow * grow * (3 - 2 * grow)
@@ -641,6 +644,15 @@ function ThrowController.start()
 		if isMine then
 			MusicController.setThrowing(false) -- the egg has landed: the throwing music is cut off
 		end
+		-- Bounces on, squashing, comes upright, rocks and trembles; my camera follows it down the lane, jolting on
+		-- each touch-down.
+		local rest = Vector3.new(landing.X, landY, landing.Z)
+		EggModel.bounce(egg, rest, if isMine and cameraFrom
+			then function(_t, track, jolt)
+				local shake = Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * jolt * 0.5
+				camera.CFrame = ThrowCinematic.flightCamera(cameraFrom, track, duration, duration) + shake
+			end
+			else nil)
 		EggModel.split(egg) -- cut in half where it lands, white and yolk showing (Config/Throw landing.split)
 		if EggModel.has(eggConfig.id) then
 			task.delay(Throw.landing.split.delay, RevealSound.eggSlice, isMine) -- with the streak's sweep

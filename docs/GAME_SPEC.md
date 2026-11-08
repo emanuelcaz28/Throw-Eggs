@@ -243,8 +243,9 @@ reveal; your own catch appears once you've tapped through it. Limit and timings 
 - **[Built]** Step on the throw pad and a vertical meter appears. A marker swings up and down a tube with 10 levels and
   slows near the top. Level 10 is PERFECT and gives the biggest throw. **[Owner, 2026-11-05]** PERFECT is a little harder
   (the top 6% of the tube, `Throw.meter.perfectZone`, about 1 tap in 6.5) and gets its own moment (`PerfectMoment`, Figma
-  "Perfect / Moment"): gold edge flash, sunburst, a big slammed PERFECT! and x1.5 THROW. No extra reward.
-- **[Built]** Distance = Throw Power × the level's bonus. Our meter multiplies on purpose, unlike the reference's flat bonus.
+  "Perfect / Moment"): gold edge flash, sunburst, a big slammed PERFECT! and FULL POWER. No extra reward.
+- **[Built]** Distance = Throw Power × the level's share: 0.4 at level 1 up to 0.9 just below the top.
+  **[Owner, 2026-11-08]** PERFECT throws exactly your Throw Power, with no 1.5x bonus (`Throw.meter.perfectMultiplier` 1).
 - **[Built]** All HUD except Throw Power hides while aiming and flying.
 - **[Seen]** The owner's recording of the throw (`~/Documents/Screen Recording 2026-11-03 at 20.02.26.mov`,
   watched frame by frame for the first 10 seconds). Times in seconds:
@@ -1465,7 +1466,8 @@ feel powerful and compete; how big the numbers get doesn't matter.
 **[Owner, 2026-11-07]** A little bit of easy progress early to mid game, then harder. Late game means map 10 and up: it
 shouldn't be easy, but it shouldn't be a hard grind or impossible either.
 
-**[Built]** Worked out with a play simulation (`tools/pace_sim.luau`: each kind of player trains, throws and shops in their
+**[Built, re-run 2026-11-08 after fixed power per bar and PERFECT at 1x: every row within about half an hour of this
+table; average free player map 10 at 2.0 h, map 15 at 21.6 h]** Worked out with a play simulation (`tools/pace_sim.luau`: each kind of player trains, throws and shops in their
 own way, a session a day, with offline earnings and the daily reward) that runs the game's own Config (2026-11-07, median of 9
 runs). Run on the numbers of 2026-11-06 it gave map 15 at 30.3 h, against 30 h from the simulation it replaces. Hours are
 time played; the Index's x2 XP boost and bought lucky throws aren't counted.
@@ -1489,8 +1491,15 @@ time played; the Index's x2 XP boost and bought lucky throws aren't counted.
 
 The way there: `xpPerMap` 2.03 made power "way too hard" at map 10 (80 squats for +25 power), and 1.8 for every map was "way too
 fast" (25 squats). That mixed up how long a bar takes and how long a map takes, so they're now separate (`docs/RETENTION_PLAN.md`
-step 1): the maps' numbers set the XP each point of power costs, and `barSquats` cuts every bar to about 22 squats, each giving
-its share of the power. An average player's bar gives +20 power at map 8, +7 at map 11 and +2 at map 15.
+step 1): the maps' numbers set the XP each point of power costs, and `barSquats` cut every bar to about 22 squats, each giving
+its share of the power. An average player's bar gave +20 power at map 8, +7 at map 11 and +2 at map 15, down to +1 in The
+Deep End.
+
+**[Owner, 2026-11-08]** That was wrong: "I don't want people to be capped at training at all, but harder", and buying rack
+upgrades while the power per bar went down "players will not like that at all". Like the reference, every bar now gives the
+same +5 power forever (x2 Power: +10), rack upgrades only give more XP per squat so bars fill faster, and the XP a bar needs
+grows down the lane. An average player's bar takes 1 to 4 squats up to map 9, 5 at map 10, 17 at map 12 and 44 at map 15;
+after a rack upgrade bars feel quick, then slowly get harder again.
 
 **[Owner, 2026-11-07]** The passes stay full x2 on every map, as the shop promises ("forever"), even though both together
 reach map 15 in about 3.4 h. Making late rack upgrades dearer doesn't help: it slows free players just as much.
@@ -1504,21 +1513,16 @@ reach map 15 in about 3.4 h. Making late rack upgrades dearer doesn't help: it s
 
 - **Income** by rank is 1, 3, 10, 40, 150, 500 $/s on the Forest, **×100 for each map after it** (`Config/Dinos`), so a
   new map's first good catch multiplies income at once (map 15's rarest: about $5 × 10^30/s before mutations).
-- **Throw Power works like the reference [Owner]:** XP fills a bar, and each full bar gives a fixed amount of power.
-  **Rack upgrades** (the pad by the squat rack, bought with money) raise the power per bar in tiers: **5**, then
-  **10** after 3 upgrades, **20** after 4 more, then each tier is one upgrade longer and gives 25% more (25, 31, 39...).
-  Upgrades cost $50, ×50 each (`Config/Training`), and each also gives 25% more XP per rep (the pad shows
-  "+X XP / rep", like the reference's bars). **The XP a bar needs follows how far your Throw Power reaches**, like
-  the reference ("XP per level grows with distance down the lane"): 2 XP at the throw line, 1.85x more for every
-  map a PERFECT throw passes up to map 9, 3.5x across map 10, then 2.1x a map (`baseXp`, `xpPerMap`, `hardFromMap`,
-  `hardMapStep`, `xpPerLateMap`, `Training.xpForNextBar`). That's a full bar: players fill bars of about 22 squats, each with its
-  share of the power (`barSquats`, `Training.barFor`). Power from packs counts too. So
-  x2 Power and x2 Training each make training exactly 2x faster, and a power pack skips just the bars it replaces.
-  Early bars fill in seconds, and from about map 8 every bar takes about 22 squats. Later maps take longer because each
-  bar gives less of the way there; money gates the rack upgrades (each costs minutes of income
-  early on, hours later). A full bar floats "+5 ⚡ POWER"; the bar shows the power per bar.
-- **Throw Power packs (Robux) [Owner]:** power put straight into your stats, small amounts at small prices so
-  everything looks cheap: +100, +500, +1,000 (`Config/Shop` `powerPacks`).
+- **Throw Power works like the reference [Owner]:** XP fills a bar, and **every full bar gives +5 Throw Power, always**
+  (`powerPerBar`; x2 Power makes it +10). **Rack upgrades** (the pad by the squat rack, bought with money) never change
+  that: each gives 25% more XP per squat (`xpPerRepGrowth`; the pad shows "+X XP per squat" and how many more until the
+  next rack), so bars fill faster. Upgrades cost $50, ×50 each (`Config/Training`). **The XP a bar needs follows how far
+  your Throw Power reaches**, like the reference ("XP per level grows with distance down the lane"): 1 XP at the throw
+  line, 1.6x more for every map your power reaches up to map 9, 3.5x across map 10, then 2x a map (`baseXp`, `xpPerMap`,
+  `hardFromMap`, `hardMapStep`, `xpPerLateMap`, `Training.xpForNextBar`). Power from packs counts too. So x2 Power and
+  x2 Training each make training exactly 2x faster, and a power pack skips just the bars it replaces. Early bars fill
+  in a squat or two; later maps take longer because each bar needs more XP; money gates the rack upgrades (each costs
+  minutes of income early on, hours later). A full bar floats "+5 ⚡ POWER"; the bar shows "+5 ⚡ per bar".
 - **x2 Power (Game Pass) [Owner]:** every full bar on the squat rack gives double power, forever. Its card sits under
   x2 Cash and x2 Training in the shop; it shows SOON until its pass id is in `Config/Shop` `doublePower`.
 - **Base upgrades** (`Config/Plot`): 10 spots, +2 an upgrade, 20 at most. **[Owner, 2026-11-06]** At $1,000 ×10 each

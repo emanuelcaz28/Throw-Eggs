@@ -21,9 +21,11 @@ local Throw = {
 		cyclesPerSecond = 0.8, -- full up-and-down trips of the marker
 		minTime = 0.25, -- seconds before a tap counts, so a throw can't be instant
 		levels = 10, -- equal steps up the tube; the top one is PERFECT
+		-- [Owner, 2026-11-08] A PERFECT throw goes exactly as far as your Throw Power, no 1.5x bonus; the other levels
+		-- go less far.
 		minMultiplier = 0.4, -- distance multiplier at level 1
-		maxMultiplier = 1, -- at the level just below the top
-		perfectMultiplier = 1.5, -- at the top level
+		maxMultiplier = 0.9, -- at the level just below the top
+		perfectMultiplier = 1, -- at the top level
 		-- The PERFECT band: this share of the tube at its top (the other levels split the rest evenly). The
 		-- marker slows near the top, so a band of 0.1 was hit about 1 tap in 5; 0.06 is about 1 in 6.5.
 		perfectZone = 0.06,
@@ -106,6 +108,33 @@ local Throw = {
 		ringTime = 0.3,
 		dustDelay = 0.1,
 		dustColor = Color3.fromRGB(226, 208, 170),
+		-- First it bounces (EggModel.bounce): it touches down `run` studs short of where it lands, squashes flat,
+		-- hops on twice, smaller each time, coming upright as it goes, rocks on its foot like a toy that won't fall
+		-- over, then trembles: the cut is coming. Studs and seconds; studs at the egg's own size where it says so.
+		bounce = {
+			run = 3.5, -- studs it skids on along the lane after touching down
+			hops = { -- each hop: how high (studs at size 1), how long, and its share of the run
+				{ height = 1.7, time = 0.4, share = 0.7 },
+				{ height = 0.5, time = 0.24, share = 0.3 },
+			},
+			squash = 0.35, -- how much flatter it goes on touching down (a share of its height); half that on the 2nd
+			contact = 0.08, -- seconds it stays squashed on the ground before it hops on
+			squashTime = 0.14, -- seconds it's stretched taller as it springs off
+			wobble = 0.24, -- radians it rocks on its foot once it stands
+			wobbleTime = 0.45, -- seconds the rocking dies away over
+			tremble = 0.06, -- studs at size 1 it shakes just before the cut
+			trembleTime = 0.18,
+		},
+		-- When the cut is through, egg white and yolk splash out and land as flat splats, and bits of shell fly off.
+		splash = {
+			whites = 9, -- drops of egg white
+			yolks = 4, -- drops of yolk
+			chips = 7, -- bits of shell
+			speed = { 5, 10 }, -- studs a second outwards, at size 1
+			rise = { 7, 12 }, -- and upwards
+			gravity = 55,
+			fadeAfter = 2.5, -- seconds the splats stay before fading
+		},
 		-- Then the egg is cut in half (EggModel.split): a white streak sweeps across its middle, the top half slides
 		-- off along the cut, tips over and lands upside down beside the bottom half, and rocks to a stop, so both show
 		-- their white and yolk. Seconds, and studs at the egg's own size; the same as SPLIT in

@@ -22,7 +22,7 @@ end
 
 -- Loads them ahead of time, so the first step isn't silent.
 function RevealSound.preload()
-	SoundPool.preload({ settings.step, settings.tick, settings.roar, settings.slam.small, settings.slam.mid, settings.slam.huge, settings.eggDrop, settings.eggSlice, settings.throwWhoosh, settings.bigReveal, settings.meterTap, settings.meterPerfect })
+	SoundPool.preload({ settings.step, settings.tick, settings.roar, settings.slam.small, settings.slam.mid, settings.slam.huge, settings.eggDrop, settings.eggSlice, settings.throwWhoosh, settings.bigReveal, settings.plainReveal, settings.meterTap, settings.meterPerfect })
 end
 
 -- A footfall on the walk. `bigness` 0 for the smallest monster, 1 for the biggest.
@@ -57,6 +57,20 @@ function RevealSound.bigReveal(sizeId: string?)
 	local volume = sizeId and settings.bigRevealSizes[sizeId]
 	if volume and settings.bigReveal ~= "" then
 		play(settings.bigReveal, volume, 1)
+	end
+end
+
+-- The owner's sound when a plain catch (no luck label) shows whole.
+function RevealSound.plainReveal()
+	if settings.plainReveal ~= "" then
+		play(settings.plainReveal, settings.plainRevealVolume, 1)
+	end
+end
+
+-- The same sound, quieter, when a tap skips the reveal.
+function RevealSound.skip()
+	if settings.plainReveal ~= "" then
+		play(settings.plainReveal, settings.skipVolume, 1)
 	end
 end
 
