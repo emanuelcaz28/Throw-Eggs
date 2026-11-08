@@ -1,11 +1,12 @@
--- The Back to Plot button: puts a player out in front of their own plot's gate (Plot.frontCFrame), from anywhere,
--- so nobody can get stuck (on the throw platform, in a corner of a world, under a giant). The server moves them.
--- Not while their egg is in the air or the catch is showing. Training is stopped first; a meter in progress is
--- called off by ThrowService as soon as they're off the platform.
+-- The Back to Plot button: the player's screen has already put them out in front of their own plot's gate
+-- (HomeController, Plot.frontCFrame), at once. Here the server calls their throw meter off straight away, rather than
+-- when it next sees them off the platform, and stops training. Should the move not reach the server, it moves them
+-- itself a moment later. Nothing happens while their egg is in the air or the catch is showing.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
+local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local PlotService = require(script.Parent.PlotService)
 local ThrowService = require(script.Parent.ThrowService)
 local TrainingService = require(script.Parent.TrainingService)
@@ -13,6 +14,16 @@ local TrainingService = require(script.Parent.TrainingService)
 local HomeService = {}
 
 local lastUsed: { [Player]: number } = {}
+
+local function alive(player: Player): (Model?, Humanoid?, BasePart?)
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if character and humanoid and root and humanoid.Health > 0 then
+		return character, humanoid, root
+	end
+	return nil, nil, nil
+end
 
 local function goHome(player: Player)
 	local now = os.clock()
@@ -22,26 +33,24 @@ local function goHome(player: Player)
 	lastUsed[player] = now
 
 	local plotIndex = player:GetAttribute("PlotIndex")
-	local character = player.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not plotIndex then
 		PlotService.notify(player, "You don't have a plot in this server", true)
 		return
 	end
-	if not (humanoid and root) or humanoid.Health <= 0 then
-		return
-	end
-	if ThrowService.isThrowing(player) then
-		PlotService.notify(player, "Wait for your egg to land", true)
+	if not alive(player) or ThrowService.isThrowing(player) then
 		return
 	end
 
 	TrainingService.stop(player)
-	humanoid.Sit = false
-	local home = Plot.frontCFrame(plotIndex) + Vector3.new(0, humanoid.HipHeight + root.Size.Y / 2, 0)
-	character:PivotTo(home)
-	root.AssemblyLinearVelocity = Vector3.zero
+	ThrowService.leaveMeter(player)
+	task.delay(Plot.homeButton.backupAfter, function()
+		local character, humanoid, root = alive(player)
+		if character and humanoid and root and Throw.onPlatform(root.Position) and not ThrowService.isThrowing(player) then
+			humanoid.Sit = false
+			character:PivotTo(Plot.frontCFrame(plotIndex) + Vector3.new(0, humanoid.HipHeight + root.Size.Y / 2, 0))
+			root.AssemblyLinearVelocity = Vector3.zero
+		end
+	end)
 end
 
 function HomeService.start()

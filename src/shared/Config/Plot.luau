@@ -38,8 +38,9 @@ local Plot = {
 	homeInset = 6, -- after a catch you land this far inside the plot's front edge (its exit)
 	-- The Back to Plot button (HomeController, HomeService) puts you this far out in front of your gate, facing in.
 	-- Straight out from the gate is clear: the squat rack and XP pad stand to one side, the egg stall to the other
-	-- (Config/Training, Config/Hub), so you never land on a pad.
-	homeButton = { outFromGate = 10, cooldown = 1 },
+	-- (Config/Training, Config/Hub), so you never land on a pad. Your own screen moves you at once; if the server
+	-- still sees you on the throw platform backupAfter seconds later, it moves you itself.
+	homeButton = { outFromGate = 10, cooldown = 1, backupAfter = 1.5 },
 	gateWidth = 12, -- the gap in the fence at the middle of the front edge
 	fenceSection = 6, -- studs between fence posts: the Blender rails' length (BaseKit base_FenceRails)
 

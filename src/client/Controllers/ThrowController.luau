@@ -340,6 +340,23 @@ end
 
 -- True while a throw is aiming, flying or revealing: no jump button then.
 local throwBusy = false
+-- This screen took the player into the meter (the dip to black, frozen on the throw spot) and the egg hasn't gone.
+local meterTaken = false
+-- The tap has gone to the server: from then on Back to Plot can't take the player away from their throw.
+local tapSent = false
+-- Calls the meter off on this screen (built in start()).
+local cancelMeter: () -> () = function() end
+
+-- Back to Plot (HomeController) shows while the meter is up, and whenever the player stands on the throw platform
+-- outside a throw, so there's always a way out of the throwing area [player feedback, 2026-11-08]. Never from the
+-- tap until the reveal is over.
+local function updateHomeButton(onPlatform: boolean)
+	local home = player.PlayerGui:FindFirstChild("HomeHud")
+	local shown = if meterTaken then not tapSent else onPlatform and not throwBusy
+	if home and home.Enabled ~= shown then
+		home.Enabled = shown
+	end
+end
 
 -- Phones: the jump button is hidden and jumping is switched off while the player is over the throw platform or
 -- in a throw. GuiService.TouchControlsEnabled alone wasn't enough: the button still showed up there, and a jump
@@ -348,7 +365,9 @@ local function lockJumping()
 	local character = Players.LocalPlayer.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	local locked = throwBusy or (root ~= nil and Throw.onPlatform(root.Position))
+	local onPlatform = root ~= nil and Throw.onPlatform(root.Position)
+	updateHomeButton(onPlatform)
+	local locked = throwBusy or onPlatform
 	if humanoid then
 		if locked then
 			humanoid.Jump = false
@@ -381,12 +400,14 @@ local function setHudsEnabled(enabled: boolean, keepPower: boolean?)
 	end
 end
 
--- Back to Plot (HomeController) shows only while the meter is up, so the meter can always be left.
-local function setHomeButton(shown: boolean)
-	local home = player.PlayerGui:FindFirstChild("HomeHud")
-	if home then
-		home.Enabled = shown
+-- Back to Plot (HomeController) leaves the meter on this screen at once, without waiting for the server. False from
+-- the tap until the reveal is over, when nothing may move the thrower.
+function ThrowController.leaveMeter(): boolean
+	if tapSent or (throwBusy and not meterTaken) then
+		return false
 	end
+	cancelMeter()
+	return true
 end
 
 function ThrowController.start()
@@ -465,6 +486,7 @@ function ThrowController.start()
 			local lucky = LuckOfferController.chosen() -- read before stopAiming hides the offer
 			stopAiming()
 			showResult(markerHeight)
+			tapSent = true
 			remotes.Tap:FireServer(markerHeight, lucky)
 		end
 	end
@@ -491,17 +513,64 @@ function ThrowController.start()
 		end
 	end)
 
+	-- Goes up on every meter start and every call-off, so a call-off during the dip to black stops the start.
+	local meterRun = 0
+
+	-- Calls the meter off on this screen: the server's MeterCancel, Back to Plot, or the player off the platform
+	-- during the dip. Nothing to undo when this screen never took the meter (it turned it down).
+	cancelMeter = function()
+		meterRun += 1
+		if not meterTaken then
+			return
+		end
+		meterTaken = false
+		tapSent = false
+		MusicController.setThrowing(false)
+		hideMeter()
+		releaseCharacter()
+		if heldEgg then
+			heldEgg:Destroy()
+			heldEgg = nil
+		end
+		workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+		setHudsEnabled(true)
+		task.spawn(ThrowCinematic.fade, hud.fade, false, Throw.aim.fadeIn) -- in case it came during the dip to black
+	end
+
+	local function standingOnPlatform(): boolean
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		return root ~= nil and Throw.onPlatform(root.Position)
+	end
+
 	-- Stepping onto the platform: a dip to black, and back on the thrower standing on the throw spot with the egg
 	-- in hand, the camera low behind their right shoulder, and only Throw Power and the meter left on screen.
 	remotes.MeterStart.OnClientEvent:Connect(function()
+		-- The server saw the player on the platform a moment ago. With lag they may have walked off since, and they
+		-- were pulled back onto it from far away and frozen [player feedback, 2026-11-08]. Now this screen turns the
+		-- meter down instead, and the server calls it off.
+		if not standingOnPlatform() then
+			remotes.MeterDeclined:FireServer()
+			return
+		end
+		meterRun += 1
+		local run = meterRun
+		meterTaken = true
+		tapSent = false
+		local aim = Throw.aim
+		ThrowCinematic.fade(hud.fade, true, aim.fadeOut)
+		if run ~= meterRun then
+			return -- called off during the dip (cancelMeter fades back in)
+		end
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-		if not (root and humanoid) then
+		if not (root and humanoid and Throw.onPlatform(root.Position)) then
+			-- Walked off during the dip.
+			cancelMeter()
+			remotes.MeterDeclined:FireServer()
 			return
 		end
-		local aim = Throw.aim
-		ThrowCinematic.fade(hud.fade, true, aim.fadeOut)
 		spot = ThrowCinematic.throwSpot(root, humanoid)
 		ThrowCinematic.setThrower(character)
 		root.CFrame = spot
@@ -514,11 +583,13 @@ function ThrowController.start()
 		camera.CameraType = Enum.CameraType.Scriptable
 		camera.CFrame = ThrowCinematic.windupCamera(spot, 0)
 		setHudsEnabled(false, true)
-		setHomeButton(true)
 		MusicController.setThrowing(true) -- the throwing area's music, until the egg lands (Config/Music)
 		placeMarker(0)
 		hud.meter.Visible = true
 		task.wait(aim.black)
+		if run ~= meterRun then
+			return -- called off while black
+		end
 		aiming = true
 		aimStartedAt = os.clock()
 		LuckOfferController.show(equipped.id)
@@ -532,18 +603,7 @@ function ThrowController.start()
 		ThrowCinematic.fade(hud.fade, false, aim.fadeIn)
 	end)
 
-	remotes.MeterCancel.OnClientEvent:Connect(function()
-		MusicController.setThrowing(false)
-		setHomeButton(false)
-		hideMeter()
-		releaseCharacter()
-		if heldEgg then
-			heldEgg:Destroy()
-			heldEgg = nil
-		end
-		workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-		setHudsEnabled(true)
-	end)
+	remotes.MeterCancel.OnClientEvent:Connect(cancelMeter)
 
 	local pendingCatch = nil
 	remotes.Landed.OnClientEvent:Connect(function(catch)
@@ -552,7 +612,8 @@ function ThrowController.start()
 		hud.luckPanel.set(catch.luck)
 	end)
 
-	remotes.Launched.OnClientEvent:Connect(function(thrower: Player, distance: number, _perfect: boolean, eggId: string)
+	-- A throw from the tap to the end of its reveal, on the thrower's screen and everyone else's.
+	local function playThrow(thrower: Player, distance: number, _perfect: boolean, eggId: string)
 		local isMine = thrower == player
 		local lane = Throw.lane
 		local flight = Throw.flight
@@ -566,6 +627,9 @@ function ThrowController.start()
 		EggModel.dress(egg, eggConfig.id) -- the server's egg, should it differ from the one in the hand
 		if isMine then
 			heldEgg = nil
+			meterTaken = false -- the egg has gone: the meter is over, and Back to Plot waits for the reveal's end
+			tapSent = false
+			pendingCatch = nil -- an earlier throw's catch that came too late isn't this one's
 		end
 		local trail = ThrowCinematic.addTrail(egg)
 		-- The egg lands on the corridor floor, which is lower than the platform, on the lane's middle line.
@@ -578,7 +642,6 @@ function ThrowController.start()
 
 		if isMine then
 			stopAiming()
-			setHomeButton(false)
 			task.delay(RESULT_HOLD, function()
 				if not aiming then
 					hud.meter.Visible = false
@@ -695,6 +758,28 @@ function ThrowController.start()
 			RevealController.returnHome()
 		end
 		remotes.RevealDone:FireServer()
+	end
+
+	remotes.Launched.OnClientEvent:Connect(function(thrower: Player, ...: any)
+		local ok, err = pcall(playThrow, thrower, ...)
+		if not ok and thrower == player then
+			-- Whatever broke, the thrower gets their character, camera and HUD back and goes home, and the server hears
+			-- the throw is over, so they're never left frozen in the throwing area.
+			warn(`[ThrowController] Throw failed: {err}`)
+			stopAiming()
+			hud.meter.Visible = false
+			hud.luckPanel.show(false)
+			showBars(hud, false)
+			releaseCharacter()
+			MusicController.setThrowing(false)
+			workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+			setHudsEnabled(true)
+			task.spawn(ThrowCinematic.fade, hud.fade, false, Throw.aim.fadeIn)
+			if standingOnPlatform() then
+				RevealController.returnHome()
+			end
+			remotes.RevealDone:FireServer()
+		end
 	end)
 end
 

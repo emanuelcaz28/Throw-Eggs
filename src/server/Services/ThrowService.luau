@@ -37,6 +37,7 @@ type ThrowState = {
 	aimStartedAt: number,
 	revealStartedAt: number,
 	mustLeave: boolean?,
+	revealDone: boolean?, -- the client said it's done before the catch landed here (it gave up waiting, or broke)
 	lucky: number?, -- the lucky throw picked with USE for the egg in the air, used up when it lands
 	carryKey: number?, -- a tutorial catch put on the player's head once the reveal is done
 }
@@ -53,7 +54,7 @@ local remotes: { [string]: RemoteEvent } = {}
 local function makeRemotes()
 	local folder = Instance.new("Folder")
 	folder.Name = "ThrowRemotes"
-	for _, name in { "MeterStart", "MeterCancel", "Tap", "Launched", "Landed", "RevealDone", "LuckyCatch" } do
+	for _, name in { "MeterStart", "MeterCancel", "MeterDeclined", "Tap", "Launched", "Landed", "RevealDone", "LuckyCatch" } do
 		local remote = Instance.new("RemoteEvent")
 		remote.Name = name
 		remote.Parent = folder
@@ -107,20 +108,36 @@ local function isOnPad(player: Player): boolean
 	return root ~= nil and humanoid ~= nil and humanoid.Health > 0 and Throw.onPlatform(root.Position)
 end
 
+-- The player is home again: the catch goes onto their head, ready to place, and the next throw can start once the
+-- reveal's shortest time has passed.
+local function finishReveal(player: Player, state: ThrowState)
+	if state.carryKey then
+		PlotService.carry(player, state.carryKey)
+		state.carryKey = nil
+	end
+	local remaining = Reveal.minTime - (os.clock() - state.revealStartedAt)
+	task.delay(math.max(remaining, 0), function()
+		if states[player] == state and state.phase == "revealing" then
+			state.phase = "idle"
+			FlightStreaming.stop(player)
+		end
+	end)
+end
+
 local function onTap(player: Player, height: any, lucky: any)
 	local state = states[player]
 	if not state or state.phase ~= "aiming" then
 		return
 	end
 	-- height ~= height is only true for NaN.
-	if typeof(height) ~= "number" or height ~= height then
-		return
-	end
-	if os.clock() - state.aimStartedAt < Throw.meter.minTime or not isOnPad(player) then
-		return
-	end
 	local power = TrainingService.getThrowPower(player)
-	if not power then
+	if typeof(height) ~= "number" or height ~= height or os.clock() - state.aimStartedAt < Throw.meter.minTime
+		or not isOnPad(player) or not power
+	then
+		-- A tap that can't throw calls the meter off: the player's screen has stopped taking taps, and they'd stand
+		-- frozen on it. It starts again while they're on the platform.
+		state.phase = "idle"
+		remotes.MeterCancel:FireClient(player)
 		return
 	end
 
@@ -144,6 +161,7 @@ local function onTap(player: Player, height: any, lucky: any)
 	local owned = data and typeof(lucky) == "number" and (data.luckyThrows[tostring(lucky)] or 0) > 0
 	state.lucky = if owned and LuckyThrows.isPicked(lucky) then lucky else nil
 	state.mustLeave = true -- the next meter waits until this player has stepped off the platform
+	state.revealDone = nil
 	if Throw.isPerfect(height) then
 		DailyTasks.count(player, "perfects")
 	end
@@ -251,6 +269,9 @@ local function onTap(player: Player, height: any, lucky: any)
 		state.phase = "revealing"
 		state.revealStartedAt = os.clock()
 		remotes.Landed:FireClient(player, catch)
+		if state.revealDone then
+			finishReveal(player, state)
+		end
 
 		-- Lucky catch banner for everyone else in the server. The catcher's own client shows it
 		-- after their reveal, from the catch it already has.
@@ -274,21 +295,16 @@ end
 
 local function onRevealDone(player: Player)
 	local state = states[player]
-	if not state or state.phase ~= "revealing" then
+	if not state then
 		return
 	end
-	-- The player is home again: the catch goes onto their head, ready to place.
-	if state.carryKey then
-		PlotService.carry(player, state.carryKey)
-		state.carryKey = nil
+	-- Done before the catch landed here: the client gave up waiting for it, or its throw broke. Before, this was
+	-- ignored and the player could never throw again in that server; now the reveal ends as soon as the egg lands.
+	if state.phase == "flying" then
+		state.revealDone = true
+	elseif state.phase == "revealing" then
+		finishReveal(player, state)
 	end
-	local remaining = Reveal.minTime - (os.clock() - state.revealStartedAt)
-	task.delay(math.max(remaining, 0), function()
-		if states[player] == state and state.phase == "revealing" then
-			state.phase = "idle"
-			FlightStreaming.stop(player)
-		end
-	end)
 end
 
 local function step()
@@ -314,6 +330,17 @@ local function addPlayer(player: Player)
 	states[player] = { phase = "idle", aimStartedAt = 0, revealStartedAt = 0 }
 end
 
+-- The meter is called off from the player's side: their screen turned it down because they had already walked off
+-- the platform (with lag the server sees them there late), or they pressed Back to Plot (HomeService). The next one
+-- waits until the server sees them off the platform, so a late position can't start it again. Not during a throw.
+function ThrowService.leaveMeter(player: Player)
+	local state = states[player]
+	if state and (state.phase == "aiming" or state.phase == "idle") then
+		state.phase = "idle"
+		state.mustLeave = true
+	end
+end
+
 -- True from the tap until the reveal is done: the egg is in the air or the catch is showing, and nothing may move
 -- the thrower. While only aiming they may leave (the meter is called off once they're off the platform).
 function ThrowService.isThrowing(player: Player): boolean
@@ -327,6 +354,7 @@ function ThrowService.start()
 
 	remotes.Tap.OnServerEvent:Connect(onTap)
 	remotes.RevealDone.OnServerEvent:Connect(onRevealDone)
+	remotes.MeterDeclined.OnServerEvent:Connect(ThrowService.leaveMeter)
 	Players.PlayerAdded:Connect(addPlayer)
 	Players.PlayerRemoving:Connect(function(player)
 		states[player] = nil
