@@ -5,6 +5,11 @@
     "ReplicatedStorage": {
       "Shared": { "$path": "src/shared" }
     },
+    "Workspace": {
+      "$properties": {
+        "StreamOutBehavior": "Default"
+      }
+    },
     "ServerScriptService": {
       "Server": { "$path": "src/server" }
     },

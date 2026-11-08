@@ -104,6 +104,14 @@ return {
 		eggDrop = "rbxassetid://115878085017623", -- sounds/egg_drop_2_loud.mp3 (the first upload was 14 dB too quiet)
 		eggSlice = "rbxassetid://105375332927135", -- sounds/egg_slice_1.mp3
 		eggVolume = { mine = 0.9, others = 0.25 },
+		-- [Owner, 2026-11-08] The whoosh when the egg leaves the hand. Same volumes as the egg sounds (others' throws quieter).
+		throwWhoosh = "rbxassetid://116592483100589",
+		throwWhooshSkip = 0.3, -- the file starts with 0.3 s of silence, skipped
+		throwWhooshLead = 0.25, -- its loudest part is 0.56 s in, so it starts this much before the release to peak with it
+		-- [Owner, 2026-11-08] Plays when the reveal finishes (the whole monster shows) on a big catch: the sizes listed
+		-- here. Not too loud, a little louder the bigger the size. Empty is silent.
+		bigReveal = "rbxassetid://130323531865053",
+		bigRevealSizes = { Chonker = 0.3, MegaChonk = 0.35, PlanetSized = 0.42, UnitOfDoom = 0.5 }, -- size id = volume
 		-- The tap on the throw meter (ElevenLabs). One soft pop for every level from 1 to 9, and the PERFECT sound on the top
 		-- one (it replaces the pop). Empty is silent.
 		meterTap = "rbxassetid://72148299314968", -- sounds/meter_tap_pop_b.mp3
@@ -115,10 +123,12 @@ return {
 		-- The slam when a luck label hits the screen with the camera punch (ElevenLabs, uploaded by the owner).
 		-- Paste the rbxassetid:// numbers here after uploading; an empty one is simply silent.
 		slam = {
-			small = "rbxassetid://96964679141367", -- sounds/slam_small_a.mp3
+			small = "rbxassetid://96964679141367", -- sounds/slam_small_a.mp3: no longer in the reveal, only the 2X XP training hit
 			mid = "rbxassetid://86796383601211", -- sounds/slam_punchy_a.mp3
 			huge = "rbxassetid://118199520952084", -- sounds/slam_huge_c.mp3
-			weights = { "small", "small", "mid", "mid", "huge", "huge" }, -- which one each of the six tiers plays
+			-- [Owner, 2026-11-08] which one each of the six tiers plays: the weakest is out, the first two get the
+			-- second strongest, the rest the strongest. Was small, small, mid, mid, huge, huge.
+			weights = { "mid", "mid", "huge", "huge", "huge", "huge" },
 			volume = { 1.4, 2.2 }, -- [Owner, 2026-11-08: louder, was 0.6 to 1] from the first tier to the last...
 			speed = { 1.1, 0.9 }, -- ...a little deeper each time
 			boostVolume = 1.4, -- [Owner, 2026-11-08] the small slam also plays when a training tap hits the 2X XP bubble (BoostMoment)

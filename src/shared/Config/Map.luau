@@ -137,6 +137,21 @@ local Map = {
 	studsMaterial = "Studs",
 
 	spawn = Vector3.new(0, 0, 40), -- in the open ground, between the platform and the bases
+
+	-- How the world reaches a player's device. Only the corridor's floor and walls are sent in full at join;
+	-- the props down the corridor (tens of thousands of parts across every world) arrive as the player gets near
+	-- them, so a fresh join shows the bases at once. While an egg flies, the server keeps asking for the props a
+	-- little ahead of it, then round the landing spot until the reveal is over (FlightStreaming).
+	streaming = {
+		-- Each ask loads only about 100 studs round its spot, so it asks for a row of spots, `spacing` studs apart.
+		spacing = 150,
+		ahead = 750, -- while it flies: this far ahead of the egg, so props arrive before the camera gets there
+		behind = 1500, -- after it lands: this far back, the farthest a reveal walk starts (Config/Reveal maxStartDistance)
+		past = 450, -- and this far past the egg, the view beyond it
+		flightEvery = 0.15, -- seconds between asks while the egg flies
+		landedEvery = 1, -- seconds between asks at the landing spot, through the reveal
+		timeout = 0.3, -- seconds one ask may wait before the next (asks are one at a time)
+	},
 }
 
 return Map

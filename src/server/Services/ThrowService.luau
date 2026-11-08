@@ -17,6 +17,7 @@ local DailyTasks = require(script.Parent.DailyTasks)
 local DinoRoll = require(script.Parent.DinoRoll)
 local CompetitionService = require(script.Parent.CompetitionService)
 local EggService = require(script.Parent.EggService)
+local FlightStreaming = require(script.Parent.FlightStreaming)
 local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
 local PlotService = require(script.Parent.PlotService)
@@ -147,6 +148,7 @@ local function onTap(player: Player, height: any, lucky: any)
 		DailyTasks.count(player, "perfects")
 	end
 	remotes.Launched:FireAllClients(player, distance, Throw.isPerfect(height), egg.id)
+	FlightStreaming.follow(player, distance) -- the world loads ahead of the egg, not only round the player
 
 	task.delay(Throw.releaseDelay() + Throw.flightTime(distance), function()
 		if states[player] ~= state then
@@ -284,6 +286,7 @@ local function onRevealDone(player: Player)
 	task.delay(math.max(remaining, 0), function()
 		if states[player] == state and state.phase == "revealing" then
 			state.phase = "idle"
+			FlightStreaming.stop(player)
 		end
 	end)
 end
@@ -327,6 +330,7 @@ function ThrowService.start()
 	Players.PlayerAdded:Connect(addPlayer)
 	Players.PlayerRemoving:Connect(function(player)
 		states[player] = nil
+		FlightStreaming.stop(player)
 	end)
 	for _, player in Players:GetPlayers() do
 		addPlayer(player)

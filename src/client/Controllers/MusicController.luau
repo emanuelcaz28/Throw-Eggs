@@ -17,11 +17,18 @@ local SettingsState = require(script.Parent.SettingsState)
 local MusicController = {}
 
 local throwing = false
+local thrown = false -- the egg has left the hand: the throwing music drops lower until it lands
 
 -- Called by ThrowController: true when the player steps into the throwing area, false when their egg lands (or the
 -- throw is called off).
 function MusicController.setThrowing(on: boolean)
 	throwing = on
+	thrown = false
+end
+
+-- Called by ThrowController at the release: the throwing music is lowered while the egg flies.
+function MusicController.setThrown()
+	thrown = true
 end
 
 local function track(name: string, id: string): Sound?
@@ -69,7 +76,11 @@ function MusicController.start()
 						aim.TimePosition = 0
 						aim:Play()
 					end
-					fade(aim, "aim", Music.throwVolume, Music.throwFadeIn)
+					if thrown then
+						fade(aim, "aim", Music.throwFlightVolume, Music.throwFlightFade)
+					else
+						fade(aim, "aim", Music.throwVolume, Music.throwFadeIn)
+					end
 				else
 					fade(aim, "aim", 0, Music.throwCut)
 					if aim.IsPlaying and aim.Volume < 0.01 then

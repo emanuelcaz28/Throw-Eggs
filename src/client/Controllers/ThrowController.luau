@@ -289,6 +289,8 @@ local function windUp(thrower: Player, egg: BasePart, isMine: boolean, hud, spot
 	local startedAt = os.clock()
 	local track = nil
 	local barsShown = false
+	local whooshed = false
+	local whooshAt = Throw.releaseDelay() - Reveal.sounds.throwWhooshLead
 	egg.Size = EGG_SIZE * settings.heldScale
 	while true do
 		local elapsed = os.clock() - startedAt
@@ -315,6 +317,10 @@ local function windUp(thrower: Player, egg: BasePart, isMine: boolean, hud, spot
 			if spot then
 				camera.CFrame = ThrowCinematic.windupCamera(spot, elapsed)
 			end
+		end
+		if not whooshed and elapsed >= whooshAt then
+			whooshed = true
+			RevealSound.throwWhoosh(isMine) -- peaks with the release
 		end
 		if elapsed >= Throw.releaseDelay() then
 			break
@@ -581,6 +587,9 @@ function ThrowController.start()
 		-- The egg is in the thrower's hand until the release, then flies from exactly there in a straight line (seen
 		-- from above) to where it lands, tumbling end over end from the way the hand held it. No jump or swerve.
 		local releasedAt, cameraFrom = windUp(thrower, egg, isMine, hud, if isMine then spot else nil)
+		if isMine then
+			MusicController.setThrown() -- the throwing music drops lower while the egg flies
+		end
 		local heldTurn = egg.CFrame.Rotation
 		local tumbleAxis = lane.direction:Cross(Vector3.yAxis).Unit
 		trail.Enabled = true

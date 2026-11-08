@@ -1039,6 +1039,7 @@ local function play(catch, egg: BasePart)
 		if drama then
 			drama.unveil()
 		end
+		RevealSound.bigReveal(catch.size)
 		if roarNow then
 			roarNow()
 		end

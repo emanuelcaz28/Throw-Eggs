@@ -22,7 +22,7 @@ end
 
 -- Loads them ahead of time, so the first step isn't silent.
 function RevealSound.preload()
-	SoundPool.preload({ settings.step, settings.tick, settings.roar, settings.slam.small, settings.slam.mid, settings.slam.huge, settings.eggDrop, settings.eggSlice, settings.meterTap, settings.meterPerfect })
+	SoundPool.preload({ settings.step, settings.tick, settings.roar, settings.slam.small, settings.slam.mid, settings.slam.huge, settings.eggDrop, settings.eggSlice, settings.throwWhoosh, settings.bigReveal, settings.meterTap, settings.meterPerfect })
 end
 
 -- A footfall on the walk. `bigness` 0 for the smallest monster, 1 for the biggest.
@@ -49,6 +49,21 @@ end
 function RevealSound.eggDrop(mine: boolean)
 	if settings.eggDrop ~= "" then
 		play(settings.eggDrop, if mine then settings.eggVolume.mine else settings.eggVolume.others, 1)
+	end
+end
+
+-- The sound at the end of a big catch's reveal. Silent for sizes not listed in bigRevealSizes.
+function RevealSound.bigReveal(sizeId: string?)
+	local volume = sizeId and settings.bigRevealSizes[sizeId]
+	if volume and settings.bigReveal ~= "" then
+		play(settings.bigReveal, volume, 1)
+	end
+end
+
+-- The whoosh, started throwWhooshLead seconds before the egg leaves the hand so its loudest part lands on the release.
+function RevealSound.throwWhoosh(mine: boolean)
+	if settings.throwWhoosh ~= "" then
+		play(settings.throwWhoosh, if mine then settings.eggVolume.mine else settings.eggVolume.others, 1, settings.throwWhooshSkip)
 	end
 end
 

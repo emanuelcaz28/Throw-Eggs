@@ -68,6 +68,8 @@ local function place(parent: Instance, folder: Instance, name: string, position:
 		return
 	end
 	local model = original:Clone() :: Model
+	-- Sent to a player whole, the moment they come near it, never half a tree (and PropMotionController sees all its parts).
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
 			part.Anchored = true
@@ -215,10 +217,10 @@ function MapDecor.build(parent: Instance)
 	decorateArena(arena)
 	arena.Parent = parent
 
-	-- Streamed to everyone like the corridor itself, so the egg never flies past bare ground.
+	-- Not Persistent: sending every world's props to everyone at join (30,000+ parts and their meshes) held back
+	-- the bases nearby. They stream in as the player comes near, and FlightStreaming loads the stretch ahead of an egg.
 	local corridor = Instance.new("Model")
 	corridor.Name = "CorridorDecor"
-	corridor.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 	for _, biome in Biomes do
 		local rules = Decor.corridor[biome.id]
 		if rules then

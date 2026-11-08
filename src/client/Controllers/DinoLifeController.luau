@@ -1,4 +1,5 @@
--- Brings plot dinos to life: each walks to a random spot on its plot, idles, and repeats, moving its
+-- Brings plot dinos to life: each walks to a roomy spot on its plot (steering round the others), idles, and repeats,
+-- and while the plot's owner stands on it they gather in a circle round them (updateRings). Each moves its
 -- skeleton as it goes. Runs on each client only; the server just places the dino. The poses copy the
 -- Walk and Idle loops in assets/models/build_forest.py, and the jaw and roar of the monsters that
 -- have a Jaw bone copy build_volcano.py. Monsters with a Swim bone swim and hover instead (SWIM and HOVER,
@@ -519,16 +520,205 @@ local function plus(a, b)
 end
 
 local dinos: { [Model]: any } = {}
+-- The walking monsters on each plot (not the best catch on its pedestal, not carried ones), so they can circle their owner
+-- and keep out of each other's way.
+local plotMembers: { [number]: { any } } = {}
+-- Each plot's circle while its owner stands on it (DinoLife ring): who's in it, how wide, and each one's place.
+local rings: { [number]: any } = {}
+-- Where each plot monster stood when it was last removed. The server rebuilds a plot's monsters whenever one is placed,
+-- picked up or sold, and the new ones carry on from here instead of jumping back to their saved spots.
+local lastPlaces: { [string]: any } = {}
 
-local function randomSpot(state): Vector3
+local function flat(v: Vector3): Vector3
+	return Vector3.new(v.X, 0, v.Z)
+end
+
+local function placeKey(model: Model): string?
+	local plotIndex, key = model:GetAttribute("PlotIndex"), model:GetAttribute("DinoKey")
+	return if plotIndex and key then `{plotIndex}:{key}` else nil
+end
+
+local function joinPlot(state)
+	local list = plotMembers[state.plotIndex] or {}
+	plotMembers[state.plotIndex] = list
+	table.insert(list, state)
+	local ring = rings[state.plotIndex]
+	if ring then
+		ring.dirty = true
+	end
+end
+
+local function leavePlot(state)
+	local list = plotMembers[state.plotIndex]
+	local i = list and table.find(list, state)
+	if i then
+		table.remove(list, i)
+	end
+	local ring = rings[state.plotIndex]
+	if ring then
+		ring.dirty = true
+	end
+end
+
+-- How much free ground a spot has: the gap to the nearest other monster on the plot (where it stands, or where it's
+-- heading), less both their bodies.
+local function room(state, spot: Vector3): number
+	local best = math.huge
+	for _, other in plotMembers[state.plotIndex] or {} do
+		if other ~= state then
+			local here = flat(spot - other.position).Magnitude
+			local there = if other.target then flat(spot - other.target).Magnitude else math.huge
+			best = math.min(best, math.min(here, there) - other.radius - state.radius)
+		end
+	end
+	return best
+end
+
+-- A spot on the plot to wander to: of a few tried, the roomiest, so monsters spread out instead of bunching up. Room past
+-- a couple of body widths counts no more, and a little chance stays in, so they don't all head for the corners.
+local function wanderSpot(state): Vector3
 	local half = Plot.size / 2
-	local x = (math.random() * 2 - 1) * (half.X - Plot.placeMargin)
-	local z = (math.random() * 2 - 1) * (half.Z - Plot.placeMargin)
-	return state.centre + Vector3.new(x, 0, z)
+	local enough = state.radius * 2 + DinoLife.ring.gap * 2
+	local best, bestScore = nil, -math.huge
+	for _ = 1, DinoLife.steer.spotTries do
+		local x = (math.random() * 2 - 1) * (half.X - Plot.placeMargin)
+		local z = (math.random() * 2 - 1) * (half.Z - Plot.placeMargin)
+		local spot = state.centre + Vector3.new(x, 0, z)
+		local score = math.min(room(state, spot), enough) + math.random() * enough * 0.5
+		if flat(spot - state.position).Magnitude < state.radius then
+			score -= enough -- hardly a walk at all
+		end
+		if score > bestScore then
+			best, bestScore = spot, score
+		end
+	end
+	return Vector3.new(best.X, state.position.Y, best.Z)
 end
 
 local function idleTime(): number
 	return DinoLife.idleSeconds + (math.random() * 2 - 1) * DinoLife.idleJitter
+end
+
+-- Where a plot's owner stands, if they're on their plot (a little past its edge still counts once the circle has formed).
+local function ownerOnPlot(plotIndex: number, formed: boolean): Vector3?
+	for _, player in Players:GetPlayers() do
+		if player:GetAttribute("PlotIndex") == plotIndex then
+			if player:GetAttribute("IsTraining") == true then
+				return nil
+			end
+			local character = player.Character
+			local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+			if not root or not humanoid or humanoid.Health <= 0 then
+				return nil
+			end
+			local margin = if formed then DinoLife.ring.leaveMargin else 0
+			local half = Plot.size / 2
+			local offset = root.Position - Plot.positions[plotIndex]
+			if math.abs(offset.X) <= half.X + margin and math.abs(offset.Z) <= half.Z + margin then
+				return root.Position
+			end
+			return nil
+		end
+	end
+	return nil
+end
+
+-- Hands out the places in a circle round the owner. Every monster's nose is the same distance from the owner, so small
+-- ones stand close and giants stand further back with their bodies behind them. Each takes a slice of the circle wide
+-- enough for its body plus the gap at its own distance, in the order they already stand round the owner (so nobody crosses
+-- the circle), and the circle is turned so they walk as little as they can. The noses' circle is as small as lets every
+-- slice fit; any slack is shared out evenly.
+local function sliceOf(state, front: number): number
+	local half = (state.width + DinoLife.ring.gap) / 2
+	return 2 * math.asin(math.min(1, half / (front + state.depth / 2)))
+end
+
+local function layOut(ring, owner: Vector3)
+	local members = ring.members
+	for _, state in members do
+		local offset = flat(state.position - owner)
+		state.ringNow = if offset.Magnitude > 0.01 then math.atan2(offset.Z, offset.X) else math.random() * TAU
+	end
+	table.sort(members, function(a, b)
+		return a.ringNow < b.ringNow
+	end)
+	local function slices(front: number): number
+		local total = 0
+		for _, state in members do
+			total += sliceOf(state, front)
+		end
+		return total
+	end
+	local low, high = DinoLife.ring.ownerGap, DinoLife.ring.ownerGap
+	if #members > 1 then
+		while slices(high) > TAU and high < 1e5 do
+			high *= 2
+		end
+		for _ = 1, 30 do
+			local mid = (low + high) / 2
+			if slices(mid) > TAU then
+				low = mid
+			else
+				high = mid
+			end
+		end
+	end
+	local front = high
+	local total = slices(front)
+	local stretch = if #members > 1 then TAU / total else 1
+	local at = 0
+	for _, state in members do
+		local share = sliceOf(state, front) * stretch
+		state.ringBase = at + share / 2
+		state.ringRadius = front + state.depth / 2
+		at += share
+	end
+	-- The turn that moves everyone least: the average of how far each one's place is from where it stands now.
+	local sx, sz = 0, 0
+	for _, state in members do
+		local d = state.ringNow - state.ringBase
+		sx += math.cos(d)
+		sz += math.sin(d)
+	end
+	local turn = math.atan2(sz, sx)
+	for _, state in members do
+		state.ringAngle = state.ringBase + turn
+		state.ringDelay = math.random() * DinoLife.ring.reactJitter
+	end
+	ring.dirty = false
+end
+
+-- Each plot's circle, every frame: forms when the owner steps on, follows them, re-forms when monsters come or go, and
+-- breaks up when they leave, everyone standing a moment before wandering off again.
+local function updateRings()
+	for plotIndex, members in plotMembers do
+		local ring = rings[plotIndex]
+		local owner = if #members > 0 then ownerOnPlot(plotIndex, ring ~= nil) else nil
+		if owner and not ring then
+			ring = { members = table.clone(members), dirty = true }
+			rings[plotIndex] = ring
+		elseif ring and not owner then
+			rings[plotIndex] = nil
+			for _, state in members do
+				state.ring = nil
+				state.target = nil
+				state.idleLeft = DinoLife.ring.scatterIdle[1]
+					+ math.random() * (DinoLife.ring.scatterIdle[2] - DinoLife.ring.scatterIdle[1])
+			end
+			ring = nil
+		end
+		if ring then
+			if ring.dirty then
+				ring.members = table.clone(members)
+				layOut(ring, owner)
+			end
+			ring.owner = owner
+			for _, state in members do
+				state.ring = ring
+			end
+		end
+	end
 end
 
 -- Each map's 7th and 8th monsters: bones that move for ever on top of the walk and idle, whatever the monster is doing. Each
@@ -1158,6 +1348,14 @@ local function add(model: Model)
 	if not position then
 		return
 	end
+	local key = not stays and placeKey(model)
+	local last = key and lastPlaces[key]
+	if last and os.clock() - last.at < 5 then
+		-- Rebuilt by the server a moment ago: carry on from where it stood, not its saved spot.
+		local here = Vector3.new(last.position.X, model:GetPivot().Y, last.position.Z)
+		local look = if DinoModel.facesBack(model) then -last.facing else last.facing
+		model:PivotTo(CFrame.lookAt(here, here + look))
+	end
 	local pivot = model:GetPivot()
 	local scale = model:GetScale()
 	local _, extents = model:GetBoundingBox()
@@ -1252,7 +1450,21 @@ local function add(model: Model)
 		walking = false,
 		hidden = false,
 		looks = {}, -- each part's own Transparency, for showing it again after hiding it
+		-- Its body on the ground, in its own axes at rest: width across and depth from nose to tail, in studs.
+		width = extents.X,
+		depth = extents.Z,
+		radius = (extents.X + extents.Z) / 4, -- roughly, for keeping out of others' way
+		plotIndex = if stays then nil else plotIndex,
+		ring = nil,
+		ringDelay = 0,
+		stuck = 0,
+		closest = math.huge,
+		gait = 1,
+		turning = false,
 	}
+	if not stays then
+		joinPlot(dinos[model])
+	end
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
 			dinos[model].looks[part] = part.Transparency
@@ -1279,41 +1491,132 @@ local function ride(state)
 	end
 end
 
-local function moveAlong(state, dt: number)
-	if not state.target then
-		state.idleLeft -= dt
-		if state.idleLeft <= 0 then
-			state.target = randomSpot(state)
-		end
-		return
-	end
-	local offset = state.target - state.position
-	if offset.Magnitude < DinoLife.arriveDistance * state.scale then
-		state.target = nil
-		state.idleLeft = idleTime()
-		return
-	end
-	local wanted = offset.Unit
+-- Turns it toward a direction at its turning speed. Returns how far off it was.
+local function turnToward(state, wanted: Vector3, dt: number): number
 	local angle = math.acos(math.clamp(state.facing:Dot(wanted), -1, 1))
-	local turn = DinoLife.turnSpeed * dt
 	if angle > 0.001 then
 		local sign = if state.facing:Cross(wanted).Y >= 0 then 1 else -1
-		state.facing = CFrame.Angles(0, sign * math.min(turn, angle), 0):VectorToWorldSpace(state.facing)
+		state.facing = CFrame.Angles(0, sign * math.min(DinoLife.turnSpeed * dt, angle), 0):VectorToWorldSpace(state.facing)
 	end
-	-- It slows while turning, so it doesn't drift sideways.
-	local pace = math.max(state.facing:Dot(wanted), 0)
-	state.position += state.facing * state.speed * pace * dt
+	return angle
+end
+
+local function placeModel(state)
 	local look = if state.turned then -state.facing else state.facing
 	state.model:PivotTo(CFrame.lookAt(state.position, state.position + look))
 end
 
+-- Its place in its owner's circle, right now (the circle moves with the owner).
+local function ringSpot(state, ring): Vector3
+	local radius = state.ringRadius
+	local spot = ring.owner + Vector3.new(cos(state.ringAngle) * radius, 0, sin(state.ringAngle) * radius)
+	return Vector3.new(spot.X, state.position.Y, spot.Z)
+end
+
+-- Which way to walk: at its spot, bent to one side round any monster (or the owner) in its way ahead, less so near the spot
+-- so it can settle in beside its neighbours. It only ever swerves, at most 45 degrees, never backs away, so it always gets
+-- closer: on a small plot the giants can't help touching, and pushing them apart would walk them off it.
+local function steerFrom(state, wanted: Vector3, distance: number, ring): Vector3
+	local side = Vector3.new(-wanted.Z, 0, wanted.X)
+	local lateral = 0
+	local function avoid(point: Vector3, reach: number)
+		local to = flat(point - state.position)
+		local d = to.Magnitude
+		local ahead = to:Dot(wanted)
+		if d < reach and d > 0.01 and ahead > 0 and ahead < distance + reach then
+			local across = to:Dot(side)
+			lateral -= (if across >= 0 then 1 else -1) * ((reach - d) / reach)
+		end
+	end
+	for _, other in plotMembers[state.plotIndex] or {} do
+		if other ~= state then
+			avoid(other.position, (state.width + other.width) / 2 + DinoLife.ring.gap / 2)
+		end
+	end
+	if ring then
+		avoid(ring.owner, state.width / 2 + DinoLife.steer.ownerRadius + DinoLife.ring.ownerGap / 2)
+	end
+	local fade = math.clamp(distance / (state.width + 0.01), 0, 1)
+	lateral = math.clamp(lateral * DinoLife.steer.avoidWeight * fade, -1, 1)
+	return (wanted + side * lateral).Unit
+end
+
+local function moveAlong(state, dt: number)
+	state.turning = false
+	local ring = state.ring
+	if ring and state.ringDelay > 0 then
+		-- A moment before it reacts to its owner: it finishes the step it was taking.
+		state.ringDelay -= dt
+		if not state.target then
+			return
+		end
+		ring = nil
+	end
+	if ring then
+		local spot = ringSpot(state, ring)
+		if state.target or flat(spot - state.position).Magnitude > DinoLife.ring.followDistance + state.width / 4 then
+			state.target = spot
+		else
+			-- In its place: it turns to face its owner, stepping round if it's far off.
+			local toOwner = flat(ring.owner - state.position)
+			if toOwner.Magnitude > 0.01 then
+				local off = turnToward(state, toOwner.Unit, dt)
+				state.turning = off > DinoLife.steer.turnInPlace
+				if off > 0.001 then
+					placeModel(state)
+				end
+			end
+			return
+		end
+	elseif not state.target then
+		state.idleLeft -= dt
+		if state.idleLeft <= 0 then
+			state.target = wanderSpot(state)
+			state.stuck = 0
+			state.closest = math.huge
+		end
+		return
+	end
+	local offset = flat(state.target - state.position)
+	local distance = offset.Magnitude
+	if distance < DinoLife.arriveDistance * state.scale then
+		state.target = nil
+		state.gait = 1
+		state.idleLeft = idleTime()
+		return
+	end
+	if not ring then
+		-- Getting no closer (walled in by others): it stops and thinks again after a short rest.
+		if distance < state.closest - 0.5 then
+			state.closest = distance
+			state.stuck = 0
+		else
+			state.stuck += dt
+			if state.stuck > DinoLife.steer.giveUpSeconds then
+				state.target = nil
+				state.gait = 1
+				state.idleLeft = 1 + math.random() * 2
+				return
+			end
+		end
+	end
+	local wanted = steerFrom(state, offset / distance, distance, ring)
+	turnToward(state, wanted, dt)
+	-- It slows while turning, so it doesn't drift sideways, and as it nears its spot, so it doesn't stop dead.
+	local slowing = math.clamp(distance / (state.speed * DinoLife.steer.slowSeconds), DinoLife.steer.minPace, 1)
+	local pace = math.max(state.facing:Dot(wanted), 0) * slowing
+	state.gait = math.max(pace, 0.5)
+	state.position += state.facing * state.speed * pace * dt
+	placeModel(state)
+end
+
 local function pose(state, dt: number)
-	local goal = if state.target or state.walking then 1 else 0
+	local goal = if state.target or state.walking or state.turning then 1 else 0
 	local step = dt / DinoLife.blendTime
 	state.blend += math.clamp(goal - state.blend, -step, step)
 	local w = state.blend
 	local eased = w * w * (3 - 2 * w)
-	state.stride = (state.stride + dt / state.strideSeconds * TAU) % TAU
+	state.stride = (state.stride + dt * state.gait / state.strideSeconds * TAU) % TAU
 	state.idleClock = (state.idleClock + dt / DinoLife.idleLoopSeconds * TAU) % TAU
 	state.thrashClock = (state.thrashClock + dt) % 4
 	local p, t, s = state.stride, state.idleClock, state.thrashClock
@@ -1382,6 +1685,7 @@ local function step(dt: number)
 	local viewport = camera.ViewportSize
 	local aspect = viewport.X / math.max(viewport.Y, 1)
 	local halfView = math.atan(math.tan(math.rad(camera.FieldOfView) / 2) * math.sqrt(1 + aspect * aspect))
+	updateRings()
 	for _, state in dinos do
 		state.pending += dt
 		state.frame += 1
@@ -1448,6 +1752,14 @@ function DinoLifeController.start()
 		task.defer(add, model)
 	end)
 	CollectionService:GetInstanceRemovedSignal(DinoLife.tag):Connect(function(model)
+		local state = dinos[model]
+		if state and state.plotIndex then
+			leavePlot(state)
+			local key = placeKey(model)
+			if key then
+				lastPlaces[key] = { position = state.position, facing = state.facing, at = os.clock() }
+			end
+		end
 		dinos[model] = nil
 	end)
 	RunService.Heartbeat:Connect(step)

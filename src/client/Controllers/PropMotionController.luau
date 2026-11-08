@@ -95,11 +95,23 @@ local function add(model: Instance)
 	table.insert(props, prop)
 end
 
+-- A prop the device drops again (props stream in and out as the player moves) stops being moved.
+local function remove(model: Instance)
+	local prop = propOf[model]
+	seen[model] = nil
+	propOf[model] = nil
+	local index = prop and table.find(props, prop)
+	if index then
+		table.remove(props, index)
+	end
+end
+
 local function watch(folder: Instance)
 	for _, child in folder:GetChildren() do
 		add(child)
 	end
 	folder.ChildAdded:Connect(add)
+	folder.ChildRemoved:Connect(remove)
 end
 
 -- The prop's own directions: its upright, its Blender X ("across") and its Blender Y ("ahead"). The importer
