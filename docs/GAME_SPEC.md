@@ -1530,7 +1530,10 @@ reach map 15 in about 3.4 h. Making late rack upgrades dearer doesn't help: it s
   $500No): the play simulation buys them around maps 2, 5, 8, 10 and 13, maxed about 14 hours into the game.
 - **One egg per map** (`Config/Eggs`), each 100x the one before: Dirty (free), Spotted ($500), Golden ($50K), Lava
   ($5M), Frost ($500M), Shadow ($50B), Abyss ($5T), Cosmic ($500T), Eclipse ($50Qa), Forbidden ($5Qi), Carnival
-  ($500Qi), Clockwork ($50Sx), Thorn ($5Sp), Spore ($500Sp), Weeping ($50Oc); luck ×1 to ×17. **[Built], [Owner,
+  ($5Sx), Clockwork ($5Sp), Thorn ($5Oc), Spore ($5No), Weeping ($5Dc); luck ×1 to ×17. **[Owner, 2026-11-08]**
+  From Carnival on each egg is 1000x the one before, not 100x: late income outgrows 100x a map, so every egg was
+  owned by about 7 h of a 22 h game and the shop went quiet. The play simulation shows egg prices don't change how
+  fast anyone reaches map 15, so this only spreads the buying over the late game (last egg at about 17 h). **[Built], [Owner,
   2026-11-05]** Each egg's model follows its map (`assets/models/build_egg_blueprints.py`), and its card wears its
   colour and names its map. The Egg Shop row scrolls sideways past five and opens on your best egg.
   **[Owner, 2026-11-06]** The eggs made in Blender, "nothing special but more attractive as they ramp up in price".
