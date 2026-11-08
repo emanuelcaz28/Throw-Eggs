@@ -9,8 +9,22 @@ local CatchOdds = {}
 
 -- Each monster's chance of hatching, most common first; they add up to 1. luck is counted from the map's par
 -- (Config/Luck forRoll) with every boost multiplied in. recent: the ids of the last catches, newest first.
--- minRarity (x100 and x500 lucky throws, Config/Catch luckyHits): monsters of a lower rarity never come.
-function CatchOdds.monsters(biomeId: string, luck: number, minRank: number?, recent: { string }?, minRarity: number?): { number }
+-- filter (lucky throws and the surprise gift), all optional: minRarity / maxRarity leave out monsters of a lower /
+-- higher rarity level (1 Common ... 8 Secret, the words in Config/RarityLadder); minPlace leaves out monsters more common
+-- than that place in their home map's list (DinoStats.rarityRank). Both go by the monster's home map, so they also work
+-- in The Deep End's mixed list.
+export type Filter = { minRarity: number?, maxRarity: number?, minPlace: number? }
+local function passes(dinoId: string, filter: Filter?): boolean
+	if not filter then
+		return true
+	end
+	local level = DinoStats.rarityLevel(dinoId) or 1
+	local place = DinoStats.rarityRank(dinoId) or 1
+	return not ((filter.minRarity and level < filter.minRarity) or (filter.maxRarity and level > filter.maxRarity)
+		or (filter.minPlace and place < filter.minPlace))
+end
+
+function CatchOdds.monsters(biomeId: string, luck: number, minRank: number?, recent: { string }?, filter: Filter?): { number }
 	local dinos = Dinos[biomeId]
 	local pick = Catch.pick
 	local count = #dinos
@@ -24,8 +38,7 @@ function CatchOdds.monsters(biomeId: string, luck: number, minRank: number?, rec
 	local weights, total = {}, 0
 	for rank, dino in dinos do
 		local weight = 0
-		local tooCommon = minRarity ~= nil and (DinoStats.rarityRank(dino.id) or 1) < minRarity
-		if rank >= lowest and not (minRank and dino.prize) and not tooCommon then -- a guarantee never gives a map's prizes (Config/Dinos)
+		if rank >= lowest and not (minRank and dino.prize) and passes(dino.id, filter) then -- a guarantee never gives a map's prizes (Config/Dinos)
 			weight = math.min(dino.chance / aim, aim / dino.chance) ^ pick.falloff
 			for index, id in recent or {} do
 				if id == dino.id then
@@ -43,10 +56,45 @@ function CatchOdds.monsters(biomeId: string, luck: number, minRank: number?, rec
 	return weights
 end
 
+-- Whether any monster in this list gets through the filter; nonPrize: and isn't one of its map's prizes.
+function CatchOdds.hasAny(biomeId: string, filter: Filter, nonPrize: boolean?): boolean
+	for _, dino in Dinos[biomeId] or {} do
+		if passes(dino.id, filter) and not (nonPrize and dino.prize) then
+			return true
+		end
+	end
+	return false
+end
+
+-- Which monsters the surprise gift (Config/Hooks surpriseGift) may be on this map, as a filter, or nil when the gift
+-- doesn't count here. Where the only Legendaries and Mythics are the map's prizes (maps 3 and 4), its Epics instead.
+function CatchOdds.giftFilter(biomeId: string, gift): Filter?
+	local filter = { minRarity = gift.minRarity, maxRarity = gift.maxRarity, minPlace = gift.minPlace }
+	if not CatchOdds.hasAny(biomeId, filter) then
+		return nil
+	end
+	if not CatchOdds.hasAny(biomeId, filter, true) then
+		return { minRarity = gift.prizeOnlyRarity, maxRarity = gift.prizeOnlyRarity }
+	end
+	return filter
+end
+
+-- What a lucky throw on this map may give (a CatchOdds.monsters filter), and whether the map falls short of the
+-- line's rarity. A map with no monster that rare (maps 1 and 2 have no Legendary, Config/RarityLadder) gives its
+-- rarest word instead, with big sizes made far likelier (Config/Catch shortMapSizeBoost) [Owner, 2026-11-08].
+function CatchOdds.luckyFilter(biomeId: string, hit): (Filter?, boolean)
+	if not hit.minRarity then
+		return nil, false
+	end
+	local top = DinoStats.topRarityLevel(biomeId)
+	return { minRarity = math.min(hit.minRarity, top), minPlace = hit.minPlace }, top < hit.minRarity
+end
+
 -- Every colour and size that make this monster's catch at least 1 in `minOneIn`, each weighted by how likely it
 -- really is (1 / its "1 in X"), and the weights' total. Empty when none does. colourAndSize: leaves out no colour
--- and normal size (Config/Catch luckyHits).
-function CatchOdds.hitOptions(dinoId: string, minOneIn: number, colourAndSize: boolean?)
+-- and normal size (Config/Catch luckyHits). sizeBoost: each size's weight is also multiplied by its own "1 in X" to
+-- this power, so 1 makes every size as likely as the others (Config/Catch shortMapSizeBoost).
+function CatchOdds.hitOptions(dinoId: string, minOneIn: number, colourAndSize: boolean?, sizeBoost: number?)
 	local options, total = {}, 0
 	local mutations = if colourAndSize then Catch.mutations else { false, table.unpack(Catch.mutations) }
 	local sizes = if colourAndSize then Catch.sizes else { false, table.unpack(Catch.sizes) }
@@ -55,8 +103,12 @@ function CatchOdds.hitOptions(dinoId: string, minOneIn: number, colourAndSize: b
 			local entry = { id = dinoId, mutation = mutation and mutation.id or nil, size = size and size.id or nil }
 			local stats = DinoStats.describe(entry)
 			if stats and stats.oneIn >= minOneIn then
-				table.insert(options, { entry = entry, weight = 1 / stats.oneIn })
-				total += 1 / stats.oneIn
+				local weight = 1 / stats.oneIn
+				if sizeBoost and size then
+					weight *= size.chance ^ sizeBoost
+				end
+				table.insert(options, { entry = entry, weight = weight })
+				total += weight
 			end
 		end
 	end
@@ -110,17 +162,19 @@ function CatchOdds.lucky(biomeId: string, luck: number, multiplier: number)
 	local dinos = Dinos[biomeId]
 	local hit = CatchOdds.luckyHit(multiplier) or { minOneIn = 0 }
 	local minOneIn, colourAndSize = hit.minOneIn, hit.colourAndSize
-	local odds = CatchOdds.monsters(biomeId, luck * multiplier, nil, nil, hit.minRarity)
+	local filter, short = CatchOdds.luckyFilter(biomeId, hit)
+	local sizeBoost = if short then Catch.shortMapSizeBoost else nil
+	local odds = CatchOdds.monsters(biomeId, luck * multiplier, nil, nil, filter)
 	local monsters, mutations, sizes = {}, {}, {}
 	for rank = 1, #dinos do
 		monsters[rank] = 0
 	end
 	for rank, dino in dinos do
 		local landed = rank
-		local options, total = CatchOdds.hitOptions(dino.id, minOneIn, colourAndSize)
+		local options, total = CatchOdds.hitOptions(dino.id, minOneIn, colourAndSize, sizeBoost)
 		if #options == 0 then
 			landed = #dinos
-			options, total = CatchOdds.hitOptions(dinos[landed].id, minOneIn, colourAndSize)
+			options, total = CatchOdds.hitOptions(dinos[landed].id, minOneIn, colourAndSize, sizeBoost)
 		end
 		monsters[landed] += odds[rank]
 		for _, option in options do

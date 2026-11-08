@@ -4,7 +4,9 @@
 -- and the panel takes the tier's colour.
 --
 -- One banner at a time; a rarer catch waiting in line goes first. Banners wait while your own
--- reveal plays, and your own catch is queued once its reveal is over.
+-- egg flies and your own reveal plays, and your own catch is queued once its reveal is over. The banner
+-- sits over the top centre, where the flight shows the luck and the world's name: one already up when
+-- your egg leaves the hand slides away at once and comes back afterwards [player feedback, 2026-11-08].
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -16,6 +18,7 @@ local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 local RevealController = require(script.Parent.RevealController)
+local ThrowCinematic = require(script.Parent.ThrowCinematic)
 
 local player = Players.LocalPlayer
 local settings = Reveal.luckyBanner
@@ -219,12 +222,25 @@ local function show(announcement)
 	hud.banner.Visible = true
 	spinClover()
 	tween(hud.banner, settings.dropTime, { Position = UDim2.new(0.5, 0, 0, 6) }, Enum.EasingStyle.Back)
-	task.wait(settings.dropTime + settings.holdTime)
+	local waited = 0
+	local cut = false
+	while waited < settings.dropTime + settings.holdTime do
+		if ThrowCinematic.isLuckPanelShown() then
+			cut = true
+			break
+		end
+		waited += task.wait()
+	end
 	tween(hud.banner, settings.leaveTime, { Position = hidden }, Enum.EasingStyle.Quad, Enum.EasingDirection.In).Completed:Wait()
 	hud.banner.Visible = false
 	if rainbowSpin then
 		rainbowSpin:Disconnect()
 	end
+	return cut
+end
+
+local function mustWait(): boolean
+	return RevealController.isPlaying() or ThrowCinematic.isLuckPanelShown()
 end
 
 -- Shows queued banners one after another, rarest first, never during your own reveal.
@@ -235,10 +251,14 @@ local function runQueue()
 	showing = true
 	task.spawn(function()
 		while #queue > 0 do
-			while RevealController.isPlaying() do
+			while mustWait() do
 				task.wait(0.2)
 			end
-			show(table.remove(queue, 1))
+			local announcement = table.remove(queue, 1)
+			if show(announcement) then
+				-- Cut short by a throw: shown again in full once the throw and its reveal are over.
+				table.insert(queue, 1, announcement)
+			end
 			task.wait(settings.gap)
 		end
 		showing = false

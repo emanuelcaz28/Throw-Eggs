@@ -217,6 +217,16 @@ local function grantFor(productId: number): ((Player, any) -> ())?
 	return nil
 end
 
+-- Gives what a Developer Product gives, with no purchase (AdminCommands). False if the id gives nothing. The caller saves.
+function ShopService.grantProduct(player: Player, data, productId: number): boolean
+	local grant = grantFor(productId)
+	if not grant then
+		return false
+	end
+	grant(player, data)
+	return true
+end
+
 -- The receiver of a gift is told who it's from; the buyer that it arrived.
 local function announceGift(from: Player, to: Player, productId: number)
 	local item = Gifts.find(productId)
@@ -483,6 +493,9 @@ local function giveSpecialGifts(player: Player, data)
 			data.receipts[gift.id] = true
 			for _, special in Specials do
 				if special.id == gift.special then
+					if gift.regive then
+						data.specialsGiven[special.id] = nil -- lost it: let it be given again, this once
+					end
 					ShopService.giveSpecial(player, special)
 				end
 			end

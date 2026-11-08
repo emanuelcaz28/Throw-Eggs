@@ -200,7 +200,7 @@ An empty base's owner shows "$0/s".
   to MYTHIC) pick or unpick all of a rarity; tapping a tile picks one. The footer shows how many and the total, and
   SELL needs a second tap (SURE? TAP AGAIN, 3 seconds). Nothing is picked on opening, monsters on the base aren't
   shown, and the carried one shows HOLDING and can't be picked. The server re-checks all of this (`sellMany`).
-- **Leaderboards:** MOST DINOS, TOP MONEY and LUCKIEST CATCH, top 10 across all servers, refreshed every minute,
+- **Leaderboards:** MOST POWER (Throw Power; replaced MOST DINOS [Owner, 2026-11-08]), TOP MONEY and LUCKIEST CATCH, top 10 across all servers, refreshed every minute,
   standing side by side **[Built]**. In the arena they stand on the ground in front of the wall, on the right as you
   face the bases from the platform **[Seen]**. The exact spot is an estimate. **[Built]** A shallow arc in front of the front
   wall on that side (`Config/Leaderboards`). Each is a Blender board (`build_leaderboards.py`): a screen in a wooden frame
@@ -246,6 +246,16 @@ reveal; your own catch appears once you've tapped through it. Limit and timings 
   "Perfect / Moment"): gold edge flash, sunburst, a big slammed PERFECT! and FULL POWER. No extra reward.
 - **[Built]** Distance = Throw Power × the level's share: 0.4 at level 1 up to 0.9 just below the top.
   **[Owner, 2026-11-08]** PERFECT throws exactly your Throw Power, with no 1.5x bonus (`Throw.meter.perfectMultiplier` 1).
+- **[Owner, 2026-11-08, from player feedback] [Built] Power Limit:** strong players can set the farthest their eggs fly,
+  so they can still reach earlier maps whose monsters they haven't all caught. A throw goes as far as it would anyway but
+  never past the limit, so with a limit well under your power nearly every tap lands right on it. A **LIMIT** button sits
+  right of the Throw Power number (shown once your power can pass the first map; LIMIT OFF dark, LIMIT 1,450 orange when
+  on, still shown while aiming). It opens the Power Limit panel: an ON/OFF switch, the limit as a big number with a
+  slider (up to your power), and a map card between < and > buttons that jump the limit to the far end of the map before
+  or after, showing "EGGS LAND IN" the map and how many of its monsters you've caught. Moving the slider or the arrows
+  turns it on. Saved with your settings; the server applies it to every throw (`Config/PowerLimit`,
+  `PowerLimitController`, `ThrowService`), and the luck offer's chances count it. No "SO CLOSE" hint when the limit
+  stopped the egg. Screenshots in `design/power-limit/` (Figma not connected when built).
 - **[Built]** All HUD except Throw Power hides while aiming and flying.
 - **[Seen]** The owner's recording of the throw (`~/Documents/Screen Recording 2026-11-03 at 20.02.26.mov`,
   watched frame by frame for the first 10 seconds). Times in seconds:
@@ -665,6 +675,22 @@ more aggressive map by map, 6 at a time, a prompt each. **[Built]** in Blender, 
 rarities are **ANCIENT** and **SECRET** **[Owner]** (`UiKit.RARITY_ORDER`), after Mythic; special monsters stay Mythic. They're each
 map's prizes (`prize = true`): the rarest about 1 in 20,000, luck reaches them (a x500 throw at a far end gives the 7th about
 half the time, the 8th about 1 in 7), but the pity rules and the new map gift count from the 6th, so they're never handed out.
+
+**[Owner, 2026-11-08] Rarity words climb with the maps.** "As you make progress in the game the rarities should only be
+higher": the first map tops out at Epic, the second has 2 Epics, the third has no Common, 2 Epics and a Legendary, and so on.
+**[Built]** (`Config/RarityLadder`, read by `UiKit.rarityOf` everywhere: Index, plot, tags, reveal, Sell, Details). Only
+the word changes; each map's odds stay in `Config/Dinos`. Commonest first:
+
+| Map | Words | Map | Words | Map | Words |
+|---|---|---|---|---|---|
+| 1 | C C C U U R R E | 6 | R R E E L L M M | 11 | E L L M M A A S |
+| 2 | C C U U R R E E | 7 | R E E L L L M M | 12 | L L M M A A A S |
+| 3 | U U R R R E E L | 8 | R E E L L M M A | 13 | L L M M A A S S |
+| 4 | U U R R E E L L | 9 | E E L L M M A A | 14 | M M A A A S S S |
+| 5 | U R R E E L L M | 10 | E L L M M M A A | 15 | M M A A S S S S |
+
+The Deep End's monsters keep their home map's word. Rules that name a rarity follow the words: the surprise gift and
+x100/x500 lucky throws (section 13).
 Income carries on the same steps: 1,500 and 5,000 on the Forest, times 100 a map. So far, rarest last:
 
 | Map | 7th | 8th | What's new in how they move |
@@ -955,6 +981,11 @@ designed yet; the build plan is in `docs/RETENTION_PLAN.md`.
   that makes the catch at least **1 in 100 million (x500), 1 in a million (x100), 1 in 100,000 (x50)**, each as likely
   as it really is, so results vary (simulated: x500 is IMPOSSIBLE! about 7% of the time). The luck number in flight
   no longer includes the lucky throw's x. Shop text: "Next throw: a guaranteed 1 in 100M+ catch" / "1 in 1M+".
+  **[Owner, 2026-11-08] Legendary or better, by the word.** x100 and x500 never give anything below Legendary (the
+  words in section 8) and, as before, nothing below a map's 5th place. Maps 1 and 2 top out at Epic, so there the
+  throw is a 100% Epic and big sizes are far likelier (`Config/Catch` `shortMapSizeBoost` = 1: every size as likely as
+  the others). On map 1: x100 gives each size about 17% (Unit of Doom was 0.1%), x500 gives Mega Chonk or bigger 84%
+  of the time. Details shows it per map, because it reads the same `CatchOdds` code.
 - **[Built] Luck offer, [Owner, 2026-11-06]** (`LuckOfferController`, Figma "Throw Eggs - Shop" Luck offer v2, from the
   owner's recording of the reference): while aiming, and only then, two glowing pills in the top left sell x100 and x500
   (rainbow rim, halo, rays, shine, sparkles, clover bob), with the R$ 3 deal on x100 until it's used. Prices come from
@@ -976,6 +1007,21 @@ designed yet; the build plan is in `docs/RETENTION_PLAN.md`.
 - **[Built] Jackpot pity** (`Config/Hooks` jackpotPity, **[Owner, 2026-11-05]**): after 250 throws in a row without the
   map's rarest monster, the next throw is it ("JACKPOT STREAK!"), about 2 hours of play. With the new roll the rarest
   comes on its own about 1 in 250 to 1 in 900 throws on 6-monster maps, so this mostly helps the unlucky.
+- **[Built] Surprise gift** (`Config/Hooks` surpriseGift, **[Owner, 2026-11-08]**): every 60th throw is a Legendary or a
+  Mythic, never Ancient or Secret and nothing below Legendary. A fixed beat, not pity: catching a Legendary on your own
+  doesn't move it. No countdown, "they should not see it coming", and nothing tells them it was a gift: no
+  pop-up, and the server doesn't even send the reason to the client, so it looks like plain luck. Normal odds pick between the two (about 88% Legendary, 12% Mythic at a world's
+  par luck; more Mythic with better eggs and boosts). Works in The Deep End too (its Legendaries and Mythics by their home
+  world's rarity). A throw that already has a guarantee (new world, jackpot, a lucky throw, the tutorial) keeps it and
+  the gift waits for the next plain throw. The play simulation shows no change to the pace (training gates it).
+  **[Owner, 2026-11-08]** The gift goes by the rarity words (section 8) and only counts on maps where Legendary and
+  Mythic are high rarities: a Legendary or Mythic in the map's rarer half (5th place or rarer, `minPlace`). That's maps
+  3 to 11 and The Deep End. Throws on maps 1-2 (no Legendary) and 12-15 (there Legendary and Mythic are the commonest)
+  don't count towards the 60. A lucky throw (x50, x100, x500) on the 60th keeps its own odds and the gift waits for the
+  next plain throw. On maps 3 and 4 the only Legendaries are the map's prizes, so there the gift is one of the map's two
+  Epics instead (`prizeOnlyRarity`, **[Owner, 2026-11-08]** "for the 3 and 4 only give an epic from those 2"): Swamp
+  Spinosaurus 80% / Mossmaw 20%, Volcano Obsidian Rex 88% / Volcano King 12%. From map 6 on it's mostly the 5th
+  (1 in 400). The play simulation shows no change to the pace.
 - **[Built] New-map gift:** the first egg that lands in a map you've never caught anything in hatches one of its 3
   rarest ("NEW WORLD BONUS!").
 - **[Built] So close:** landing within 60 studs of the next map shows "SO CLOSE! 23 studs short of Swamp".
@@ -1522,7 +1568,7 @@ reach map 15 in about 3.4 h. Making late rack upgrades dearer doesn't help: it s
   `hardFromMap`, `hardMapStep`, `xpPerLateMap`, `Training.xpForNextBar`). Power from packs counts too. So x2 Power and
   x2 Training each make training exactly 2x faster, and a power pack skips just the bars it replaces. Early bars fill
   in a squat or two; later maps take longer because each bar needs more XP; money gates the rack upgrades (each costs
-  minutes of income early on, hours later). A full bar floats "+5 ⚡ POWER"; the bar shows "+5 ⚡ per bar".
+  minutes of income early on, hours later). A full bar floats "+5 ⚡ POWER" above STOP; the bar shows "Level N" (owner, 2026-11-08: no "per bar" text).
 - **x2 Power (Game Pass) [Owner]:** every full bar on the squat rack gives double power, forever. Its card sits under
   x2 Cash and x2 Training in the shop; it shows SOON until its pass id is in `Config/Shop` `doublePower`.
 - **Base upgrades** (`Config/Plot`): 10 spots, +2 an upgrade, 20 at most. **[Owner, 2026-11-06]** At $1,000 ×10 each

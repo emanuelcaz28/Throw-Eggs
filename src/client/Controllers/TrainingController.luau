@@ -3,11 +3,13 @@
 -- requests only: every value is read from attributes the server sets on the local player.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local BoostMoment = require(script.Parent.BoostMoment)
 local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
+local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Pop = require(ReplicatedStorage.Shared.Config.Pop)
 local PopText = require(ReplicatedStorage.Shared.PopText)
 local Training = require(ReplicatedStorage.Shared.Config.Training)
@@ -18,24 +20,11 @@ local player = Players.LocalPlayer
 local TrainingController = {}
 
 local POWER = Color3.fromRGB(90, 190, 255)
-local AFFORD = Color3.fromRGB(120, 235, 120)
-local TOO_PRICEY = Color3.fromRGB(240, 70, 60)
 local TEXT = Color3.new(1, 1, 1)
+local TAU = 2 * math.pi
 local BUBBLE_SIZE = 112
 local POWER_HEIGHT = 52 -- before scaling for small screens
 local POWER_ABOVE_BOTTOM = 98 -- clears the cash and $/s beneath it
-
-local function makeLabel(parent: Instance, font: Enum.Font, color: Color3, align: Enum.TextXAlignment): TextLabel
-	local label = Instance.new("TextLabel")
-	label.BackgroundTransparency = 1
-	label.Font = font
-	label.TextColor3 = color
-	label.TextXAlignment = align
-	label.TextScaled = true
-	label.Text = ""
-	label.Parent = parent
-	return label
-end
 
 local function buildHud()
 	local gui = Instance.new("ScreenGui")
@@ -127,27 +116,98 @@ local function buildHud()
 end
 
 -- Price and reward floating over the XP upgrade pad at the player's own base, so only they see
--- their numbers. Returns the sign too, so it can move to a new base.
-local function buildPadSign(): (BillboardGui, TextLabel, TextLabel, TextLabel)
+-- their numbers (Config/Training xpUpgrade.sign). It hangs on its own point in the world, not on the pad: the pad
+-- unloads when the player goes far (map streaming, every throw) and the words used to vanish with it [Owner,
+-- 2026-11-08: "I don't usually see the text above the pad"].
+local function padLine(parent: Instance, size: number, order: number): (TextLabel, UIGradient)
+	local look = Training.xpUpgrade.sign
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.FontFace = UiKit.FONT
+	label.TextSize = size
+	label.TextColor3 = TEXT
+	label.Text = ""
+	label.Size = UDim2.new(1, 0, 0, size + look.outline * 2)
+	label.LayoutOrder = order
+	label.Parent = parent
+	HudStyle.outline(label, look.outline)
+	local gradient = Instance.new("UIGradient")
+	gradient.Rotation = 90
+	gradient.Parent = label
+	return label, gradient
+end
+
+local function colours(gradient: UIGradient, pair)
+	gradient.Color = ColorSequence.new(Color3.fromHex(pair[1]), Color3.fromHex(pair[2]))
+end
+
+local function buildPadSign()
+	local look = Training.xpUpgrade.sign
+	local point = Instance.new("Attachment")
+	point.Name = "XpUpgradeSignPoint"
+	point.Parent = workspace.Terrain -- never streamed out
+
 	local sign = Instance.new("BillboardGui")
 	sign.Name = "XpUpgradeSign"
-	sign.Size = UDim2.fromOffset(220, 116)
-	sign.StudsOffsetWorldSpace = Vector3.new(0, 5, 0)
-	sign.MaxDistance = 120
+	sign.Size = UDim2.fromOffset(look.size.X, look.size.Y)
+	sign.MaxDistance = look.maxDistance
+	sign.LightInfluence = 0
+	sign.ResetOnSpawn = false
+	sign.Enabled = false
+	sign.Adornee = point
 	sign.Parent = player:WaitForChild("PlayerGui")
-	local price = makeLabel(sign, Enum.Font.GothamBlack, TOO_PRICEY, Enum.TextXAlignment.Center)
-	price.Size = UDim2.fromScale(1, 0.46)
-	price.TextStrokeTransparency = 0
-	local reward = makeLabel(sign, Enum.Font.GothamBlack, TEXT, Enum.TextXAlignment.Center)
-	reward.Position = UDim2.fromScale(0, 0.46)
-	reward.Size = UDim2.fromScale(1, 0.27)
-	reward.TextStrokeTransparency = 0
+
+	local root = Instance.new("Frame")
+	root.BackgroundTransparency = 1
+	root.AnchorPoint = Vector2.new(0.5, 1) -- springs from its bottom middle, over the pad
+	root.Position = UDim2.fromScale(0.5, 1)
+	root.Size = UDim2.fromScale(1, 1)
+	root.Parent = sign
+	local punch = Instance.new("UIScale")
+	punch.Parent = root
+	local list = Instance.new("UIListLayout")
+	list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	list.VerticalAlignment = Enum.VerticalAlignment.Bottom
+	list.SortOrder = Enum.SortOrder.LayoutOrder
+	list.Parent = root
+
+	local price, priceColour = padLine(root, look.priceText, 1)
+	local pulse = Instance.new("UIScale")
+	pulse.Parent = price
 	-- Each upgrade raises XP per squat (Training.xpPerRepGrowth): what it will be after this one.
-	local xp = makeLabel(sign, Enum.Font.GothamBlack, UiKit.POWER, Enum.TextXAlignment.Center)
-	xp.Position = UDim2.fromScale(0, 0.73)
-	xp.Size = UDim2.fromScale(1, 0.27)
-	xp.TextStrokeTransparency = 0
-	return sign, price, reward, xp
+	local xp, xpColour = padLine(root, look.xpText, 2)
+	colours(xpColour, look.xp)
+	local rack, rackColour = padLine(root, look.rackText, 3)
+	colours(rackColour, look.rack)
+
+	-- A short hold of E buys one, the same request as the ready pop-up's UPGRADE (the server checks the price).
+	local settings = Training.xpUpgrade.prompt
+	local promptPoint = Instance.new("Attachment")
+	promptPoint.Name = "XpUpgradePromptPoint"
+	promptPoint.Parent = workspace.Terrain
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "XpUpgradePrompt"
+	prompt.ActionText = "Upgrade"
+	prompt.ObjectText = "XP per squat"
+	prompt.KeyboardKeyCode = Enum.KeyCode.E
+	prompt.HoldDuration = settings.holdSeconds
+	prompt.MaxActivationDistance = settings.reach
+	prompt.RequiresLineOfSight = false
+	prompt.Enabled = false
+	prompt.Parent = promptPoint
+
+	return {
+		point = point,
+		promptPoint = promptPoint,
+		prompt = prompt,
+		sign = sign,
+		punch = punch,
+		price = price,
+		priceColour = priceColour,
+		pulse = pulse,
+		xp = xp,
+		rack = rack,
+	}
 end
 
 function TrainingController.start()
@@ -172,15 +232,16 @@ function TrainingController.start()
 		hud.power.Text = Format.commas(power)
 		hud.bar.Visible = isTraining
 		hud.stop.Visible = isTraining
-		hud.level.Text = `+{Format.short(player:GetAttribute("PowerPerBar") or 0)} ⚡ per bar`
+		hud.level.Text = `Level {Format.short(level)}`
 		hud.xp.Text = `{Format.short(xp)} / {Format.short(needed)}`
 		hud.fill:TweenSize(UDim2.fromScale(math.clamp(xp / needed, 0, 1), 1), "Out", "Quad", 0.2, true)
 
-		-- A full bar happens every few seconds early on, so it floats instead of shouting.
+		-- A full bar happens every few seconds early on, so it floats instead of shouting. From above STOP, which
+		-- sits on the bar, so phones don't get the words over the button.
 		if lastLevel and level > lastLevel and lastPower then
-			PopText.float(`+{Format.short(power - lastPower)} ⚡ POWER`, Pop.colors.good, PopText.above(hud.bar))
+			PopText.float(`+{Format.short(power - lastPower)} ⚡ POWER`, Pop.colors.good, PopText.above(hud.stop))
 		elseif isTraining and lastXp and level == lastLevel and xp > lastXp then
-			PopText.float(`+{Format.short(xp - lastXp)} XP`, Pop.colors.xp, PopText.above(hud.bar))
+			PopText.float(`+{Format.short(xp - lastXp)} XP`, Pop.colors.xp, PopText.above(hud.stop))
 		end
 		if not isTraining then
 			hud.bubble.Visible = false
@@ -225,32 +286,58 @@ function TrainingController.start()
 	render()
 
 	task.spawn(function()
-		local sign, price, reward, xpLine = buildPadSign()
-		local function placeSign()
-			local plotIndex = player:GetAttribute("PlotIndex")
-			local rack = plotIndex and workspace:WaitForChild("Racks"):WaitForChild(`Rack{plotIndex}`)
-			local button = rack and rack:WaitForChild("base_XpButton", 10)
-			sign.Adornee = button and button:FindFirstChild("Button")
-			sign.Enabled = sign.Adornee ~= nil
-		end
-		player:GetAttributeChangedSignal("PlotIndex"):Connect(placeSign)
-		placeSign()
+		local pad = buildPadSign()
+		local look = Training.xpUpgrade.sign
+		local ready = false -- a plot and a price to show
+		local affordable = false
+		local lastUpgrades: number? = nil
+
 		local function renderPad()
+			local plotIndex = player:GetAttribute("PlotIndex")
 			local cost = player:GetAttribute("XpUpgradePrice")
 			local upgrades = player:GetAttribute("XpUpgrades")
-			if not cost or not upgrades then
+			ready = plotIndex ~= nil and Plot.positions[plotIndex] ~= nil and cost ~= nil and upgrades ~= nil
+			pad.sign.Enabled = ready
+			pad.prompt.Enabled = ready and player:GetAttribute("IsTraining") ~= true
+			if not ready then
 				return
 			end
-			price.Text = Format.cash(cost)
-			price.TextColor3 = if (player:GetAttribute("Cash") or 0) >= cost then AFFORD else TOO_PRICEY
+			pad.point.WorldPosition = Training.xpPadPosition(plotIndex)
+			pad.promptPoint.WorldPosition = pad.point.WorldPosition + Vector3.new(0, Training.xpUpgrade.prompt.height, 0)
+			pad.price.Text = Format.cash(cost)
+			affordable = (player:GetAttribute("Cash") or 0) >= cost
+			colours(pad.priceColour, if affordable then look.afford else look.tooPricey)
+			local nextXp = player:GetAttribute("NextXpPerRep") or 0
+			pad.xp.Text = `+{if nextXp % 1 == 0 then nextXp else string.format("%.1f", nextXp)} XP per squat`
 			-- Upgrades only fill bars faster (Config/Training); every few, the rack itself changes.
 			local nextRack, left = Training.nextRack(upgrades)
-			reward.Text = if not nextRack then "Faster bars" elseif left == 1 then `{nextRack.name}!` else `{left} more: {nextRack.name}`
-			local nextXp = player:GetAttribute("NextXpPerRep") or 0
-			xpLine.Text = `+{if nextXp % 1 == 0 then nextXp else string.format("%.1f", nextXp)} XP per squat`
+			pad.rack.Text = if not nextRack then "Faster bars"
+				elseif left == 1 then `Next: {nextRack.name}!`
+				else `{left} more to {nextRack.name}`
+			-- Just bought one: the sign jumps and springs back.
+			if lastUpgrades and upgrades > lastUpgrades then
+				pad.punch.Scale = look.punch
+				TweenService:Create(pad.punch, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+			end
+			lastUpgrades = upgrades
 		end
 		player.AttributeChanged:Connect(renderPad)
 		renderPad()
+		pad.prompt.Triggered:Connect(function()
+			remotes.BuyUpgrade:FireServer()
+		end)
+
+		-- It floats gently, and the price breathes while you can afford it.
+		RunService.RenderStepped:Connect(function()
+			if not ready then
+				return
+			end
+			local now = os.clock()
+			pad.sign.StudsOffsetWorldSpace = Vector3.new(0, look.height + math.sin(now * TAU / look.bobSeconds) * look.bob, 0)
+			pad.pulse.Scale = if affordable
+				then 1 + (look.pulse - 1) * (0.5 + 0.5 * math.sin(now * TAU / look.pulseSeconds))
+				else 1
+		end)
 	end)
 end
 

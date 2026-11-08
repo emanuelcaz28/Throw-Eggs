@@ -11,6 +11,7 @@ require(Services.PlotService).start()
 require(Services.EggService).start()
 require(Services.HubService).start()
 require(Services.ShopService).start()
+require(Services.AdminCommands).start() -- after AdminService and ShopService
 require(Services.DailyService).start()
 require(Services.DailyTasks).start()
 require(Services.LeaderboardService).start()

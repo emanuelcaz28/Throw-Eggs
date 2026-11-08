@@ -45,10 +45,11 @@ function RevealSound.roar(strength: number)
 	play(settings.roar, lerp(settings.roarVolume[1], settings.roarVolume[2], strength), lerp(settings.roarSpeed[1], settings.roarSpeed[2], strength))
 end
 
--- The egg touching down, and the cut that follows. `mine` is false for other players' throws, which play quieter.
+-- The egg touching down, and the cut that follows. `mine` is false for other players' throws, which stay silent: every
+-- sound is only for the player it belongs to [Owner, 2026-11-08].
 function RevealSound.eggDrop(mine: boolean)
-	if settings.eggDrop ~= "" then
-		play(settings.eggDrop, if mine then settings.eggVolume.mine else settings.eggVolume.others, 1)
+	if mine and settings.eggDrop ~= "" then
+		play(settings.eggDrop, settings.eggVolume.mine, 1)
 	end
 end
 
@@ -83,14 +84,14 @@ end
 
 -- The whoosh, started throwWhooshLead seconds before the egg leaves the hand so its loudest part lands on the release.
 function RevealSound.throwWhoosh(mine: boolean)
-	if settings.throwWhoosh ~= "" then
-		play(settings.throwWhoosh, if mine then settings.eggVolume.mine else settings.eggVolume.others, 1, settings.throwWhooshSkip)
+	if mine and settings.throwWhoosh ~= "" then
+		play(settings.throwWhoosh, settings.eggVolume.mine, 1, settings.throwWhooshSkip)
 	end
 end
 
 function RevealSound.eggSlice(mine: boolean)
-	if settings.eggSlice ~= "" then
-		play(settings.eggSlice, if mine then settings.eggVolume.mine else settings.eggVolume.others, 1)
+	if mine and settings.eggSlice ~= "" then
+		play(settings.eggSlice, settings.eggVolume.mine, 1)
 	end
 end
 

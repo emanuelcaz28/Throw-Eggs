@@ -389,7 +389,7 @@ local function setHudsEnabled(enabled: boolean, keepPower: boolean?)
 	-- A phone's thumbstick and jump button go too: the thrower can't move, and the jump button sat on the meter.
 	GuiService.TouchControlsEnabled = enabled
 	throwBusy = not enabled
-	for _, name in { "TrainingHud", "PlotHud", "DailyButtonHud", "EggShopHud", "IndexHud", "ShopHud", "BoostHud", "BoostCardHud", "DailyHud", "GoalHud", "SettingsHud", "SettingsButtonHud", "TutorialHud", "TutorialPointerHud", "ReadyPopupHud" } do
+	for _, name in { "TrainingHud", "PlotHud", "DailyButtonHud", "EggShopHud", "IndexHud", "ShopHud", "BoostHud", "BoostCardHud", "DailyHud", "GoalHud", "SettingsHud", "SettingsButtonHud", "TutorialHud", "TutorialPointerHud", "ReadyPopupHud", "PowerLimitHud" } do
 		if keepPower and name == "TrainingHud" then
 			continue
 		end

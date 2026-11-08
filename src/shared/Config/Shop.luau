@@ -95,10 +95,15 @@ local Shop = {
 		{ id = "GIFT_LUCK100_10_2026-11-06", multiplier = 100, amount = 10, userIds = { 234533860, 1404164940, 11729966071, 159677990 } },
 		{ id = "GIFT_LUCK500_10_2026-11-06", multiplier = 500, amount = 10, userIds = { 234533860, 1404164940, 11729966071 } },
 		{ id = "GIFT_LUCK500_20_2026-11-06", multiplier = 500, amount = 20, userIds = { 159677990 } },
+		{ id = "GIFT_LUCK500_10_2026-11-08", multiplier = 500, amount = 10, userIds = { 159677990 } }, -- tibastefan123
+		{ id = "GIFT_LUCK500_2_2026-11-08", multiplier = 500, amount = 2, userIds = { 11729966071 } }, -- pisorcos00
+		{ id = "GIFT_LUCK100_10_2026-11-08", multiplier = 100, amount = 10, userIds = { 11729966071 } }, -- pisorcos00
 	},
-	-- Special monsters handed out by the owner, the same way: once per id, kept with the receipts.
+	-- Special monsters handed out by the owner, the same way: once per id, kept with the receipts. regive = true gives
+	-- the monster again even though the save says it was given before (for a player who lost it); only use it for that.
 	specialGifts = {
 		{ id = "GIFT_GLOOMFIN_2026-11-06", special = "Gloomfin", userIds = { 159677990 } },
+		{ id = "GIFT_GLOOMFIN_REGIVE_2026-11-08", special = "Gloomfin", userIds = { 159677990 }, regive = true }, -- tibastefan123
 	},
 	-- The owner's own test account: no Game Pass counts for it (its passes and the Game Pass monsters they gave are
 	-- taken away when it loads). Roblox still lists the purchases, but the game ignores them. Other players are unaffected.

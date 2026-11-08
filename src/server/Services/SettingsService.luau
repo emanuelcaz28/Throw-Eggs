@@ -41,7 +41,7 @@ local function onSet(player: Player, key: any, value: any)
 		if typeof(value) ~= "number" or value ~= value then
 			return
 		end
-		value = math.clamp(math.floor(value + 0.5), 0, 100)
+		value = math.clamp(math.floor(value + 0.5), 0, Settings.max[key] or 100)
 	elseif typeof(value) ~= "boolean" then
 		return
 	end

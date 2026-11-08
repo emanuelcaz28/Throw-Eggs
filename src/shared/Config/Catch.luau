@@ -41,14 +41,22 @@ return {
 	-- every combination that makes the whole catch at least this rare ("1 in X", DinoStats.describe), each as likely as
 	-- it really is, so the result varies: usually just past the line, now and then far past it. Biggest first; a
 	-- throw uses the first line its multiplier reaches.
-	-- minRarity: no monster below this rarity (1 Common, 2 Uncommon, 3 Rare, 4 Epic, 5 Legendary: its place in its map's
-	-- list). colourAndSize: always a colour and a size, never "No colour" or "Normal size" [Owner, 2026-11-07: x100 and
+	-- minRarity: no monster below this rarity word (1 Common, 2 Uncommon, 3 Rare, 4 Epic, 5 Legendary, Config/RarityLadder).
+	-- A map with no monster that rare (maps 1 and 2 top out at Epic) gives its rarest word instead, with
+	-- shortMapSizeBoost below [Owner, 2026-11-08: "100% chance for an epic for the first maps and waaay higher chances
+	-- of a big size monster"]. minPlace: and no monster more common than this place in its map's list, so late maps,
+	-- where every word is Legendary or higher, still give their rarer half as before.
+	-- colourAndSize: always a colour and a size, never "No colour" or "Normal size" [Owner, 2026-11-07: x100 and
 	-- x500 must give 0% Common to Epic, no colour and normal size].
 	luckyHits = {
-		{ multiplier = 500, minOneIn = 100000000, minRarity = 5, colourAndSize = true }, -- 1 in 100 million or rarer: GODLY!, sometimes IMPOSSIBLE!
-		{ multiplier = 100, minOneIn = 1000000, minRarity = 5, colourAndSize = true }, -- 1 in a million or rarer: GODLY!
+		{ multiplier = 500, minOneIn = 100000000, minRarity = 5, minPlace = 5, colourAndSize = true }, -- 1 in 100 million or rarer: GODLY!, sometimes IMPOSSIBLE!
+		{ multiplier = 100, minOneIn = 1000000, minRarity = 5, minPlace = 5, colourAndSize = true }, -- 1 in a million or rarer: GODLY!
 		{ multiplier = 50, minOneIn = 100000 }, -- the daily reward's: 1 in 100,000 or rarer, LEGENDARY!
 	},
+	-- On a map that falls short of a lucky throw's minRarity, each size's chance is also multiplied by its own
+	-- "1 in X" to this power. At 1 every size is as likely as the others: on map 1 a x100 gives Unit of Doom about
+	-- 1 in 6 (0.1% without), and a x500 gives Mega Chonk or bigger about 2 times in 3.
+	shortMapSizeBoost = 1,
 
 	-- Which monster comes (DinoRoll, docs/GAME_SPEC.md section 8b). Luck aims at a "1 in X": the map's
 	-- commonest monster's odds times the roll's luck (Config/Luck forRoll), so 50x luck on the Forest

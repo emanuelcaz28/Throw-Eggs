@@ -12,6 +12,7 @@ local Format = require(ReplicatedStorage.Shared.Format)
 local Leaderboards = require(ReplicatedStorage.Shared.Config.Leaderboards)
 local PlayerData = require(script.Parent.PlayerData)
 local Roles = require(ReplicatedStorage.Shared.Roles)
+local TrainingService = require(script.Parent.TrainingService)
 local World = require(ReplicatedStorage.Shared.World)
 
 local LeaderboardService = {}
@@ -32,6 +33,14 @@ local PIXELS_PER_STUD = 48
 local boardLists: { [string]: Frame } = {} -- each board's list of rows
 local lastWritten: { [number]: { [string]: number } } = {}
 local names: { [number]: string } = {}
+
+-- A player's score on this board: a save field, or their Throw Power.
+local function scoreOf(board, player: Player, data): number
+	if board.stat == "throwPower" then
+		return TrainingService.getThrowPower(player) or 0
+	end
+	return data[board.stat] or 0
+end
 
 local function encode(board, value: number): number
 	if board.kind == "count" then
@@ -177,7 +186,7 @@ local function buildBody(parent: Instance, board, position: Vector3, facing: Vec
 	for _, name in Leaderboards.modelFolder do
 		folder = folder and folder:FindFirstChild(name)
 	end
-	local template = folder and folder:FindFirstChild(`board_{board.id}`)
+	local template = folder and folder:FindFirstChild(board.model or `board_{board.id}`)
 	if template then
 		local model = template:Clone() :: Model
 		model:ScaleTo(Leaderboards.scale)
@@ -339,7 +348,7 @@ local function writeScores()
 			local written = lastWritten[player.UserId] or {}
 			lastWritten[player.UserId] = written
 			for _, board in Leaderboards.boards do
-				local value = encode(board, data[board.stat])
+				local value = encode(board, scoreOf(board, player, data))
 				if value > 0 and written[board.id] ~= value then
 					local ok, err = pcall(function()
 						storeFor(board):SetAsync(tostring(player.UserId), value)
@@ -372,8 +381,9 @@ local function readTop(board): { { userId: number, value: number } }
 	end
 	for _, player in Players:GetPlayers() do
 		local data = PlayerData.get(player)
-		if data and data[board.stat] > 0 and not hidden[player.UserId] then
-			table.insert(top, { userId = player.UserId, value = data[board.stat] })
+		local score = if data then scoreOf(board, player, data) else 0
+		if score > 0 and not hidden[player.UserId] then
+			table.insert(top, { userId = player.UserId, value = score })
 		end
 	end
 	table.sort(top, function(a, b)

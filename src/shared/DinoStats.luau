@@ -4,6 +4,7 @@ local Biomes = require(script.Parent.Config.Biomes)
 local Catch = require(script.Parent.Config.Catch)
 local Chonk = require(script.Parent.Config.Chonk)
 local Dinos = require(script.Parent.Config.Dinos)
+local RarityLadder = require(script.Parent.Config.RarityLadder)
 local Specials = require(script.Parent.Config.Specials)
 
 local DinoStats = {}
@@ -30,6 +31,33 @@ end
 -- That place, or nil for a monster from no map (the specials).
 function DinoStats.rarityRank(dinoId: string): number?
 	return rarityRankById[dinoId]
+end
+
+-- A monster's rarity word and its level (1 Common ... 8 Secret), from its home map's line in Config/RarityLadder,
+-- so the words climb as the maps go on. nil for a monster from no map (the specials).
+local rarityById = {}
+for biomeId, words in RarityLadder.byBiome do
+	for index, dino in Dinos[biomeId] or {} do
+		rarityById[dino.id] = words[math.min(index, #words)]
+	end
+end
+
+function DinoStats.rarity(dinoId: string): string?
+	return rarityById[dinoId]
+end
+
+function DinoStats.rarityLevel(dinoId: string): number?
+	local word = rarityById[dinoId]
+	return if word then table.find(RarityLadder.order, word) else nil
+end
+
+-- The highest rarity level any monster in this list reaches.
+function DinoStats.topRarityLevel(biomeId: string): number
+	local top = 1
+	for _, dino in Dinos[biomeId] or {} do
+		top = math.max(top, DinoStats.rarityLevel(dino.id) or 1)
+	end
+	return top
 end
 
 -- How big a dino is with no size mutation: its biome's standard size.

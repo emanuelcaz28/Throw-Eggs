@@ -64,10 +64,10 @@ local function rollExtra(options, boost)
 	end
 end
 
-local function rollCatch(biome, luck, minRank, recent, extraBoost, minRarity)
+local function rollCatch(biome, luck, minRank, recent, extraBoost, filter)
 	local pool = biome.rollFrom or biome.id
 	local dinos = Dinos[pool]
-	local odds = CatchOdds.monsters(pool, luck, minRank, recent, minRarity)
+	local odds = CatchOdds.monsters(pool, luck, minRank, recent, filter)
 	local pick, rank = math.random(), #dinos
 	for r in dinos do
 		pick -= odds[r]
@@ -96,12 +96,14 @@ end
 -- A lucky throw's catch (DinoRoll.rollCatch with minOneIn): the colour and size make it at least that rare.
 local function luckyCatch(biome, luck, multiplier, recent)
 	local hit = CatchOdds.luckyHit(multiplier)
-	local dino, rank = rollCatch(biome, luck * multiplier, nil, recent, nil, hit.minRarity)
-	local options, total = CatchOdds.hitOptions(dino.id, hit.minOneIn, hit.colourAndSize)
+	local filter, short = CatchOdds.luckyFilter(biome.rollFrom or biome.id, hit)
+	local sizeBoost = if short then Catch.shortMapSizeBoost else nil
+	local dino, rank = rollCatch(biome, luck * multiplier, nil, recent, nil, filter)
+	local options, total = CatchOdds.hitOptions(dino.id, hit.minOneIn, hit.colourAndSize, sizeBoost)
 	if #options == 0 then
 		local dinos = Dinos[biome.rollFrom or biome.id]
 		dino, rank = dinos[#dinos], #dinos
-		options, total = CatchOdds.hitOptions(dino.id, hit.minOneIn, hit.colourAndSize)
+		options, total = CatchOdds.hitOptions(dino.id, hit.minOneIn, hit.colourAndSize, sizeBoost)
 	end
 	local pick, chosen = math.random() * total, options[#options]
 	for _, option in options do
@@ -114,7 +116,7 @@ end
 -- One player. opts: session (minutes a day), trainSeconds, throws, tap (share of bubbles tapped), perfect, lowLevel,
 -- highLevel (the meter), shop ("cheapest", "noRack", "rackOnly"), passXp, passPower, passCash, packs (+1,000 power packs a day).
 local function play(opts)
-	local s = { t = 0, day = 1, left = (opts.session or 60) * 60, lucky = 50, power = Training.startPower, xp = 0, ups = 0, cash = 0, plot = {}, plotUps = 0, egg = 1, recent = {}, sinceRare = 0, sinceTop = 0, caught = {}, income = 0 }
+	local s = { t = 0, day = 1, left = (opts.session or 60) * 60, lucky = 50, power = Training.startPower, xp = 0, ups = 0, cash = 0, plot = {}, plotUps = 0, egg = 1, recent = {}, sinceRare = 0, sinceTop = 0, sinceGift = 0, caught = {}, income = 0 }
 	local reached = { [1] = { t = 0, day = 1 } }
 	s.power += (opts.packs or 0) * 1000 -- the first day's packs
 	local passXp, passPower, passCash = opts.passXp or 1, opts.passPower or 1, opts.passCash or 1
@@ -188,18 +190,21 @@ local function play(opts)
 			tick(2 + Throw.releaseDelay() + Throw.flightTime(distance) + 8) -- meter, wind-up, flight, reveal, then home and the walk back (about 3 s at walkSpeed 32)
 			local biome = Luck.biomeAt(distance)
 			local index = table.find(Biomes, biome)
-			local minRank
+			local minRank, gift
 			if not s.caught[biome.id] then minRank = rarest(biome, Hooks.newMapGift.rarest)
 			elseif s.sinceTop + 1 >= Hooks.jackpotPity.throws then minRank = rarest(biome, Hooks.jackpotPity.rarest)
+			elseif s.sinceGift + 1 >= Hooks.surpriseGift.throws and CatchOdds.giftFilter(biome.rollFrom or biome.id, Hooks.surpriseGift) then gift = CatchOdds.giftFilter(biome.rollFrom or biome.id, Hooks.surpriseGift)
 			elseif s.sinceRare + 1 >= Hooks.pity.throws then minRank = rarest(biome, Hooks.pity.rarest) end
 			local luck = Luck.forRoll(distance, Eggs[s.egg].luckBonus)
 			local dino, rank, income
 			if s.lucky then
 				dino, rank, income = luckyCatch(biome, luck, s.lucky, s.recent)
 				s.lucky = nil
+				gift = nil
 			else
-				dino, rank, income = rollCatch(biome, luck, minRank, s.recent, DeepEnd.boostAt(reach))
+				dino, rank, income = rollCatch(biome, luck, minRank, s.recent, DeepEnd.boostAt(reach), gift)
 			end
+			s.sinceGift = if gift then 0 elseif CatchOdds.giftFilter(biome.rollFrom or biome.id, Hooks.surpriseGift) then s.sinceGift + 1 else s.sinceGift
 			s.sinceRare = if rank >= rarest(biome, Hooks.pity.rarest) then 0 else s.sinceRare + 1
 			s.sinceTop = if rank >= rarest(biome, Hooks.jackpotPity.rarest) then 0 else s.sinceTop + 1
 			s.recent = { dino.id, s.recent[1] }

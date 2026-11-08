@@ -14,6 +14,8 @@ local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local ThrowCinematic = {}
 
+local luckHolder: Frame? = nil -- the luck panel, once built (isLuckPanelShown)
+
 local CORRIDOR_LOOK = 30 -- studs ahead the camera aims when it looks down the corridor
 local CHEST = Vector3.new(0, 1.5, 0) -- from the root, where the camera looks when it faces the thrower
 local STANDARD_BODY = 4 -- a standard avatar's hip height plus its root's height, in studs
@@ -208,6 +210,7 @@ function ThrowCinematic.buildLuckPanel(gui: ScreenGui)
 	holder.BackgroundTransparency = 1
 	holder.Visible = false
 	holder.Parent = gui
+	luckHolder = holder
 	local scale = Instance.new("UIScale")
 	scale.Scale = UiKit.scale()
 	scale.Parent = holder
@@ -239,8 +242,26 @@ function ThrowCinematic.buildLuckPanel(gui: ScreenGui)
 
 	local current = nil
 	local luckPanel = {}
+	local shownCount = 0 -- goes up on every show, so a fade-out from an earlier throw can't hide this one
+	local fades: { Tween } = {}
+
+	local function clearFade()
+		for _, tween in fades do
+			tween:Cancel()
+		end
+		table.clear(fades)
+		for _, object in holder:GetDescendants() do
+			if object:IsA("TextLabel") then
+				object.TextTransparency = 0
+			elseif object:IsA("UIStroke") then
+				object.Transparency = 0
+			end
+		end
+	end
 
 	function luckPanel.show(shown: boolean)
+		shownCount += 1
+		clearFade()
 		holder.Visible = shown
 		current = nil
 	end
@@ -265,26 +286,33 @@ function ThrowCinematic.buildLuckPanel(gui: ScreenGui)
 	-- Fades it away (the landing's cut to black) and hides it.
 	function luckPanel.fadeOut(seconds: number)
 		local info = TweenInfo.new(seconds)
+		clearFade()
 		for _, object in holder:GetDescendants() do
-			if object:IsA("TextLabel") then
-				TweenService:Create(object, info, { TextTransparency = 1 }):Play()
-			elseif object:IsA("UIStroke") then
-				TweenService:Create(object, info, { Transparency = 1 }):Play()
+			local goal = if object:IsA("TextLabel") then { TextTransparency = 1 }
+				elseif object:IsA("UIStroke") then { Transparency = 1 }
+				else nil
+			if goal then
+				local tween = TweenService:Create(object, info, goal)
+				tween:Play()
+				table.insert(fades, tween)
 			end
 		end
+		local fadingShow = shownCount
 		task.delay(seconds, function()
-			holder.Visible = false
-			for _, object in holder:GetDescendants() do
-				if object:IsA("TextLabel") then
-					object.TextTransparency = 0
-				elseif object:IsA("UIStroke") then
-					object.Transparency = 0
-				end
+			if shownCount == fadingShow then -- not shown again for a new throw in the meantime
+				holder.Visible = false
+				clearFade()
 			end
 		end)
 	end
 
 	return luckPanel
+end
+
+-- Whether this player's luck panel is on screen (their egg is in the air or just landed). The lucky catch banner waits
+-- for it, as it would cover the luck and the world's name (LuckyBannerController).
+function ThrowCinematic.isLuckPanelShown(): boolean
+	return luckHolder ~= nil and luckHolder.Visible
 end
 
 -- A full-screen black layer over everything, for the dips to black.

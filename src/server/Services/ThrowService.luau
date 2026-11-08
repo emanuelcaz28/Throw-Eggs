@@ -10,8 +10,10 @@ local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Hooks = require(ReplicatedStorage.Shared.Config.Hooks)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
+local PowerLimit = require(ReplicatedStorage.Shared.Config.PowerLimit)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
+local CatchOdds = require(ReplicatedStorage.Shared.CatchOdds)
 local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
 local DailyTasks = require(script.Parent.DailyTasks)
 local DinoRoll = require(script.Parent.DinoRoll)
@@ -143,7 +145,11 @@ local function onTap(player: Player, height: any, lucky: any)
 
 	height = math.clamp(height, 0, 1)
 	-- reach is how far the throw really goes; past the last world the egg lands on The Deep End's floor (Config/DeepEnd).
-	local reach = power * Throw.multiplier(height)
+	-- The player's Power Limit (Config/PowerLimit) stops it short, so strong players can still reach earlier maps.
+	local settings = (PlayerData.get(player) or {}).settings or {}
+	local fullReach = power * Throw.multiplier(height)
+	local reach = PowerLimit.apply(fullReach, settings.powerLimitOn, settings.powerLimit)
+	local limited = reach < fullReach
 	local distance = math.min(reach, Throw.farthestLanding())
 
 	-- The egg in hand when it leaves counts, even if the player swaps mid-flight.
@@ -188,12 +194,22 @@ local function onTap(player: Player, height: any, lucky: any)
 			return last - count + 1
 		end
 
-		-- Guarantees (Config/Hooks): the first catch in a new biome, or too many throws without a rare one.
-		local minRank, reason = nil, nil
+		-- Guarantees (Config/Hooks): the first catch in a new biome, too many throws without a rare one, or the surprise
+		-- gift (every 60th throw a Legendary or Mythic; band is the monsters it may be). Only throws on maps where
+		-- Legendary and Mythic are high rarities count towards the gift (Config/Hooks surpriseGift).
+		local giftBand = CatchOdds.giftFilter(pool, Hooks.surpriseGift)
+		local giftMap = giftBand ~= nil
+		local minRank, reason, band = nil, nil, nil
 		if data and not IndexService.hasCaughtIn(data, pool) then
 			minRank, reason = rarest(Hooks.newMapGift.rarest), "newMap"
 		elseif data and data.throwsSinceRarest + 1 >= Hooks.jackpotPity.throws then
 			minRank, reason = rarest(Hooks.jackpotPity.rarest), "jackpot"
+		elseif
+			data
+			and giftMap
+			and data.throwsSinceGift + 1 >= Hooks.surpriseGift.throws
+		then
+			band, reason = giftBand, "gift"
 		elseif data and data.throwsSinceRare + 1 >= Hooks.pity.throws then
 			minRank, reason = rarest(Hooks.pity.rarest), "pity"
 		end
@@ -202,7 +218,7 @@ local function onTap(player: Player, height: any, lucky: any)
 		local luckyThrow = if data then ShopService.takeLuckyThrow(player, data, state.lucky) else 1
 		if luckyThrow > 1 then
 			-- Already a guaranteed hit, and its odds must stay what its Details panel showed before buying (CatchOdds).
-			minRank, reason = nil, nil
+			minRank, reason, band = nil, nil, nil
 		end
 
 		-- The tutorial's two throws (Config/Tutorial): the first is a set modest monster, the second always beats it.
@@ -210,7 +226,7 @@ local function onTap(player: Player, height: any, lucky: any)
 		local tutorial = if data and luckyThrow == 1 then TutorialService.planThrow(data, pool, rarest) else nil
 		if tutorial then
 			minRank = if tutorial.kind == "second" then tutorial.minRank else nil
-			reason = nil
+			reason, band = nil, nil
 		end
 
 		-- The big number is what players see; the roll counts luck from the biome's par (Luck.forRoll).
@@ -220,12 +236,16 @@ local function onTap(player: Player, height: any, lucky: any)
 		local depth = if deep then DeepEnd.depthAt(reach) else 0
 		local catch = if tutorial and tutorial.kind == "first"
 			then TutorialService.plainCatch(pool, tutorial.rank)
-			else DinoRoll.rollCatch(pool, rollLuck, minRank, data and data.recentCatches, hit, DeepEnd.boostAt(reach))
+			else DinoRoll.rollCatch(pool, rollLuck, minRank, data and data.recentCatches, hit, DeepEnd.boostAt(reach), band)
 		catch.luck = Luck.at(distance) * Luck.eggFactor(egg.luckBonus, distance) * timedLuck
-		catch.guarantee = reason
+		-- The surprise gift is never told to the client: it must look like a lucky catch [Owner, 2026-11-08].
+		catch.guarantee = if reason == "gift" then nil else reason
 		if data then
 			data.throwsSinceRare = if catch.rank >= rarest(Hooks.pity.rarest) then 0 else data.throwsSinceRare + 1
 			data.throwsSinceRarest = if catch.rank >= rarest(Hooks.jackpotPity.rarest) then 0 else data.throwsSinceRarest + 1
+			-- A gift that had to wait (the 60th throw already had a guarantee or was a lucky throw) comes on the next
+			-- plain throw. Throws on maps without the gift don't count.
+			data.throwsSinceGift = if reason == "gift" then 0 elseif giftMap then data.throwsSinceGift + 1 else data.throwsSinceGift
 			data.recentCatches = { catch.id, data.recentCatches[1] }
 			data.farthestThrow = math.max(data.farthestThrow, math.floor(reach))
 			if depth > data.deepestDepth then
@@ -235,9 +255,12 @@ local function onTap(player: Player, height: any, lucky: any)
 		end
 		CompetitionService.landedIn(player, biome)
 
-		-- Just short of the next biome: the client shows how close it was.
+		-- Just short of the next biome: the client shows how close it was. Not when the Power Limit stopped it there:
+		-- the player chose that spot.
 		local nextBiome = Biomes[table.find(Biomes, biome) + 1]
-		if deep then
+		if limited then
+			-- no hint
+		elseif deep then
 			local nextDepth = DeepEnd.distanceOf(depth + 1)
 			if nextDepth - reach <= Hooks.almostThere.studs then
 				catch.almostThere = { name = `Depth {depth + 1}`, studs = math.max(math.ceil(nextDepth - reach), 1) }

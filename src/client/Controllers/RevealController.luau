@@ -59,11 +59,34 @@ local STORED_TEXT = {
 
 local hud = nil
 
+-- Tweens still running, by the object they move, so the end of a reveal can stop them (stopTweens).
+local running: { [Instance]: { Tween } } = setmetatable({}, { __mode = "k" }) :: any
+
 local function tween(instance: Instance, time: number, goal, style: Enum.EasingStyle?, direction: Enum.EasingDirection?)
 	local info = TweenInfo.new(time, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out)
 	local created = TweenService:Create(instance, info, goal)
+	local list = running[instance] or {}
+	running[instance] = list
+	table.insert(list, created)
+	created.Completed:Once(function()
+		local index = table.find(list, created)
+		if index then
+			table.remove(list, index)
+		end
+	end)
 	created:Play()
 	return created
+end
+
+-- Stops every tween still moving these objects. A reveal closed quickly ends while its colour wash and edge glows are
+-- still fading in (1 s); without this they carried on after the cleanup and left the screen tinted [Owner, 2026-11-08].
+local function stopTweens(...: Instance)
+	for _, instance in { ... } do
+		for _, moving in running[instance] or {} do
+			moving:Cancel()
+		end
+		running[instance] = nil
+	end
 end
 
 -- Puts the character back on its own plot, by the exit. Players without a plot stay put.
@@ -806,6 +829,7 @@ local function colourMoment(rarity: string, stage, strength: number)
 end
 
 local function clearColourMoment()
+	stopTweens(hud.wash, hud.vignette, table.unpack(hud.glows))
 	hud.wash.BackgroundTransparency = 1
 	if hud.rays then
 		hud.rays.destroy()
@@ -1431,6 +1455,9 @@ function RevealController.play(catch, egg: BasePart)
 			dark:Destroy()
 		end
 		hud.vignette.ImageTransparency = 1
+		for _, glow in hud.glows do
+			glow.BackgroundTransparency = 1
+		end
 		error(err, 0)
 	end
 	finishedEvent:Fire(catch)

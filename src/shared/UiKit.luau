@@ -15,6 +15,7 @@ local DinoModel = require(script.Parent.DinoModel)
 local EggModel = require(script.Parent.EggModel)
 local DinoStats = require(script.Parent.DinoStats)
 local Icons = require(script.Parent.Config.Icons)
+local RarityLadder = require(script.Parent.Config.RarityLadder)
 
 local UiKit = {}
 
@@ -49,9 +50,9 @@ UiKit.GRADIENTS = {
 	unseen = { "#d9dce3", "#9aa1ae" },
 }
 
--- One tier per monster of a map, most common first (Figma "Throw Eggs - Index & Inventory"). The first six monsters end at
--- mythic; a map's two prizes (Config/Dinos) are ancient and secret.
-UiKit.RARITY_ORDER = { "common", "uncommon", "rare", "epic", "legendary", "mythic", "ancient", "secret" }
+-- The rarity tiers, most common first (Figma "Throw Eggs - Index & Inventory"). Which monster gets which is
+-- Config/RarityLadder: the words climb map by map.
+UiKit.RARITY_ORDER = RarityLadder.order
 UiKit.RARITY = {
 	common = { "#e6e9ef", "#a9b1bf" },
 	uncommon = { "#b4f59c", "#52c43f" },
@@ -482,13 +483,12 @@ function UiKit.monster(parent: Instance, dinoId: string, options): (ViewportFram
 	return frame, model
 end
 
--- Which rarity tier a dino is: its place in its biome's list, most common first.
+-- Which rarity tier a dino is (Config/RarityLadder: its home map's word for its place in the list).
 function UiKit.rarityOf(dinoId: string): string
 	if DinoStats.special(dinoId) then
 		return "mythic"
 	end
-	local rank = DinoStats.rarityRank(dinoId)
-	return if rank then UiKit.RARITY_ORDER[math.min(rank, #UiKit.RARITY_ORDER)] else "common"
+	return DinoStats.rarity(dinoId) or "common"
 end
 
 -- A rarity-coloured tile with a spinning dino, its name on top and optional text at the bottom.

@@ -33,7 +33,7 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
    click places it there; the server checks the spot. Every new catch goes into the backpack and onto the
    head when the reveal ends, so the player places it (`Config/Plot` carryNewCatches; the carried one always shows
    on the hotbar, in the last slot if it isn't among the ten best); starting a throw puts it back in the hotbar.
-   Equip Best picks free spots by itself. The plot holds a limited number (start 10); extras go to backpack. Equip Best / Pick Up / Sell.
+   Equip Best picks free spots by itself. The plot holds a limited number (start 10); extras go to backpack. Equip Best / Unequip All / Pick Up / Sell. Equip Best keeps tied monsters where they are; Unequip All moves the weakest off first, as many as the backpack (100) holds.
    Plots (bases) are 48 x 48, five in one row across the back of the arena, fenced, with a gate in the middle
    of the front edge. A blue upgrade sign on the front fence by the gate shows "🐾 10 › 12" and the price
    (green when the owner can afford it, red when not, a gold MAX bar at 20); clicking it buys +2 room (up to
@@ -89,6 +89,12 @@ never show during the tutorial, a throw, or while any panel is open (a card a pa
 A player buying upgrade after upgrade on the pad gets no rack card until they stop for 5 s. Phones get a 1.3x
 bigger card (at most 70% of the screen width) with a bigger X.
 
+Over the player's own pad float three short lines, seen only by them (`TrainingController`, `Config/Training`
+xpUpgrade.sign): the price (green while affordable, breathing gently; red when not), the XP per squat it gives,
+and how many more until the next rack. It bobs slowly and jumps when an upgrade is bought. It hangs on its own
+point in the world, not on the pad, so it stays when the pad unloads after a long throw. Within 2 studs of the
+pad a short hold of E (the prompt's button on phones) buys one, through the same `BuyUpgrade` request as the card.
+
 ## Biomes (throw order, near → far)
 
 | # | Biome | Luck at end (target) |
@@ -128,7 +134,7 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
 ## MVP build order
 
 1. Training station → Throw Power stat (saved with DataStore).
-2. Throw lane + timing meter; distance = power × meter.
+2. Throw lane + timing meter; distance = power × meter, never past the player's Power Limit if they set one (Config/PowerLimit).
 3. 3 biomes × 5 dinos, weighted roll × luck multiplier.
 4. Reveal sequence (hangman letters + climbing "1 in X"). Spend real time here.
 5. Plot holding 8 dinos placed freely + $/s income, fenced, with capacity upgrades at its sign (`Config/Plot`).
@@ -143,7 +149,7 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
 9. Timed events: one every 15 minutes for 5 minutes, taking turns: Double Luck (2x luck) and Ghost Rush (GHOST 10x
    likelier), from the server clock (`Config/Events`); an icon at the bottom right explains it on hover or tap.
    After the last world: The Deep End behind the Last Door, with endless Depth (`Config/DeepEnd`, `docs/GAME_SPEC.md` section 9).
-10. Arena leaderboards (along the right-hand wall, seen from the platform): MOST DINOS (dinos caught), TOP MONEY (money earned) and LUCKIEST CATCH (rarest
+10. Arena leaderboards (along the right-hand wall, seen from the platform): MOST POWER (Throw Power), TOP MONEY (money earned) and LUCKIEST CATCH (rarest
     "1 in X"), top 10 across all servers, refreshed every minute (`Config/Leaderboards`).
 11. Offline earnings: on rejoin, the plot pays 50% of its $/s for the time away (up to 8 hours, events not
     counted), with a "Your dinos earned $X while you were away!" message (`Config/Plot`).
@@ -173,7 +179,7 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
     "1 in X" at the top, screen edges lit in the luck tier's colour, the name as white dashes filling in at the
     bottom, then a white flash and turning light rays behind the monster in its rarity's colour (no rings), and the
     final text straight on the screen (no card), and a "YOU CAUGHT!" banner on the plot after very rare ones. Catches of 1 in 10K
-    or rarer get the lucky catch banner (mock-up 12) for the whole server (`LuckyBannerController`).
+    or rarer get the lucky catch banner (mock-up 12) for the whole server (`LuckyBannerController`). It waits while your own egg is in the air (it would cover the luck and world name), and one already up slides away when you throw and comes back after your reveal.
 Not built yet: dinos priced by % of best. No rebirth: the reference game has none.
 
 ## Reference game notes

@@ -22,11 +22,13 @@ local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Icons = require(ReplicatedStorage.Shared.Config.Icons)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
+local PowerLimit = require(ReplicatedStorage.Shared.Config.PowerLimit)
 local LuckBoosts = require(ReplicatedStorage.Shared.LuckBoosts)
 local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
+local SettingsState = require(script.Parent.SettingsState)
 
 local player = Players.LocalPlayer
 
@@ -355,9 +357,11 @@ local function multiplierText(value: number): string
 	return string.format("%g", value)
 end
 
--- How far this player can throw right now, a perfect throw, and where that lands (Config/DeepEnd).
+-- How far this player can throw right now, a perfect throw, and where that lands (Config/DeepEnd). The Power Limit
+-- stops it short, the same as on the server (Config/PowerLimit).
 local function bestLanding(): (number, number)
-	local reach = (player:GetAttribute("ThrowPower") or 0) * Throw.meter.perfectMultiplier
+	local full = (player:GetAttribute("ThrowPower") or 0) * Throw.meter.perfectMultiplier
+	local reach = PowerLimit.apply(full, SettingsState.get("powerLimitOn"), SettingsState.get("powerLimit"))
 	return math.min(reach, Throw.farthestLanding()), reach
 end
 

@@ -178,18 +178,41 @@ local function build(model: Model)
 	}
 end
 
+-- Models whose parts changed since their tag was built, so it's built again on the next pick.
+local stale = {}
+
 local function add(model: Instance)
 	if tags[model] or not model:IsA("Model") or not model:GetAttribute("TagName") then
 		return
 	end
 	build(model)
+	-- Another player's carried monster can reach this screen before its body does (their character streams in part
+	-- by part), which left a tag with nothing to hang on and no height, never shown [Owner, 2026-11-08: "I can't
+	-- see the monster name tag on this other player"]. A part arriving later builds it again, measured.
+	tags[model].watch = model.DescendantAdded:Connect(function(child)
+		if child:IsA("BasePart") then
+			stale[model] = true
+		end
+	end)
 end
 
 local function remove(model: Instance)
 	local tag = tags[model]
 	if tag then
 		tag.gui:Destroy()
+		tag.watch:Disconnect()
 		tags[model] = nil
+	end
+	stale[model] = nil
+end
+
+local function rebuildStale()
+	for model in stale do
+		stale[model] = nil
+		if tags[model] then
+			remove(model)
+			add(model)
+		end
 	end
 end
 
@@ -334,6 +357,7 @@ function MonsterTagController.start()
 		since += dt
 		if since >= PICK_EVERY then
 			since = 0
+			rebuildStale()
 			pick()
 		end
 	end)

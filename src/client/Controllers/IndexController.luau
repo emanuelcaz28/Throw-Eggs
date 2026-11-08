@@ -21,6 +21,7 @@ local RarityLabel = require(script.Parent.RarityLabel)
 local player = Players.LocalPlayer
 
 local IndexController = {}
+IndexController.discovered = {} -- every monster id this player has caught, as the server last said (PowerLimitController reads it)
 
 local PANEL_SIZE = Vector2.new(1060, 672)
 local LIST = { x = 4, y = 10, width = 1040, height = 556 } -- the scrolling list, in the panel's body
@@ -290,7 +291,7 @@ local function mapRow(parent: Instance, biome, number: number, discovered)
 	local tiles = {}
 	for order, dino in monstersOf(biome) do
 		local seen = discovered[dino.id] == true
-		local rarity = UiKit.RARITY_ORDER[math.min(order, #UiKit.RARITY_ORDER)]
+		local rarity = UiKit.rarityOf(dino.id)
 		table.insert(tiles, { frame = monsterTile(row, dino, rarity, seen, order), dino = dino, seen = seen })
 	end
 	return { top = (number - 1) * MAP_PITCH, tiles = tiles, shown = false }
@@ -417,6 +418,7 @@ function IndexController.start()
 	hud.list:GetPropertyChangedSignal("CanvasPosition"):Connect(updateModels)
 	remote.OnClientEvent:Connect(function(newDiscovered)
 		discovered = newDiscovered
+		IndexController.discovered = newDiscovered
 		for _, biome in Biomes do
 			local found, count = countFound(biome, discovered)
 			if count > 0 and found == count and not completed[biome.id] then

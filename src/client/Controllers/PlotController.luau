@@ -119,10 +119,16 @@ local function buildGui()
 	empty.Name = "Empty"
 	empty.Position = UDim2.fromOffset(20, 90)
 	empty.Size = UDim2.new(1, -40, 0, 60)
-	local equip = UiKit.button(panel.body, "EQUIP BEST", "yellow", PANEL_SIZE.X - 32, 66, 32)
+	-- EQUIP BEST and UNEQUIP ALL side by side along the bottom.
+	local bottomWidth = (PANEL_SIZE.X - 42) / 2
+	local equip = UiKit.button(panel.body, "EQUIP BEST", "yellow", bottomWidth, 66, 28)
 	equip.Name = "EquipBest"
 	equip.AnchorPoint = Vector2.new(0, 1)
 	equip.Position = UDim2.new(0, 16, 1, -16)
+	local unequipAll = UiKit.button(panel.body, "UNEQUIP ALL", "red", bottomWidth, 66, 28)
+	unequipAll.Name = "UnequipAll"
+	unequipAll.AnchorPoint = Vector2.new(0, 1)
+	unequipAll.Position = UDim2.new(0, 26 + bottomWidth, 1, -16)
 
 	-- Backpack dinos, best first, on keys 1-0. Along the bottom edge; training hides it, so the
 	-- training bar can have that spot.
@@ -201,6 +207,7 @@ local function buildGui()
 		panel = panel,
 		tabs = tabs,
 		equip = equip,
+		unequipAll = unequipAll,
 		list = list,
 		empty = empty,
 	}
@@ -672,6 +679,9 @@ function PlotController.start()
 	end)
 	hud.equip.Activated:Connect(function()
 		send("equipBest")
+	end)
+	hud.unequipAll.Activated:Connect(function()
+		send("unequipAll")
 	end)
 	remotes.DinosChanged.OnClientEvent:Connect(function(newDinos, newSlots)
 		dinos = newDinos

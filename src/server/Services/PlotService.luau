@@ -430,27 +430,73 @@ local function backpackCount(data): number
 	return #data.dinos - #plotted(data)
 end
 
--- Puts the best monsters on the base and says what happened. When they're already there nothing moves, so monsters
--- that earn the same aren't swapped around for nothing.
+-- Puts the best monsters on the base and says what happened. Monsters that earn the same keep their places: one already
+-- on the base wins a tie, so nothing is swapped around for nothing. Which monsters move is decided one by one, never by
+-- comparing income totals: a base earning trillions made a weak monster's gain look like rounding, so free slots
+-- stayed empty and it said "already on your base" [player feedback, 2026-11-08].
 local function equipBest(player: Player, data)
 	local sorted = table.clone(data.dinos)
 	table.sort(sorted, function(a, b)
-		return incomeOf(a) > incomeOf(b)
+		local incomeA, incomeB = incomeOf(a), incomeOf(b)
+		if incomeA ~= incomeB then
+			return incomeA > incomeB
+		end
+		if (a.onPlot == true) ~= (b.onPlot == true) then
+			return a.onPlot == true
+		end
+		return (a.key or 0) < (b.key or 0)
 	end)
-	local now, best = 0, 0
+	local placed, removed, gain = 0, 0, 0
 	for rank, entry in sorted do
-		now += if entry.onPlot then incomeOf(entry) else 0
-		best += if rank <= capacityOf(data) then incomeOf(entry) else 0
+		local wanted = rank <= capacityOf(data)
+		if wanted and not entry.onPlot then
+			placed += 1
+			gain += incomeOf(entry)
+		elseif entry.onPlot and not wanted then
+			removed += 1
+			gain -= incomeOf(entry)
+		end
+		entry.onPlot = wanted
 	end
-	if best <= now * (1 + 1e-9) then -- a hair over, as adding up in another order can differ in the last digits
+	if placed == 0 and removed == 0 then
 		remotes.Notice:FireClient(player, "Your best monsters are already on your base")
 		return
 	end
-	for rank, entry in sorted do
-		entry.onPlot = rank <= capacityOf(data)
+	changed(player, data)
+	remotes.Notice:FireClient(player, if gain > 0
+		then `Best monsters equipped! +{Format.cash(gain)}/s`
+		else "Best monsters equipped!")
+end
+
+-- Takes the monsters off the base into the backpack, the weakest first, as many as the backpack has room for.
+local function unequipAll(player: Player, data)
+	local placed = plotted(data)
+	if #placed == 0 then
+		remotes.Notice:FireClient(player, "Your base is already empty")
+		return
+	end
+	table.sort(placed, function(a, b)
+		return incomeOf(a) < incomeOf(b)
+	end)
+	local room = Plot.backpackSize - backpackCount(data)
+	local moved = 0
+	for _, entry in placed do
+		if moved >= room then
+			break
+		end
+		entry.onPlot = false
+		moved += 1
+	end
+	if moved == 0 then
+		remotes.Notice:FireClient(player, "Your backpack is full", true)
+		return
 	end
 	changed(player, data)
-	remotes.Notice:FireClient(player, `Best monsters equipped! +{Format.cash(best - now)}/s`)
+	if moved < #placed then
+		remotes.Notice:FireClient(player, `Backpack full: {moved} of {#placed} monsters unequipped`, true)
+	else
+		remotes.Notice:FireClient(player, "All monsters unequipped")
+	end
 end
 
 -- Saves from before the bases shrank can hold more dinos than the base now fits, or spots outside
@@ -570,6 +616,9 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 
 	if action == "equipBest" then
 		equipBest(player, data)
+		return
+	elseif action == "unequipAll" then
+		unequipAll(player, data)
 		return
 	elseif action == "unequip" then
 		setHeld(player, data, nil)

@@ -1,4 +1,4 @@
--- After a reveal: says why a catch was guaranteed (the new-map gift or pity, Config/Hooks) and
+-- After a reveal: says why a catch was guaranteed (the new-map gift or pity, Config/Hooks; never the surprise gift) and
 -- "SO CLOSE!" when the egg landed just short of the next world. The server decides all of it; this
 -- only shows what the catch says.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

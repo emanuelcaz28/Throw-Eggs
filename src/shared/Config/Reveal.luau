@@ -100,11 +100,12 @@ return {
 		roar = "", -- [Owner, 2026-11-08: removed, a weird scream after the reveal] was 9113980319, "Creature Mix Giant Crab Monster Roar"
 		roarVolume = { 0.35, 1 }, -- from a first-label catch to the biggest...
 		roarSpeed = { 1.15, 0.7 }, -- ...deeper the bigger it is
-		-- The egg landing and being cut in half (ElevenLabs). Empty is silent; others' throws play quieter.
+		-- The egg landing and being cut in half (ElevenLabs). Empty is silent. Only the thrower hears their own throw's sounds;
+		-- other players' throws are silent [Owner, 2026-11-08: every sound only for the player it belongs to].
 		eggDrop = "rbxassetid://115878085017623", -- sounds/egg_drop_2_loud.mp3 (the first upload was 14 dB too quiet)
 		eggSlice = "rbxassetid://105375332927135", -- sounds/egg_slice_1.mp3
-		eggVolume = { mine = 0.9, others = 0.25 },
-		-- [Owner, 2026-11-08] The whoosh when the egg leaves the hand. Same volumes as the egg sounds (others' throws quieter).
+		eggVolume = { mine = 0.9 },
+		-- [Owner, 2026-11-08] The whoosh when the egg leaves the hand. Same volume as the egg sounds, and only for the thrower.
 		throwWhoosh = "rbxassetid://116592483100589",
 		throwWhooshSkip = 0.3, -- the file starts with 0.3 s of silence, skipped
 		throwWhooshLead = 0.25, -- its loudest part is 0.56 s in, so it starts this much before the release to peak with it

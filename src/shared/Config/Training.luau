@@ -57,6 +57,32 @@ local Training = {
 		padHeight = 8,
 		basePrice = 50, -- the first upgrade; each one after costs priceGrowth times more
 		priceGrowth = 50,
+		-- The words floating over the owner's own pad (TrainingController): the price, the XP per squat it gives,
+		-- and how far the next rack is [Owner, 2026-11-08: "smaller and better, more satisfying"].
+		sign = {
+			height = 4, -- studs over the pad
+			size = Vector2.new(190, 90), -- its box in pixels
+			maxDistance = 90, -- studs; further away it's gone
+			priceText = 30, -- pixel heights of the three lines
+			xpText = 17,
+			rackText = 13,
+			outline = 3,
+			bob = 0.2, -- it floats this many studs up and down...
+			bobSeconds = 2.6, -- ...once every this many seconds
+			pulse = 1.07, -- while you can afford it, the price breathes up to this size
+			pulseSeconds = 1.1,
+			punch = 1.35, -- buying one makes the sign jump to this size and spring back
+			afford = { "#E2FFC4", "#38D24A" }, -- the price's colours, top to bottom
+			tooPricey = { "#FFC2B8", "#EE3B2B" },
+			xp = { "#E0F8FF", "#46C3F2" },
+			rack = { "#FFFFFF", "#FFD15C" },
+		},
+		-- Holding E (or the prompt's button on phones and pads) near the pad buys one too [Owner, 2026-11-08].
+		prompt = {
+			holdSeconds = 0.4,
+			reach = 2, -- studs from the prompt's point it shows [Owner, 2026-11-08]
+			height = 3, -- studs over the pad it hangs at: a character's middle, so reach is measured across the ground
+		},
 	},
 
 	-- [Owner] While training, a bubble pops up every 3 seconds, tapped or not; tapping it gives one rep worth
