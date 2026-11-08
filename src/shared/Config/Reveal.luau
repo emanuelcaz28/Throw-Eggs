@@ -112,6 +112,9 @@ return {
 		-- here. Not too loud, a little louder the bigger the size. Empty is silent.
 		bigReveal = "rbxassetid://130323531865053",
 		bigRevealSizes = { Chonker = 0.3, MegaChonk = 0.35, PlanetSized = 0.42, UnitOfDoom = 0.5 }, -- size id = volume
+		-- [Owner, 2026-11-08] every monster slams when its whole body is shown: punchy for the weakest, huge from
+		-- hugeFrom up (0 = weakest tier, 1 = rarest), louder the rarer.
+		unveilSlam = { hugeFrom = 0.5, volume = { 0.35, 0.6 } },
 		-- The tap on the throw meter (ElevenLabs). One soft pop for every level from 1 to 9, and the PERFECT sound on the top
 		-- one (it replaces the pop). Empty is silent.
 		meterTap = "rbxassetid://72148299314968", -- sounds/meter_tap_pop_b.mp3

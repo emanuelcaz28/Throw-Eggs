@@ -600,8 +600,9 @@ local function idleTime(): number
 end
 
 -- Where a plot's owner stands, if they're on their plot (a little past its edge still counts once the circle has formed).
+-- Only the local player's own plot: other players' monsters never circle anyone on this screen.
 local function ownerOnPlot(plotIndex: number, formed: boolean): Vector3?
-	for _, player in Players:GetPlayers() do
+	for _, player in { Players.LocalPlayer } do
 		if player:GetAttribute("PlotIndex") == plotIndex then
 			if player:GetAttribute("IsTraining") == true then
 				return nil
@@ -664,7 +665,7 @@ local function layOut(ring, owner: Vector3)
 			end
 		end
 	end
-	local front = high
+	local front = math.min(high, math.max(DinoLife.ring.maxFront, DinoLife.ring.ownerGap))
 	local total = slices(front)
 	local stretch = if #members > 1 then TAU / total else 1
 	local at = 0
@@ -685,6 +686,7 @@ local function layOut(ring, owner: Vector3)
 	for _, state in members do
 		state.ringAngle = state.ringBase + turn
 		state.ringDelay = math.random() * DinoLife.ring.reactJitter
+		state.ringSlack = 0
 	end
 	ring.dirty = false
 end
@@ -1554,7 +1556,15 @@ local function moveAlong(state, dt: number)
 	end
 	if ring then
 		local spot = ringSpot(state, ring)
-		if state.target or flat(spot - state.position).Magnitude > DinoLife.ring.followDistance + state.width / 4 then
+		if state.ringSlackAt and flat(ring.owner - state.ringSlackAt).Magnitude > DinoLife.ring.followDistance then
+			state.ringSlack, state.ringSlackAt = 0, nil -- the owner moved on: walk to the real place again
+		end
+		local slack = DinoLife.ring.followDistance + state.width / 4 + (state.ringSlack or 0)
+		if state.target or flat(spot - state.position).Magnitude > slack then
+			if not state.target then
+				state.stuck = 0
+				state.closest = math.huge
+			end
 			state.target = spot
 		else
 			-- In its place: it turns to face its owner, stepping round if it's far off.
@@ -1585,19 +1595,24 @@ local function moveAlong(state, dt: number)
 		state.idleLeft = idleTime()
 		return
 	end
-	if not ring then
-		-- Getting no closer (walled in by others): it stops and thinks again after a short rest.
-		if distance < state.closest - 0.5 then
-			state.closest = distance
-			state.stuck = 0
-		else
-			state.stuck += dt
-			if state.stuck > DinoLife.steer.giveUpSeconds then
-				state.target = nil
-				state.gait = 1
-				state.idleLeft = 1 + math.random() * 2
-				return
-			end
+	-- Getting no closer (walled in by others): it stops. In the circle it settles where it is and turns to its owner.
+	if distance < state.closest - 0.5 then
+		state.closest = distance
+		state.stuck = 0
+	else
+		state.stuck += dt
+		if ring and state.stuck > DinoLife.steer.giveUpSeconds * 0.5 then
+			state.target = nil
+			state.gait = 1
+			state.ringSlack = distance
+			state.ringSlackAt = ring.owner
+			return
+		end
+		if not ring and state.stuck > DinoLife.steer.giveUpSeconds then
+			state.target = nil
+			state.gait = 1
+			state.idleLeft = 1 + math.random() * 2
+			return
 		end
 	end
 	local wanted = steerFrom(state, offset / distance, distance, ring)

@@ -60,6 +60,13 @@ function RevealSound.bigReveal(sizeId: string?)
 	end
 end
 
+-- Every monster's slam when its whole body is shown. `strength` 0 for the weakest catch, 1 for the rarest.
+function RevealSound.unveilSlam(strength: number)
+	local u = settings.unveilSlam
+	local id = if strength >= u.hugeFrom then settings.slam.huge else settings.slam.mid
+	play(id, lerp(u.volume[1], u.volume[2], strength), 1)
+end
+
 -- The whoosh, started throwWhooshLead seconds before the egg leaves the hand so its loudest part lands on the release.
 function RevealSound.throwWhoosh(mine: boolean)
 	if settings.throwWhoosh ~= "" then

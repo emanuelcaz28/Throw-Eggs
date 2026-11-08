@@ -4,6 +4,8 @@ return {
 	updateInterval = 60, -- seconds between saving everyone's scores and reading the top lists
 	rows = 10,
 	storeVersion = 1,
+	-- [Owner, 2026-11-08] accounts never shown on the boards (the owner). Their old scores are removed on server start.
+	hiddenNames = { "cacaciosu3000" },
 
 	-- Where the boards stand: the middle of each one's foot, in a shallow arc in front of the arena's front
 	-- wall, on the right as you face the bases from the platform (-X), clear of the corner and of base 1's

@@ -1040,6 +1040,7 @@ local function play(catch, egg: BasePart)
 			drama.unveil()
 		end
 		RevealSound.bigReveal(catch.size)
+		RevealSound.unveilSlam(math.clamp((finalTierIndex or 0) / #Reveal.tiers, 0, 1))
 		if roarNow then
 			roarNow()
 		end

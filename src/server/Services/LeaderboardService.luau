@@ -312,11 +312,30 @@ local function storeFor(board): OrderedDataStore
 	return DataStoreService:GetOrderedDataStore(`Leaderboard_v{Leaderboards.storeVersion}_{board.id}`)
 end
 
+-- UserIds kept off the boards (Leaderboards.hiddenNames), filled at start.
+local hidden: { [number]: boolean } = {}
+
+local function loadHidden()
+	for _, name in Leaderboards.hiddenNames or {} do
+		local ok, userId = pcall(Players.GetUserIdFromNameAsync, Players, name)
+		if ok and userId then
+			hidden[userId] = true
+			for _, board in Leaderboards.boards do
+				pcall(function()
+					storeFor(board):RemoveAsync(tostring(userId))
+				end)
+			end
+		else
+			warn(`[LeaderboardService] Couldn't find hidden player {name}`)
+		end
+	end
+end
+
 -- Saves scores that changed since the last write.
 local function writeScores()
 	for _, player in Players:GetPlayers() do
 		local data = PlayerData.get(player)
-		if data and not PlayerData.isTestSave(player) then -- a Studio test save would overwrite the real scores
+		if data and not PlayerData.isTestSave(player) and not hidden[player.UserId] then -- a Studio test save would overwrite the real scores
 			local written = lastWritten[player.UserId] or {}
 			lastWritten[player.UserId] = written
 			for _, board in Leaderboards.boards do
@@ -344,13 +363,16 @@ local function readTop(board): { { userId: number, value: number } }
 	local top = {}
 	if ok then
 		for _, item in page do
-			table.insert(top, { userId = tonumber(item.key), value = decode(board, item.value) })
+			local userId = tonumber(item.key)
+			if userId and not hidden[userId] then
+				table.insert(top, { userId = userId, value = decode(board, item.value) })
+			end
 		end
 		return top
 	end
 	for _, player in Players:GetPlayers() do
 		local data = PlayerData.get(player)
-		if data and data[board.stat] > 0 then
+		if data and data[board.stat] > 0 and not hidden[player.UserId] then
 			table.insert(top, { userId = player.UserId, value = data[board.stat] })
 		end
 	end
@@ -432,6 +454,7 @@ function LeaderboardService.start()
 		lastWritten[player.UserId] = nil
 	end)
 	task.spawn(function()
+		loadHidden()
 		task.wait(FIRST_UPDATE_DELAY)
 		while true do
 			refresh()

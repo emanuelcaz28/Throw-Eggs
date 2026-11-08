@@ -24,6 +24,7 @@ return {
 	ring = {
 		gap = 3, -- studs of empty ground between two neighbours' sides
 		ownerGap = 4, -- studs between the owner and the nearest monster's front
+		maxFront = 9, -- studs: the noses never stand further than this from the owner; if they don't fit side by side they squeeze in and touch (tiny plot, huge monsters)
 		leaveMargin = 4, -- studs past the plot's edge before the circle breaks up (so it doesn't flicker at the gate)
 		followDistance = 3, -- a monster walks back to its place once it's this far off (plus a quarter of its width)
 		reactJitter = 0.6, -- seconds: each monster reacts up to this late, so they don't all set off together
