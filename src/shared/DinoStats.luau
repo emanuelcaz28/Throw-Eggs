@@ -17,6 +17,21 @@ for _, biome in Biomes do
 	end
 end
 
+-- A monster's place in its own map's list, most common first: its rarity (1 Common ... 8 Secret, UiKit.RARITY_ORDER).
+local rarityRankById = {}
+for key, list in Dinos do
+	if key ~= "DeepPool" then -- a mix of worlds: places in it mean nothing
+		for index, dino in list do
+			rarityRankById[dino.id] = index
+		end
+	end
+end
+
+-- That place, or nil for a monster from no map (the specials).
+function DinoStats.rarityRank(dinoId: string): number?
+	return rarityRankById[dinoId]
+end
+
 -- How big a dino is with no size mutation: its biome's standard size.
 function DinoStats.standardScale(dinoId: string): number
 	return standardScaleById[dinoId] or 1
@@ -36,10 +51,24 @@ function DinoStats.special(id: string?)
 	return DinoStats.findOption(Specials, id)
 end
 
--- Whether a monster can be sold: all but a Game Pass's special, which the pass gives only once.
+-- Whether a monster can be sold (or fed to another): all but the specials, bought with Robux, so they're never lost by
+-- mistake [Owner, 2026-11-08]. Their row has RESIZE where SELL was (PlotController, Config/Specials resizes).
 function DinoStats.sellable(id: string?): boolean
-	local special = DinoStats.special(id)
-	return not (special and special.passId)
+	return DinoStats.special(id) == nil
+end
+
+-- The sizes a special can be set to with RESIZE, smallest first: its normal size, then each size mutation's scale. Only
+-- how big it looks: its income stays what it was when bought.
+local resizes = { { id = "Normal", name = "NORMAL", scale = 1 } }
+for index = #Catch.sizes, 1, -1 do
+	table.insert(resizes, Catch.sizes[index])
+end
+DinoStats.resizes = resizes
+
+-- How much bigger a special shows, from its saved RESIZE choice (entry.resize); 1 for everything else.
+function DinoStats.resizeScale(entry): number
+	local option = DinoStats.special(entry.id) and DinoStats.findOption(resizes, entry.resize)
+	return if option then option.scale else 1
 end
 
 -- The "1 in X" players see is the real chance of exactly that catch on a plain throw at its map's start (luck 1, the

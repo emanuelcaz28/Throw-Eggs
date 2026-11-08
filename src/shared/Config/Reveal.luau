@@ -97,9 +97,32 @@ return {
 		tickVolume = 0.22,
 		tickEvery = 0.07, -- never more often than this, while the numbers fly
 		tickSpeed = { 0.9, 1.9 }, -- its pitch from the walk to the last number
-		roar = "rbxassetid://9113980319", -- "Creature Mix Giant Crab Monster Roar", Pro Sound Effects: the unveil
+		roar = "", -- [Owner, 2026-11-08: removed, a weird scream after the reveal] was 9113980319, "Creature Mix Giant Crab Monster Roar"
 		roarVolume = { 0.35, 1 }, -- from a first-label catch to the biggest...
 		roarSpeed = { 1.15, 0.7 }, -- ...deeper the bigger it is
+		-- The egg landing and being cut in half (ElevenLabs). Empty is silent; others' throws play quieter.
+		eggDrop = "rbxassetid://115878085017623", -- sounds/egg_drop_2_loud.mp3 (the first upload was 14 dB too quiet)
+		eggSlice = "rbxassetid://105375332927135", -- sounds/egg_slice_1.mp3
+		eggVolume = { mine = 0.9, others = 0.25 },
+		-- The tap on the throw meter (ElevenLabs). One soft pop for every level from 1 to 9, and the PERFECT sound on the top
+		-- one (it replaces the pop). Empty is silent.
+		meterTap = "rbxassetid://72148299314968", -- sounds/meter_tap_pop_b.mp3
+		meterPerfect = "rbxassetid://134056799185127", -- [Owner, 2026-11-08] the owner's new PERFECT sound (replaced perfect_voice_dark_unreal, 113022786466445)
+		meterTapSkip = 0.2, -- meter_tap_pop_b.mp3 starts with 0.2 s of silence; skipped so the pop lands on the tap
+		meterPerfectSkip = 0,
+		meterTapVolume = 0.4, -- [Owner, 2026-11-07] low to medium
+		meterPerfectVolume = 0.55, -- [Owner] not loud, quieter, but still easy to hear
+		-- The slam when a luck label hits the screen with the camera punch (ElevenLabs, uploaded by the owner).
+		-- Paste the rbxassetid:// numbers here after uploading; an empty one is simply silent.
+		slam = {
+			small = "rbxassetid://96964679141367", -- sounds/slam_small_a.mp3
+			mid = "rbxassetid://86796383601211", -- sounds/slam_punchy_a.mp3
+			huge = "rbxassetid://118199520952084", -- sounds/slam_huge_c.mp3
+			weights = { "small", "small", "mid", "mid", "huge", "huge" }, -- which one each of the six tiers plays
+			volume = { 1.4, 2.2 }, -- [Owner, 2026-11-08: louder, was 0.6 to 1] from the first tier to the last...
+			speed = { 1.1, 0.9 }, -- ...a little deeper each time
+			boostVolume = 1.4, -- [Owner, 2026-11-08] the small slam also plays when a training tap hits the 2X XP bubble (BoostMoment)
+		},
 	},
 
 	-- The server frees the player for the next throw once they finish the reveal,

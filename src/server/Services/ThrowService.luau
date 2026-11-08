@@ -9,6 +9,7 @@ local DeepEnd = require(ReplicatedStorage.Shared.Config.DeepEnd)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Hooks = require(ReplicatedStorage.Shared.Config.Hooks)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
+local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
@@ -21,6 +22,7 @@ local PlayerData = require(script.Parent.PlayerData)
 local PlotService = require(script.Parent.PlotService)
 local ShopService = require(script.Parent.ShopService)
 local TrainingService = require(script.Parent.TrainingService)
+local TutorialService = require(script.Parent.TutorialService)
 local World = require(ReplicatedStorage.Shared.World)
 
 local ThrowService = {}
@@ -35,6 +37,7 @@ type ThrowState = {
 	revealStartedAt: number,
 	mustLeave: boolean?,
 	lucky: number?, -- the lucky throw picked with USE for the egg in the air, used up when it lands
+	carryKey: number?, -- a tutorial catch put on the player's head once the reveal is done
 }
 
 local states: { [Player]: ThrowState } = {}
@@ -129,6 +132,11 @@ local function onTap(player: Player, height: any, lucky: any)
 	local egg = EggService.equipped(player)
 
 	state.phase = "flying"
+	-- A monster still carried goes back to the hotbar, so it's not on the player's head through the throw and the
+	-- reveal walk, where a big one would hide the view. The new catch takes its place after the reveal.
+	if Plot.carryNewCatches then
+		PlotService.putAway(player)
+	end
 	-- The lucky throw picked on the meter, if it's one picked by hand and the player owns it. Nothing is used up yet:
 	-- leaving before the egg lands keeps it.
 	local data = PlayerData.get(player)
@@ -177,12 +185,22 @@ local function onTap(player: Player, height: any, lucky: any)
 			minRank, reason = nil, nil
 		end
 
+		-- The tutorial's two throws (Config/Tutorial): the first is a set modest monster, the second always beats it.
+		-- They take the place of the guarantees above. A lucky throw keeps its own odds, but still counts.
+		local tutorial = if data and luckyThrow == 1 then TutorialService.planThrow(data, pool, rarest) else nil
+		if tutorial then
+			minRank = if tutorial.kind == "second" then tutorial.minRank else nil
+			reason = nil
+		end
+
 		-- The big number is what players see; the roll counts luck from the biome's par (Luck.forRoll).
 		local rollLuck = Luck.forRoll(distance, egg.luckBonus) * timedLuck * luckyThrow
 		-- A lucky throw is a guaranteed hit (Config/Catch luckyHits). The luck shown leaves its x out [Owner, 2026-11-06].
-		local hit = if luckyThrow > 1 then DinoRoll.hitFor(luckyThrow) else nil
+		local hit = if luckyThrow > 1 then DinoRoll.luckyHit(luckyThrow) else nil
 		local depth = if deep then DeepEnd.depthAt(reach) else 0
-		local catch = DinoRoll.rollCatch(pool, rollLuck, minRank, data and data.recentCatches, hit, DeepEnd.boostAt(reach))
+		local catch = if tutorial and tutorial.kind == "first"
+			then TutorialService.plainCatch(pool, tutorial.rank)
+			else DinoRoll.rollCatch(pool, rollLuck, minRank, data and data.recentCatches, hit, DeepEnd.boostAt(reach))
 		catch.luck = Luck.at(distance) * Luck.eggFactor(egg.luckBonus, distance) * timedLuck
 		catch.guarantee = reason
 		if data then
@@ -217,7 +235,15 @@ local function onTap(player: Player, height: any, lucky: any)
 		end
 		-- The world the monster belongs to, which isn't The Deep End's: a Deep End catch can complete it.
 		catch.isNew, catch.completedBiome = IndexService.discover(player, catch.id, homeBiome[catch.id] or biome)
-		catch.storedIn = PlotService.addCatch(player, catch)
+		-- Catches wait in the backpack and go onto the player's head when the reveal is done (onRevealDone): every
+		-- catch with Config/Plot carryNewCatches, and the tutorial's either way.
+		local carry = Plot.carryNewCatches or (data ~= nil and TutorialService.carriesCatch(data))
+		local catchKey
+		catch.storedIn, catchKey = PlotService.addCatch(player, catch, carry)
+		if data then
+			TutorialService.recordCatch(player, data, catch, catchKey)
+		end
+		state.carryKey = if catch.storedIn == "carried" then catchKey else nil
 		DailyTasks.count(player, "catches")
 
 		state.phase = "revealing"
@@ -248,6 +274,11 @@ local function onRevealDone(player: Player)
 	local state = states[player]
 	if not state or state.phase ~= "revealing" then
 		return
+	end
+	-- The player is home again: the catch goes onto their head, ready to place.
+	if state.carryKey then
+		PlotService.carry(player, state.carryKey)
+		state.carryKey = nil
 	end
 	local remaining = Reveal.minTime - (os.clock() - state.revealStartedAt)
 	task.delay(math.max(remaining, 0), function()

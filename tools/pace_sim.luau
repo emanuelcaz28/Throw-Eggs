@@ -64,10 +64,10 @@ local function rollExtra(options, boost)
 	end
 end
 
-local function rollCatch(biome, luck, minRank, recent, extraBoost)
+local function rollCatch(biome, luck, minRank, recent, extraBoost, minRarity)
 	local pool = biome.rollFrom or biome.id
 	local dinos = Dinos[pool]
-	local odds = CatchOdds.monsters(pool, luck, minRank, recent)
+	local odds = CatchOdds.monsters(pool, luck, minRank, recent, minRarity)
 	local pick, rank = math.random(), #dinos
 	for r in dinos do
 		pick -= odds[r]
@@ -95,13 +95,13 @@ end
 
 -- A lucky throw's catch (DinoRoll.rollCatch with minOneIn): the colour and size make it at least that rare.
 local function luckyCatch(biome, luck, multiplier, recent)
-	local dino, rank = rollCatch(biome, luck * multiplier, nil, recent)
-	local minOneIn = CatchOdds.hitFor(multiplier)
-	local options, total = CatchOdds.hitOptions(dino.id, minOneIn)
+	local hit = CatchOdds.luckyHit(multiplier)
+	local dino, rank = rollCatch(biome, luck * multiplier, nil, recent, nil, hit.minRarity)
+	local options, total = CatchOdds.hitOptions(dino.id, hit.minOneIn, hit.colourAndSize)
 	if #options == 0 then
 		local dinos = Dinos[biome.rollFrom or biome.id]
 		dino, rank = dinos[#dinos], #dinos
-		options, total = CatchOdds.hitOptions(dino.id, minOneIn)
+		options, total = CatchOdds.hitOptions(dino.id, hit.minOneIn, hit.colourAndSize)
 	end
 	local pick, chosen = math.random() * total, options[#options]
 	for _, option in options do

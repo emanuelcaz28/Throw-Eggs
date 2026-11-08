@@ -321,6 +321,29 @@ for i = 1, 3 do
 	end
 end
 
+-- The Prism Egg's swimmers (Duskeel, Umbray, Dreadlure; assets/models/build_special_monsters.py) swim and have Lash
+-- bones, but theirs are whiskers, not briar whips, and their heads are the front of their bodies, not on a neck. THRASH
+-- flung the whiskers 80 degrees and jerked the head (eyes, horns and all) right off the hull, so instead the whiskers
+-- trail in a slow wave (WHISKER) and the head and jaw move only this much of the swim and hover.
+local WHISKER = {}
+for n = 1, 8 do
+	for k, letter in { "a", "b", "c" } do
+		local reach = 0.05 + 0.04 * (k - 1) -- the tip sways most, about 18 degrees from the lip in all
+		WHISKER["Lash" .. n .. letter] = function(s: number)
+			local w = QUARTER * s
+			return reach * sin(2 * w - 0.8 * k + 1.3 * n), 0, 0.7 * reach * sin(w - 0.8 * k + 2 * n)
+		end
+	end
+end
+local WHISKERED_DAMPING = { Head = 0.3, Jaw = 0.6, Neck1 = 0.5, Neck2 = 0.5, Neck3 = 0.5 }
+
+local function damped(pose, k: number)
+	return function(x: number)
+		local a, b, c, d, e = pose(x)
+		return a * k, b * k, c * k, (d or 0) * k, (e or 0) * k
+	end
+end
+
 -- The Weeping Dark's monsters (map 15) don't just thrash, they attack. A monster with a tear bone (DRIP) gets all of RAGE on
 -- top of the rest: every 4 seconds it loads up and lunges, heaving back, slamming forward, its head driving in, its jaw
 -- dropping and biting shut, its tail cracking; its arms claw one after the other, 2 seconds apart; it snaps at the air
@@ -1137,6 +1160,7 @@ local function add(model: Model)
 	end
 	local pivot = model:GetPivot()
 	local scale = model:GetScale()
+	local _, extents = model:GetBoundingBox()
 	local bones = {}
 	local legHeight = nil
 	local roars = false
@@ -1174,6 +1198,11 @@ local function add(model: Model)
 			if roars and not swims and ROAR[bone.Name] then
 				idle = plus(idle, ROAR[bone.Name])
 			end
+			local whiskered = swims and thrashes
+			local damping = whiskered and WHISKERED_DAMPING[bone.Name]
+			if damping then
+				walk, idle = damped(walk, damping), damped(idle, damping)
+			end
 			table.insert(bones, {
 				bone = bone,
 				walk = walk,
@@ -1183,7 +1212,7 @@ local function add(model: Model)
 				yaw = axis(Vector3.yAxis),
 				spin = SPIN[bone.Name],
 				angle = math.random() * TAU, -- so a plot's keys don't all turn in step
-				thrash = if thrashes then THRASH[bone.Name] else nil,
+				thrash = if whiskered then WHISKER[bone.Name] elseif thrashes then THRASH[bone.Name] else nil,
 				rage = if rages then RAGE[bone.Name] else nil,
 				drip = DRIP[bone.Name],
 				pounce = if vents then POUNCE[bone.Name] else nil,
@@ -1203,7 +1232,8 @@ local function add(model: Model)
 		model = model,
 		bones = bones,
 		scale = scale,
-		centre = Vector3.new(position.X, pivot.Y, position.Z),
+		reach = extents.Magnitude, -- generous: the whole box's diagonal around its feet, so it never vanishes from view early
+		centre =Vector3.new(position.X, pivot.Y, position.Z),
 		position = pivot.Position,
 		facing = pivot:VectorToWorldSpace(ahead), -- where its head points
 		turned = turned,
@@ -1345,14 +1375,24 @@ local function pose(state, dt: number)
 end
 
 local function step(dt: number)
-	local cameraPosition = workspace.CurrentCamera.CFrame.Position
+	local camera = workspace.CurrentCamera
+	local cameraPosition = camera.CFrame.Position
+	local look = camera.CFrame.LookVector
+	-- Half the angle across the screen's diagonal, so anything near a corner still counts as in view.
+	local viewport = camera.ViewportSize
+	local aspect = viewport.X / math.max(viewport.Y, 1)
+	local halfView = math.atan(math.tan(math.rad(camera.FieldOfView) / 2) * math.sqrt(1 + aspect * aspect))
 	for _, state in dinos do
 		state.pending += dt
 		state.frame += 1
 		local carrier = state.carrier
-		local distance = ((if carrier then carrier.Position else state.position) - cameraPosition).Magnitude
+		local offset = (if carrier then carrier.Position else state.position) - cameraPosition
+		local distance = offset.Magnitude
+		local inView = distance <= state.reach
+			or math.acos(math.clamp(offset:Dot(look) / distance, -1, 1)) <= halfView + math.asin(state.reach / distance)
 		local shown = state.shown
 		local skip = if shown then (if shown() then 1 else math.huge)
+			elseif not inView and not state.mine then DinoLife.offScreenFrameSkip -- your own carried one hides on cue (ride)
 			elseif distance > DinoLife.farDistance
 			then DinoLife.farFrameSkip
 			elseif distance > DinoLife.nearDistance then DinoLife.midFrameSkip

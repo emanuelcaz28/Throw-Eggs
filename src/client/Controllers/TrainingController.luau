@@ -95,6 +95,7 @@ local function buildHud()
 
 	local bubble = Instance.new("TextButton")
 	bubble.Name = "Bubble"
+	bubble:SetAttribute("NoClickSound", true) -- the 2X XP moment has its own
 	bubble.AnchorPoint = Vector2.new(0.5, 0.5)
 	bubble.Size = UDim2.fromOffset(BUBBLE_SIZE, BUBBLE_SIZE)
 	bubble.AutoButtonColor = false

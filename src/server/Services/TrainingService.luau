@@ -3,7 +3,7 @@
 -- every rack, but only the base's owner trains there. The orange button in front of it sells more XP
 -- per rep, and while training a bubble every few seconds offers a double rep. The rack and the button are
 -- Blender models (BaseKit), and each base shows the rack its owner's upgrades have earned (Config/Training rackModels). Everything is decided here on the server; the client reads the Player attributes set in
--- publish and can only ask through TrainingRemotes (StopTraining, TapBubble).
+-- publish and can only ask through TrainingRemotes (StopTraining, TapBubble, BuyUpgrade).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -12,6 +12,7 @@ local BaseKit = require(ReplicatedStorage.Shared.BaseKit)
 local DailyTasks = require(script.Parent.DailyTasks)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
+local ReadyPopup = require(ReplicatedStorage.Shared.Config.ReadyPopup)
 local Roles = require(ReplicatedStorage.Shared.Roles)
 local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
@@ -39,7 +40,7 @@ local FACING = Vector3.new(0, 0, -1) -- out of the base, the way the lifter look
 local function makeRemotes()
 	local folder = Instance.new("Folder")
 	folder.Name = "TrainingRemotes"
-	for _, name in { "StopTraining", "BubbleShown", "TapBubble", "Boosted" } do
+	for _, name in { "StopTraining", "BubbleShown", "TapBubble", "Boosted", "BuyUpgrade" } do
 		local remote = Instance.new("RemoteEvent")
 		remote.Name = name
 		remote.Parent = folder
@@ -137,6 +138,7 @@ local function publish(player: Player, data: { [string]: any })
 	player:SetAttribute("XpPerRep", xpPerRep(player, data))
 	player:SetAttribute("NextXpPerRep", Training.xpPerRepFor(data.xpUpgrades + 1) * passMultiplier(player))
 	player:SetAttribute("XpUpgradePrice", Training.xpUpgradePrice(data.xpUpgrades))
+	player:SetAttribute("XpUpgrades", data.xpUpgrades) -- for the ready pop-up's next rack name (Config/ReadyPopup)
 	local upgradesLeft = Training.upgradesToNextTier(data.xpUpgrades)
 	player:SetAttribute("PowerPerBar", gain)
 	player:SetAttribute("NextPowerPerBar", (barOf(player, data, data.xpUpgrades + upgradesLeft)))
@@ -361,6 +363,19 @@ function TrainingService.start()
 		stopTraining(player, true)
 	end)
 	remotes.TapBubble.OnServerEvent:Connect(onTapBubble)
+	-- The ready pop-up's UPGRADE button buys the next upgrade from anywhere, like the pad (Config/ReadyPopup).
+	local lastCardBuy: { [Player]: number } = {}
+	remotes.BuyUpgrade.OnServerEvent:Connect(function(player)
+		local data = PlayerData.get(player)
+		if not data or os.clock() - (lastCardBuy[player] or 0) < ReadyPopup.buyCooldown then
+			return
+		end
+		lastCardBuy[player] = os.clock()
+		tryBuyXpUpgrade(player, data)
+	end)
+	Players.PlayerRemoving:Connect(function(player)
+		lastCardBuy[player] = nil
+	end)
 	Players.PlayerRemoving:Connect(function(player)
 		local plotIndex = training[player]
 		training[player] = nil

@@ -3,6 +3,9 @@
 -- to a base, on the few of its monsters nearest to you, so a full base never piles its tags into a heap (docs/GAME_SPEC.md section 4, numbers in Config/Plot
 -- `tags`). A giant's tag stops at a ceiling over its feet, so it can be read from its base. Display only: the
 -- server puts what each tag says on the monster (PlotService).
+-- The monster a player carries on their head has a tag too, with its rarity word under the mutations [Owner,
+-- 2026-11-07: "I can't see their name tag and rarity at all while holding it"]: your own always, anywhere, except
+-- while it's hidden (aiming, the throw, the reveal, training); other players' when you're within maxDistance.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,6 +21,7 @@ local HudStyle = require(Shared.HudStyle)
 local UiKit = require(Shared.UiKit)
 
 local RevealController = require(script.Parent.RevealController)
+local RarityLabel = require(script.Parent.RarityLabel)
 
 local MonsterTagController = {}
 
@@ -120,9 +124,20 @@ local function build(model: Model)
 		end
 	end
 
-	local name = line(root, model:GetAttribute("TagName") or "", settings.nameText, 2)
+	-- The carried monster's rarity, in its rarity's colour (TagId is only on carried ones).
+	local id = model:GetAttribute("TagId")
+	if id then
+		-- The animated rarity word (RarityLabel, Config/Rarity).
+		local label = RarityLabel.create(root, UiKit.rarityOf(id), settings.rarityText)
+		label.Size = UDim2.new(1, 0, 0, settings.rarityText + settings.outline * 2)
+		label.LayoutOrder = 2
+		table.insert(lines, label:FindFirstChild("Word", true))
+		tall += settings.rarityText + settings.outline * 2
+	end
+
+	local name = line(root, model:GetAttribute("TagName") or "", settings.nameText, 3)
 	name.Size = UDim2.new(1, 0, 0, settings.nameText + settings.outline)
-	local income = line(root, `{Format.cash(model:GetAttribute("TagIncome") or 0)}/s`, settings.incomeText, 3)
+	local income = line(root, `{Format.cash(model:GetAttribute("TagIncome") or 0)}/s`, settings.incomeText, 4)
 	income.Size = UDim2.new(1, 0, 0, settings.incomeText + settings.outline)
 	gradient(income, Color3.fromHex(settings.income[1]), Color3.fromHex(settings.income[2]))
 	table.insert(lines, name)
@@ -132,13 +147,30 @@ local function build(model: Model)
 	local pivot = model:GetPivot()
 	local box, extents = model:GetBoundingBox()
 	local top = box.Position.Y + extents.Y / 2 - pivot.Position.Y
+	local gap = settings.headGap
+	if id then
+		-- The carried one's tag hugs its head: measured from the parts you can see (the invisible root and
+		-- hitbox reach higher), with a smaller gap, and drawn smaller (Config/Plot tags carried).
+		top = 0
+		for _, part in model:GetDescendants() do
+			if part:IsA("BasePart") and part.Transparency < 1 then
+				local half = part.Size / 2
+				local reach = math.abs(part.CFrame.RightVector.Y) * half.X
+					+ math.abs(part.CFrame.UpVector.Y) * half.Y
+					+ math.abs(part.CFrame.LookVector.Y) * half.Z
+				top = math.max(top, part.Position.Y + reach - pivot.Position.Y)
+			end
+		end
+		gap = settings.carried.gap
+	end
 	local adornee = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)
 	gui.Adornee = adornee
 	gui.Parent = holder
 	tags[model] = {
 		gui = gui,
 		scale = scale,
-		height = math.min(top + settings.headGap, settings.ceiling),
+		height = math.min(top + gap, settings.ceiling),
+		carried = id ~= nil,
 		radius = math.min(extents.X, extents.Z) / 2,
 		adornee = adornee,
 		lines = lines,
@@ -185,7 +217,13 @@ local function pick()
 	if plotIndex and not RevealController.isPlaying() then
 		local here = body.Position * Vector3.new(1, 0, 1)
 		for model, tag in tags do
-			if model.Parent and tag.adornee and tag.adornee.Parent and model:GetAttribute("PlotIndex") == plotIndex then
+			if
+				model.Parent
+				and tag.adornee
+				and tag.adornee.Parent
+				and model:GetAttribute("PlotIndex") == plotIndex
+				and not model:GetAttribute("HiddenForMe") -- the player switched other players' dinos off (SettingsController)
+			then
 				local feet = model:GetPivot().Position * Vector3.new(1, 0, 1)
 				local distance = math.max((feet - here).Magnitude - tag.radius, 0)
 				table.insert(nearby, { model = model, distance = distance })
@@ -195,15 +233,42 @@ local function pick()
 			return a.distance < b.distance
 		end)
 	end
+	-- Carried monsters: your own (nearest of all), and other players' within reach.
+	local hidden = RevealController.isPlaying()
+		or workspace.CurrentCamera.CameraType == Enum.CameraType.Scriptable
+		or player:GetAttribute("IsTraining") == true
+	for model, tag in tags do
+		if model:GetAttribute("Carried") and model.Parent and tag.adornee and tag.adornee.Parent then
+			if model.Parent == character then
+				if not hidden then
+					table.insert(nearby, 1, { model = model, distance = 0, carried = true })
+				end
+			elseif body and not RevealController.isPlaying() then
+				local distance = (model:GetPivot().Position - body.Position).Magnitude
+				if distance <= settings.maxDistance then
+					table.insert(nearby, { model = model, distance = distance, carried = true })
+				end
+			end
+		end
+	end
+
 	local keep = {}
 	order = {}
-	for index = 1, math.min(settings.nearest, #nearby) do
+	local onBase = 0
+	for index = 1, #nearby do
 		local model = nearby[index].model
+		if not nearby[index].carried then
+			onBase += 1
+			if onBase > settings.nearest then
+				continue
+			end
+		end
 		table.insert(order, model)
 		local tag = tags[model]
 		keep[model] = true
 		tag.gui.Enabled = true
-		tag.scale.Scale = 1 - (1 - settings.farScale) * math.min(nearby[index].distance / settings.maxDistance, 1)
+		tag.scale.Scale = (1 - (1 - settings.farScale) * math.min(nearby[index].distance / settings.maxDistance, 1))
+			* (if tag.carried then settings.carried.scale else 1)
 	end
 	for model in shown do
 		if not keep[model] and tags[model] then

@@ -10,11 +10,11 @@ return {
 	-- speed studs a second at the first map's size.
 	swim = { strideSeconds = 1.2, speed = 2.2 },
 	idleLoopSeconds = 8,
-	-- An equipped monster rides on its player's head at its real size (PlotService), sitting: its feet sink below
-	-- the top of the head by this share of its hip height, but never more than maxSink studs, so a small one's legs
-	-- hang round the head and a big one perches on top instead of standing over the player. It walks while its
+	-- An equipped monster rides on its player's head at its real size (PlotService), standing on the top of the
+	-- character (hats included). Its feet sink below that by this share of its hip height, but never more than
+	-- maxSink studs. [Owner, 2026-11-07: it was "literally in me" with sink 0.7 and maxSink 1.] It walks while its
 	-- player moves faster than walkSpeed (studs a second) and idles, roar and all, while they stand.
-	carry = { sink = 0.7, maxSink = 1, walkSpeed = 2 },
+	carry = { sink = 0, maxSink = 0, walkSpeed = 2 },
 	turnSpeed = 2.5, -- radians per second
 	blendTime = 0.35, -- seconds to ease between idle and walk
 	arriveDistance = 1, -- studs, at the first map's size
@@ -22,6 +22,9 @@ return {
 	nearDistance = 120,
 	farDistance = 350,
 	farFrameSkip = 6,
+	-- Dinos outside the camera's view (behind it or off to a side) update only every this many frames, wherever they
+	-- are: nobody sees them move, and they catch up the moment they come back on screen.
+	offScreenFrameSkip = 6,
 	-- Monsters bigger than this (their size against the first map's) cast no shadow, so a size-mutated giant
 	-- doesn't put half the map in the dark. Normal-sized ones keep theirs.
 	shadowMaxScale = 4,

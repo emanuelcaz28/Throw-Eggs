@@ -17,9 +17,9 @@ local rng = Random.new()
 -- Each monster's chance of hatching, most common first (CatchOdds, which the luck offer's Details panel reads too).
 DinoRoll.odds = CatchOdds.monsters
 
-function DinoRoll.roll(biomeId: string, luck: number, minRank: number?, recent: { string }?)
+function DinoRoll.roll(biomeId: string, luck: number, minRank: number?, recent: { string }?, minRarity: number?)
 	local dinos = Dinos[biomeId]
-	local odds = DinoRoll.odds(biomeId, luck, minRank, recent)
+	local odds = DinoRoll.odds(biomeId, luck, minRank, recent, minRarity)
 	local pick = rng:NextNumber()
 	for rank, dino in dinos do
 		pick -= odds[rank]
@@ -42,10 +42,10 @@ local function rollExtra(options, boost: number, perOption: { [string]: number }
 	return nil
 end
 
--- A colour and size for this monster that make the whole catch at least 1 in `minOneIn`, each combination as likely
--- as it really is (1 / its "1 in X"), or nil when none does.
-local function hitExtras(dinoId: string, minOneIn: number): (string?, string?, boolean)
-	local options, total = CatchOdds.hitOptions(dinoId, minOneIn)
+-- A colour and size for this monster that make the whole catch at least 1 in `hit.minOneIn`, each combination as
+-- likely as it really is (1 / its "1 in X"), or nil when none does. hit: a Config/Catch luckyHits line.
+local function hitExtras(dinoId: string, hit): (string?, string?, boolean)
+	local options, total = CatchOdds.hitOptions(dinoId, hit.minOneIn, hit.colourAndSize)
 	local pick = rng:NextNumber() * total
 	for _, option in options do
 		pick -= option.weight
@@ -57,23 +57,24 @@ local function hitExtras(dinoId: string, minOneIn: number): (string?, string?, b
 	return if last then last.entry.mutation else nil, if last then last.entry.size else nil, last ~= nil
 end
 
--- The "1 in X" a lucky throw of this multiplier guarantees (Config/Catch luckyHits), or nil.
-DinoRoll.hitFor = CatchOdds.hitFor
+-- The Config/Catch luckyHits line a lucky throw of this multiplier uses, or nil.
+DinoRoll.luckyHit = CatchOdds.luckyHit
 
 -- A full catch: the monster plus its mutation and size, and what they add up to. The same luck makes the
--- mutation and size likelier too, more gently (Catch.luckPower), on top of any event boost. `minOneIn` (lucky
--- throws): the colour and size are instead picked so the catch is at least that rare (Config/Catch luckyHits).
+-- mutation and size likelier too, more gently (Catch.luckPower), on top of any event boost. `hit` (lucky throws, a
+-- Config/Catch luckyHits line): the colour and size are instead picked so the catch is at least that rare, and
+-- monsters below its minRarity never come.
 -- The "1 in X" shown is always the catch's real odds (DinoStats.describe). extraBoost: The Deep End's Depth (Config/DeepEnd).
-function DinoRoll.rollCatch(biomeId: string, luck: number, minRank: number?, recent: { string }?, minOneIn: number?, extraBoost: number?)
-	local dino, rank = DinoRoll.roll(biomeId, luck, minRank, recent)
+function DinoRoll.rollCatch(biomeId: string, luck: number, minRank: number?, recent: { string }?, hit, extraBoost: number?)
+	local dino, rank = DinoRoll.roll(biomeId, luck, minRank, recent, hit and hit.minRarity)
 	local entry
-	if minOneIn then
-		local mutationId, sizeId, found = hitExtras(dino.id, minOneIn)
+	if hit then
+		local mutationId, sizeId, found = hitExtras(dino.id, hit)
 		if not found then
 			-- No colour and size get this monster there: the map's rarest always can.
 			local dinos = Dinos[biomeId]
 			dino, rank = dinos[#dinos], #dinos
-			mutationId, sizeId = hitExtras(dino.id, minOneIn)
+			mutationId, sizeId = hitExtras(dino.id, hit)
 		end
 		entry = { id = dino.id, mutation = mutationId, size = sizeId }
 	else

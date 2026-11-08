@@ -20,6 +20,7 @@ local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Pop = require(ReplicatedStorage.Shared.Config.Pop)
 local PopText = require(ReplicatedStorage.Shared.PopText)
 local SellPanel = require(script.Parent.SellPanel)
+local RarityLabel = require(script.Parent.RarityLabel)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
 local player = Players.LocalPlayer
@@ -214,7 +215,7 @@ function PlotController.start()
 	local slots = 0
 	local renderList
 
-	local function send(action: string, key: (number | { number })?, x: number?, z: number?)
+	local function send(action: string, key: (number | { number })?, x: (number | string)?, z: number?)
 		remotes.DinoAction:FireServer(action, key, x, z)
 	end
 	local sellPanel = SellPanel.new(hud.gui, function(keys)
@@ -257,7 +258,9 @@ function PlotController.start()
 					used += 1
 				end
 			end
-			return `CHONK {target.chonk} TO {level}`, `-{Format.cash(Chonk.priceOf(target.income) * used)}`
+			-- The tutorial's feeding step is free, once (TutorialService).
+			local free = player:GetAttribute("TutorialFreeFeed") == target.key
+			return `CHONK {target.chonk} TO {level}`, if free then "FREE" else `-{Format.cash(Chonk.priceOf(target.income) * used)}`
 		end,
 	})
 	local function openFeed(dino)
@@ -267,12 +270,126 @@ function PlotController.start()
 		feedPanel.open()
 	end
 
-	-- Backpack dinos in hotbar order (the list arrives best first).
+	-- The Resize panel: a special (bought with Robux) can't be sold, so its row has RESIZE instead [Owner, 2026-11-08].
+	-- It steps through DinoStats.resizes, from its normal size to the biggest size mutation's. Looks only: its income
+	-- stays the same. The server checks it all.
+	local resizeKey: number? = nil
+	local resizePanel = UiKit.panel(hud.gui, { name = "ResizePanel", title = "Resize", header = "purple", width = 500, height = 360 })
+	local resizeName = UiKit.text(resizePanel.body, "", 40)
+	resizeName.Position = UDim2.fromOffset(0, 18)
+	local resizeTimes = UiKit.text(resizePanel.body, "", 24, SIZE_WORD)
+	resizeTimes.Position = UDim2.fromOffset(0, 70)
+	local pips = Instance.new("Frame")
+	pips.BackgroundTransparency = 1
+	pips.AnchorPoint = Vector2.new(0.5, 0)
+	pips.Position = UDim2.new(0.5, 0, 0, 112)
+	pips.Size = UDim2.fromOffset(#DinoStats.resizes * 52, 22)
+	pips.Parent = resizePanel.body
+	local pipsLayout = Instance.new("UIListLayout")
+	pipsLayout.FillDirection = Enum.FillDirection.Horizontal
+	pipsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	pipsLayout.Padding = UDim.new(0, 8)
+	pipsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	pipsLayout.Parent = pips
+	for index in DinoStats.resizes do
+		local pip = Instance.new("Frame")
+		pip.Name = `Pip{index}`
+		pip.LayoutOrder = index
+		pip.Size = UDim2.fromOffset(44, 22)
+		pip.Parent = pips
+		UiKit.corner(pip, 8)
+		UiKit.stroke(pip, 3)
+	end
+	local resizeButtons = Instance.new("Frame")
+	resizeButtons.BackgroundTransparency = 1
+	resizeButtons.Position = UDim2.fromOffset(0, 160)
+	resizeButtons.Size = UDim2.new(1, 0, 0, 64)
+	resizeButtons.Parent = resizePanel.body
+	local buttonsLayout = Instance.new("UIListLayout")
+	buttonsLayout.FillDirection = Enum.FillDirection.Horizontal
+	buttonsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	buttonsLayout.Padding = UDim.new(0, 10)
+	buttonsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	buttonsLayout.Parent = resizeButtons
+	local resizeNote = UiKit.muted(resizePanel.body, "Only changes how big it looks. It earns the same.", 18)
+	resizeNote.Position = UDim2.fromOffset(0, 236)
+
+	local function resizeTarget()
+		for _, dino in dinos do
+			if dino.key == resizeKey then
+				return dino
+			end
+		end
+		return nil
+	end
+	local function resizeIndex(dino): number
+		for index, option in DinoStats.resizes do
+			if option.id == (dino.resize or "Normal") then
+				return index
+			end
+		end
+		return 1
+	end
+	local function renderResize()
+		local dino = resizeTarget()
+		if not dino then
+			UiKit.closePanel(resizePanel)
+			return
+		end
+		local index = resizeIndex(dino)
+		local option = DinoStats.resizes[index]
+		resizeName.Text = option.name
+		resizeTimes.Text = `x{option.scale} SIZE`
+		for pipIndex in DinoStats.resizes do
+			pips[`Pip{pipIndex}`].BackgroundColor3 = if pipIndex <= index then Color3.fromRGB(190, 120, 255) else Color3.fromRGB(45, 40, 70)
+		end
+	end
+	local function resizeTo(index: number)
+		local dino = resizeTarget()
+		local option = DinoStats.resizes[math.clamp(index, 1, #DinoStats.resizes)]
+		if dino and option.id ~= (dino.resize or "Normal") then
+			send("resize", dino.key, option.id)
+		end
+	end
+	for order, spec in { { "SMALLEST", "blue", 128, 20, 1 }, { "-", "blue", 64, 34, -1 }, { "+", "green", 64, 34, 1 }, { "BIGGEST", "green", 128, 20, math.huge } } do
+		local label, style, width, textSize, step = spec[1], spec[2], spec[3], spec[4], spec[5]
+		local button = UiKit.button(resizeButtons, label, style, width, 56, textSize)
+		button.LayoutOrder = order
+		button.Activated:Connect(function()
+			local dino = resizeTarget()
+			if not dino then
+				return
+			end
+			if label == "SMALLEST" then
+				resizeTo(1)
+			elseif label == "BIGGEST" then
+				resizeTo(#DinoStats.resizes)
+			else
+				resizeTo(resizeIndex(dino) + step)
+			end
+		end)
+	end
+	local function openResize(dino)
+		resizeKey = dino.key
+		resizePanel.header:FindFirstChildWhichIsA("TextLabel").Text = `Resize {dino.name}`
+		renderResize()
+		UiKit.openPanel(resizePanel)
+	end
+
+	-- Backpack dinos in hotbar order (the list arrives best first). The carried one is always on the hotbar: past the
+	-- last key it takes the last slot, so a new catch carried off the reveal shows even when it's not among the best.
 	local function backpack()
 		local list = {}
+		local heldKey = player:GetAttribute("HeldDino")
 		for _, dino in dinos do
 			if not dino.onPlot then
 				table.insert(list, dino)
+			end
+		end
+		for index = #HOTBAR_KEYS + 1, #list do
+			if list[index].key == heldKey then
+				table.insert(list, #HOTBAR_KEYS, table.remove(list, index))
+				break
 			end
 		end
 		return list
@@ -386,7 +503,7 @@ function PlotController.start()
 
 		local size = DinoStats.findOption(Catch.sizes, dino.size)
 		local chonkWord = if dino.chonk > 0 then `  CHONK {dino.chonk}` else ""
-		local tier = UiKit.text(row, string.upper(rarity) .. chonkWord, 14, Color3.fromHex(UiKit.RARITY_TEXT[rarity]), Enum.TextXAlignment.Left)
+		local tier = RarityLabel.create(row, rarity, 14, Enum.TextXAlignment.Left, string.upper(rarity) .. chonkWord)
 		tier.Position = UDim2.fromOffset(104, 8)
 		tier.Size = UDim2.fromOffset(176, 18)
 		local name = UiKit.text(row, dino.name, 24, nil, Enum.TextXAlignment.Left)
@@ -436,7 +553,16 @@ function PlotController.start()
 		sell.Name = "Sell"
 		-- On the base the second button feeds it; it's sold from the backpack, or here once it can't grow.
 		local feedable = dino.onPlot and not DinoStats.special(dino.id) and dino.chonk < Chonk.maxLevel
-		sell.Visible = DinoStats.sellable(dino.id) and not feedable -- a pass gives its monster only once
+		sell.Visible = DinoStats.sellable(dino.id) and not feedable
+		if DinoStats.special(dino.id) then -- bought with Robux: never sold, resized instead
+			local resize = UiKit.button(row, "RESIZE", "purple", 124, 38, 18)
+			resize.Name = "Resize"
+			resize.AnchorPoint = Vector2.new(1, 0)
+			resize.Position = UDim2.new(1, -12, 0, 52)
+			resize.Activated:Connect(function()
+				openResize(dino)
+			end)
+		end
 		if feedable then
 			local feed = UiKit.button(row, "FEED", "purple", 124, 38, 18)
 			feed.Name = "Feed"
@@ -465,7 +591,16 @@ function PlotController.start()
 		end)
 	end
 
+	-- The list is rebuilt only while the panel is open: picking up or placing a monster changes it twice (HeldDino,
+	-- then DinosChanged), and rebuilding every row each time, panel shut, was a hitch on every pick-up. Opening the
+	-- panel catches up.
+	local listStale = true
 	renderList = function()
+		if not hud.panel.frame.Visible then
+			listStale = true
+			return
+		end
+		listStale = false
 		for _, child in hud.list:GetChildren() do
 			if child:IsA("Frame") then
 				child:Destroy()
@@ -545,6 +680,9 @@ function PlotController.start()
 		renderHotbar()
 		sellPanel.setDinos(newDinos)
 		feedPanel.setDinos(newDinos)
+		if resizePanel.frame.Visible then
+			renderResize()
+		end
 	end)
 	remotes.Notice.OnClientEvent:Connect(function(text: string, bad: boolean?)
 		PopText.notice(text, not bad)
@@ -556,7 +694,12 @@ function PlotController.start()
 		hud.hotbar.Visible = player:GetAttribute("IsTraining") ~= true and not feedPanel.panel.frame.Visible and not hud.panel.frame.Visible and not sellPanel.panel.frame.Visible
 	end
 	player:GetAttributeChangedSignal("IsTraining"):Connect(renderHotbarVisible)
-	hud.panel.frame:GetPropertyChangedSignal("Visible"):Connect(renderHotbarVisible)
+	hud.panel.frame:GetPropertyChangedSignal("Visible"):Connect(function()
+		renderHotbarVisible()
+		if hud.panel.frame.Visible and listStale then
+			renderList()
+		end
+	end)
 	sellPanel.panel.frame:GetPropertyChangedSignal("Visible"):Connect(renderHotbarVisible)
 	feedPanel.panel.frame:GetPropertyChangedSignal("Visible"):Connect(renderHotbarVisible)
 	renderHotbarVisible()
@@ -593,7 +736,7 @@ function PlotController.start()
 			return ghost
 		end
 		clearGhost()
-		local model = DinoModel.build(dino.id, dino.mutation, Vector3.zero, DinoModel.statueScale(dino.id, dino.size, dino.chonk))
+		local model = DinoModel.build(dino.id, dino.mutation, Vector3.zero, DinoModel.entryScale(dino))
 		model.Name = "PlacementGhost"
 		for _, part in model:GetDescendants() do
 			if part:IsA("BasePart") and part.Transparency < 1 then
@@ -601,6 +744,7 @@ function PlotController.start()
 			end
 		end
 		local highlight = Instance.new("Highlight")
+		highlight.Name = "GhostTint" -- not "Highlight": some monsters have a part by that name (Parasaurolophus)
 		highlight.FillTransparency = 0.6
 		highlight.Parent = model
 		ghost, ghostKey = model, dino.key
@@ -661,14 +805,37 @@ function PlotController.start()
 		return if hit and hit:GetAttribute("DinoKey") then hit :: Model else nil
 	end
 
-	-- On a computer, the monster a click would pick up gets a white outline while the mouse is over it.
-	local hover = Instance.new("Highlight")
-	hover.Name = "PickUpHover"
-	hover.FillTransparency = 1
-	hover.OutlineColor = Color3.new(1, 1, 1)
-	hover.DepthMode = Enum.HighlightDepthMode.Occluded
-	hover.Enabled = false
-	hover.Parent = workspace
+	-- On a computer, the monster a click would pick up gets a white outline while the mouse is over it. Each monster
+	-- keeps its own outline, made the first time it's hovered and only switched on and off after that: moving one
+	-- Highlight from monster to monster froze the game for up to a tenth of a second each time (measured in Studio
+	-- 2026-11-07), which was the lag on walking onto the base and on sweeping the mouse over it.
+	local hovered: Model? = nil
+	local function outlineOf(statue: Model): Highlight
+		local outline = statue:FindFirstChild("PickUpHover") :: Highlight?
+		if not outline then
+			outline = Instance.new("Highlight")
+			outline.Name = "PickUpHover"
+			outline.FillTransparency = 1
+			outline.OutlineColor = Color3.new(1, 1, 1)
+			outline.DepthMode = Enum.HighlightDepthMode.Occluded
+			outline.Enabled = false
+			outline.Adornee = statue
+			outline.Parent = statue
+		end
+		return outline :: Highlight
+	end
+	local function setHovered(statue: Model?)
+		if statue == hovered then
+			return
+		end
+		if hovered and hovered.Parent then
+			outlineOf(hovered).Enabled = false
+		end
+		hovered = statue
+		if statue then
+			outlineOf(statue).Enabled = true
+		end
+	end
 
 	local function isTraining(): boolean
 		return player:GetAttribute("IsTraining") == true
@@ -681,12 +848,10 @@ function PlotController.start()
 			clearGhost()
 			aim = nil
 			hud.hint.Visible = false
-			local hovered = if not dino and UserInputService.MouseEnabled then statueAt(UserInputService:GetMouseLocation()) else nil
-			hover.Adornee = hovered
-			hover.Enabled = hovered ~= nil
+			setHovered(if not dino and UserInputService.MouseEnabled then statueAt(UserInputService:GetMouseLocation()) else nil)
 			return
 		end
-		hover.Enabled = false
+		setHovered(nil)
 		local touch = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 		local spot = spotAt(UserInputService:GetMouseLocation())
 		local model = ghostFor(dino)
@@ -707,8 +872,9 @@ function PlotController.start()
 			local valid = spot.inBounds and room
 			aim = { x = spot.x, z = spot.z, valid = valid }
 			model:PivotTo(CFrame.new(Plot.positions[spot.plotIndex] + Vector3.new(spot.x, Plot.size.Y, spot.z)))
-			model.Highlight.FillColor = if valid then GOOD_SPOT else BAD_SPOT
-			model.Highlight.OutlineColor = if valid then GOOD_SPOT else BAD_SPOT
+			local tint = model:FindFirstChild("GhostTint") :: Highlight
+			tint.FillColor = if valid then GOOD_SPOT else BAD_SPOT
+			tint.OutlineColor = if valid then GOOD_SPOT else BAD_SPOT
 			model.Parent = workspace
 		else
 			aim = nil

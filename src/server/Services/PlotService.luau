@@ -19,6 +19,7 @@ local Format = require(ReplicatedStorage.Shared.Format)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local BaseSigns = require(script.Parent.BaseSigns)
 local PlayerData = require(script.Parent.PlayerData)
+local TutorialService = require(script.Parent.TutorialService)
 local World = require(ReplicatedStorage.Shared.World)
 
 local PlotService = {}
@@ -252,22 +253,36 @@ end
 
 -- The carried monster sits on top of the character's head at its real size (its map's standard size times its size
 -- mutation), facing the way the character faces, welded on so everyone sees it. Its body is centred over the head
--- and its belly rests on it (Config/DinoLife carry); DinoLifeController makes it walk and idle.
+-- and its feet stand on the top of the whole character, hats and big avatar heads included, so it's never inside
+-- the player (Config/DinoLife carry) [Owner, 2026-11-07]. DinoLifeController makes it walk and idle; its tag
+-- (MonsterTagController) shows its name and rarity.
 local function attachHeldModel(player: Player, entry)
 	dropHeldModel(player)
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local head = character and character:FindFirstChild("Head") :: BasePart?
-	if not root or not head or not DinoStats.describe(entry) then
+	local stats = DinoStats.describe(entry)
+	if not root or not head or not stats then
 		return
 	end
-	local model = DinoModel.build(entry.id, entry.mutation, Vector3.zero, DinoModel.statueScale(entry.id, entry.size, entry.chonk))
+	local model = DinoModel.build(entry.id, entry.mutation, Vector3.zero, DinoModel.entryScale(entry))
 	model.Name = "HeldDino"
 	local centre = DinoModel.visibleBox(model)
 	local sink = math.min((DinoModel.legHeight(model) or 0) * DinoLife.carry.sink, DinoLife.carry.maxSink)
 	local facing = if DinoModel.facesBack(model) then CFrame.Angles(0, math.pi, 0) else CFrame.identity
-	local headTop = root.CFrame:PointToObjectSpace(head.Position + Vector3.new(0, head.Size.Y / 2, 0))
-	model:PivotTo(root.CFrame * CFrame.new(0, headTop.Y - sink, 0) * facing * CFrame.new(-centre.X, 0, -centre.Z))
+	-- The top of everything the character wears, measured upright from its root: a Head part can be much smaller
+	-- than the avatar's head mesh, and hats and hair stick up above it.
+	local top = root.CFrame:PointToObjectSpace(head.Position + Vector3.new(0, head.Size.Y / 2, 0)).Y
+	for _, part in character:GetDescendants() do
+		if part:IsA("BasePart") and part ~= root and part.Transparency < 1 then
+			local corner = part.Size / 2
+			local reach = math.abs(part.CFrame.RightVector.Y) * corner.X
+				+ math.abs(part.CFrame.UpVector.Y) * corner.Y
+				+ math.abs(part.CFrame.LookVector.Y) * corner.Z
+			top = math.max(top, root.CFrame:PointToObjectSpace(part.Position).Y + reach)
+		end
+	end
+	model:PivotTo(root.CFrame * CFrame.new(0, top - sink, 0) * facing * CFrame.new(-centre.X, 0, -centre.Z))
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
 			part.Anchored = false
@@ -280,6 +295,12 @@ local function attachHeldModel(player: Player, entry)
 		end
 	end
 	model:SetAttribute("Carried", true)
+	-- What its floating tag shows, like the monsters on the base (MonsterTagController).
+	model:SetAttribute("TagName", stats.name)
+	model:SetAttribute("TagIncome", stats.income)
+	model:SetAttribute("TagMutation", entry.mutation)
+	model:SetAttribute("TagSize", entry.size)
+	model:SetAttribute("TagId", entry.id)
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	CollectionService:AddTag(model, DinoLife.tag)
 	model.Parent = character
@@ -326,7 +347,7 @@ local function rebuildStatues(player: Player, data)
 		local stats = DinoStats.describe(entry)
 		if stats then
 			local position = spotPosition(plotIndex, entry.x, entry.z)
-			local statue = DinoModel.build(entry.id, entry.mutation, position, DinoModel.statueScale(entry.id, entry.size, entry.chonk))
+			local statue = DinoModel.build(entry.id, entry.mutation, position, DinoModel.entryScale(entry))
 			-- What its floating tag shows (MonsterTagController draws it, on the few monsters nearest each player).
 			statue:SetAttribute("TagName", stats.name)
 			statue:SetAttribute("TagIncome", stats.income)
@@ -358,6 +379,7 @@ local function publish(player: Player, data)
 				name = stats.name,
 				mutation = entry.mutation,
 				size = entry.size,
+				resize = entry.resize, -- a special's RESIZE choice (DinoStats.resizes)
 				income = stats.income,
 				oneIn = stats.oneIn,
 				onPlot = entry.onPlot,
@@ -498,7 +520,9 @@ local function feed(player: Player, data, target, keys: any)
 			wanted[key] = true
 		end
 	end
-	local price = Chonk.priceOf(incomeOf(target))
+	-- The tutorial's feeding step is free, once (Config/Tutorial freeFeed).
+	local free = TutorialService.isFreeFeed(data, target.key)
+	local price = if free then 0 else Chonk.priceOf(incomeOf(target))
 	local eaten = {}
 	for _, entry in data.dinos do
 		if level >= Chonk.maxLevel then
@@ -527,6 +551,9 @@ local function feed(player: Player, data, target, keys: any)
 		if eaten[data.dinos[index]] then
 			table.remove(data.dinos, index)
 		end
+	end
+	if free then
+		TutorialService.usedFreeFeed(player, data)
 	end
 	local before = target.chonk or 0
 	target.chonk, target.food = level, food
@@ -581,6 +608,17 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 		end
 	elseif action == "feed" then
 		feed(player, data, entry, x)
+	elseif action == "resize" and DinoStats.special(entry.id) then
+		-- RESIZE on a special: how big it looks, from its normal size up to the biggest size mutation's. Its income
+		-- stays as it is.
+		if typeof(x) ~= "string" or not DinoStats.findOption(DinoStats.resizes, x) or (entry.resize or "Normal") == x then
+			return
+		end
+		entry.resize = if x == "Normal" then nil else x
+		changed(player, data)
+		if held[player] == entry.key then
+			setHeld(player, data, entry.key) -- the one on the player's head, rebuilt at its new size
+		end
 	elseif action == "sell" and DinoStats.sellable(entry.id) then
 		earn(player, data, sellPrice(entry))
 		table.remove(data.dinos, index)
@@ -600,15 +638,20 @@ function PlotService.notify(player: Player, text: string, bad: boolean?)
 end
 
 -- Stores a new catch: on the plot if there's room, otherwise in the backpack.
--- With no room in either, it's sold. Returns where it went: "plot", "backpack" or "sold".
-function PlotService.addCatch(player: Player, catch): string?
+-- With no room in either, it's sold. Returns where it went: "plot", "backpack", "carried" or "sold", and its key.
+-- Carried (every catch with Config/Plot carryNewCatches, and the tutorial's): it waits in the backpack, on the hotbar,
+-- for PlotService.carry, even with the base full: the player picks one up to make room (the tutorial's catches come
+-- while the base is still empty).
+function PlotService.addCatch(player: Player, catch, carry: boolean?): (string?, number?)
 	local data = PlayerData.get(player)
 	if not data then
 		return nil
 	end
 	local entry = { key = data.nextDinoKey, id = catch.id, mutation = catch.mutation, size = catch.size, income = catch.income, onPlot = false }
 	local result
-	if #plotted(data) < capacityOf(data) then
+	if carry and backpackCount(data) < Plot.backpackSize then
+		result = "carried"
+	elseif #plotted(data) < capacityOf(data) then
 		entry.onPlot = true
 		result = "plot"
 	elseif backpackCount(data) < Plot.backpackSize or catch.income then
@@ -620,7 +663,24 @@ function PlotService.addCatch(player: Player, catch): string?
 	data.nextDinoKey += 1
 	table.insert(data.dinos, entry)
 	changed(player, data)
-	return result
+	return result, entry.key
+end
+
+-- Puts this backpack monster on the player's head to be placed, like equipping it from the hotbar.
+function PlotService.carry(player: Player, key: number)
+	local data = PlayerData.get(player)
+	local entry = data and findEntry(data, key)
+	if entry and not entry.onPlot then
+		setHeld(player, data, key)
+	end
+end
+
+-- Takes the carried monster off the player's head; it stays in the backpack, on the hotbar.
+function PlotService.putAway(player: Player)
+	local data = PlayerData.get(player)
+	if data and held[player] then
+		setHeld(player, data, nil)
+	end
 end
 
 -- Gives a Config/Specials monster, its income fixed now at its share of the player's best, and returns that income.

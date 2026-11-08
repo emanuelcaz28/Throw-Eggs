@@ -316,7 +316,7 @@ end
 local function writeScores()
 	for _, player in Players:GetPlayers() do
 		local data = PlayerData.get(player)
-		if data then
+		if data and not PlayerData.isTestSave(player) then -- a Studio test save would overwrite the real scores
 			local written = lastWritten[player.UserId] or {}
 			lastWritten[player.UserId] = written
 			for _, board in Leaderboards.boards do

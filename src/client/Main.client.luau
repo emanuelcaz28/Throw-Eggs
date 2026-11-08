@@ -1,5 +1,7 @@
 local Controllers = script.Parent.Controllers
 
+require(Controllers.SettingsState).start() -- first: the volume groups every sound plays through
+
 require(Controllers.SkyController).start()
 require(Controllers.PropMotionController).start()
 require(Controllers.TrainingController).start()
@@ -19,3 +21,9 @@ require(Controllers.RevealController).start()
 require(Controllers.LuckyBannerController).start()
 require(Controllers.HookMessages).start()
 require(Controllers.ThrowController).start()
+task.spawn(require(Controllers.TutorialController).start) -- waits for the save, so it mustn't hold up the rest
+task.spawn(require(Controllers.ReadyPopupController).start) -- its check loop never returns
+task.spawn(require(Controllers.AdminController).start) -- waits until the server says this player is an admin
+require(Controllers.UiClickSound).start()
+require(Controllers.MusicController).start()
+require(Controllers.SettingsController).start()

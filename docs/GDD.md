@@ -30,8 +30,10 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
    hotbar (keys 1–0, best first); equipping one, or picking one up off the plot, sits it on the character's
    head at its real size, walking while they move and idling while they stand. While it's
    carried, a see-through dino follows the pointer over your plot (green = can go, red = can't) and a
-   click places it there; the server checks the spot. New catches and Equip Best pick a free spot by
-   themselves. The plot holds a limited number (start 10); extras go to backpack. Equip Best / Pick Up / Sell.
+   click places it there; the server checks the spot. Every new catch goes into the backpack and onto the
+   head when the reveal ends, so the player places it (`Config/Plot` carryNewCatches; the carried one always shows
+   on the hotbar, in the last slot if it isn't among the ten best); starting a throw puts it back in the hotbar.
+   Equip Best picks free spots by itself. The plot holds a limited number (start 10); extras go to backpack. Equip Best / Pick Up / Sell.
    Plots (bases) are 48 x 48, five in one row across the back of the arena, fenced, with a gate in the middle
    of the front edge. A blue upgrade sign on the front fence by the gate shows "🐾 10 › 12" and the price
    (green when the owner can afford it, red when not, a gold MAX bar at 20); clicking it buys +2 room (up to
@@ -40,6 +42,52 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
 5. **Egg Shop** — buy better egg tiers with cash. Better egg = better roll table / more luck.
 
 Loop: train → farther throws → more luck → rarer dinos → more cash → better eggs → rarer dinos.
+
+## New-player tutorial
+
+Follows the reference game's tutorial flow (owner's recording, 2026-11-07) with no instructions on screen: the player
+just follows the guides (owner, 2026-11-08: "everything is instinctual"). Numbers in `Config/Tutorial`.
+
+Steps, staged so each one pays for the next (a step is done as soon as what it asks for is true):
+
+1. **Throw** — a beam of scrolling arrows on the ground leads to the throw platform, an arrow bobs over it.
+2. **Place** — the catch rides on the player's head; its own placing ghost shows where it goes.
+3. **Throw again** and 4. **place again** — the two monsters now earn the cash for the next steps.
+5. **Upgrade** — beam and arrow to the rack's upgrade button, "Upgrade!" over the arrow.
+6. **Train** — beam to the rack; after 5 power bars a chevron points at STOP.
+7. **Buy an egg** — beam to the Egg Shop, "New egg!" over the arrow; in the shop a chevron points at the next egg.
+8. **Throw with the new egg.** Then it's over, without a word.
+
+- **Two throws, second is better.** The server decides both catches (`TutorialService`, `ThrowService`): the first
+  egg ever thrown hatches the landing map's rank-3 monster, plain (replaces that map's new-world gift); the
+  second hatches one of the map's 3 rarest (not prizes), never earning less than the first. The guarantee
+  counts the save's first two throws ever, so it can't be farmed.
+- **Nothing else on screen:** until it's over every HUD but cash, power, training and throwing is hidden (Index, Shop,
+  Monsters button, Daily, luck boosts, offline money, settings, ready pop-ups: `Tutorial.hiddenHuds`).
+- **Look:** a flat Beam with the owner's arrow texture (`Tutorial.guide.beam`) from an attachment at the player's
+  feet, through the base gate when needed, to the target; a floating yolk chevron
+  with an ink outline, a word over it on two steps, and a bobbing chevron on screen buttons (`TutorialController`,
+  `TutorialGuide`).
+- **Save:** `data.tutorial` (step, throws used, both catches). Saves that already played start it finished.
+- **Testing:** in Studio tick the `StudioFreshSave` attribute on Workspace before Play (a brand-new save that's never
+  read or written; the leaderboards skip it). In the live game the admin panel's "Play as new player" does the same
+  (`AdminService`, `Config/Admin`). The panel also has Finish tutorial and +$1M (throwaway save only).
+
+### Ready pop-ups (after the tutorial)
+
+Like the reference's "new equipment" / "new food" cards. A card slides in at the top centre the moment the player
+can afford something new (`ReadyPopupController`, numbers in `Config/ReadyPopup`, Figma Ready Pop-up):
+
+- **UPGRADE READY!** (or **NEW RACK!** when the upgrade brings a new rack model): the next squat rack upgrade, its
+  price and the new XP per squat. **UPGRADE** buys it wherever the player stands (`TrainingRemotes.BuyUpgrade`; the
+  server checks the price, one buy a second).
+- **NEW EGG READY!**: the next egg in the shop, its price and luck. **SHOP** opens the Egg Shop wherever the player
+  stands (`EggShopController.open`).
+
+Each card shows once per upgrade or egg, one at a time (rack first), for 8 s with a timer bar; X closes it. Cards
+never show during the tutorial, a throw, or while any panel is open (a card a panel opens over comes back later).
+A player buying upgrade after upgrade on the pad gets no rack card until they stop for 5 s. Phones get a 1.3x
+bigger card (at most 70% of the screen width) with a bigger X.
 
 ## Biomes (throw order, near → far)
 

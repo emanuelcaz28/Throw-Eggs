@@ -515,13 +515,20 @@ heads sit too low to hide.
 - **[Built]** Hotbar of carried dinos on keys 1 to 0, best first. Holding one shows a see-through preview over your
   base (green = OK, red = not); clicking places it.
 - **[Built]** Equip Best, Pick Up and Sell in the My Dinos panel.
+- **[Owner, 2026-11-08] Every catch goes into the player's hands, not onto the base.** **[Built]** When the reveal ends
+  the new monster is in the backpack, on the hotbar, and carried on the player's head, so they place it themselves
+  (`Config/Plot` carryNewCatches). It's carried even with the base full (pick one up to make room). The carried
+  monster is always on the hotbar: in the last slot if it isn't among the ten best. Starting a throw puts it back in
+  the hotbar so it's not on the head through the reveal. Bought and gifted monsters still go straight to the base.
 - **[Owner, 2026-11-07]** EQUIP BEST always says what happened: "Best monsters equipped! +$X/s", or "Your best monsters are already on
   your base", and then nothing moves.
 - **[Owner, 2026-11-05] The carried monster sits on your head at its real size and plays its animation.** **[Built]**
   Equipping a monster (hotbar key, slot or EQUIP) or picking one up off the base (PICK UP, which also puts it in the
   backpack) sits it on top of the player's head at the size it has on a base: its map's standard size times its size
-  mutation, in its mutation's colours, facing the way the player faces, welded on so everyone sees it. A small one's
-  legs hang round the head; a big one perches on top (its feet sink at most 1 stud, `Config/DinoLife` `carry`). It
+  mutation, in its mutation's colours, facing the way the player faces, welded on so everyone sees it. It stands on
+  the top of the character, hats and big avatar heads included, never inside the player **[Owner, 2026-11-07]**
+  (`Config/DinoLife` `carry`). Its tag floats over it like a base monster's, with its rarity word added: your own
+  always, other players' within 60 studs (`MonsterTagController`). It
   walks while the player moves and idles (roar and all) while they stand (`DinoLifeController`). On the carrier's
   own screen it hides while aiming, throwing, in the reveal and while training. A big size mutation blocks some of
   the view ahead: that's the joke of the game, and `carry` is where to change it.
@@ -563,12 +570,15 @@ Unit of Doom**. **[Built]** (`Config/Catch`), scale is on top of the map's stand
 
 | Size | Chance | Income | Scale |
 |---|---|---|---|
-| Thicc | 1 in 10 | ×1.5 | 1.5× |
-| Absolute Unit | 1 in 40 | ×2.5 | 2.5× |
-| Chonker | 1 in 150 | ×4 | 5× |
-| Mega Chonk | 1 in 600 | ×8 | 12× |
-| Planet-Sized | 1 in 2,500 | ×20 | 35× |
-| Unit of Doom | 1 in 9,787 | ×50 | 100× |
+| Thicc | 1 in 10 | ×1.5 | 1.2× |
+| Absolute Unit | 1 in 40 | ×2.5 | 1.45× |
+| Chonker | 1 in 150 | ×4 | 1.8× |
+| Mega Chonk | 1 in 600 | ×8 | 2.4× |
+| Planet-Sized | 1 in 2,500 | ×20 | 3.3× |
+| Unit of Doom | 1 in 9,787 | ×50 | 4.5× |
+
+**[Owner, 2026-11-07]** The big sizes were way too big: the scales went from 1.25×, 1.6×, 2.2×, 3.2×, 5×, 8× to the
+ones above, so the biggest is still clearly huge but no longer too big.
 
 **[Built]** Luck makes mutations and sizes likelier too, gently: their chances are multiplied by luck^0.4 (`Config/Catch`
 `luckPower`), and no single one goes above a 1 in 2 chance. It's the same luck as the monster roll, counted from the
@@ -1576,7 +1586,12 @@ and a monster that's been fed, or the carried one, can't be eaten. No training b
   three special monsters of Gloomfin's dark family: **Duskeel** 150% (70%), **Umbray** 300% (25%), **Dreadlure** 700%
   (5%) (`Config/Shop` prismEgg, `Config/Specials`). The card shows each one turning with its odds, its share and what
   it would earn now (Roblox wants odds shown before buying). A hatch gets a shout. Like Gloomfin they never count as
-  "best", but they can be sold, since another egg can always be bought; pass monsters still can't.
+  "best". ~~They can be sold, since another egg can always be bought.~~
+- **No selling Robux monsters, RESIZE instead [Built], [Owner, 2026-11-08]:** none of the four specials (Gloomfin,
+  Duskeel, Umbray, Dreadlure) can be sold, at the Sell Stand or in My Monsters, or fed to another monster, so Robux is
+  never lost by mistake. Their row in My Monsters has **RESIZE** where SELL was: a panel with SMALLEST, -, +, BIGGEST
+  steps through normal size and each size mutation's scale (x1 up to x4.5, Unit of Doom). Looks only: the income stays
+  what it was when bought. Saved on the monster (`entry.resize`; `DinoStats.resizes`, `PlotService` resize).
 - **GIFT [Built], [Owner, 2026-11-05]:** "only dev products and game passes": a GIFT button in the Shop's header opens
   a panel to pick a player in the server, then one of: Prism Egg, Gloomfin, Luck x100/x500, x2 Cash/Training/Power,
   cash packs, Throw Power packs (`Shared/Gifts`). Server Luck is left out (it's for the whole server already), and so

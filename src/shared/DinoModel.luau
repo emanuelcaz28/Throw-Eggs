@@ -47,6 +47,12 @@ function DinoModel.statueScale(dinoId: string, sizeId: string?, chonk: number?):
 	return DinoStats.standardScale(dinoId) * (if size then size.scale else 1) * Chonk.scaleMultiplier(chonk)
 end
 
+-- An owned monster's size on the base, on a player's head and as a placement ghost: statueScale, times a special's
+-- RESIZE choice (DinoStats.resizeScale).
+function DinoModel.entryScale(entry): number
+	return DinoModel.statueScale(entry.id, entry.size, entry.chonk) * DinoStats.resizeScale(entry)
+end
+
 local SKIN_ROLES = { Body = true, Accent = true, Belly = true, Claw = true }
 local SKIN_TINT = 0.75
 

@@ -1,6 +1,6 @@
 -- The Dino Index panel, from Figma "Throw Eggs - Index & Inventory" (Index v2): one long scrolling list of every map,
 -- its picture on a card against the panel's left edge and its monsters beside it in rows of four, sorted by rarity
--- from COMMON up, each on a rarity tile with its real model turning. Unseen monsters are black silhouettes named "???",
+-- from COMMON up, each on a rarity tile with its real model standing still (no turning: it lagged). Unseen monsters are black silhouettes named "???",
 -- their rarity and odds still showing. Only the maps near the screen hold live models, so phones aren't drawing all
 -- of them at once. Display only: the server decides what's been found.
 local Players = game:GetService("Players")
@@ -14,7 +14,9 @@ local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Index = require(ReplicatedStorage.Shared.Config.Index)
 local PopText = require(ReplicatedStorage.Shared.PopText)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
+local Rarity = require(ReplicatedStorage.Shared.Config.Rarity)
 local RevealController = require(script.Parent.RevealController)
+local RarityLabel = require(script.Parent.RarityLabel)
 
 local player = Players.LocalPlayer
 
@@ -26,6 +28,7 @@ local CARD_SIZE = Vector2.new(310, 272) -- a map's card, as much of it as shows
 local CARD_TUCK = 26 -- the card starts this far off the list's left edge, which hides its rounded left corners
 local TILE_SIZE = Vector2.new(168, 131)
 local TILE_GAP = 10
+local PILL_WIDTH = 80 -- the rarity pill on a tile; fits LEGENDARY with the odds beside it
 local TILE_COLUMNS = 4
 local TILES_X = CARD_SIZE.X + 12
 local MAP_PITCH = CARD_SIZE.Y + 20 -- from one map's top to the next
@@ -231,7 +234,14 @@ local function monsterTile(parent: Instance, dino, rarity: string, seen: boolean
 	)
 	tile.Size = UDim2.fromOffset(TILE_SIZE.X, TILE_SIZE.Y)
 	tile.Parent = parent
-	UiKit.gradient(tile, if seen then rarity else "unseen")
+	-- Found tiles are painted in the rarity word's own colour (Config/Rarity), so card and tag match
+	-- [Owner, 2026-11-08: "background colors to match the rarity tag's colour"].
+	if seen then
+		local base = Color3.fromHex((Rarity.styles[rarity] or Rarity.styles.common).bottom)
+		UiKit.gradient(tile, { base:Lerp(Color3.new(1, 1, 1), 0.35):ToHex(), base:Lerp(Color3.new(0, 0, 0), 0.08):ToHex() })
+	else
+		UiKit.gradient(tile, "unseen")
+	end
 	UiKit.corner(tile, 14)
 	UiKit.stroke(tile, 3)
 	local glow = Instance.new("Frame")
@@ -242,31 +252,27 @@ local function monsterTile(parent: Instance, dino, rarity: string, seen: boolean
 	glow.BackgroundTransparency = if seen then 0.72 else 0.85
 	glow.Parent = tile
 	UiKit.corner(glow, 38)
-	-- The rarity pill: see-through dark on a found monster, in the rarity's colours on an unseen one.
+	-- The rarity pill: the Figma rarity word (RarityLabel, held still [Owner, 2026-11-07: moving ones lagged the
+	-- Index]) on a dark pill, on every tile, found or not [Owner, 2026-11-08].
+	-- One fixed width for every pill: automatic sizing around the Figma word made the pill grow to the tile's edge and
+	-- cut LEGENDARY short. The word is drawn on its own straight into the pill, centred.
 	local pill = Instance.new("Frame")
 	pill.Position = UDim2.fromOffset(7, 7)
-	pill.AutomaticSize = Enum.AutomaticSize.X
-	pill.Size = UDim2.fromOffset(0, 20)
+	pill.Size = UDim2.fromOffset(PILL_WIDTH, 20)
 	pill.BackgroundColor3 = UiKit.INK
-	pill.BackgroundTransparency = if seen then 0.45 else 0
+	pill.BackgroundTransparency = 0.35
 	pill.ZIndex = 3
 	pill.Parent = tile
 	UiKit.corner(pill, 8)
-	if not seen then
-		local pair = UiKit.RARITY[rarity]
-		pill.BackgroundColor3 = Color3.fromHex(pair[2]):Lerp(Color3.new(0, 0, 0), 0.12)
-	end
-	local pillPad = Instance.new("UIPadding")
-	pillPad.PaddingLeft = UDim.new(0, 7)
-	pillPad.PaddingRight = UDim.new(0, 7)
-	pillPad.Parent = pill
-	local rarityLabel = UiKit.text(pill, string.upper(rarity), 12)
-	rarityLabel.AutomaticSize = Enum.AutomaticSize.X
-	rarityLabel.Size = UDim2.fromScale(0, 1)
-	rarityLabel.ZIndex = 3
-	local odds = UiKit.text(tile, `1 in {Format.commas(DinoStats.monsterOneIn(dino.id))}`, 12, nil, Enum.TextXAlignment.Right)
-	odds.Position = UDim2.fromOffset(70, 8)
-	odds.Size = UDim2.fromOffset(TILE_SIZE.X - 78, 18)
+	local fancy = RarityLabel.create(pill, rarity, 10, nil, nil, true)
+	fancy.AnchorPoint = Vector2.new(0.5, 0.5)
+	fancy.Position = UDim2.fromScale(0.5, 0.5)
+	fancy.Size = UDim2.fromScale(1, 1)
+	local odds = UiKit.text(tile, `1 in {Format.commas(DinoStats.monsterOneIn(dino.id))}`, 11, nil, Enum.TextXAlignment.Right)
+	odds.AnchorPoint = Vector2.new(1, 0)
+	odds.Position = UDim2.new(1, -8, 0, 8)
+	odds.Size = UDim2.fromOffset(TILE_SIZE.X - PILL_WIDTH - 22, 18)
+	fitText(odds, 11)
 	odds.ZIndex = 3
 	local name = UiKit.text(tile, if seen then dino.name else "???", 16)
 	name.Position = UDim2.fromOffset(5, TILE_SIZE.Y - 27)
@@ -299,7 +305,7 @@ local function showModels(row, show: boolean)
 	for _, tile in row.tiles do
 		if show then
 			tile.view = UiKit.monster(tile.frame, tile.dino.id, {
-				spin = tile.seen,
+				spin = false, -- [Owner, 2026-11-07] no turning at all in the Index: it lagged. Still, in the same front three-quarter view
 				silhouette = not tile.seen,
 				position = UDim2.fromOffset(10, 17),
 				size = UDim2.fromOffset(TILE_SIZE.X - 20, 90),

@@ -12,6 +12,7 @@ local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Roles = require(ReplicatedStorage.Shared.Roles)
+local SettingsState = require(script.Parent.SettingsState)
 
 local RevealDrama = {}
 
@@ -25,6 +26,7 @@ local function makeSound(id: string, volume: number, looped: boolean): Sound
 	sound.SoundId = id
 	sound.Volume = volume
 	sound.Looped = looped
+	sound.SoundGroup = SettingsState.sfxGroup -- the player's sound effects slider
 	sound.Parent = SoundService
 	return sound
 end

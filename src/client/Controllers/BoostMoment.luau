@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 
 local PopText = require(ReplicatedStorage.Shared.PopText)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
+local RevealSound = require(script.Parent.RevealSound)
 
 local BoostMoment = {}
 
@@ -161,6 +162,7 @@ end
 -- Plays the moment. tapAt is the bubble's middle as AbsolutePosition measures it, bar the level bar the orbs fly
 -- to, multiplier and xp what the server gave.
 function BoostMoment.play(tapAt: Vector2, bar: GuiObject, multiplier: number, xp: string)
+	RevealSound.boostSlam() -- the weakest slam, as the title hits
 	if stopRunning then
 		stopRunning()
 	end

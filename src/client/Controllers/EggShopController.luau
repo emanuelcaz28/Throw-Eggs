@@ -17,6 +17,19 @@ local player = Players.LocalPlayer
 
 local EggShopController = {}
 
+-- For the ready pop-up (ReadyPopupController): which eggs are owned, a signal when that changes, and open().
+EggShopController.owned = {} :: { [string]: boolean }
+local changed = Instance.new("BindableEvent")
+EggShopController.changed = changed.Event
+local openShop: (() -> ())? = nil
+
+-- Opens the Egg Shop wherever the player stands (the ready pop-up's SHOP button). It stays open until X.
+function EggShopController.open()
+	if openShop then
+		openShop()
+	end
+end
+
 local CARD_SIZE = Vector2.new(176, 380)
 local CARD_GAP = 16
 local VISIBLE_CARDS = 5
@@ -182,10 +195,16 @@ function EggShopController.start()
 			end
 		end
 	end)
+	openShop = function()
+		UiKit.openPanel(hud.panel)
+		showNextEgg()
+	end
 	remotes.EggsChanged.OnClientEvent:Connect(function(newOwned, newEquipped)
 		owned = newOwned
 		equipped = newEquipped
+		EggShopController.owned = newOwned
 		render()
+		changed:Fire()
 	end)
 	player:GetAttributeChangedSignal("Cash"):Connect(render)
 	render()

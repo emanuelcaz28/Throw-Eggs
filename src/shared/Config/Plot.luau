@@ -10,6 +10,9 @@ local Plot = {
 	upgradeBasePrice = 500000,
 	upgradePriceGrowth = 1000000,
 	backpackSize = 100, -- dinos held off the plot; a catch with no room is sold automatically
+	-- Every catch goes into the backpack (hotbar) and onto the player's head once the reveal is done, so they place it
+	-- themselves, instead of landing straight on the base [Owner, 2026-11-08]. false: catches go on the base by themselves.
+	carryNewCatches = true,
 	sellSeconds = 60, -- a dino sells for this many seconds of its own income
 	offlineRate = 0.5, -- share of the plot's $/s paid for time away (events don't count)
 	maxOfflineHours = 8, -- time away beyond this earns nothing more
@@ -68,6 +71,10 @@ local Plot = {
 		farScale = 0.75, -- how big a tag is at maxDistance, against up close
 		mutationText = 13, -- pixel heights of the three lines [Owner, 2026-11-04: the first ones were far too big]
 		nameText = 20,
+		rarityText = 15, -- the carried monster's rarity word, between the mutations and the name
+		-- The carried monster's tag [Owner, 2026-11-07: "more close to its head and not that big"]: this much
+		-- smaller than a base monster's, and gap studs over the top of its visible body.
+		carried = { scale = 0.7, gap = 0.3 },
 		incomeText = 17,
 		outline = 2.5, -- the dark outline round the letters, in pixels
 		sizeWord = { "#FFFFFF", "#AEB8C8" }, -- size mutations are silver, top to bottom

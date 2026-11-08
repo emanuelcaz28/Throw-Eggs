@@ -21,6 +21,8 @@ local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 local RevealController = require(script.Parent.RevealController)
 local PerfectMoment = require(script.Parent.PerfectMoment)
+local MusicController = require(script.Parent.MusicController)
+local RevealSound = require(script.Parent.RevealSound)
 local ThrowCinematic = require(script.Parent.ThrowCinematic)
 
 local player = Players.LocalPlayer
@@ -96,6 +98,7 @@ local function buildGui()
 	meter.AutoButtonColor = false
 	meter.Text = ""
 	meter.Visible = false
+	meter:SetAttribute("NoClickSound", true) -- the throw has its own sounds
 	meter.Parent = gui
 
 	local aspect = Instance.new("UIAspectRatioConstraint")
@@ -361,7 +364,7 @@ local function setHudsEnabled(enabled: boolean, keepPower: boolean?)
 	-- A phone's thumbstick and jump button go too: the thrower can't move, and the jump button sat on the meter.
 	GuiService.TouchControlsEnabled = enabled
 	throwBusy = not enabled
-	for _, name in { "TrainingHud", "PlotHud", "DailyButtonHud", "EggShopHud", "IndexHud", "ShopHud", "BoostHud", "BoostCardHud", "DailyHud", "GoalHud" } do
+	for _, name in { "TrainingHud", "PlotHud", "DailyButtonHud", "EggShopHud", "IndexHud", "ShopHud", "BoostHud", "BoostCardHud", "DailyHud", "GoalHud", "SettingsHud", "SettingsButtonHud", "TutorialHud", "TutorialPointerHud", "ReadyPopupHud" } do
 		if keepPower and name == "TrainingHud" then
 			continue
 		end
@@ -421,6 +424,7 @@ function ThrowController.start()
 		local perfect = Throw.isPerfect(height)
 		hud.prompt.Text = if perfect then "PERFECT!" elseif level >= 8 then "GREAT!" elseif level >= 5 then "GOOD" else "OK"
 		hud.prompt.TextColor3 = if perfect then GOLD else TEXT
+		RevealSound.meterTap(perfect) -- the soft pop, or the PERFECT sound on the top level
 		if perfect then
 			hud.zone.BackgroundColor3 = GOLD
 			PerfectMoment.play()
@@ -505,6 +509,7 @@ function ThrowController.start()
 		camera.CFrame = ThrowCinematic.windupCamera(spot, 0)
 		setHudsEnabled(false, true)
 		setHomeButton(true)
+		MusicController.setThrowing(true) -- the throwing area's music, until the egg lands (Config/Music)
 		placeMarker(0)
 		hud.meter.Visible = true
 		task.wait(aim.black)
@@ -522,6 +527,7 @@ function ThrowController.start()
 	end)
 
 	remotes.MeterCancel.OnClientEvent:Connect(function()
+		MusicController.setThrowing(false)
 		setHomeButton(false)
 		hideMeter()
 		releaseCharacter()
@@ -622,7 +628,14 @@ function ThrowController.start()
 
 		trail.Enabled = false
 		ThrowCinematic.landingEffects(Vector3.new(egg.Position.X, lane.floorY, egg.Position.Z))
+		RevealSound.eggDrop(isMine)
+		if isMine then
+			MusicController.setThrowing(false) -- the egg has landed: the throwing music is cut off
+		end
 		EggModel.split(egg) -- cut in half where it lands, white and yolk showing (Config/Throw landing.split)
+		if EggModel.has(eggConfig.id) then
+			task.delay(Throw.landing.split.delay, RevealSound.eggSlice, isMine) -- with the streak's sweep
+		end
 		if not isMine then
 			task.wait(flight.landingPause)
 			egg:Destroy()

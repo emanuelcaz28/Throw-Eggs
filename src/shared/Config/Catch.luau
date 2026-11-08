@@ -17,15 +17,16 @@ return {
 		{ id = "Gold", name = "GOLD", chance = 30, incomeMultiplier = 2, color = Color3.fromRGB(255, 205, 70) },
 	},
 	-- Size mutations are the only way a monster grows past its biome's standard size (Config/Biomes
-	-- standardScale); scale multiplies that standard size, up to 8x. Each tier is about 1.5x the one below, them likelier (luckPower).
+	-- standardScale); scale multiplies that standard size, up to 4.5x. Each tier is about 1.2x to 1.4x the one below,
 	-- so even the rarest towers over its base without filling the screen. Luck makes them likelier (luckPower).
+	-- [Owner, 2026-11-07: the big sizes were way too big; was 1.25, 1.6, 2.2, 3.2, 5, 8.]
 	sizes = {
-		{ id = "UnitOfDoom", name = "UNIT OF DOOM", chance = 9787, incomeMultiplier = 50, scale = 8 },
-		{ id = "PlanetSized", name = "PLANET-SIZED", chance = 2500, incomeMultiplier = 20, scale = 5 },
-		{ id = "MegaChonk", name = "MEGA CHONK", chance = 600, incomeMultiplier = 8, scale = 3.2 },
-		{ id = "Chonker", name = "CHONKER", chance = 150, incomeMultiplier = 4, scale = 2.2 },
-		{ id = "AbsoluteUnit", name = "ABSOLUTE UNIT", chance = 40, incomeMultiplier = 2.5, scale = 1.6 },
-		{ id = "Thicc", name = "THICC", chance = 10, incomeMultiplier = 1.5, scale = 1.25 },
+		{ id = "UnitOfDoom", name = "UNIT OF DOOM", chance = 9787, incomeMultiplier = 50, scale = 4.5 },
+		{ id = "PlanetSized", name = "PLANET-SIZED", chance = 2500, incomeMultiplier = 20, scale = 3.3 },
+		{ id = "MegaChonk", name = "MEGA CHONK", chance = 600, incomeMultiplier = 8, scale = 2.4 },
+		{ id = "Chonker", name = "CHONKER", chance = 150, incomeMultiplier = 4, scale = 1.8 },
+		{ id = "AbsoluteUnit", name = "ABSOLUTE UNIT", chance = 40, incomeMultiplier = 2.5, scale = 1.45 },
+		{ id = "Thicc", name = "THICC", chance = 10, incomeMultiplier = 1.5, scale = 1.2 },
 	},
 	-- Luck also makes mutations and sizes likelier, but much more gently than it changes which monster
 	-- hatches: their chances are multiplied by luck ^ luckPower, the same luck as the monster roll
@@ -40,9 +41,12 @@ return {
 	-- every combination that makes the whole catch at least this rare ("1 in X", DinoStats.describe), each as likely as
 	-- it really is, so the result varies: usually just past the line, now and then far past it. Biggest first; a
 	-- throw uses the first line its multiplier reaches.
+	-- minRarity: no monster below this rarity (1 Common, 2 Uncommon, 3 Rare, 4 Epic, 5 Legendary: its place in its map's
+	-- list). colourAndSize: always a colour and a size, never "No colour" or "Normal size" [Owner, 2026-11-07: x100 and
+	-- x500 must give 0% Common to Epic, no colour and normal size].
 	luckyHits = {
-		{ multiplier = 500, minOneIn = 100000000 }, -- 1 in 100 million or rarer: GODLY!, sometimes IMPOSSIBLE!
-		{ multiplier = 100, minOneIn = 1000000 }, -- 1 in a million or rarer: GODLY!
+		{ multiplier = 500, minOneIn = 100000000, minRarity = 5, colourAndSize = true }, -- 1 in 100 million or rarer: GODLY!, sometimes IMPOSSIBLE!
+		{ multiplier = 100, minOneIn = 1000000, minRarity = 5, colourAndSize = true }, -- 1 in a million or rarer: GODLY!
 		{ multiplier = 50, minOneIn = 100000 }, -- the daily reward's: 1 in 100,000 or rarer, LEGENDARY!
 	},
 

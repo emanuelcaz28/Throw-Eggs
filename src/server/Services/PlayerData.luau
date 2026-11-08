@@ -162,6 +162,15 @@ local function load(player: Player)
 	local store, storeErr = getStore()
 	local data, reason = nil, storeErr
 
+	local freshSave = RunService:IsStudio() and workspace:GetAttribute(Save.studioFreshSaveAttribute) == true
+	if freshSave then
+		store, reason = nil, `Workspace attribute {Save.studioFreshSaveAttribute} is on: a new save, never read or written`
+	end
+	-- An admin's "Play as new player" (AdminService): a throwaway save, live too, never read or written.
+	local adminFresh = PlayerData.wantsFreshSave ~= nil and PlayerData.wantsFreshSave(player)
+	if adminFresh then
+		store, reason = nil, "admin test: a new save, never read or written"
+	end
 	if store then
 		for attempt = 1, Save.loadAttempts do
 			data, reason = tryAcquire(store, player.UserId, token)
@@ -177,6 +186,8 @@ local function load(player: Player)
 	local session: Session
 	if data then
 		session = { token = token, data = withoutPasses(player, applyResets(player, data)), memoryOnly = false, released = false }
+	elseif adminFresh then
+		session = { token = token, data = withDefaults(nil), memoryOnly = true, released = false }
 	elseif RunService:IsStudio() and reason ~= "locked by another session" then
 		warn(
 			`[PlayerData] Saving is OFF in this Studio session: {reason}\n`
@@ -223,6 +234,12 @@ function PlayerData.get(player: Player): { [string]: any }?
 	return session and session.data
 end
 
+-- True while the player's save lives only in memory (a Studio test): nothing about them may be written anywhere.
+function PlayerData.isTestSave(player: Player): boolean
+	local session = sessions[player]
+	return session ~= nil and session.memoryOnly
+end
+
 -- Saves right away and waits for the result. Returns whether the save succeeded.
 function PlayerData.saveNow(player: Player): boolean
 	local session = sessions[player]
@@ -230,6 +247,9 @@ function PlayerData.saveNow(player: Player): boolean
 end
 
 -- Runs for every player once their data is ready, including players already loaded.
+-- Set by AdminService: whether this player asked for a throwaway save (admins only).
+PlayerData.wantsFreshSave = nil :: ((Player) -> boolean)?
+
 function PlayerData.onLoaded(callback: (Player, { [string]: any }) -> ())
 	table.insert(loadedCallbacks, callback)
 	for player, session in sessions do

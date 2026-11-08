@@ -122,14 +122,28 @@ local function onBoosted(booster: Player)
 	if not root or not humanoid then
 		return
 	end
+	-- One glow per character, kept and faded again on every boost: a brand-new Highlight each time made the game
+	-- hitch on the tap (setting a Highlight up is the expensive part, not showing it).
 	local fade = TweenInfo.new(GLOW_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local highlight = Instance.new("Highlight")
-	highlight.FillColor = GLOW
-	highlight.OutlineColor = Color3.new(1, 1, 1)
-	highlight.FillTransparency = 0.1
-	highlight.Parent = character
-	TweenService:Create(highlight, fade, { FillTransparency = 1, OutlineTransparency = 1 }):Play()
-	Debris:AddItem(highlight, GLOW_TIME)
+	local highlight = character:FindFirstChild("BoostGlow") :: Highlight?
+	if not highlight then
+		highlight = Instance.new("Highlight")
+		highlight.Name = "BoostGlow"
+		highlight.FillColor = GLOW
+		highlight.OutlineColor = Color3.new(1, 1, 1)
+		highlight.Parent = character
+	end
+	local glow = highlight :: Highlight
+	glow.FillTransparency = 0.1
+	glow.OutlineTransparency = 0
+	glow.Enabled = true
+	local tween = TweenService:Create(glow, fade, { FillTransparency = 1, OutlineTransparency = 1 })
+	tween.Completed:Connect(function(state)
+		if state == Enum.PlaybackState.Completed then
+			glow.Enabled = false
+		end
+	end)
+	tween:Play()
 
 	local spot = Instance.new("Attachment")
 	spot.Parent = root
@@ -168,6 +182,37 @@ local function onBoosted(booster: Player)
 	Debris:AddItem(ring, RING_TIME)
 end
 
+-- The local player's own animations are paused while they train: an avatar's idle animation kept fighting the squat
+-- pose and the lifter twitched under the bar (owner, 2026-11-08). Other players pause theirs on their own screens.
+local pausedAnimate: LocalScript? = nil
+local function pauseAnimations(character: Model, paused: boolean)
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+	local animate = character:FindFirstChild("Animate") :: LocalScript?
+	if paused then
+		if animate and not animate.Disabled then
+			animate.Disabled = true
+			pausedAnimate = animate
+		end
+		if animator then
+			for _, track in animator:GetPlayingAnimationTracks() do
+				track:Stop(0)
+			end
+		end
+	else
+		-- Standing straight again before the idle comes back, so no joint keeps the last squat.
+		for _, joint in character:GetDescendants() do
+			if joint:IsA("Motor6D") then
+				joint.Transform = CFrame.identity
+			end
+		end
+		if pausedAnimate and pausedAnimate.Parent == character then
+			pausedAnimate.Disabled = false -- restarting the script starts the idle again
+		end
+		pausedAnimate = nil
+	end
+end
+
 function SquatController.start()
 	local remotes = ReplicatedStorage:WaitForChild("TrainingRemotes")
 	remotes.Boosted.OnClientEvent:Connect(onBoosted)
@@ -182,9 +227,15 @@ function SquatController.start()
 				local bar = character:FindFirstChild("SquatBar")
 				if other:GetAttribute("IsTraining") then
 					addBar(character)
+					if other == Players.LocalPlayer and not pausedAnimate then
+						pauseAnimations(character, true)
+					end
 					pose(character, depth)
 				elseif bar then
 					bar:Destroy()
+					if other == Players.LocalPlayer then
+						pauseAnimations(character, false)
+					end
 				end
 			end
 		end

@@ -995,6 +995,7 @@ local function play(catch, egg: BasePart)
 			joltAngle = math.rad(Reveal.lucky.jolt[index] or 0)
 			punch(impact.zoom[index] or 1, landsIn)
 			task.delay(landsIn, function()
+				RevealSound.slam(index, #Reveal.tiers) -- the hit lands with the label
 				if dust and not cardShown then
 					dust.burst(strength)
 				end

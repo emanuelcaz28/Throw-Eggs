@@ -14,7 +14,6 @@ local BlockModel = require(script.Parent.BlockModel)
 local DinoModel = require(script.Parent.DinoModel)
 local EggModel = require(script.Parent.EggModel)
 local DinoStats = require(script.Parent.DinoStats)
-local Dinos = require(script.Parent.Config.Dinos)
 local Icons = require(script.Parent.Config.Icons)
 
 local UiKit = {}
@@ -488,14 +487,8 @@ function UiKit.rarityOf(dinoId: string): string
 	if DinoStats.special(dinoId) then
 		return "mythic"
 	end
-	for key, list in Dinos do
-		for index, dino in if key == "DeepPool" then {} else list do -- a mix of worlds: places in it mean nothing
-			if dino.id == dinoId then
-				return UiKit.RARITY_ORDER[math.min(index, #UiKit.RARITY_ORDER)]
-			end
-		end
-	end
-	return "common"
+	local rank = DinoStats.rarityRank(dinoId)
+	return if rank then UiKit.RARITY_ORDER[math.min(rank, #UiKit.RARITY_ORDER)] else "common"
 end
 
 -- A rarity-coloured tile with a spinning dino, its name on top and optional text at the bottom.
@@ -654,6 +647,17 @@ end
 function UiKit.closePanel(panel)
 	openPanels[panel] = nil
 	panel.frame.Visible = false
+end
+
+-- True while any panel is on screen (the ready pop-ups wait for this, ReadyPopupController).
+function UiKit.anyPanelOpen(): boolean
+	for panel in openPanels do
+		if panel.frame.Visible then
+			return true
+		end
+		openPanels[panel] = nil -- hidden some other way
+	end
+	return false
 end
 
 function UiKit.togglePanel(panel)

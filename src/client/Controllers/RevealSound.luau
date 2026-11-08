@@ -1,11 +1,10 @@
 -- The sounds of every reveal: the walk's footfalls, the counter's ticks and the unveil's roar (Config/Reveal sounds). The
 -- mood of rare catches, the drone, heartbeat and rising strings, is RevealDrama's. All from Roblox's licensed libraries or
 -- built into Roblox. Display only.
-local ContentProvider = game:GetService("ContentProvider")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local SoundService = game:GetService("SoundService")
 
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
+local SoundPool = require(script.Parent.SoundPool)
 
 local RevealSound = {}
 
@@ -16,36 +15,14 @@ local function lerp(a: number, b: number, u: number): number
 	return a + (b - a) * u
 end
 
--- Plays once and clears itself up.
-local function play(id: string, volume: number, speed: number)
-	local sound = Instance.new("Sound")
-	sound.Name = "RevealSound"
-	sound.SoundId = id
-	sound.Volume = volume
-	sound.PlaybackSpeed = speed
-	sound.Parent = SoundService
-	sound:Play()
-	sound.Ended:Once(function()
-		sound:Destroy()
-	end)
+-- Plays at once from loaded copies (SoundPool), so nothing comes late.
+local function play(id: string, volume: number, speed: number, skip: number?)
+	SoundPool.play(id, volume, speed, skip)
 end
 
 -- Loads them ahead of time, so the first step isn't silent.
 function RevealSound.preload()
-	local sounds = {}
-	for _, id in { settings.step, settings.tick, settings.roar } do
-		local sound = Instance.new("Sound")
-		sound.SoundId = id
-		table.insert(sounds, sound)
-	end
-	task.spawn(function()
-		pcall(function()
-			ContentProvider:PreloadAsync(sounds)
-		end)
-		for _, sound in sounds do
-			sound:Destroy()
-		end
-	end)
+	SoundPool.preload({ settings.step, settings.tick, settings.roar, settings.slam.small, settings.slam.mid, settings.slam.huge, settings.eggDrop, settings.eggSlice, settings.meterTap, settings.meterPerfect })
 end
 
 -- A footfall on the walk. `bigness` 0 for the smallest monster, 1 for the biggest.
@@ -66,6 +43,43 @@ end
 -- The monster's roar at the unveil. `strength` 0 for the least of them, 1 for the biggest.
 function RevealSound.roar(strength: number)
 	play(settings.roar, lerp(settings.roarVolume[1], settings.roarVolume[2], strength), lerp(settings.roarSpeed[1], settings.roarSpeed[2], strength))
+end
+
+-- The egg touching down, and the cut that follows. `mine` is false for other players' throws, which play quieter.
+function RevealSound.eggDrop(mine: boolean)
+	if settings.eggDrop ~= "" then
+		play(settings.eggDrop, if mine then settings.eggVolume.mine else settings.eggVolume.others, 1)
+	end
+end
+
+function RevealSound.eggSlice(mine: boolean)
+	if settings.eggSlice ~= "" then
+		play(settings.eggSlice, if mine then settings.eggVolume.mine else settings.eggVolume.others, 1)
+	end
+end
+
+-- The tap on the throw meter: the soft pop for levels 1 to 9, the PERFECT sound for the top level.
+function RevealSound.meterTap(perfect: boolean)
+	local id = if perfect then settings.meterPerfect else settings.meterTap
+	if id ~= "" then
+		play(id, if perfect then settings.meterPerfectVolume else settings.meterTapVolume, 1, if perfect then settings.meterPerfectSkip else settings.meterTapSkip)
+	end
+end
+
+-- The slam of a luck label hitting the screen. `index` is the tier, 1 to `count`; the higher, the heavier it hits.
+function RevealSound.slam(index: number, count: number)
+	local slam = settings.slam
+	local id = slam[slam.weights[index] or slam.weights[#slam.weights]]
+	if id == nil or id == "" then
+		return
+	end
+	local u = (index - 1) / math.max(count - 1, 1)
+	play(id, lerp(slam.volume[1], slam.volume[2], u), lerp(slam.speed[1], slam.speed[2], u))
+end
+
+-- The weakest slam, for the 2X XP hit while training.
+function RevealSound.boostSlam()
+	play(settings.slam.small, settings.slam.boostVolume, settings.slam.speed[1])
 end
 
 return RevealSound

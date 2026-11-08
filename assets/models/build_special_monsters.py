@@ -370,6 +370,7 @@ def duskeel():
     shell(m, "Body", [(0, 2.55, 0.34, 0.62, 0.36), (0, 1.9, 0.5, 1.12, 0.74), (0, 1.0, 0.62, 1.62, 1.14), (0, 0.1, 0.68, 1.82, 1.46),
                       (0, -0.7, 0.62, 1.66, 1.6)], -42, 222, 8, f=f)
     for side in (-1, 1):
+        m.bone = "Head"  # barbel() leaves m.bone on the whisker's last bone: without this the second eye and horn rode the whisker
         glare(m, f.at(side * 0.66, 1.15, 0.88), f.r @ Vector((side * 0.72, 0.62, 0.22)), 0.44, -side, slant=0.72, spikes=0)
         # Horns swept back off the skull, and a row of knobs down the snout.
         a = Vector(f.at(side * 0.55, 0.2, 1.2))
@@ -456,6 +457,7 @@ def umbray():
     m.bone = "Head"
     shell(m, "Body", [(0, 1.55, 0.3, 1.9, 0.26), (0, 0.9, 0.4, 2.55, 0.56), (0, 0.1, 0.46, 3.0, 0.82), (0, -0.8, 0.46, 3.3, 0.96)], -30, 210, 8, f=f)
     for side in (-1, 1):
+        m.bone = "Head"  # barbel() leaves m.bone on the whisker's last bone: without this the second eye and horn rode the whisker
         glare(m, f.at(side * 1.05, 0.25, 0.78), f.r @ Vector((side * 0.55, 0.72, 0.42)), 0.46, -side, slant=0.72, spikes=0)
         horn = Vector(f.at(side * 1.15, 0.95, 0.3))
         limb(m, "Accent", [tuple(horn), tuple(horn + Vector((side * 0.6, 0.9, 0.05))), tuple(horn + Vector((side * 0.52, 2.0, 0.2)))], 0.62, 0.42)
@@ -535,6 +537,7 @@ def dreadlure():
     m.bone = "Head"
     shell(m, "Body", [(0, 4.45, 0.72, 3.8, 0.75), (0, 3.7, 1.15, 5.2, 1.8), (0, 2.5, 1.65, 6.4, 3.1), (0, 1.1, 2.05, 7.2, 4.3), (0, -0.3, 2.3, 7.5, 5.2)], -50, 230, 10, f=f)
     for side in (-1, 1):
+        m.bone = "Head"  # barbel() leaves m.bone on the whisker's last bone: without this the second eye and horn rode the whisker
         # On the skin (the dome is 2.6 out at this height), looking out, forward and a little up.
         glare(m, f.at(side * 2.78, 2.45, 2.7), f.r @ Vector((side * 0.66, 0.58, 0.48)), 1.3, -side, slant=0.78, spikes=0)
         for t, h in ((0.8, 1.2), (1.9, 0.95)):  # bone knobs along the lip

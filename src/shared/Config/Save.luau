@@ -1,4 +1,6 @@
 -- Player save settings. Bump storeName only to wipe everyone's progress.
+local Settings = require(script.Parent.Settings)
+
 return {
 	storeName = "PlayerData_v1",
 	autosaveInterval = 60, -- seconds between autosaves; each one also refreshes the session lock
@@ -59,5 +61,12 @@ return {
 		dailyTasksDone = false, -- whether today's x2 XP has been given
 		dailyStreak = 0, -- the last daily reward day claimed, 1 to 7 (Config/Daily)
 		dailyLastDay = -1, -- the UTC day number (os.time() // 86400) of the last daily claim
+		settings = Settings.defaults, -- music and sound effect volume, hide other players' dinos (Config/Settings)
+		tutorial = false, -- the new-player tutorial's progress; TutorialService makes it (a save that has played starts it finished)
 	},
+
+	-- Studio only: with this attribute ticked on Workspace (in Edit mode, before Play), every player in the play test
+	-- gets a brand-new save that is never read or written, and the leaderboards ignore them. For testing the tutorial
+	-- and anything else without touching a real save (memory studio-test-save-pitfall).
+	studioFreshSaveAttribute = "StudioFreshSave",
 }

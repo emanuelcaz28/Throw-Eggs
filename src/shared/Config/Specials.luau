@@ -1,9 +1,10 @@
 -- Special monsters: from no map, earning a share of the buyer's best monster. The income is fixed when given and saved
 -- on the monster, and other special monsters never count as "best", so one can't multiply another. Ids are saved, so
 -- never rename one. Models: assets/models/build_special_monsters.py.
---   With a passId: a Game Pass, bought once. It can't be sold, since the pass only gives its monster once.
---   With an egg: hatched from that Robux egg (Config/Shop prismEgg), which can be bought again and again, so these
---   can be sold like any monster.
+--   With a passId: a Game Pass, bought once.
+--   With an egg: hatched from that Robux egg (Config/Shop prismEgg), which can be bought again and again.
+-- None of them can be sold or fed to another monster, so Robux is never lost by mistake [Owner, 2026-11-08]; their row
+-- has RESIZE instead, from normal size up to the biggest size mutation's, looks only (DinoStats.resizes).
 return {
 	{
 		id = "Gloomfin",

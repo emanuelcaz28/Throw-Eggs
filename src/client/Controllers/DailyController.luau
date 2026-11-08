@@ -1,6 +1,6 @@
 -- The Daily Reward panel (Config/Daily): seven day tiles, each a lucky throw, the big one on day 7, CLAIM, and today's three
--- tasks. It opens itself a few seconds after joining when a claim is waiting; a button above Monsters opens it any time,
--- with a red dot while a claim is waiting. Display and requests only: DailyService and DailyTasks decide everything.
+-- tasks. It opens itself a few seconds after joining when a claim is waiting; a button above Monsters opens it, and is
+-- only there while a claim is waiting (with a red dot). Display and requests only: DailyService and DailyTasks decide everything.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -180,6 +180,8 @@ function DailyController.start()
 			tile.stroke.Thickness = if index == day then 6 else 4
 		end
 		hud.dot.Visible = claimable
+		-- The button is only there while a claim is waiting [Owner, 2026-11-07: keep the Daily UI hidden until needed].
+		hud.open.Visible = claimable
 		hud.claim.TextSize = if claimable then 42 else 30
 		if claimable then
 			UiKit.restyle(hud.claim, "CLAIM", "green")
