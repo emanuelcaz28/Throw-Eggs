@@ -82,6 +82,11 @@ local PULSE_SECONDS = 1.2
 local PULSE_AMOUNT = 0.05
 local WIGGLE_SECONDS = 2
 local WIGGLE_DEGREES = 5
+-- Robux buttons never grow or move: every SHAKE_EVERY seconds they give one quick little shake [Owner, 2026-11-09].
+local SHAKE_EVERY = 3
+local SHAKE_TIME = 0.4 -- seconds the shake lasts
+local SHAKE_DEGREES = 4 -- how far it turns at first, dying away
+local SHAKE_SWINGS = 3 -- back-and-forths in one shake
 local VIEW_PITCH = math.rad(16)
 local VIEW_FOV = 26
 
@@ -109,6 +114,13 @@ local function startLoop()
 				if not entry.object:GetAttribute("Pressed") then
 					entry.data.Scale = 1 + PULSE_AMOUNT * math.sin(t * 2 * math.pi / PULSE_SECONDS + entry.object.AbsolutePosition.X * 0.01)
 				end
+			elseif entry.kind == "shake" then
+				local into = t % SHAKE_EVERY
+				-- Only while it still shows a price: an OWNED or UNAVAILABLE button stays still.
+				local priced = entry.object:IsA("TextButton") and string.find(entry.object.Text, "R$", 1, true) ~= nil
+				entry.object.Rotation = if priced and into < SHAKE_TIME and not entry.object:GetAttribute("Pressed")
+					then SHAKE_DEGREES * (1 - into / SHAKE_TIME) * math.sin(into / SHAKE_TIME * SHAKE_SWINGS * 2 * math.pi)
+					else 0
 			elseif entry.kind == "wiggle" then
 				entry.object.Rotation = entry.data + WIGGLE_DEGREES * math.sin(t * 2 * math.pi / WIGGLE_SECONDS)
 			end
@@ -118,6 +130,11 @@ end
 
 local function track(kind: string, object: Instance, data)
 	startLoop()
+	for _, entry in moving do
+		if entry.object == object and entry.kind == kind then
+			return -- already moving this way
+		end
+	end
 	table.insert(moving, { kind = kind, object = object, data = data })
 end
 
@@ -290,9 +307,14 @@ function UiKit.restyle(button: TextButton, value: string, style: string)
 	end
 end
 
--- Robux and claim buttons breathe so the eye finds them.
+-- Claim buttons breathe so the eye finds them.
 function UiKit.pulse(button: GuiObject)
 	track("pulse", button, button:FindFirstChildOfClass("UIScale"))
+end
+
+-- Robux buttons stay still, but for a quick little shake every few seconds (SHAKE_EVERY).
+function UiKit.shake(button: GuiObject)
+	track("shake", button, nil)
 end
 
 -- A small tilted sticker (BEST DEAL!, x2, OWNED) that rocks gently around its tilt (default -4°).
@@ -483,6 +505,17 @@ function UiKit.monster(parent: Instance, dinoId: string, options): (ViewportFram
 	return frame, model
 end
 
+-- The rarity word a monster shows on its tags, the best monster card and My Monsters: its tier in capitals, or "?"
+-- for a monster bought with Robux, which comes from no map [Owner, 2026-11-09: instead of MYTHIC].
+function UiKit.rarityWord(dinoId: string): string
+	return if DinoStats.special(dinoId) then "?" else string.upper(UiKit.rarityOf(dinoId))
+end
+
+-- Which Config/Rarity style its rarity word is drawn in: its tier's, or the plain black "mystery" for a Robux monster.
+function UiKit.rarityLook(dinoId: string): string
+	return if DinoStats.special(dinoId) then "mystery" else UiKit.rarityOf(dinoId)
+end
+
 -- Which rarity tier a dino is (Config/RarityLadder: its home map's word for its place in the list).
 function UiKit.rarityOf(dinoId: string): string
 	if DinoStats.special(dinoId) then
@@ -610,7 +643,43 @@ function UiKit.panel(gui: ScreenGui, options)
 	body.Parent = frame
 
 	-- closeInset: how far the X reaches in from the panel's right edge, for anything placed beside it in the header.
-	local panel = { frame = frame, body = body, close = close, closeInset = if bigClose then 90 else 74, scale = scale, header = header }
+	local panel = {
+		frame = frame,
+		body = body,
+		close = close,
+		closeInset = if bigClose then 90 else 74,
+		scale = scale,
+		header = header,
+		sizeFactor = options.sizeFactor or 1, -- how much of the usual panel scale it opens at (a smaller panel: below 1)
+		effect = options.openEffect, -- "rise": the Shop's grander opening (below); nil: the small pop
+		home = frame.Position,
+		token = 0,
+	}
+	scale.Scale = UiKit.scale() * panel.sizeFactor
+	if panel.effect == "rise" then
+		-- A soft dark veil behind the panel, on its own layer so it covers the whole screen, past the top bar.
+		local veilGui = Instance.new("ScreenGui")
+		veilGui.Name = frame.Name .. "Veil"
+		veilGui.ResetOnSpawn = false
+		veilGui.ScreenInsets = Enum.ScreenInsets.None
+		veilGui.DisplayOrder = gui.DisplayOrder - 1
+		veilGui.Enabled = false
+		veilGui.Parent = gui.Parent
+		local veil = Instance.new("Frame")
+		veil.Name = "Veil"
+		veil.BackgroundColor3 = Color3.fromRGB(8, 4, 24)
+		veil.BackgroundTransparency = 1
+		veil.BorderSizePixel = 0
+		veil.Size = UDim2.fromScale(1, 1)
+		veil.Active = false
+		veil.Parent = veilGui
+		panel.veil = veil
+		panel.veilGui = veilGui
+		-- However the panel is hidden (its X, another panel, a script), the veil goes with it.
+		frame:GetPropertyChangedSignal("Visible"):Connect(function()
+			veilGui.Enabled = frame.Visible
+		end)
+	end
 	close.Activated:Connect(function()
 		UiKit.closePanel(panel)
 	end)
@@ -631,6 +700,15 @@ end
 -- with keepOpen set (Welcome back, closed only by its CLAIM) is left alone.
 local openPanels = {}
 
+local RISE = {
+	from = 0.6, -- the panel starts at this share of its size...
+	drop = 70, -- ...and this many design pixels lower. No tilt: a turned frame stops clipping what's inside it, so
+	-- the Shop's rays, stripes and next card spilled out past the panel while it opened [2026-11-09].
+	time = 0.45,
+	veil = 0.5, -- the veil's transparency once open (1 is none)
+	closeTime = 0.14,
+}
+
 function UiKit.openPanel(panel)
 	for other in openPanels do
 		if other ~= panel and not other.keepOpen then
@@ -638,14 +716,41 @@ function UiKit.openPanel(panel)
 		end
 	end
 	openPanels[panel] = true
-	local full = UiKit.scale()
+	panel.token += 1
+	local full = UiKit.scale() * panel.sizeFactor
 	panel.frame.Visible = true
-	panel.scale.Scale = full * 0.85
-	TweenService:Create(panel.scale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = full }):Play()
+	if panel.effect == "rise" then
+		-- It springs up from below as it grows, with a little overshoot, while the veil fades in.
+		panel.scale.Scale = full * RISE.from
+		panel.frame.Position = panel.home + UDim2.fromOffset(0, RISE.drop * full)
+		TweenService:Create(panel.scale, TweenInfo.new(RISE.time, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = full }):Play()
+		TweenService:Create(panel.frame, TweenInfo.new(RISE.time, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+			Position = panel.home,
+		}):Play()
+		TweenService:Create(panel.veil, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = RISE.veil }):Play()
+	else
+		panel.scale.Scale = full * 0.85
+		TweenService:Create(panel.scale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = full }):Play()
+	end
 end
 
 function UiKit.closePanel(panel)
 	openPanels[panel] = nil
+	if panel.effect == "rise" and panel.frame.Visible then
+		-- A quick shrink back and the veil fades out, then it hides, unless it was opened again meanwhile.
+		panel.token += 1
+		local token = panel.token
+		local full = UiKit.scale() * panel.sizeFactor
+		local info = TweenInfo.new(RISE.closeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		TweenService:Create(panel.scale, info, { Scale = full * 0.9 }):Play()
+		TweenService:Create(panel.veil, info, { BackgroundTransparency = 1 }):Play()
+		task.delay(RISE.closeTime, function()
+			if panel.token == token then
+				panel.frame.Visible = false
+			end
+		end)
+		return
+	end
 	panel.frame.Visible = false
 end
 
@@ -661,7 +766,7 @@ function UiKit.anyPanelOpen(): boolean
 end
 
 function UiKit.togglePanel(panel)
-	if panel.frame.Visible then
+	if panel.frame.Visible and openPanels[panel] then
 		UiKit.closePanel(panel)
 	else
 		UiKit.openPanel(panel)

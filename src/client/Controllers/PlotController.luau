@@ -255,7 +255,9 @@ function PlotController.start()
 				return "", ""
 			end
 			if #picked == 0 then
-				return `CHONK {target.chonk}: {target.food} / {Chonk.foodFor(target.chonk)} FOOD`, ""
+				local nextSize, nextLevel = Chonk.nextSize(target.chonk)
+				local toward = if nextSize then ` ({DinoStats.findOption(Catch.sizes, nextSize).name} at {nextLevel})` else ""
+				return `CHONK {target.chonk}: {target.food} / {Chonk.foodFor(target.chonk)} FOOD{toward}`, ""
 			end
 			local level, food = target.chonk, target.food
 			local used = 0
@@ -267,7 +269,15 @@ function PlotController.start()
 			end
 			-- The tutorial's feeding step is free, once (TutorialService).
 			local free = player:GetAttribute("TutorialFreeFeed") == target.key
-			return `CHONK {target.chonk} TO {level}`, if free then "FREE" else `-{Format.cash(Chonk.priceOf(target.income) * used)}`
+			-- Feeding only changes the size (Config/Chonk): say which size this reaches, or how far the next one is.
+			local reached = Chonk.sizeAt(level)
+			local before = Chonk.sizeAt(target.chonk)
+			local nextSize, nextLevel = Chonk.nextSize(level)
+			local growth = if reached and reached ~= before
+				then ` = {DinoStats.findOption(Catch.sizes, reached).name}!`
+				elseif nextSize then `, {DinoStats.findOption(Catch.sizes, nextSize).name} at {nextLevel}`
+				else ""
+			return `CHONK {target.chonk} TO {level}{growth}`, if free then "FREE" else `-{Format.cash(Chonk.priceOf(target.income) * used)}`
 		end,
 	})
 	local function openFeed(dino)
@@ -508,9 +518,10 @@ function PlotController.start()
 			chipLabel.ZIndex = 3
 		end
 
-		local size = DinoStats.findOption(Catch.sizes, dino.size)
+		-- The size it shows: caught, or grown to by feeding (then marked FED, Config/Chonk).
+		local size = DinoStats.findOption(Catch.sizes, dino.shownSize)
 		local chonkWord = if dino.chonk > 0 then `  CHONK {dino.chonk}` else ""
-		local tier = RarityLabel.create(row, rarity, 14, Enum.TextXAlignment.Left, string.upper(rarity) .. chonkWord)
+		local tier = RarityLabel.create(row, UiKit.rarityLook(dino.id), 14, Enum.TextXAlignment.Left, UiKit.rarityWord(dino.id) .. chonkWord)
 		tier.Position = UDim2.fromOffset(104, 8)
 		tier.Size = UDim2.fromOffset(176, 18)
 		local name = UiKit.text(row, dino.name, 24, nil, Enum.TextXAlignment.Left)
@@ -533,7 +544,7 @@ function PlotController.start()
 		statsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 		statsLayout.Parent = stats
 		if size then
-			local sizeWord = UiKit.text(stats, size.name, 15, SIZE_WORD)
+			local sizeWord = UiKit.text(stats, if dino.fed then `{size.name} FED` else size.name, 15, SIZE_WORD)
 			sizeWord.AutomaticSize = Enum.AutomaticSize.X
 			sizeWord.Size = UDim2.fromScale(0, 1)
 		end
@@ -858,7 +869,7 @@ function PlotController.start()
 			clearGhost()
 			aim = nil
 			hud.hint.Visible = false
-			setHovered(if not dino and UserInputService.MouseEnabled then statueAt(UserInputService:GetMouseLocation()) else nil)
+			setHovered(if not dino and not isTraining() and UserInputService.MouseEnabled then statueAt(UserInputService:GetMouseLocation()) else nil)
 			return
 		end
 		setHovered(nil)
@@ -893,7 +904,7 @@ function PlotController.start()
 	end)
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if gameProcessed then
+		if gameProcessed or isTraining() then -- training: no stray equips or pick-ups (PlotService refuses them too)
 			return
 		end
 		for index, keyCode in HOTBAR_KEYS do
@@ -919,7 +930,7 @@ function PlotController.start()
 	-- nothing carried picks up the monster tapped. Phones have no hover, so the tap itself picks the spot. Touch
 	-- positions leave out the top bar, while the camera's ray needs the whole screen.
 	UserInputService.TouchTap:Connect(function(positions, gameProcessed)
-		if gameProcessed or #positions ~= 1 then
+		if gameProcessed or #positions ~= 1 or isTraining() then
 			return
 		end
 		local point = positions[1] + GuiService:GetGuiInset()

@@ -72,13 +72,17 @@ local Plot = {
 		farScale = 0.75, -- how big a tag is at maxDistance, against up close
 		mutationText = 13, -- pixel heights of the three lines [Owner, 2026-11-04: the first ones were far too big]
 		nameText = 20,
-		rarityText = 15, -- the carried monster's rarity word, between the mutations and the name
+		rarityText = 15, -- the rarity word (carried and base monsters), between the mutations and the name
+		bestRarityText = 34, -- the rarity word on the server's best monster's stats card (its design pixels)
 		-- The carried monster's tag [Owner, 2026-11-07: "more close to its head and not that big"]: this much
 		-- smaller than a base monster's, and gap studs over the top of its visible body.
 		carried = { scale = 0.7, gap = 0.3 },
 		incomeText = 17,
 		outline = 2.5, -- the dark outline round the letters, in pixels
 		sizeWord = { "#FFFFFF", "#AEB8C8" }, -- size mutations are silver, top to bottom
+		-- A size reached by feeding (Config/Chonk) has a smaller FED after its word [Owner, 2026-11-08].
+		fedText = 10,
+		fedWord = { "#FFE9B0", "#FFA43A" },
 		income = { "#B6FF8A", "#2FD24A" },
 		-- A colour mutation's word runs from its colour lifted towards white (by this much) down to its colour.
 		colourLift = 0.6,

@@ -161,8 +161,19 @@ function DinoStats.describe(entry)
 	else
 		chance *= noSize
 	end
-	income *= Chonk.incomeMultiplier(entry.chonk)
+	-- Feeding is looks only (Config/Chonk): money and odds come from the size it was caught with.
 	return { name = dino.name, income = income, oneIn = math.max(math.floor(1 / chance + 0.5), 1) }
+end
+
+-- The size a monster shows: the one it was caught with, or the one feeding has grown it to when that's bigger
+-- (Config/Chonk sizeLevels). Returns the Config/Catch sizes option (nil for normal size) and whether feeding made it.
+function DinoStats.shownSize(sizeId: string?, chonk: number?): (any?, boolean)
+	local caught = DinoStats.findOption(Catch.sizes, sizeId)
+	local fed = DinoStats.findOption(Catch.sizes, Chonk.sizeAt(chonk))
+	if fed and (not caught or fed.scale > caught.scale) then
+		return fed, true
+	end
+	return caught, false
 end
 
 return DinoStats

@@ -7,7 +7,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BlockModel = require(script.Parent.BlockModel)
 local Catch = require(script.Parent.Config.Catch)
-local Chonk = require(script.Parent.Config.Chonk)
 local DinoLife = require(script.Parent.Config.DinoLife)
 local DinoStats = require(script.Parent.DinoStats)
 local Roles = require(script.Parent.Roles)
@@ -40,11 +39,12 @@ function DinoModel.color(name: string, mutationId: string?): Color3
 	return Color3.fromHSV(hue / 360, BASE_SATURATION, BASE_VALUE)
 end
 
--- How big a dino stands on a plot and in the reveal: its biome's standard size, times its size
--- mutation if it has one, times how far it's been fed (Config/Chonk).
+-- How big a dino stands on a plot and in the reveal, against a plain first-map monster (every model is first brought
+-- to one size, fitScale): its biome's standard size, times its size mutation if it has one, or the size tier feeding has reached when that's bigger (Config/Chonk).
 function DinoModel.statueScale(dinoId: string, sizeId: string?, chonk: number?): number
-	local size = DinoStats.findOption(Catch.sizes, sizeId)
-	return DinoStats.standardScale(dinoId) * (if size then size.scale else 1) * Chonk.scaleMultiplier(chonk)
+	-- Its caught size, or the size feeding has grown it to when that's bigger (DinoStats.shownSize, Config/Chonk).
+	local size = DinoStats.shownSize(sizeId, chonk)
+	return DinoStats.standardScale(dinoId) * (if size then size.scale else 1)
 end
 
 -- An owned monster's size on the base, on a player's head and as a placement ghost: statueScale, times a special's
@@ -203,19 +203,18 @@ function DinoModel.legHeight(model: Model): number?
 	return nil
 end
 
--- Builds the dino with its feet at origin. Scaling and spinning happen around the feet.
--- Not parented: the caller decides where it goes. The "Head" part is the top of the model.
-function DinoModel.build(dinoId: string, mutationId: string?, origin: Vector3, scale: number): Model
+-- The model as made, scaled by worldScale, not yet settled.
+local function buildRaw(dinoId: string, mutationId: string?, origin: Vector3, worldScale: number): Model
 	local mutation = DinoStats.findOption(Catch.mutations, mutationId)
-	local imported = buildImported(dinoId, mutation, origin, scale)
+	local imported = buildImported(dinoId, mutation, origin, worldScale)
 	if imported then
-		return settle(imported, scale)
+		return imported
 	end
 	local blocks = BlockModel.build(`dino_{dinoId}`, origin, mutation and mutation.color, MUTATION_TINT)
 	if blocks then
 		blocks.Name = "Dino"
-		blocks:ScaleTo(scale)
-		return settle(blocks, scale)
+		blocks:ScaleTo(worldScale)
+		return blocks
 	end
 	local color = DinoModel.color(dinoId, mutationId)
 	local model = Instance.new("Model")
@@ -233,8 +232,34 @@ function DinoModel.build(dinoId: string, mutationId: string?, origin: Vector3, s
 		part.Parent = model
 	end
 	model.WorldPivot = CFrame.new(origin)
-	model:ScaleTo(scale)
-	return settle(model, scale)
+	model:ScaleTo(worldScale)
+	return model
+end
+
+-- Every monster's model is made at its own size in Blender (a Compy 4 studs long, Batastrophe 61), so first each is
+-- brought to one longest side, Catch.standardLength studs, and only then do its map's standard size and its size
+-- mutation multiply it [Owner, 2026-11-09: "a catch with no size mutation is always exactly X", docs/GAME_SPEC.md].
+-- Measured once per monster.
+local fits: { [string]: number } = {}
+function DinoModel.fitScale(dinoId: string): number
+	local fit = fits[dinoId]
+	if fit then
+		return fit
+	end
+	local probe = buildRaw(dinoId, nil, Vector3.zero, 1)
+	local _, size = DinoModel.visibleBox(probe)
+	probe:Destroy()
+	local longest = math.max(size.X, size.Y, size.Z)
+	fit = if longest > 0 then Catch.standardLength / longest else 1
+	fits[dinoId] = fit
+	return fit
+end
+
+-- Builds the dino with its feet at origin. Scaling and spinning happen around the feet. scale is its size against
+-- a plain first-map monster (statueScale); 1 means its longest side is Catch.standardLength studs.
+-- Not parented: the caller decides where it goes. The "Head" part is the top of the model.
+function DinoModel.build(dinoId: string, mutationId: string?, origin: Vector3, scale: number): Model
+	return settle(buildRaw(dinoId, mutationId, origin, scale * DinoModel.fitScale(dinoId)), scale)
 end
 
 return DinoModel

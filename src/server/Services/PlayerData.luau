@@ -174,8 +174,9 @@ local function load(player: Player)
 	if store then
 		for attempt = 1, Save.loadAttempts do
 			data, reason = tryAcquire(store, player.UserId, token)
-			-- Studio with API access off fails the same way every time, so don't sit retrying.
-			if data or not player.Parent or (RunService:IsStudio() and reason ~= "locked by another session") then
+			-- Studio doesn't sit retrying: API access off fails the same way every time, and a locked save is played
+			-- from a read-only copy below.
+			if data or not player.Parent or RunService:IsStudio() then
 				break
 			end
 			warn(`[PlayerData] {player.Name}: load attempt {attempt} failed: {reason}`)
@@ -183,8 +184,24 @@ local function load(player: Player)
 		end
 	end
 
+	-- Studio and the save is locked (the owner is also in the live game, or a stopped play test still holds it): play
+	-- a copy of the real save that is never written back, instead of kicking after a minute [Owner, 2026-11-08: "I
+	-- can't test because nothing loads"]. The lock is left alone, so the other session keeps saving safely.
+	local readOnlyCopy = false
+	if not data and store and RunService:IsStudio() and reason == "locked by another session" then
+		local ok, record = pcall(function()
+			return store:GetAsync(keyFor(player.UserId))
+		end)
+		if ok and record then
+			data, readOnlyCopy = withDefaults(record.data), true
+			warn(`[PlayerData] {player.Name}: save is locked by another session, so this Studio test plays a copy of it. Nothing will be saved.`)
+		end
+	end
+
 	local session: Session
-	if data then
+	if readOnlyCopy then
+		session = { token = token, data = withoutPasses(player, applyResets(player, data)), memoryOnly = true, released = false }
+	elseif data then
 		session = { token = token, data = withoutPasses(player, applyResets(player, data)), memoryOnly = false, released = false }
 	elseif adminFresh then
 		session = { token = token, data = withDefaults(nil), memoryOnly = true, released = false }

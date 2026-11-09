@@ -29,12 +29,15 @@ return {
 	},
 	valueColors = { count = Color3.fromRGB(111, 227, 255), cash = Color3.fromRGB(141, 255, 90), oneIn = Color3.fromRGB(255, 150, 240) },
 
-	-- stat is the save field, or "throwPower" for the player's Throw Power (TrainingService). "count" shows plain
-	-- numbers, "cash" and "oneIn" short ones (1.2M). model: the Blender board to use, if not board_<id>.
+	-- stat is the save field, "throwPower" for the player's Throw Power (TrainingService), or "income" for their $/s
+	-- right now (the Income attribute PlotService sets: the base with passes, no timed event). "count" shows plain
+	-- numbers, "cash" and "oneIn" short ones (1.2M); perSecond adds "/s". model: the Blender board to use, if not
+	-- board_<id>.
 	-- [Owner, 2026-11-08] Most Power replaced Most Dinos; it has its own store and reuses that board's model.
+	-- [Owner, 2026-11-08] Top Money shows $/s instead of total money earned: its own store (TopIncome), the same board.
 	boards = {
 		{ id = "MostPower", title = "MOST POWER", subtitle = "Throw Power", stat = "throwPower", kind = "count", model = "board_MostDinos", color = Color3.fromRGB(70, 150, 230) },
-		{ id = "TopMoney", title = "TOP MONEY", subtitle = "Total money earned", stat = "totalEarned", kind = "cash", color = Color3.fromRGB(90, 190, 80) },
+		{ id = "TopIncome", title = "TOP MONEY", subtitle = "Money per second", stat = "income", kind = "cash", perSecond = true, model = "board_TopMoney", color = Color3.fromRGB(90, 190, 80) },
 		{ id = "LuckiestCatch", title = "LUCKIEST CATCH", subtitle = "Rarest catch", stat = "rarestOneIn", kind = "oneIn", color = Color3.fromRGB(170, 90, 220) },
 	},
 }

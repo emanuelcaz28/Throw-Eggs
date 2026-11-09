@@ -1,21 +1,46 @@
--- Feeding (docs/RETENTION_PLAN.md step 4): spare monsters and some cash make a favourite on the base grow. [Owner,
--- 2026-11-07] Feeding makes a monster bigger than its size mutation alone, up to the limits here, so a favourite can
--- end up spilling over the fence. Levels are saved on the monster (entry.chonk, and food towards the next in entry.food).
+-- Feeding (docs/RETENTION_PLAN.md step 4): spare monsters and some cash make a favourite on the base grow. Levels are
+-- saved on the monster (entry.chonk, and food towards the next in entry.food).
+-- [Owner, 2026-11-08] Looks only: feeding never changes what a monster earns (it made every monster earn x3.5 and
+-- Robux monsters, a share of the best, grew with it). Instead it climbs the size tiers (Config/Catch sizes) at the
+-- levels below, each much further than the last, so a fed Unit of Doom is a long-term goal. A monster caught bigger
+-- keeps its own size until feeding passes it. Its tag says FED next to the size word (MonsterTagController).
 local Chonk = {
 	maxLevel = 50,
-	incomePerLevel = 0.05, -- +5% of its income a level, added up, not compounded: x3.5 at level 50
-	scalePerLevel = 0.02, -- +2% of its size a level, added up: x2 at level 50, on top of its size mutation
+	-- The Chonk level at which feeding reaches each size. Food per level grows by one (foodFor), so the total food
+	-- is about level^2/2: Thicc 6, Absolute Unit 36, Chonker 120, Mega Chonk 325, Planet-Sized 741, Unit of Doom 1,275
+	-- (a third of that in monsters of the same kind).
+	sizeLevels = {
+		{ size = "Thicc", level = 3 },
+		{ size = "AbsoluteUnit", level = 8 },
+		{ size = "Chonker", level = 15 },
+		{ size = "MegaChonk", level = 25 },
+		{ size = "PlanetSized", level = 38 },
+		{ size = "UnitOfDoom", level = 50 },
+	},
 	food = 1, -- what any monster is worth
 	twinFood = 3, -- what one of the same kind is worth
 	cashSeconds = 30, -- each monster fed costs this many seconds of what the fed monster earns
 }
 
-function Chonk.incomeMultiplier(level: number?): number
-	return 1 + Chonk.incomePerLevel * (level or 0)
+-- The size feeding has reached at this level (a Config/Catch sizes id), or nil below the first.
+function Chonk.sizeAt(level: number?): string?
+	local reached = nil
+	for _, step in Chonk.sizeLevels do
+		if (level or 0) >= step.level then
+			reached = step.size
+		end
+	end
+	return reached
 end
 
-function Chonk.scaleMultiplier(level: number?): number
-	return 1 + Chonk.scalePerLevel * (level or 0)
+-- The next size feeding reaches above this level and the level it comes at, or nil once there are no more.
+function Chonk.nextSize(level: number?): (string?, number?)
+	for _, step in Chonk.sizeLevels do
+		if (level or 0) < step.level then
+			return step.size, step.level
+		end
+	end
+	return nil, nil
 end
 
 -- Food to go from this level to the next: each level asks for one more than the last.

@@ -7,12 +7,10 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BestCatch = require(ReplicatedStorage.Shared.Config.BestCatch)
-local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local DinoLife = require(ReplicatedStorage.Shared.Config.DinoLife)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
-local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Roles = require(ReplicatedStorage.Shared.Roles)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
@@ -133,15 +131,25 @@ end
 
 
 -- The stats beside the monster (Figma "Best monster stats"): clean outlined text, no card and no labels: the
--- mutation and size, the monster's name, its $/s, its odds and its world.
-local STATS = Vector2.new(360, 270)
+-- mutation and size, its rarity, the monster's name, its $/s and its odds; not its world [Owner, 2026-11-09]. The
+-- rarity line is left empty
+-- here: each player's screen draws the animated word in it (MonsterTagController, from the gui's RarityId)
+-- [Owner, 2026-11-09].
+local STATS = Vector2.new(360, 258)
+local RARITY_TOP, RARITY_HEIGHT = 32, 40
 local function buildStats()
 	local panel, gui = worldPanel("StatsPanel", STATS, BestCatch.statsPixelsPerStud)
 	local function line(y: number, height: number, color: Color3, stroke: number): TextLabel
 		return text(gui, UDim2.fromOffset(STATS.X / 2, y), UDim2.fromOffset(STATS.X - 8, height), color, stroke)
 	end
 	local extras = line(0, 30, Color3.fromRGB(235, 242, 255), 3)
-	local name = line(32, 58, Color3.new(1, 1, 1), 5)
+	local rarity = Instance.new("Frame")
+	rarity.Name = "Rarity"
+	rarity.BackgroundTransparency = 1
+	rarity.Position = UDim2.fromOffset(0, RARITY_TOP)
+	rarity.Size = UDim2.fromOffset(STATS.X, RARITY_HEIGHT)
+	rarity.Parent = gui
+	local name = line(76, 58, Color3.new(1, 1, 1), 5)
 	UiKit.gradient(name, GOLD)
 	name.BackgroundTransparency = 1
 	face = {
@@ -149,9 +157,8 @@ local function buildStats()
 		gui = gui,
 		extras = extras,
 		name = name,
-		income = line(100, 48, UiKit.CASH, 4),
-		odds = line(156, 48, ODDS, 4),
-		world = line(212, 48, Color3.fromRGB(170, 130, 255), 4),
+		income = line(144, 48, UiKit.CASH, 4),
+		odds = line(200, 48, ODDS, 4),
 	}
 end
 
@@ -206,13 +213,6 @@ local function buildTitle()
 	local monster = text(gui, onTitle(432, 164), onTitle(400, 38), UiKit.CASH, 3)
 	monster.TextXAlignment = Enum.TextXAlignment.Left
 	title = { panel = anchor, gui = gui, avatar = avatar, owner = owner, monster = monster }
-end
-
-local biomeOf = {}
-for _, biome in Biomes do
-	for _, dino in Dinos[biome.id] or {} do
-		biomeOf[dino.id] = biome
-	end
 end
 
 -- Turns the statue so its head points the way the pedestal faces. Most imports face their pivot's +Z, a few
@@ -279,10 +279,9 @@ local function show(player: Player, entry, stats)
 	face.extras.Text = table.concat(words, " · ")
 	face.extras.Visible = #words > 0
 	face.name.Text = stats.name
+	face.gui:SetAttribute("RarityId", entry.id) -- drawn on each screen (MonsterTagController)
 	face.odds.Text = `1 in {Format.short(stats.oneIn)}`
 	face.income.Text = `{Format.cash(stats.income)}/s`
-	local biome = biomeOf[entry.id]
-	face.world.Text = if biome then biome.name else "?"
 
 	-- The title floats just over the monster's head; the card stands at its right as you face it (the standPoint's
 	-- -X), its foot on the cushion.

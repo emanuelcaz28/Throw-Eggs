@@ -43,9 +43,9 @@ local Shop = {
 		name = "Server Luck x2",
 		-- Roblox wants a luck boost's effect in numbers before buying: x2 luck doubles a rare monster's weight in the roll, and
 		-- 2 ^ Catch.luckPower is about 1.3.
-		description = "15 min for everyone: rare monsters about 2x likelier, colours and sizes 1.3x",
+		description = "3 min for everyone: rare monsters about 2x likelier, colours and sizes 1.3x",
 		multiplier = 2,
-		seconds = 15 * 60, -- buying again while active adds more time
+		seconds = 3 * 60, -- buying again while active adds more time [Owner, 2026-11-09: was 15 min]
 		settleEvery = 5, -- seconds between updates of each buyer's saved time left
 	},
 	-- Asking Roblox which Game Passes a player owns can fail; a pass must never go missing because of that.

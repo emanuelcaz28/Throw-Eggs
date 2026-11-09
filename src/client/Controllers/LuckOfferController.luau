@@ -2,7 +2,8 @@
 -- sell the x100 and x500 lucky throws, with the one-time R$ 3 deal on the first. It's gone the moment the egg is thrown,
 -- the one corner clear of the meter and Throw Power, and far from the throw tap. A pill the player already owns shows
 -- USE and how many instead of the price: tapping it picks that luck for this throw (ON), tapping again un-picks it
--- [Owner, 2026-11-07]. Nothing is used up until the egg lands (ThrowService). A daily x50, which goes by itself, shows
+-- [Owner, 2026-11-07]. While ON the throw is always PERFECT (ThrowController parks the marker at the top, ThrowService
+-- makes it one), and Back to Plot unticks it [Owner, 2026-11-09]. Nothing is used up until the egg lands (ThrowService). A daily x50, which goes by itself, shows
 -- as a small READY chip under the pills. DETAILS shows the real chances for this player (CatchOdds), as Roblox wants for paid
 -- random items, and no throw goes while it's open (ThrowController asks blocksThrow).
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -223,17 +224,48 @@ local function buildOffer(parent: Instance, item, y: number, onBuy: (number) -> 
 	local sparkles = { sparkle(offer, 176, 2, 15), sparkle(offer, 58, 40, 11), sparkle(offer, 6, 2, 12) }
 
 	-- The price, in a dark pill; the deal also shows what it costs after, crossed out. Owned: USE and how many, green,
-	-- or ON in gold once picked for this throw.
+	-- or ON in gold once picked for this throw. USE is made to be noticed [Owner, 2026-11-09]: it beats like a heart,
+	-- in a glow with a rainbow ring, and a shine crosses it.
 	local priceWidth = if deal then 88 else 66
-	local buy = tapArea(offer, "Price", if deal then 40 else 46, 56, priceWidth, 28)
-	UiKit.gradient(buy, if owned > 0 then (if picked then { "#ffe066", "#ff9a1f" } else { "#3df08a", "#0fa85a" }) else { "#3a3560", "#1f1a33" })
-	UiKit.corner(buy, 14)
-	UiKit.stroke(buy, 3)
+	local buy: TextButton
+	local use = nil
+	if owned > 0 then
+		local holder = box(offer, "Use", 46 + priceWidth / 2, 70, priceWidth, 28)
+		holder.AnchorPoint = Vector2.new(0.5, 0.5)
+		local scale = Instance.new("UIScale")
+		scale.Parent = holder
+		local glow = box(holder, "Glow", -4, -4, priceWidth + 8, 36)
+		glow.BackgroundTransparency = 0.6
+		glow.BackgroundColor3 = Color3.fromHex(if picked then "#ffd23f" else "#b6ff3d")
+		UiKit.corner(glow, 18)
+		local ring = UiKit.stroke(glow, 3, Color3.new(1, 1, 1))
+		local ringColours = Instance.new("UIGradient")
+		ringColours.Color = RAINBOW
+		ringColours.Parent = ring
+		buy = tapArea(holder, "Price", 0, 0, priceWidth, 28)
+		UiKit.gradient(buy, if picked then { "#ffe066", "#ff9a1f" } else { "#8dff6b", "#0fa85a" })
+		UiKit.corner(buy, 14)
+		UiKit.stroke(buy, 3)
+		local useShine = bands(buy, "Shine", NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.4, 1),
+			NumberSequenceKeypoint.new(0.5, 0.25),
+			NumberSequenceKeypoint.new(0.6, 1),
+			NumberSequenceKeypoint.new(1, 1),
+		}))
+		local useLabel = UiKit.text(buy, if picked then "ON" else `USE {owned}`, 15)
+		useLabel.Size = UDim2.fromScale(1, 1)
+		use = { scale = scale, glow = glow, ring = ringColours, shine = useShine, picked = picked }
+	else
+		buy = tapArea(offer, "Price", if deal then 40 else 46, 56, priceWidth, 28)
+		UiKit.gradient(buy, { "#3a3560", "#1f1a33" })
+		UiKit.corner(buy, 14)
+		UiKit.stroke(buy, 3)
+	end
 	local pale = Color3.fromHex("#d6ffc4")
 	local price = if owned > 0 then nil else priceOf(productId, redraw)
 	if owned > 0 then
-		local useLabel = UiKit.text(buy, if picked then "ON" else `USE {owned}`, 14)
-		useLabel.Size = UDim2.fromScale(1, 1)
+		-- USE or ON, made above.
 	else
 		priceLabel(buy, ROBUX, 2, 26, 16, Color3.new(1, 1, 1))
 	end
@@ -278,7 +310,7 @@ local function buildOffer(parent: Instance, item, y: number, onBuy: (number) -> 
 	detailsPad.BackgroundTransparency = 1
 	detailsPad.ZIndex = 4
 
-	local tagText = if picked then "ON THIS THROW!" elseif deal then item.dealTag else style.tag
+	local tagText = if picked then "PERFECT THROW!" elseif deal then item.dealTag else style.tag
 	if tagText then
 		local tag = UiKit.tag(offer, tagText, if deal then "tagGold" else { "#ff7aa8", "#e8265a" }, 12, -2)
 		tag.AnchorPoint = Vector2.new(1, 0)
@@ -313,7 +345,7 @@ local function buildOffer(parent: Instance, item, y: number, onBuy: (number) -> 
 		onDetails(item)
 	end)
 
-	return { halos = halos, rim = rim, rays = rays, shine = shine, clover = clover, sparkles = sparkles }
+	return { halos = halos, rim = rim, rays = rays, shine = shine, clover = clover, sparkles = sparkles, use = use }
 end
 
 -- The green chip for a player who already has a lucky throw ready.
@@ -458,10 +490,11 @@ local function fillChances(list: ScrollingFrame, width: number, multiplier: numb
 	end
 
 	section("SIZE")
-	row("Normal size (x1)", nil, percent(plain.sizes.none), percent(lucky.sizes.none or 0), 28)
+	-- Each size's own scale (Config/Catch sizes, up to x18) and its money bonus.
+	row("Normal x1 size", nil, percent(plain.sizes.none), percent(lucky.sizes.none or 0), 28)
 	for index = #Catch.sizes, 1, -1 do
 		local option = Catch.sizes[index]
-		row(`{option.name} (x{multiplierText(option.incomeMultiplier)})`, nil, percent(plain.sizes[option.id]), percent(lucky.sizes[option.id] or 0), 28)
+		row(`{option.name} x{multiplierText(option.scale)} size (x{multiplierText(option.incomeMultiplier)} money)`, nil, percent(plain.sizes[option.id]), percent(lucky.sizes[option.id] or 0), 28)
 	end
 end
 
@@ -581,6 +614,30 @@ local function animate()
 			label.TextTransparency = if twinkle > 0 then 1 - twinkle else 1
 			label.Rotation = t * 60
 		end
+		local use = offer.use
+		if use then
+			use.ring.Rotation = (t * 220) % 360
+			if use.picked then
+				-- ON: a calm glow.
+				local wave = (math.sin(t * 4) + 1) / 2
+				use.scale.Scale = 1 + 0.03 * wave
+				use.glow.BackgroundTransparency = 0.65 - 0.25 * wave
+				use.shine.Offset = Vector2.new(2, 0)
+			else
+				-- USE: a heartbeat, two quick thumps, with the glow flaring on each and a shine after.
+				local beat = (t * 0.9 + index * 0.35) % 1
+				local thump = 0
+				if beat < 0.12 then
+					thump = math.sin(beat / 0.12 * math.pi)
+				elseif beat > 0.18 and beat < 0.3 then
+					thump = 0.7 * math.sin((beat - 0.18) / 0.12 * math.pi)
+				end
+				use.scale.Scale = 1 + 0.09 * thump
+				use.glow.BackgroundTransparency = 0.6 - 0.4 * thump
+				local sweep = (beat - 0.3) / 0.35
+				use.shine.Offset = Vector2.new(if sweep > 0 and sweep < 1 then sweep * 2 - 1 else 2, 0)
+			end
+		end
 	end
 end
 
@@ -608,6 +665,8 @@ function LuckOfferController.hide()
 		return
 	end
 	shown = false
+	-- Thrown, Back to Plot or called off: the pick is over (ON unticks). ThrowController read it before this.
+	chosen = nil
 	closeDetails()
 	gui.Enabled = false
 	if effects then

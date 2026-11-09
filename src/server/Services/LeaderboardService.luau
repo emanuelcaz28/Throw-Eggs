@@ -38,6 +38,8 @@ local names: { [number]: string } = {}
 local function scoreOf(board, player: Player, data): number
 	if board.stat == "throwPower" then
 		return TrainingService.getThrowPower(player) or 0
+	elseif board.stat == "income" then
+		return player:GetAttribute("Income") or 0 -- PlotService: $/s right now, no timed event
 	end
 	return data[board.stat] or 0
 end
@@ -59,7 +61,7 @@ end
 
 local function valueText(board, value: number): string
 	if board.kind == "cash" then
-		return Format.cash(value)
+		return if board.perSecond then `{Format.cash(value)}/s` else Format.cash(value)
 	elseif board.kind == "oneIn" then
 		return `1 in {Format.short(value)}`
 	end

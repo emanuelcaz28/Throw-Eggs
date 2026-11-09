@@ -484,6 +484,9 @@ function ThrowController.start()
 	local function tap()
 		if aiming and os.clock() - aimStartedAt >= Throw.meter.minTime and not LuckOfferController.blocksThrow() then
 			local lucky = LuckOfferController.chosen() -- read before stopAiming hides the offer
+			if lucky then
+				markerHeight = 1 -- a picked luck boost is always a PERFECT throw (the server makes it one too)
+			end
 			stopAiming()
 			showResult(markerHeight)
 			tapSent = true
@@ -502,7 +505,8 @@ function ThrowController.start()
 
 	RunService.RenderStepped:Connect(function()
 		if aiming then
-			markerHeight = Throw.markerHeight(os.clock() - aimStartedAt)
+			-- With a luck boost ON the marker waits at the top, in PERFECT: any tap is a perfect throw [Owner, 2026-11-09].
+			markerHeight = if LuckOfferController.chosen() then 1 else Throw.markerHeight(os.clock() - aimStartedAt)
 			placeMarker(markerHeight)
 		end
 		-- Held in the right hand while aiming; the wind-up moves it itself.

@@ -496,7 +496,19 @@ local function buildGui()
 	open.Position = UDim2.new(0, 16, HudStyle.COLUMN_CENTER, (HudStyle.BUTTON_SIZE + HudStyle.BUTTON_GAP) / 2 * HudStyle.scale())
 	open.Name = "OpenShop"
 
-	local panel = UiKit.panel(gui, { name = "ShopPanel", width = PANEL_SIZE.X, height = PANEL_SIZE.Y, header = "sun", title = "Shop", icon = "🛍️", iconKey = "shop" })
+	-- [Owner, 2026-11-09] A bit smaller than before on PC, console and phone alike, and it springs up with a dark veil
+	-- behind (UiKit openEffect).
+	local panel = UiKit.panel(gui, {
+		name = "ShopPanel",
+		width = PANEL_SIZE.X,
+		height = PANEL_SIZE.Y,
+		header = "sun",
+		title = "Shop",
+		icon = "🛍️",
+		iconKey = "shop",
+		sizeFactor = 0.85,
+		openEffect = "rise",
+	})
 	local list = UiKit.scrollList(panel.body, UDim2.fromOffset(16, 4), UDim2.new(1, -24, 1, -16), 30)
 	local pad = list:FindFirstChildOfClass("UIPadding")
 	pad.PaddingTop = UDim.new(0, 20) -- room for stickers over the first card
@@ -621,7 +633,7 @@ local function showPrice(button: TextButton, id: number, infoType: Enum.InfoType
 		end)
 		if ok and info.PriceInRobux and button.Text ~= "OWNED" and not button:GetAttribute("Unavailable") then
 			UiKit.restyle(button, `{prefix or ""}R$ {info.PriceInRobux}`, "green")
-			UiKit.pulse(button)
+			UiKit.shake(button) -- no zoom on Robux buttons, only a little shake every 3 seconds [Owner, 2026-11-09]
 		end
 	end)
 end

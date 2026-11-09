@@ -38,6 +38,17 @@ local Training = {
 		stopOffset = Vector3.new(7, 0, -6), -- after STOP the player is put down here, from the pad's centre
 	},
 
+	-- The lifter's own camera as training starts (TrainingCamera): one glide to a wide view, then the normal camera
+	-- is theirs again [Owner, 2026-11-08: a view of them training from behind; 2026-11-09: no black bars, no swaying,
+	-- and players mustn't feel shut off]. Offsets are from the lifter's root, in the way they face: +X their right,
+	-- +Y up, +Z behind them.
+	camera = {
+		-- In front, to their left and above: the lifter, the rack, the other bases and the arena in view. From behind,
+		-- the base's fence and the rack's posts hid the lifter.
+		offset = Vector3.new(-10, 8, -12),
+		glideSeconds = 0.7, -- the glide from wherever the camera was
+	},
+
 	-- [Owner] The rack itself gets better as its owner buys upgrades, for everyone to see. upgrades is how many it
 	-- takes, lowest first: spread so a new rack comes about every 2 to 3 maps, the last one around map 15. model is
 	-- a piece in BaseKit (assets/models/build_racks.py). A base with no owner has the first.

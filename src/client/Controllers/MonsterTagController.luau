@@ -1,5 +1,6 @@
 -- Tags floating over the monsters on the bases: its mutations (only when it has some: the colour word in its
--- colour, the size word in silver), its name in white and its $/s in green. They show only while you're on or next
+-- colour, the size word in silver), its rarity word (RarityLabel), its name in white and its $/s in green. The
+-- server's best monster gets the same rarity word on its stats card (bestRarity below). They show only while you're on or next
 -- to a base, on the few of its monsters nearest to you, so a full base never piles its tags into a heap (docs/GAME_SPEC.md section 4, numbers in Config/Plot
 -- `tags`). A giant's tag stops at a ceiling over its feet, so it can be read from its base. Display only: the
 -- server puts what each tag says on the monster (PlotService).
@@ -121,14 +122,22 @@ local function build(model: Model)
 			local label = word(row, size.name, 2)
 			table.insert(lines, label)
 			gradient(label, Color3.fromHex(settings.sizeWord[1]), Color3.fromHex(settings.sizeWord[2]))
+			-- Grown to this size by feeding, not caught at it (Config/Chonk): a small FED after the size word.
+			if model:GetAttribute("TagFed") then
+				local fed = word(row, "FED", 3)
+				fed.TextSize = settings.fedText
+				gradient(fed, Color3.fromHex(settings.fedWord[1]), Color3.fromHex(settings.fedWord[2]))
+			end
 		end
 	end
 
-	-- The carried monster's rarity, in its rarity's colour (TagId is only on carried ones).
+	-- Its rarity, in its rarity's colour: on carried monsters (TagId, only on those) and, since [Owner, 2026-11-09],
+	-- on the ones on the bases too (TagRarity).
 	local id = model:GetAttribute("TagId")
-	if id then
+	local rarityId = id or model:GetAttribute("TagRarity")
+	if rarityId then
 		-- The animated rarity word (RarityLabel, Config/Rarity).
-		local label = RarityLabel.create(root, UiKit.rarityOf(id), settings.rarityText)
+		local label = RarityLabel.create(root, UiKit.rarityLook(rarityId), settings.rarityText, nil, UiKit.rarityWord(rarityId))
 		label.Size = UDim2.new(1, 0, 0, settings.rarityText + settings.outline * 2)
 		label.LayoutOrder = 2
 		table.insert(lines, label:FindFirstChild("Word", true))
@@ -340,8 +349,35 @@ local function follow()
 	end
 end
 
+-- The rarity word on the server's best monster's stats card (BestCatchService leaves a Rarity frame and the monster's
+-- id on the card's SurfaceGui; the animated word can only be made on the client).
+local function bestRarity()
+	local folder = workspace:WaitForChild("BestCatch", 60)
+	local panel = folder and folder:WaitForChild("StatsPanel", 60)
+	local gui = panel and panel:FindFirstChildOfClass("SurfaceGui")
+	local slot = gui and gui:WaitForChild("Rarity", 60)
+	if not slot then
+		return
+	end
+	local function render()
+		for _, child in slot:GetChildren() do
+			child:Destroy()
+		end
+		local id = gui:GetAttribute("RarityId")
+		if id then
+			local label = RarityLabel.create(slot, UiKit.rarityLook(id), settings.bestRarityText, nil, UiKit.rarityWord(id))
+			label.AnchorPoint = Vector2.new(0.5, 0.5)
+			label.Position = UDim2.fromScale(0.5, 0.5)
+			label.Size = UDim2.fromScale(1, 1)
+		end
+	end
+	gui:GetAttributeChangedSignal("RarityId"):Connect(render)
+	render()
+end
+
 function MonsterTagController.start()
 	holder = player:WaitForChild("PlayerGui")
+	task.spawn(bestRarity)
 
 	for _, model in CollectionService:GetTagged(DinoLife.tag) do
 		task.defer(add, model)

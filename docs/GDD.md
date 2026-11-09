@@ -89,6 +89,11 @@ never show during the tutorial, a throw, or while any panel is open (a card a pa
 A player buying upgrade after upgrade on the pad gets no rack card until they stop for 5 s. Phones get a 1.3x
 bigger card (at most 70% of the screen width) with a bigger X.
 
+Stepping into the rack locks the lifter in place (the server anchors them). Their camera glides for 0.9 s into a
+slow-swaying shot from behind, over the left shoulder (in front of the base fence), while thin black cinema bars slide in; on STOP it glides
+back behind them (`TrainingCamera`, `Config/Training` camera). While training, monsters can't be equipped, picked
+up, placed or unequipped: the client ignores the clicks, taps and number keys, and `PlotService` refuses them.
+
 Over the player's own pad float three short lines, seen only by them (`TrainingController`, `Config/Training`
 xpUpgrade.sign): the price (green while affordable, breathing gently; red when not), the XP per squat it gives,
 and how many more until the next rack. It bobs slowly and jumps when an upgrade is bought. It hangs on its own
@@ -145,7 +150,7 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
 8. Robux shop: x2 Cash, x2 Training, Server Luck x2, four cash packs (10 min to 30 h of the plot's $/s
    without events, each with a minimum), four Throw Power packs (+100 to +10,000 power, saved on top of the
    training level) and a free starter dino (`Config/Shop`).
-   While aiming, the luck offer sells the x100 and x500 throws, with DETAILS showing the real chances (`LuckOfferController`, `CatchOdds`).
+   While aiming, the luck offer sells the x100 and x500 throws, with DETAILS showing the real chances (`LuckOfferController`, `CatchOdds`). One the player owns shows a pulsing USE button; picked (ON) it makes that throw a guaranteed PERFECT, and the pick ends with the throw or Back to Plot.
 9. Timed events: one every 15 minutes for 5 minutes, taking turns: Double Luck (2x luck) and Ghost Rush (GHOST 10x
    likelier), from the server clock (`Config/Events`); an icon at the bottom right explains it on hover or tap.
    After the last world: The Deep End behind the Last Door, with endless Depth (`Config/DeepEnd`, `docs/GAME_SPEC.md` section 9).

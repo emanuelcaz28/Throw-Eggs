@@ -144,6 +144,16 @@ local function onTap(player: Player, height: any, lucky: any)
 	end
 
 	height = math.clamp(height, 0, 1)
+	-- The lucky throw picked on the meter, if it's one picked by hand and the player owns it. Nothing is used up yet:
+	-- leaving before the egg lands keeps it. A picked one is always a PERFECT throw [Owner, 2026-11-09]; the daily
+	-- task still only counts a perfect the player hit themselves.
+	local data = PlayerData.get(player)
+	local owned = data and typeof(lucky) == "number" and (data.luckyThrows[tostring(lucky)] or 0) > 0
+	local pickedLuck = if owned and LuckyThrows.isPicked(lucky) then lucky else nil
+	local hitPerfect = Throw.isPerfect(height)
+	if pickedLuck then
+		height = 1
+	end
 	-- reach is how far the throw really goes; past the last world the egg lands on The Deep End's floor (Config/DeepEnd).
 	-- The player's Power Limit (Config/PowerLimit) stops it short, so strong players can still reach earlier maps.
 	local settings = (PlayerData.get(player) or {}).settings or {}
@@ -161,14 +171,10 @@ local function onTap(player: Player, height: any, lucky: any)
 	if Plot.carryNewCatches then
 		PlotService.putAway(player)
 	end
-	-- The lucky throw picked on the meter, if it's one picked by hand and the player owns it. Nothing is used up yet:
-	-- leaving before the egg lands keeps it.
-	local data = PlayerData.get(player)
-	local owned = data and typeof(lucky) == "number" and (data.luckyThrows[tostring(lucky)] or 0) > 0
-	state.lucky = if owned and LuckyThrows.isPicked(lucky) then lucky else nil
+	state.lucky = pickedLuck
 	state.mustLeave = true -- the next meter waits until this player has stepped off the platform
 	state.revealDone = nil
-	if Throw.isPerfect(height) then
+	if hitPerfect then
 		DailyTasks.count(player, "perfects")
 	end
 	remotes.Launched:FireAllClients(player, distance, Throw.isPerfect(height), egg.id)

@@ -571,6 +571,13 @@ heads sit too low to hide.
    to **X × 100 at most**. More luck makes the bigger sizes likelier. 100x of map 15's 2x is about 2,000 studs, the
    most Roblox allows for one part, which is why X grows slowly (the owner chose this over a shared ceiling).
 
+**[Owner, 2026-11-09]** X stops growing at map 7 (The Abyss, 1.35x): maps 8 to 16 all use 1.35x. And "exactly X" means
+every monster: the Blender models were made at very different sizes (a Compy 4 studs long, Batastrophe 61), and X used
+to multiply each model's own size, so rare late monsters came out far too big. **[Built]** Every model is now first
+brought to one longest side, `Config/Catch` `standardLength` (10 studs, a player is about 5 tall), and only then
+multiplied by X and its size mutation (`DinoModel.fitScale`). A Unit of Doom is 100 studs long on map 1 and 135 on
+maps 7 to 16, whatever the monster.
+
 The size mutation tiers work **the same as the reference game's**, with our own names. The reference has Big, Large,
 Monstrous, Huge and Colossal **[Seen/Owner]** (Colossal exists, it just wasn't in our recordings), and a Giant size from
 its Rainbow Egg **[Web, unconfirmed]**. Their order, odds and scale aren't published anywhere, so ours stay our own
@@ -582,14 +589,19 @@ Unit of Doom**. **[Built]** (`Config/Catch`), scale is on top of the map's stand
 | Size | Chance | Income | Scale |
 |---|---|---|---|
 | Thicc | 1 in 10 | ×1.5 | 1.2× |
-| Absolute Unit | 1 in 40 | ×2.5 | 1.45× |
-| Chonker | 1 in 150 | ×4 | 1.8× |
-| Mega Chonk | 1 in 600 | ×8 | 2.4× |
-| Planet-Sized | 1 in 2,500 | ×20 | 3.3× |
-| Unit of Doom | 1 in 9,787 | ×50 | 4.5× |
+| Absolute Unit | 1 in 40 | ×2.5 | 1.8× |
+| Chonker | 1 in 150 | ×4 | 2.7× |
+| Mega Chonk | 1 in 600 | ×8 | 5× |
+| Planet-Sized | 1 in 2,500 | ×20 | 7.5× |
+| Unit of Doom | 1 in 9,787 | ×50 | 10× |
 
 **[Owner, 2026-11-07]** The big sizes were way too big: the scales went from 1.25×, 1.6×, 2.2×, 3.2×, 5×, 8× to the
 ones above, so the biggest is still clearly huge but no longer too big.
+
+**[Owner, 2026-11-08/09]** Planet-Sized and Unit of Doom went to 13× and 18× on 2026-11-08, and were still too big on the
+bases on 2026-11-09, so the list became an even ramp instead of jumping from 2.4× to 13×, and the owner then set the top
+three: Mega Chonk 5×, Planet-Sized 7.5×, Unit of Doom 10× (the table above: 1.2, 1.8, 2.7, 5, 7.5, 10). Saves keep only the
+size's id, never its scale, so every owner's existing monsters show the new sizes the next time their base is built.
 
 **[Built]** Luck makes mutations and sizes likelier too, gently: their chances are multiplied by luck^0.4 (`Config/Catch`
 `luckPower`), and no single one goes above a 1 in 2 chance. It's the same luck as the monster roll, counted from the
@@ -1605,8 +1617,14 @@ reach map 15 in about 3.4 h. Making late rack upgrades dearer doesn't help: it s
 **[Built]** (`Config/Chonk`, `PlotService` feed, `SellPanel`) My Monsters shows FEED on each monster on the base, in place of SELL (it's sold
 from the backpack, or here once it's at the top level). FEED opens the Sell Stand's grid on the backpack: pick monsters, then FEED and a
 second tap. Each is 1 food, 3 if it's the same kind, and costs 30 seconds of the fed monster's income. Each level needs one more food
-than the last, up to Chonk 50: +5% income and +2% size a level, added up, so x3.5 and x2 at the top. Passes' special monsters can't be fed,
-and a monster that's been fed, or the carried one, can't be eaten. No training bonus, so it doesn't change how fast worlds come.
+than the last, up to Chonk 50. Passes' special monsters can't be fed, and a monster that's been fed, or the carried
+one, can't be eaten. No training bonus, so it doesn't change how fast worlds come.
+**[Owner, 2026-11-08] Looks only.** Feeding no longer changes money (it was +5% a level, x3.5 at the top, and Robux
+monsters, a share of the best monster, grew with it). It climbs the size tiers instead: Thicc at Chonk 3, Absolute Unit 8,
+Chonker 15, Mega Chonk 25, Planet-Sized 38, Unit of Doom 50 (about 1,275 food; 425 monsters of the same kind). A monster
+caught bigger keeps its size until feeding passes it. Its tag and its My Monsters row say the size with **FED** after it,
+so lucky catches stay special; the tag changes as soon as it grows. The Feed panel says which size a feed reaches, or
+the next size and its level.
 
 ### Competition [Owner, 2026-11-04]
 - **Server ranking** in the top left: the 5 players by $/s, you highlighted, a crown on #1.
@@ -1619,7 +1637,7 @@ and a monster that's been fed, or the carried one, can't be eaten. No training b
   until `board_HighestIncome` and `board_FarthestThrow` are made in `build_leaderboards.py`.
 
 - **Egg Shop [Built]:** one egg per map, see The economy above.
-- **Robux Shop [Built]:** x2 Cash, x2 Training, x2 Power, lucky throws x100 (R$ 3 once, then R$ 9) and x500 (one throw each), Server Luck x2 (15 min), 4 cash packs, 4 Throw Power packs, free starter dino.
+- **Robux Shop [Built]:** x2 Cash, x2 Training, x2 Power, lucky throws x100 (R$ 3 once, then R$ 9) and x500 (one throw each), Server Luck x2 (3 min; was 15 until 2026-11-09), 4 cash packs, 4 Throw Power packs, free starter dino.
   Product ids still have to be created on the Creator Dashboard.
   **[Owner, 2026-11-05]** Everything bought comes back after leaving. Server Luck runs for the whole server, and the
   buyer also keeps the time they haven't used (it only counts down while they play): it starts again when they next
@@ -1643,7 +1661,7 @@ and a monster that's been fed, or the carried one, can't be eaten. No training b
 - **No selling Robux monsters, RESIZE instead [Built], [Owner, 2026-11-08]:** none of the four specials (Gloomfin,
   Duskeel, Umbray, Dreadlure) can be sold, at the Sell Stand or in My Monsters, or fed to another monster, so Robux is
   never lost by mistake. Their row in My Monsters has **RESIZE** where SELL was: a panel with SMALLEST, -, +, BIGGEST
-  steps through normal size and each size mutation's scale (x1 up to x4.5, Unit of Doom). Looks only: the income stays
+  steps through normal size and each size mutation's scale (x1 up to x10, Unit of Doom). Looks only: the income stays
   what it was when bought. Saved on the monster (`entry.resize`; `DinoStats.resizes`, `PlotService` resize).
 - **GIFT [Built], [Owner, 2026-11-05]:** "only dev products and game passes": a GIFT button in the Shop's header opens
   a panel to pick a player in the server, then one of: Prism Egg, Gloomfin, Luck x100/x500, x2 Cash/Training/Power,
@@ -1653,6 +1671,11 @@ and a monster that's been fed, or the carried one, can't be eaten. No training b
   pass has a gift Developer Product priced like it (`giftProductId`, 0 until created); a gifted pass is saved on the
   receiver (`giftedPasses`). The receiver gets a shout "GIFT FROM NAME!"; if they left before it arrived, the buyer
   keeps it. Someone who already has a pass shows OWNED and can't be sent it.
+- **Shop size and opening [Built], [Owner, 2026-11-09]:** the Shop panel opens at 85% of its old size on computers (phones keep
+  the full size, already scaled to fit, so the text stays readable). It springs up from lower down and tilted 5 degrees,
+  growing from 60% with a little overshoot over 0.45 s, while a dark veil fades in behind it over the whole screen; closing is a quick
+  0.14 s shrink with the veil fading out. `UiKit.panel` options `sizeFactor` and `openEffect = "rise"` (other panels keep the
+  small pop); no fade on the panel itself, as a CanvasGroup would hide its live monsters.
 - **Shop redesign [Built], [Owner, 2026-11-06]:** "like the original but more beautiful, more effects". Figma
   "Throw Eggs - Shop" (https://www.figma.com/design/kMvEjKptJBD0q5GRR5SaX4) is the design; `ShopController` builds it.
   Each pass monster gets a big featured card with the real model **playing its own idle, never spinning** (it bursts out

@@ -17,15 +17,21 @@ return {
 		{ id = "Gold", name = "GOLD", chance = 30, incomeMultiplier = 2, color = Color3.fromRGB(255, 205, 70) },
 	},
 	-- Size mutations are the only way a monster grows past its biome's standard size (Config/Biomes
-	-- standardScale); scale multiplies that standard size, up to 4.5x. Each tier is about 1.2x to 1.4x the one below,
-	-- so even the rarest towers over its base without filling the screen. Luck makes them likelier (luckPower).
+	-- standardScale); scale multiplies that standard size, up to 10x. Luck makes them likelier (luckPower).
+	-- Specials' RESIZE offers the same scales (DinoStats.resizes).
 	-- [Owner, 2026-11-07: the big sizes were way too big; was 1.25, 1.6, 2.2, 3.2, 5, 8.]
+	-- [Owner, 2026-11-08: Planet-Sized x13 and Unit of Doom x18; were 3.3 and 4.5.]
+	-- [Owner, 2026-11-09: still too big on the bases, and the list jumped unevenly; now an even ramp, then the top
+	-- three set by the owner: 1.2, 1.8, 2.7, 5, 7.5, 10.]
+	-- How long a plain first-map monster is, in studs: its longest side, whichever way that runs (a player is about 5
+	-- tall). Every model is brought to this before its map's standard size and its size mutation [Owner, 2026-11-09].
+	standardLength = 10,
 	sizes = {
-		{ id = "UnitOfDoom", name = "UNIT OF DOOM", chance = 9787, incomeMultiplier = 50, scale = 4.5 },
-		{ id = "PlanetSized", name = "PLANET-SIZED", chance = 2500, incomeMultiplier = 20, scale = 3.3 },
-		{ id = "MegaChonk", name = "MEGA CHONK", chance = 600, incomeMultiplier = 8, scale = 2.4 },
-		{ id = "Chonker", name = "CHONKER", chance = 150, incomeMultiplier = 4, scale = 1.8 },
-		{ id = "AbsoluteUnit", name = "ABSOLUTE UNIT", chance = 40, incomeMultiplier = 2.5, scale = 1.45 },
+		{ id = "UnitOfDoom", name = "UNIT OF DOOM", chance = 9787, incomeMultiplier = 50, scale = 10 },
+		{ id = "PlanetSized", name = "PLANET-SIZED", chance = 2500, incomeMultiplier = 20, scale = 7.5 },
+		{ id = "MegaChonk", name = "MEGA CHONK", chance = 600, incomeMultiplier = 8, scale = 5 },
+		{ id = "Chonker", name = "CHONKER", chance = 150, incomeMultiplier = 4, scale = 2.7 },
+		{ id = "AbsoluteUnit", name = "ABSOLUTE UNIT", chance = 40, incomeMultiplier = 2.5, scale = 1.8 },
 		{ id = "Thicc", name = "THICC", chance = 10, incomeMultiplier = 1.5, scale = 1.2 },
 	},
 	-- Luck also makes mutations and sizes likelier, but much more gently than it changes which monster

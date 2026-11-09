@@ -299,7 +299,10 @@ local function attachHeldModel(player: Player, entry)
 	model:SetAttribute("TagName", stats.name)
 	model:SetAttribute("TagIncome", stats.income)
 	model:SetAttribute("TagMutation", entry.mutation)
-	model:SetAttribute("TagSize", entry.size)
+	-- The size it shows: its caught one, or the one feeding grew it to, marked FED (DinoStats.shownSize).
+	local shownSize, fed = DinoStats.shownSize(entry.size, entry.chonk)
+	model:SetAttribute("TagSize", shownSize and shownSize.id)
+	model:SetAttribute("TagFed", fed)
 	model:SetAttribute("TagId", entry.id)
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	CollectionService:AddTag(model, DinoLife.tag)
@@ -352,7 +355,10 @@ local function rebuildStatues(player: Player, data)
 			statue:SetAttribute("TagName", stats.name)
 			statue:SetAttribute("TagIncome", stats.income)
 			statue:SetAttribute("TagMutation", entry.mutation)
-			statue:SetAttribute("TagSize", entry.size)
+			local shownSize, fed = DinoStats.shownSize(entry.size, entry.chonk)
+			statue:SetAttribute("TagSize", shownSize and shownSize.id)
+			statue:SetAttribute("TagFed", fed) -- grown by feeding: the tag says FED by the size word
+			statue:SetAttribute("TagRarity", entry.id) -- its rarity word on the tag [Owner, 2026-11-09]
 			statue.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 			statue:SetAttribute("PlotIndex", plotIndex)
 			statue:SetAttribute("DinoKey", entry.key) -- tapping or clicking it picks it up (PlotController)
@@ -379,6 +385,8 @@ local function publish(player: Player, data)
 				name = stats.name,
 				mutation = entry.mutation,
 				size = entry.size,
+				shownSize = (DinoStats.shownSize(entry.size, entry.chonk) or {}).id, -- caught, or grown by feeding
+				fed = select(2, DinoStats.shownSize(entry.size, entry.chonk)), -- shownSize came from feeding
 				resize = entry.resize, -- a special's RESIZE choice (DinoStats.resizes)
 				income = stats.income,
 				oneIn = stats.oneIn,
@@ -611,6 +619,13 @@ end
 local function onAction(player: Player, action: any, key: any, x: any, z: any)
 	local data = PlayerData.get(player)
 	if not data then
+		return
+	end
+	-- While training nothing goes on or off the head or the base: a stray click or number key on the rack used to
+	-- equip a monster [Owner, 2026-11-08].
+	local moves = action == "equip" or action == "unequip" or action == "pickUp" or action == "placeAt"
+		or action == "equipBest" or action == "unequipAll"
+	if moves and player:GetAttribute("IsTraining") == true then
 		return
 	end
 

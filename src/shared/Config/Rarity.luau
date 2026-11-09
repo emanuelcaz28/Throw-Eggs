@@ -19,6 +19,9 @@ return {
 		mythic = { top = "#ffd6e6", bottom = "#e8265a", ink = "#4a0018", glow = "#ff3d7f", glowRange = { 0.6, 1 }, glowTwice = true, pulse = 0.07, pulseTwice = true, wobble = 2.5, shine = { { 0.3, 0.9 }, { 1.8, 2.4 } }, sparkles = { { 0, 0.2, 0.42, 0.1 }, { 0.98, 0.15, 0.3, 0.75 }, { 0.06, 0.86, 0.26, 1.4 }, { 0.94, 0.85, 0.4, 2.05 } }, sparkleSpeed = 0.8 },
 		ancient = { top = "#ffe0c2", bottom = "#c2602a", ink = "#3a1400", glow = "#ff7a2e", flicker = true, shake = true, shine = { { 1.6, 2.4 } }, embers = { 0.12, 0.35, 0.6, 0.85, 0.48 } },
 		-- Secret is dark [Owner, 2026-11-07]: near-black purple letters, a light violet outline and glow so it still reads.
+		-- The "?" of a monster bought with Robux [Owner, 2026-11-09]: plain black, no glow, sparkles or movement, with a
+		-- light outline so it reads on dark cards.
+		mystery = { top = "#1a1a1a", bottom = "#000000", ink = "#ffffff" },
 		secret = { top = "#4a3596", bottom = "#0d0720", ink = "#c9b8ff", glow = "#8a5cff", glowRange = { 0.4, 0.95 }, glitch = true, shine = { { 2.0, 2.7 } } },
 	},
 	-- Sparkles: { x, y (0-1 across and down the word), size (share of the text size), when it starts (seconds) }.
