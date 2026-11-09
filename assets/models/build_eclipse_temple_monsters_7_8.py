@@ -315,10 +315,11 @@ def batastrophe():
         at = Vector((side * 2.05, 4.62, 16.75))
         egg(m, "Socket", tuple(at), 1.1, 0.55, 0.72, 10, 5)
         eclipse_ball(m, tuple(at + Vector((side * 0.02, 0.25, 0))), 0.56, (side * 0.3, 0.92, -0.2), side, lid_role="Trim", top=0.54, tilt=0.88, low=0.36)
-        # Ears: huge, ribbed, jade inside.
+        # Ears: huge, ribbed, jade inside. Each layer in front of the last by more than a sheet is thick (0.26), or they cut
+        # through each other and flicker.
         base = Vector((side * 2.3, 1.8, 18.6))
         tip = base + Vector((side * 3.6, 0.5, 8.6))
-        for role, grow, push in (("Accent", 1.0, 0.0), ("Membrane", 0.76, 0.2), ("Jade", 0.22, 0.34)):
+        for role, grow, push in (("Accent", 1.0, 0.0), ("Membrane", 0.76, 0.42), ("Jade", 0.22, 0.74)):
             rows = []  # a cupped ear, wide at the base, curving to a point
             for t in (0.0, 0.2, 0.4, 0.6, 0.8, 0.92, 1.0):
                 c0 = base.lerp(base.lerp(tip, 0.5 + 0.5 * grow), t)

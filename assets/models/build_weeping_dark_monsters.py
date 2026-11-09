@@ -280,12 +280,9 @@ def rage_maw(m, f, skull_w, length, snout_w, upper_h, lower_h, rng, gape=0.2, dr
 def weeping(m, spots, ground, parent="Head", bone="Drip", size=0.08, grown=1.0):
     """Tears falling for ever from each spot, on a Drip bone: each spot a (x, y, z), `gap` apart down to ground (see
     DRIP). grown is what the monster will be grow()n by afterwards, so the gap comes out right."""
-    gap = DRIP[bone][0] / grown
+    # 2026-11-09: the owner had the falling tears taken off (they read as stray dots). The Drip bone stays, with nothing
+    # on it, because the game turns RAGE on for any monster that has one.
     m.use(bone, spots[0], parent)
-    for x, y, z in spots:
-        while z > ground:
-            gem(m, "Tears", x, y, z, size, size * 2.4, size * 1.1, 5)
-            z -= gap
     m.bone = parent
 
 

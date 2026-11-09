@@ -168,13 +168,8 @@ def gloomfin():
             base = Vector(f.at(side * (0.8 - 0.1 * k), y0, 1.3))
             point(m, "Claw", tuple(base), tuple(base + Vector((side * 0.3, -length, 0.45 * length))), 0.22 - 0.05 * k)
         point(m, "Claw", f.at(side * 0.22, 2.25, 0.62), f.at(side * 0.3, 2.05, 0.95), 0.13)  # knobs down the snout
-    # Foam dripping from the corners of the mouth for ever, on the Drip bone (DRIP in DinoLifeController).
-    gap = DRIP["Drip"][0] / GLOOMFIN_GROW
-    corners = [Vector(f.at(side * 1.0, 0.3, -0.08)) for side in (-1, 1)]
-    m.use("Drip", tuple(corners[0]), "Head")
-    for c in corners:
-        for k in range(3):
-            gem(m, "Drool", c.x, c.y, c.z - k * gap, 0.1, 0.22, 0.12, 5)
+    # The Drip bone, with nothing on it: the dripping foam was taken off (2026-11-09), but the bone keeps RAGE on.
+    m.use("Drip", f.at(-1.0, 0.3, -0.08), "Head")
     m.bone = "Head"
     m.head_centre = tuple(f.at(0, 1.2, 0.4))
     return grow(m, GLOOMFIN_GROW)

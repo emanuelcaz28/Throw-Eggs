@@ -173,6 +173,45 @@ local function hideBlockers(eyes: { Vector3 }, box: CFrame, size: Vector3): () -
 		end
 	end
 
+	-- [Owner, 2026-11-09: a wall of The Weeping Dark covered a giant's reveal] Big pieces like the corridor's walls, its end
+	-- wall or the Last Door can block the view without their middle being in the sight line, so the camera also looks:
+	-- sight lines from each of `eyes` to points on the monster, and every piece of the map they pass through hides. The
+	-- ground the lines reach under the monster stays.
+	if map then
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Include
+		params.FilterDescendantsInstances = { map }
+		local half = size * 0.3
+		local targets = {
+			box.Position,
+			(box * CFrame.new(0, half.Y, 0)).Position,
+			(box * CFrame.new(0, -half.Y, 0)).Position,
+			(box * CFrame.new(half.X, 0, 0)).Position,
+			(box * CFrame.new(-half.X, 0, 0)).Position,
+			(box * CFrame.new(0, half.Y, half.Z)).Position,
+			(box * CFrame.new(0, half.Y, -half.Z)).Position,
+		}
+		for _, eye in eyes do
+			for _, target in targets do
+				local from = eye
+				for _ = 1, 16 do
+					local sight = target - from
+					if sight.Magnitude < 0.5 then
+						break
+					end
+					local result = workspace:Raycast(from, sight, params)
+					if not result then
+						break
+					end
+					if result.Normal.Y < 0.7 then
+						hide(result.Instance)
+					end
+					from = result.Position + sight.Unit * 0.1
+				end
+			end
+		end
+	end
+
 	return function()
 		if added then
 			added:Disconnect()

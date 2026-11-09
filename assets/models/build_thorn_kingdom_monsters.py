@@ -1201,8 +1201,10 @@ def wrathorn():
             b = fingers[min(int(t * 3) + 1, 3)]
             tip_ = Vector(a).lerp(Vector(b), (t * 3) % 1 if t < 1 else 1) * rng.uniform(0.8, 1.02) + Vector((0, 0, 0.3))
             tip_ = e + (tip_ - e) * rng.uniform(0.82, 1.03)
-            base = e + Vector((0, 0.07 * k, 0))  # each a little behind the last, so no two lie in one plane
-            blade(m, "BladeDark" if k % 2 else "Blade", tuple(base), tuple(tip_ + Vector((0, 0.07 * k, 0))), (0, 0.15, 1) if abs(tip_.z - e.z) < 2 else (1, 0.1, 0), 1.35, 0.1 + 0.06 * (k % 2))
+            tip_.y = e.y - 1.2  # every blade leaning back the same way, so the fan's blades lie parallel and never cross
+            # Each behind the last by more than a blade is thick, so no two cut through each other (they flickered at 0.07).
+            base = e + Vector((0, 0.18 * k, 0))
+            blade(m, "BladeDark" if k % 2 else "Blade", tuple(base), tuple(tip_ + Vector((0, 0.18 * k, 0))), (0, 0.15, 1) if abs(tip_.z - e.z) < 2 else (1, 0.1, 0), 1.35, 0.1 + 0.06 * (k % 2))
     m.bone = "Spine"
 
     lash(m, 1, wander((1.2, 1.3, 8.4), (3.2, 1.8, 12.4), rng, 7, (0.4, 0, 0.3), 0.2), 0.42, 0.08, "Spine", "Briar", rng, 0.42, 0.75)

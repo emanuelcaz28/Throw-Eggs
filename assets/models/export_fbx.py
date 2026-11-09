@@ -6,9 +6,13 @@
 One FBX per model: its Empty or armature and everything under it (kit_Arena holds the arena's pieces), in the rest pose, without
 animation (the game moves the bones itself). Models face Roblox -Z.
 """
+import sys
 from pathlib import Path
 
 import bpy
+
+sys.path.insert(0, str(Path(bpy.data.filepath).parent))
+import flicker_fix  # noqa: E402
 
 OUT = Path(bpy.data.filepath).parent / "fbx"
 # One folder per map, in throw order (GAME_SPEC section 8a), so the owner imports map by map.
@@ -58,6 +62,8 @@ def main():
             continue
         for root in [obj for obj in collection.objects if obj.parent is None]:
             if root.type == "ARMATURE":
+                if root.name.startswith("dino_"):
+                    print("flicker lifted", root.name, flicker_fix.lift(root))  # in memory only; the .blend isn't saved
                 root.animation_data_clear()
                 for bone in root.pose.bones:
                     bone.location = (0, 0, 0)

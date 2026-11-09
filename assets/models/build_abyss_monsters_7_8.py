@@ -158,7 +158,7 @@ def shrimpact():
     for s, letter in ((-1, "L"), (1, "R")):
         m.use(f"Fin{letter}", tuple(end + Vector((s * 1.1, 0, 0))), "Tail4")
         for k, (dx, dy) in enumerate(((1.2, -3.9), (3.1, -3.3), (4.3, -1.9))):
-            base = end + Vector((s * 1.1, 0, 0))
+            base = end + Vector((s * 1.1, 0, 0.26 * (1 - k)))  # stacked more than a leaf is thick apart, or they flicker
             leaf(m, "Fan" if k % 2 else "Accent", tuple(base), tuple(base + Vector((s * dx, dy, -0.6))), (dy, -s * dx, 0), 2.1, 0.2)
             beam(m, "Glow", tuple(base), tuple(base + Vector((s * dx, dy, -0.5)) * 0.8), 0.14, 0.14, 0.08)
     m.bone = "Swim"
