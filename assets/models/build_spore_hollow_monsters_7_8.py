@@ -1,5 +1,8 @@
 """Builds Spore Hollow's 7th and 8th monsters, animates them and renders them (Blender, background mode).
 
+SUPERSEDED 2026-11-10: the owner had all 8 redesigned ("toxic themed"); the monsters in the game come from
+build_spore_hollow_toxic.py. This file stays for the helpers other scripts import (egg, vent, finish, pounce_of) and is not exported.
+
     Blender -b -P build_spore_hollow_monsters_7_8.py
     QUICK=1 QUICK_OUT=<folder> Blender -b -P build_spore_hollow_monsters_7_8.py    (stills only)
 

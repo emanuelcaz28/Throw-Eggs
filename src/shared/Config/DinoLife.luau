@@ -10,6 +10,18 @@ return {
 	-- speed studs a second at the first map's size.
 	swim = { strideSeconds = 1.2, speed = 2.2 },
 	idleLoopSeconds = 8,
+	-- Every monster with an attack (pounce, rage, thrashing, spitting, smash, leap, ricochet, lunge, sting, thrown bits...) plays it only
+	-- now and then: once every `every` seconds it stops where it is and attacks for `seconds`, easing in and out over `ease`; the rest
+	-- of the time it roams and idles like any other monster, at the usual pace. Bones whose names start with an `ambient` family
+	-- aren't attacks and move all the time. Monsters with no attack aren't touched.
+	-- [Owner, 2026-11-10: "active every 10 seconds, then the pet should move around like all of them", first for maps 14 and 15,
+	-- then "for every monster that has an attack animation".]
+	attackCycle = {
+		every = 10,
+		seconds = 4,
+		ease = 0.4,
+		ambient = { "Sway%d", "Wriggle%d", "Slither%d", "Step%d", "Buzz", "Flick", "Pinch" },
+	},
 	-- An equipped monster rides on its player's head at its real size (PlotService), standing on the top of the
 	-- character (hats included). Its feet sink below that by this share of its hip height, but never more than
 	-- maxSink studs. [Owner, 2026-11-07: it was "literally in me" with sink 0.7 and maxSink 1.] It walks while its

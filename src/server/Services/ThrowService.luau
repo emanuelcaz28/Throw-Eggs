@@ -15,6 +15,7 @@ local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local CatchOdds = require(ReplicatedStorage.Shared.CatchOdds)
 local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
+local Analytics = require(script.Parent.Analytics)
 local DailyTasks = require(script.Parent.DailyTasks)
 local DinoRoll = require(script.Parent.DinoRoll)
 local CompetitionService = require(script.Parent.CompetitionService)
@@ -260,6 +261,7 @@ local function onTap(player: Player, height: any, lucky: any)
 			end
 		end
 		CompetitionService.landedIn(player, biome)
+		Analytics.landedIn(player, biome)
 
 		-- Just short of the next biome: the client shows how close it was. Not when the Power Limit stopped it there:
 		-- the player chose that spot.

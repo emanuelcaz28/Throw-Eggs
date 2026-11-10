@@ -1,5 +1,8 @@
 """Builds The Weeping Dark's 6 monsters, animates them and renders them (Blender, background mode).
 
+SUPERSEDED 2026-11-10 (all but Last Breath): the owner had the first 7 redesigned; they come from build_weeping_dark_dread.py.
+This file stays for Last Breath (7_8) and for the helpers other scripts import; export_fbx.py skips what it no longer owns.
+
     Blender -b -P build_weeping_dark_monsters.py
     QUICK=1 QUICK_OUT=<folder> Blender -b -P build_weeping_dark_monsters.py    (stills only, for trying faces)
     ONLY=teddy_wrecks,good_boy QUICK=1 ...                                     (just those)

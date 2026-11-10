@@ -38,15 +38,18 @@ MAP_OF_FILE = {"forest_models": "01_Forest", "world_kit": "01_Forest", "desert_m
                "abyss_monsters": "07_Abyss", "starfall_crater_monsters": "08_StarfallCrater",
                "eclipse_temple_monsters": "09_EclipseTemple", "forbidden_library_monsters": "10_ForbiddenLibrary",
                "midnight_carnival_monsters": "11_MidnightCarnival", "clockwork_citadel_monsters": "12_ClockworkCitadel",
-               "thorn_kingdom_monsters": "13_ThornKingdom", "spore_hollow_monsters": "14_SporeHollow",
-               "weeping_dark_monsters": "15_WeepingDark",
+               "thorn_kingdom_monsters": "13_ThornKingdom",
+               "spore_hollow_toxic": "14_SporeHollow",  # all 8, the toxic set (2026-11-10); spore_hollow_monsters and _7_8 are the old looks, not exported any more
+               "weeping_dark_dread": "15_WeepingDark",  # the first 7, the dread set (2026-11-10); weeping_dark_monsters is the old looks, not exported any more
                "forest_monsters_7_8": "01_Forest", "desert_monsters_7_8": "02_Desert", "swamp_monsters_7_8": "03_Swamp",
                "volcano_monsters_7_8": "04_Volcano", "frozen_peaks_monsters_7_8": "05_FrozenPeaks", "shadow_bog_monsters_7_8": "06_ShadowBog",
                "abyss_monsters_7_8": "07_Abyss", "starfall_crater_monsters_7_8": "08_StarfallCrater", "eclipse_temple_monsters_7_8": "09_EclipseTemple",
                "forbidden_library_monsters_7_8": "10_ForbiddenLibrary", "midnight_carnival_monsters_7_8": "11_MidnightCarnival", "clockwork_citadel_monsters_7_8": "12_ClockworkCitadel",
-               "thorn_kingdom_monsters_7_8": "13_ThornKingdom", "spore_hollow_monsters_7_8": "14_SporeHollow", "weeping_dark_monsters_7_8": "15_WeepingDark",
+               "thorn_kingdom_monsters_7_8": "13_ThornKingdom", "weeping_dark_monsters_7_8": "15_WeepingDark",
                "special_monsters": "16_Specials",
                "eggs": "00_Eggs"}  # the Egg Shop's eggs, all in one folder (build_eggs.py)
+# Models a .blend still holds but must not export: another file makes them now.
+SKIP = {"weeping_dark_monsters_7_8": {"dino_Inconsolable"}}  # redesigned in weeping_dark_dread; Last Breath still comes from this file
 # Blender collection -> folder inside the map's folder.
 EXPORT_COLLECTIONS = {"Animals": "Animals", "Props": "Props", "Kit": "Corridor", "Arena": "Arena", "Base": "Base"}
 
@@ -61,6 +64,8 @@ def main():
         if not collection:
             continue
         for root in [obj for obj in collection.objects if obj.parent is None]:
+            if root.name in SKIP.get(Path(bpy.data.filepath).stem, ()):
+                continue
             if root.type == "ARMATURE":
                 if root.name.startswith("dino_"):
                     print("flicker lifted", root.name, flicker_fix.lift(root))  # in memory only; the .blend isn't saved

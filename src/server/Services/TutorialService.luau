@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Tutorial = require(ReplicatedStorage.Shared.Config.Tutorial)
+local Analytics = require(script.Parent.Analytics)
 local PlayerData = require(script.Parent.PlayerData)
 
 local TutorialService = {}
@@ -148,8 +149,10 @@ local function onStep(player: Player, step: any)
 	end
 	local state = stateOf(data)
 	if step > state.step and step <= Tutorial.doneStep then
+		local from = state.step
 		state.step = step
 		publish(player, data)
+		Analytics.tutorialAdvanced(player, from, step)
 	end
 end
 
@@ -162,6 +165,12 @@ function TutorialService.start()
 	folder.Parent = ReplicatedStorage
 	stepRemote.OnServerEvent:Connect(onStep)
 	PlayerData.onLoaded(publish)
+	-- The onboarding funnel's first step, for players who haven't finished the tutorial (Analytics).
+	PlayerData.onLoaded(function(player, data)
+		if stateOf(data).step < Tutorial.doneStep then
+			Analytics.tutorialJoined(player)
+		end
+	end)
 	-- While a player is in the tutorial, keep what its steps watch up to date (unchanged values send nothing).
 	task.spawn(function()
 		while true do

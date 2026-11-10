@@ -11,6 +11,7 @@ local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Gifts = require(ReplicatedStorage.Shared.Gifts)
+local Analytics = require(script.Parent.Analytics)
 local IndexService = require(script.Parent.IndexService)
 local LuckBoosts = require(ReplicatedStorage.Shared.LuckBoosts)
 local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
@@ -445,6 +446,9 @@ end
 -- A gift's prompt closed without buying: forget it, so a later purchase isn't taken for a gift.
 local function onProductPromptFinished(userId: number, productId: number, purchased: boolean)
 	local player = Players:GetPlayerByUserId(userId)
+	if player then
+		Analytics.purchasePromptClosed(player, productId, Enum.InfoType.Product, purchased)
+	end
 	local gift = player and pendingGifts[player]
 	if gift and gift.productId == productId and not purchased then
 		pendingGifts[player] = nil
@@ -452,6 +456,7 @@ local function onProductPromptFinished(userId: number, productId: number, purcha
 end
 
 local function onPassPurchased(player: Player, passId: number, purchased: boolean)
+	Analytics.purchasePromptClosed(player, passId, Enum.InfoType.GamePass, purchased)
 	if purchased and passId ~= 0 and not table.find(Shop.ignorePassesFor, player.UserId) then
 		setPassAttribute(player, passId)
 		for _, special in Specials do

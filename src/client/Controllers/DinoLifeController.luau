@@ -7,7 +7,9 @@
 -- build_thorn_kingdom_monsters.py), and ones with a Drip bone attack too, crying as they do (RAGE and DRIP, copying
 -- build_weeping_dark_monsters.py). Monsters with Vent bones pour spores and pounce (VENT and POUNCE, copying
 -- build_spore_hollow_monsters.py). Each map's 7th and 8th monsters add SWAY on top: swaying feathers, snapping pincers, a
--- stabbing sting, a slithering body, a lunging neck (copying assets/models/rare_kit.py). Dinos without bones still walk, stiffly.
+-- stabbing sting, a slithering body, a lunging neck (copying assets/models/rare_kit.py). Every monster with an attack plays it only
+-- once a DinoLife.attackCycle, standing still for it, and roams like the rest in between. Dinos without
+-- bones still walk, stiffly.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1384,6 +1386,21 @@ local function add(model: Model)
 	-- Which way the model faces from its pivot. Most imported models face the pivot's +Z (the importer turns them
 	-- round) and a few its -Z, so the poses take the model's own right and forward, and it moves head first whichever
 	-- it is.
+	-- Every monster with an attack plays it only once a cycle (DinoLife.attackCycle): its attack moves (below, `gated`) wait for
+	-- it. What isn't an attack goes on all the time: feathers, feelers and lures swaying, a snake's slither, a centipede's legs,
+	-- wings blurring, a tongue flicking, pincers clicking, and the Prism Egg swimmers' whiskers.
+	local cycle = DinoLife.attackCycle
+	local function gated(name: string, move): boolean
+		if move == nil then
+			return false
+		end
+		for _, family in cycle.ambient do
+			if string.match(name, "^" .. family) then
+				return false
+			end
+		end
+		return true
+	end
 	local turned = DinoModel.facesBack(model)
 	local right = if turned then -Vector3.xAxis else Vector3.xAxis
 	local ahead = if turned then Vector3.zAxis else -Vector3.zAxis
@@ -1418,16 +1435,25 @@ local function add(model: Model)
 				pounce = if vents then POUNCE[bone.Name] else nil,
 				vent = string.sub(bone.Name, 1, 4) == "Vent",
 				sway = marked and marked[bone.Name] or SWAY[bone.Name],
+				gated = gated(bone.Name, marked and marked[bone.Name] or SWAY[bone.Name]),
+				steady = whiskered, -- whiskers, not an attack: they never wait
 			})
 			if bone.Name == "LegL" or bone.Name == "FrontL" then
 				legHeight = bone.WorldPosition.Y - pivot.Y
 			end
 		end
 	end
+	local every = nil
+	for _, entry in bones do
+		if entry.gated or (entry.thrash and not entry.steady) or entry.rage or entry.pounce then
+			every = cycle
+			break
+		end
+	end
 	-- Fast enough that the feet don't look like they slide: a stride covers about this much ground.
 	local isBiped = model:FindFirstChild("LegL", true) ~= nil
 	local strideLength = (legHeight or 1.5 * scale) * (if isBiped then 1.74 else 1.26)
-	local strideSeconds = if rages then DinoLife.rageStrideSeconds else DinoLife.strideSeconds
+	local strideSeconds = if rages and not every then DinoLife.rageStrideSeconds else DinoLife.strideSeconds
 	dinos[model] = {
 		model = model,
 		bones = bones,
@@ -1445,6 +1471,11 @@ local function add(model: Model)
 		stride = math.random() * TAU,
 		idleClock = math.random() * TAU,
 		thrashClock = math.random() * 4, -- seconds; the pattern is 4 long, so a plot's monsters don't thrash in step
+		attackCycle = every,
+		attackClock = if every then math.random() * every.every else 0, -- so a plot's monsters don't all attack at once
+		-- Where in its 4-second pattern the attack starts: RAGE winds up at the end of its pattern and lunges at the start.
+		attackFrom = if rages then 3.4 else 0,
+		attacking = false,
 		frame = math.random(0, DinoLife.farFrameSkip),
 		pending = 0,
 		carrier = if carried then (model.Parent and model.Parent:FindFirstChild("HumanoidRootPart")) :: BasePart? else nil,
@@ -1545,6 +1576,9 @@ end
 
 local function moveAlong(state, dt: number)
 	state.turning = false
+	if state.attacking then
+		return -- it stands its ground while it attacks, and carries on where it was going after (DinoLife.attackCycle)
+	end
 	local ring = state.ring
 	if ring and state.ringDelay > 0 then
 		-- A moment before it reacts to its owner: it finishes the step it was taking.
@@ -1626,7 +1660,23 @@ local function moveAlong(state, dt: number)
 end
 
 local function pose(state, dt: number)
-	local goal = if state.target or state.walking or state.turning then 1 else 0
+	-- A monster that attacks now and then (DinoLife.attackCycle): sa is how far it is into its attack pattern and k how much of it
+	-- shows, 0 between attacks, easing up to 1 and back down at either end of one. Everyone else attacks nonstop: sa = s, k = 1.
+	local cycle = state.attackCycle
+	local k, sa = 1, nil
+	if cycle then
+		state.attackClock = (state.attackClock + dt) % cycle.every
+		local c = state.attackClock
+		state.attacking = c < cycle.seconds
+		if state.attacking then
+			local u = math.clamp(math.min(c, cycle.seconds - c) / cycle.ease, 0, 1)
+			k = u * u * (3 - 2 * u)
+			sa = state.attackFrom + c
+		else
+			k, sa = 0, state.attackFrom
+		end
+	end
+	local goal = if (state.target and not state.attacking) or state.walking or state.turning then 1 else 0
 	local step = dt / DinoLife.blendTime
 	state.blend += math.clamp(goal - state.blend, -step, step)
 	local w = state.blend
@@ -1635,6 +1685,7 @@ local function pose(state, dt: number)
 	state.idleClock = (state.idleClock + dt / DinoLife.idleLoopSeconds * TAU) % TAU
 	state.thrashClock = (state.thrashClock + dt) % 4
 	local p, t, s = state.stride, state.idleClock, state.thrashClock
+	sa = sa or s
 	for _, entry in state.bones do
 		local wx, wy, wz, wb, ws = entry.walk(p)
 		local ix, iy, iz, ib, is = entry.idle(t)
@@ -1651,19 +1702,20 @@ local function pose(state, dt: number)
 		end
 		local thrash = entry.thrash
 		if thrash then
-			local tx, ty, tz = thrash(s)
-			transform *= CFrame.fromAxisAngle(entry.pitch, tx)
-				* CFrame.fromAxisAngle(entry.roll, ty)
-				* CFrame.fromAxisAngle(entry.yaw, tz)
+			local kt = if entry.steady then 1 else k
+			local tx, ty, tz = thrash(if entry.steady then s else sa)
+			transform *= CFrame.fromAxisAngle(entry.pitch, kt * tx)
+				* CFrame.fromAxisAngle(entry.roll, kt * ty)
+				* CFrame.fromAxisAngle(entry.yaw, kt * tz)
 		end
 		local rage = entry.rage
 		if rage then
-			local rx, ry, rz, rrise, rsurge = rage(s)
-			transform = CFrame.new((entry.yaw * rrise + entry.roll * rsurge) * state.scale)
+			local rx, ry, rz, rrise, rsurge = rage(sa)
+			transform = CFrame.new((entry.yaw * rrise + entry.roll * rsurge) * k * state.scale)
 				* transform
-				* CFrame.fromAxisAngle(entry.pitch, rx)
-				* CFrame.fromAxisAngle(entry.roll, ry)
-				* CFrame.fromAxisAngle(entry.yaw, rz)
+				* CFrame.fromAxisAngle(entry.pitch, k * rx)
+				* CFrame.fromAxisAngle(entry.roll, k * ry)
+				* CFrame.fromAxisAngle(entry.yaw, k * rz)
 		end
 		local drip = entry.drip
 		if drip then
@@ -1671,22 +1723,28 @@ local function pose(state, dt: number)
 		end
 		local pounce = entry.pounce
 		if pounce then
-			local px, py, pz = pounce(s)
-			transform *= CFrame.fromAxisAngle(entry.pitch, px)
-				* CFrame.fromAxisAngle(entry.roll, py)
-				* CFrame.fromAxisAngle(entry.yaw, pz)
+			local px, py, pz = pounce(sa)
+			transform *= CFrame.fromAxisAngle(entry.pitch, k * px)
+				* CFrame.fromAxisAngle(entry.roll, k * py)
+				* CFrame.fromAxisAngle(entry.yaw, k * pz)
 		end
 		if entry.vent then
 			transform = CFrame.new(entry.yaw * (VENT.gap * ((s / VENT.period) % 1) * state.scale)) * transform
 		end
 		local sway = entry.sway
 		if sway then
-			local ax, ay, az, ahead, up, across = sway(s, eased)
-			transform = CFrame.new((entry.roll * ahead + entry.yaw * (up or 0) + entry.pitch * (across or 0)) * state.scale)
+			local g = if entry.gated then k else 1 -- an attack move waits for its turn; a feather sways all the time
+			local ax, ay, az, ahead, up, across = sway(if entry.gated then sa else s, eased)
+			if g < 1 then
+				-- Whole turns left over from a spin (the Whirl ends two turns round) are no turn at all: without this, easing
+				-- the attack out would unwind them.
+				ax, ay, az = (ax + math.pi) % TAU - math.pi, (ay + math.pi) % TAU - math.pi, (az + math.pi) % TAU - math.pi
+			end
+			transform = CFrame.new((entry.roll * ahead + entry.yaw * (up or 0) + entry.pitch * (across or 0)) * g * state.scale)
 				* transform
-				* CFrame.fromAxisAngle(entry.pitch, ax)
-				* CFrame.fromAxisAngle(entry.roll, ay)
-				* CFrame.fromAxisAngle(entry.yaw, az)
+				* CFrame.fromAxisAngle(entry.pitch, g * ax)
+				* CFrame.fromAxisAngle(entry.roll, g * ay)
+				* CFrame.fromAxisAngle(entry.yaw, g * az)
 		end
 		entry.bone.Transform = transform
 	end
@@ -1754,6 +1812,7 @@ function DinoLifeController.reveal(model: Model): () -> ()
 	return function()
 		if state then
 			state.idleClock = ROAR_FROM
+			state.attackClock = 0 -- a monster that attacks now and then (DinoLife.attackCycle) attacks as it's unveiled
 		end
 	end
 end

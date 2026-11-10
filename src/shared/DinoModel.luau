@@ -259,7 +259,9 @@ end
 -- a plain first-map monster (statueScale); 1 means its longest side is Catch.standardLength studs.
 -- Not parented: the caller decides where it goes. The "Head" part is the top of the model.
 function DinoModel.build(dinoId: string, mutationId: string?, origin: Vector3, scale: number): Model
-	return settle(buildRaw(dinoId, mutationId, origin, scale * DinoModel.fitScale(dinoId)), scale)
+	local model = settle(buildRaw(dinoId, mutationId, origin, scale * DinoModel.fitScale(dinoId)), scale)
+	model:SetAttribute("DinoId", dinoId) -- which monster it is, for DinoLifeController (DinoLife.attackCycle)
+	return model
 end
 
 return DinoModel
