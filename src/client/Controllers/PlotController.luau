@@ -862,6 +862,30 @@ function PlotController.start()
 		return player:GetAttribute("IsTraining") == true
 	end
 
+	-- Consoles have no mouse or touch: with a controller, the spot (or monster) aimed at is the ground a few studs in
+	-- front of the player, and X or R2 places or picks up. Without this, console players were stuck holding their
+	-- first catch (Creator Analytics 2026-11-10: 9% of console players still playing at 5 minutes).
+	local GAMEPAD_BUTTONS = { Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonR2 }
+	local GAMEPAD_REACH = 8 -- studs in front of the player
+	local function usingGamepad(): boolean
+		local last = UserInputService:GetLastInputType()
+		return last.Name:sub(1, 7) == "Gamepad"
+	end
+	-- The screen point to aim with: the mouse, or with a controller, the ground in front of the character.
+	local function aimPoint(): Vector2
+		if usingGamepad() then
+			local character = player.Character
+			local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if root then
+				local ahead = root.CFrame.LookVector * Vector3.new(1, 0, 1)
+				local ground = root.Position + ahead.Unit * GAMEPAD_REACH - Vector3.new(0, root.Size.Y * 1.5, 0)
+				local point = workspace.CurrentCamera:WorldToViewportPoint(ground)
+				return Vector2.new(point.X, point.Y)
+			end
+		end
+		return UserInputService:GetMouseLocation()
+	end
+
 	RunService.RenderStepped:Connect(function()
 		local dino = heldDino()
 		-- Training pauses placing: the hint would sit right on the STOP button, and it comes back on stopping.
@@ -874,7 +898,7 @@ function PlotController.start()
 		end
 		setHovered(nil)
 		local touch = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
-		local spot = spotAt(UserInputService:GetMouseLocation())
+		local spot = spotAt(aimPoint())
 		local model = ghostFor(dino)
 		local room = plotHasRoom()
 		hud.hint.Visible = true
@@ -887,7 +911,7 @@ function PlotController.start()
 		elseif not spot.inBounds then
 			hud.hint.Text = "Too close to the edge"
 		else
-			hud.hint.Text = `{if touch then "Tap" else "Click"} to place {dino.name}`
+			hud.hint.Text = `{if usingGamepad() then "Press X" elseif touch then "Tap" else "Click"} to place {dino.name}`
 		end
 		if spot then
 			local valid = spot.inBounds and room
@@ -913,12 +937,12 @@ function PlotController.start()
 				return
 			end
 		end
-		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 and not table.find(GAMEPAD_BUTTONS, input.KeyCode) then
 			return
 		end
 		local dino = heldDino()
 		if not dino then
-			local statue = statueAt(UserInputService:GetMouseLocation())
+			local statue = statueAt(aimPoint())
 			if statue then
 				send("pickUp", statue:GetAttribute("DinoKey"))
 			end

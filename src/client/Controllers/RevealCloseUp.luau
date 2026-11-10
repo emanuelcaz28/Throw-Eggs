@@ -146,9 +146,7 @@ end
 -- Loads the monster's meshes ahead of time (call it as the walk starts): a model whose meshes haven't loaded shows up
 -- a moment late, and the close-up would open on an egg with nothing behind it. Yields until loaded.
 function RevealCloseUp.preload(dinoId: string)
-	local assets = ReplicatedStorage:FindFirstChild("Assets")
-	local dinos = assets and assets:FindFirstChild("Dinos")
-	local template = dinos and dinos:FindFirstChild(`dino_{dinoId}`)
+	local template = DinoModel.template(dinoId)
 	if template then
 		ContentProvider:PreloadAsync({ template })
 	end

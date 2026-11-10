@@ -17,6 +17,7 @@ local CatchOdds = require(ReplicatedStorage.Shared.CatchOdds)
 local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
 local Analytics = require(script.Parent.Analytics)
 local DailyTasks = require(script.Parent.DailyTasks)
+local DinoLibrary = require(script.Parent.DinoLibrary)
 local DinoRoll = require(script.Parent.DinoRoll)
 local CompetitionService = require(script.Parent.CompetitionService)
 local EggService = require(script.Parent.EggService)
@@ -299,6 +300,7 @@ local function onTap(player: Player, height: any, lucky: any)
 
 		state.phase = "revealing"
 		state.revealStartedAt = os.clock()
+		DinoLibrary.give(player, { catch.id }) -- the model reaches the player before the reveal needs it
 		remotes.Landed:FireClient(player, catch)
 		if state.revealDone then
 			finishReveal(player, state)

@@ -1,9 +1,13 @@
--- Builds a dino: its imported model from ReplicatedStorage.Assets.Dinos if it has one (made in
--- Blender, saved in the place, not in Rojo), otherwise its block model from ModelBlueprints.
+-- Builds a dino: its imported model if it has one (made in Blender, imported into ReplicatedStorage.Assets.Dinos in
+-- Studio, saved in the place, not in Rojo), otherwise its block model from ModelBlueprints.
 -- A dino with neither gets a plain eight-block stand-in coloured from its name.
 -- A mutation tints the skin of an imported model and leaves its face alone. Glowing parts (the Volcano
 -- monsters' eyes, mouths and lava) light up, see Roles.
+-- Live games load imported models on demand (DinoLibrary): the server keeps them in ServerStorage, and each player gets
+-- only the ones their screen needs. On a client, building a monster whose model hasn't arrived asks for it and waits.
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local BlockModel = require(script.Parent.BlockModel)
 local Catch = require(script.Parent.Config.Catch)
@@ -12,6 +16,82 @@ local DinoStats = require(script.Parent.DinoStats)
 local Roles = require(script.Parent.Roles)
 
 local DinoModel = {}
+
+DinoModel.LIBRARY = "DinoLibrary" -- the models' folder in ServerStorage (DinoLibrary)
+DinoModel.TEMPLATE_GUI = "DinoTemplates" -- each player's hidden ScreenGui of the models sent to them
+DinoModel.ASK_REMOTE = "DinoLibraryAsk" -- RemoteFunction in ReplicatedStorage: ask for models by id
+
+local IS_SERVER = RunService:IsServer()
+local ASK_WAIT = 8 -- seconds a client waits for an asked-for model before falling back to its block model
+
+local asked: { [string]: boolean } = {} -- ids this client already asked for, so a missing model isn't asked for again
+
+-- Where a monster's imported model is, or nil if this side doesn't have it (yet).
+local function templateOf(dinoId: string): Instance?
+	local name = `dino_{dinoId}`
+	if IS_SERVER then
+		local library = game:GetService("ServerStorage"):FindFirstChild(DinoModel.LIBRARY)
+		local template = library and library:FindFirstChild(name)
+		if template then
+			return template
+		end
+	else
+		local playerGui = Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
+		local folder = playerGui and playerGui:FindFirstChild(DinoModel.TEMPLATE_GUI)
+		local template = folder and folder:FindFirstChild(name)
+		if template then
+			return template
+		end
+	end
+	-- Studio edit mode, and a server that hasn't started DinoLibrary: the models where they're imported.
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local dinos = assets and assets:FindFirstChild("Dinos")
+	return dinos and dinos:FindFirstChild(name)
+end
+
+-- Client only: makes sure these monsters' models are here, asking the server for any that aren't, and waits for them
+-- (up to ASK_WAIT seconds). Call it before building many at once (the Index), so they come in one request.
+function DinoModel.need(dinoIds: { string })
+	if IS_SERVER then
+		return
+	end
+	local missing = {}
+	for _, dinoId in dinoIds do
+		if not asked[dinoId] and not templateOf(dinoId) then
+			asked[dinoId] = true
+			table.insert(missing, dinoId)
+		end
+	end
+	if #missing == 0 then
+		return
+	end
+	local remote = ReplicatedStorage:FindFirstChild(DinoModel.ASK_REMOTE) :: RemoteFunction?
+	if not remote then
+		return -- an old server without DinoLibrary: everything is already in ReplicatedStorage
+	end
+	local ok = pcall(remote.InvokeServer, remote, missing)
+	if not ok then
+		return
+	end
+	local folder = Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild(DinoModel.TEMPLATE_GUI, ASK_WAIT)
+	if not folder then
+		return
+	end
+	-- Replication sends the models before the reply, so this is normally instant. A monster with no imported model
+	-- (a block model) never comes, so the wait is short and shared by all of them.
+	local deadline = os.clock() + 1
+	for _, dinoId in missing do
+		while not templateOf(dinoId) and os.clock() < deadline do
+			task.wait(0.05)
+		end
+	end
+end
+
+-- The monster's imported model, for preloading its meshes; asks for it on a client if needed. nil if it has none.
+function DinoModel.template(dinoId: string): Instance?
+	DinoModel.need({ dinoId })
+	return templateOf(dinoId)
+end
 
 local BASE_SATURATION, BASE_VALUE = 0.55, 0.85
 local MUTATION_TINT = 0.55 -- how far a mutation pulls the dino's colours towards its own
@@ -93,9 +173,7 @@ local function joinParts(model: Model)
 end
 
 local function buildImported(dinoId: string, mutation, origin: Vector3, scale: number): Model?
-	local assets = ReplicatedStorage:FindFirstChild("Assets")
-	local dinos = assets and assets:FindFirstChild("Dinos")
-	local template = dinos and dinos:FindFirstChild(`dino_{dinoId}`)
+	local template = DinoModel.template(dinoId)
 	if not template then
 		return nil
 	end

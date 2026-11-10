@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
+local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
@@ -303,6 +304,17 @@ local function showModels(row, show: boolean)
 		return
 	end
 	row.shown = show
+	if show then
+		-- Models load on demand (DinoLibrary): ask for the whole row in one go, not one tile at a time.
+		local ids = {}
+		for _, tile in row.tiles do
+			table.insert(ids, tile.dino.id)
+		end
+		DinoModel.need(ids)
+		if not row.shown then
+			return -- hidden again while waiting
+		end
+	end
 	for _, tile in row.tiles do
 		if show then
 			tile.view = UiKit.monster(tile.frame, tile.dino.id, {

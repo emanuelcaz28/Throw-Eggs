@@ -1,5 +1,6 @@
 local Services = script.Parent.Services
 
+require(Services.DinoLibrary).start() -- first: moves the monster models out of ReplicatedStorage before anyone joins
 require(Services.LightingService).start()
 require(Services.MapService).start()
 require(Services.PlayerData).start()
