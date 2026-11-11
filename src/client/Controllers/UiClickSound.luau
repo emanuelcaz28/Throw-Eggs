@@ -1,4 +1,4 @@
--- The click on the buttons of the shop and the index [Owner, 2026-11-07: only those two]: it listens for any button
+-- The click on the interface's buttons (Config/UiSounds clickScreens; every screen since 2026-11-10): it listens for any button
 -- that shows up on screen, so new buttons there click without being touched, and checks which screen a button
 -- is in when it's tapped (Config/UiSounds clickScreens). A button with the attribute NoClickSound stays quiet.
 -- Display only.
@@ -20,7 +20,8 @@ end
 
 local function wantsClick(object: GuiButton): boolean
 	local screen = object:FindFirstAncestorOfClass("ScreenGui")
-	return screen ~= nil and table.find(UiSounds.clickScreens, screen.Name) ~= nil and not object:GetAttribute("NoClickSound")
+	local screens = UiSounds.clickScreens
+	return screen ~= nil and (screens == nil or table.find(screens, screen.Name) ~= nil) and not object:GetAttribute("NoClickSound")
 end
 
 local function hook(object: Instance)

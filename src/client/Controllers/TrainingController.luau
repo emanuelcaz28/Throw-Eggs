@@ -11,6 +11,7 @@ local Format = require(ReplicatedStorage.Shared.Format)
 local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Pop = require(ReplicatedStorage.Shared.Config.Pop)
+local Sfx = require(script.Parent.Sfx)
 local PopText = require(ReplicatedStorage.Shared.PopText)
 local Training = require(ReplicatedStorage.Shared.Config.Training)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
@@ -236,11 +237,9 @@ function TrainingController.start()
 		hud.xp.Text = `{Format.short(xp)} / {Format.short(needed)}`
 		hud.fill:TweenSize(UDim2.fromScale(math.clamp(xp / needed, 0, 1), 1), "Out", "Quad", 0.2, true)
 
-		-- A full bar happens every few seconds early on, so it floats instead of shouting. From above STOP, which
-		-- sits on the bar, so phones don't get the words over the button.
-		if lastLevel and level > lastLevel and lastPower then
-			PopText.float(`+{Format.short(power - lastPower)} ⚡ POWER`, Pop.colors.good, PopText.above(hud.stop))
-		elseif isTraining and lastXp and level == lastLevel and xp > lastXp then
+		-- Each squat's XP floats from above STOP, which sits on the bar, so phones don't get the words over the button.
+		-- A full bar's +POWER slams in over Throw Power instead (GameFeelJuice).
+		if isTraining and lastXp and lastLevel and level == lastLevel and xp > lastXp then
 			PopText.float(`+{Format.short(xp - lastXp)} XP`, Pop.colors.xp, PopText.above(hud.stop))
 		end
 		if not isTraining then
@@ -324,6 +323,10 @@ function TrainingController.start()
 		player.AttributeChanged:Connect(renderPad)
 		renderPad()
 		pad.prompt.Triggered:Connect(function()
+			if not affordable then
+				Sfx.play("error") -- can't afford it yet; the server would refuse it anyway
+				return
+			end
 			remotes.BuyUpgrade:FireServer()
 		end)
 

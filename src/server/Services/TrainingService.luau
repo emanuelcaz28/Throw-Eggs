@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Training = require(ReplicatedStorage.Shared.Config.Training)
 local BaseKit = require(ReplicatedStorage.Shared.BaseKit)
+local RemoteGuard = require(script.Parent.RemoteGuard)
 local DailyTasks = require(script.Parent.DailyTasks)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
@@ -347,13 +348,13 @@ function TrainingService.start()
 			end
 		end)
 	end)
-	remotes.StopTraining.OnServerEvent:Connect(function(player)
+	RemoteGuard.connect(remotes.StopTraining, function(player)
 		stopTraining(player, true)
 	end)
-	remotes.TapBubble.OnServerEvent:Connect(onTapBubble)
+	RemoteGuard.connect(remotes.TapBubble, onTapBubble)
 	-- The ready pop-up's UPGRADE button buys the next upgrade from anywhere, like the pad (Config/ReadyPopup).
 	local lastCardBuy: { [Player]: number } = {}
-	remotes.BuyUpgrade.OnServerEvent:Connect(function(player)
+	RemoteGuard.connect(remotes.BuyUpgrade, function(player)
 		local data = PlayerData.get(player)
 		if not data or os.clock() - (lastCardBuy[player] or 0) < ReadyPopup.buyCooldown then
 			return

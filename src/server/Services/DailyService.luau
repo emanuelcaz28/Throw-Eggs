@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Daily = require(ReplicatedStorage.Shared.Config.Daily)
+local RemoteGuard = require(script.Parent.RemoteGuard)
 local PlayerData = require(script.Parent.PlayerData)
 local ShopService = require(script.Parent.ShopService)
 
@@ -52,7 +53,7 @@ function DailyService.start()
 	claimRemote = Instance.new("RemoteEvent")
 	claimRemote.Name = "ClaimDaily"
 	claimRemote.Parent = ReplicatedStorage
-	claimRemote.OnServerEvent:Connect(onClaim)
+	RemoteGuard.connect(claimRemote, onClaim)
 	PlayerData.onLoaded(publish)
 
 	task.spawn(function()

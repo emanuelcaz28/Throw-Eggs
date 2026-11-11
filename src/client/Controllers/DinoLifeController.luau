@@ -1802,17 +1802,28 @@ function DinoLifeController.showcase(model: Model, shown: () -> boolean)
 	end)
 end
 
--- The monster in a reveal, alive on its spot: it breathes and sways through its own idle the whole time. Returns the
--- function that makes it roar now, for the unveil. Monsters with no roar just carry on with their idle.
-function DinoLifeController.reveal(model: Model): () -> ()
+-- The monster in a reveal, alive on its spot: it breathes and sways through its own idle. Returns the function that
+-- makes it roar now, for the unveil (monsters with no roar just carry on with their idle), and the function that
+-- freezes it as it is, like a photo (true), or lets it move again (false) [Owner, 2026-11-11: "make the monster not
+-- move for a better shot"]. `still` on the roar: it doesn't attack as it's unveiled, so it can be frozen in its roar.
+function DinoLifeController.reveal(model: Model): ((still: boolean?) -> (), (frozen: boolean) -> ())
+	local held = false
 	DinoLifeController.showcase(model, function()
-		return model.Parent ~= nil
+		return model.Parent ~= nil and not held
 	end)
 	local state = dinos[model]
-	return function()
+	return function(still: boolean?)
 		if state then
 			state.idleClock = ROAR_FROM
-			state.attackClock = 0 -- a monster that attacks now and then (DinoLife.attackCycle) attacks as it's unveiled
+			-- A monster that attacks now and then (DinoLife.attackCycle) attacks as it's unveiled, unless it's to hold still:
+			-- then its clock goes to just after an attack.
+			local cycle = state.attackCycle
+			state.attackClock = if still and cycle then cycle.seconds else 0
+		end
+	end, function(frozen: boolean)
+		held = frozen
+		if state and not frozen then
+			state.pending = 0 -- the time it stood frozen doesn't count: its next pose starts from now
 		end
 	end
 end

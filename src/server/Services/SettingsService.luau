@@ -3,6 +3,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Settings = require(ReplicatedStorage.Shared.Config.Settings)
+local RemoteGuard = require(script.Parent.RemoteGuard)
 local PlayerData = require(script.Parent.PlayerData)
 
 local SettingsService = {}
@@ -52,7 +53,7 @@ function SettingsService.start()
 	local remote = Instance.new("RemoteEvent")
 	remote.Name = "SetSetting"
 	remote.Parent = ReplicatedStorage
-	remote.OnServerEvent:Connect(onSet)
+	RemoteGuard.connect(remote, onSet, 60, 120)
 	PlayerData.onLoaded(publish)
 end
 

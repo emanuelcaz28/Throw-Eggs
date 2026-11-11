@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
+local RemoteGuard = require(script.Parent.RemoteGuard)
 local PlotService = require(script.Parent.PlotService)
 local ThrowService = require(script.Parent.ThrowService)
 local TrainingService = require(script.Parent.TrainingService)
@@ -57,7 +58,7 @@ function HomeService.start()
 	local remote = Instance.new("RemoteEvent")
 	remote.Name = "GoHome"
 	remote.Parent = ReplicatedStorage
-	remote.OnServerEvent:Connect(goHome)
+	RemoteGuard.connect(remote, goHome)
 	Players.PlayerRemoving:Connect(function(player)
 		lastUsed[player] = nil
 	end)

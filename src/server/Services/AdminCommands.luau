@@ -5,6 +5,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local RemoteGuard = require(script.Parent.RemoteGuard)
 local AdminService = require(script.Parent.AdminService)
 local Gifts = require(ReplicatedStorage.Shared.Gifts)
 local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
@@ -205,7 +206,7 @@ function AdminCommands.start()
 	remote = Instance.new("RemoteEvent")
 	remote.Name = "Give"
 	remote.Parent = ReplicatedStorage:WaitForChild("AdminRemotes") -- made by AdminService.start
-	remote.OnServerEvent:Connect(onCommand)
+	RemoteGuard.connect(remote, onCommand)
 end
 
 return AdminCommands

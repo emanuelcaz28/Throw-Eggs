@@ -14,6 +14,7 @@ local Training = require(ReplicatedStorage.Shared.Config.Training)
 local Tutorial = require(ReplicatedStorage.Shared.Config.Tutorial)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 local EggShopController = require(script.Parent.EggShopController)
+local Sfx = require(script.Parent.Sfx)
 
 local player = Players.LocalPlayer
 
@@ -306,6 +307,7 @@ function ReadyPopupController.start()
 	local function show(offer: Offer)
 		current = offer
 		shown[offer.key] = true
+		Sfx.play("popup")
 		token += 1
 		local mine = token
 		fill(card, offer)

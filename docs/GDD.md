@@ -15,6 +15,9 @@ Rule: same genre, our own names, models, UI and numbers. Nothing copied 1:1.
    it gives a double rep and the 2X XP moment (`BoostMoment`). The level bar and STOP only show while training (`Config/Training`).
 2. **Throw** — step onto the orange platform in the arena's front wall → egg meter: a marker swings up and down a vertical tube with 10 levels
    and slows near the top. Level 10, the top step, is PERFECT and gives the biggest throw.
+   A PERFECT tap gets the big "PERFECT!" moment mid-screen (`PerfectMoment`), a gold burst out of the meter's PERFECT
+   zone with a white flash and a small meter bump, and the egg flies with a gold trail everyone sees (`GameFeelJuice`,
+   `Config/Juice` perfectHit).
    The equipped **egg** flies down one long corridor, below the arena, through biomes and lands on its floor. Distance = Throw Power × the level's bonus.
    A **Luck multiplier** grows with distance (shown live, top of screen).
 3. **Hatch / reveal** — the egg lands in a biome and hatches. Dino name fills in letter by letter
@@ -216,8 +219,10 @@ Exact formulas aren't visible in the recordings, so numbers are readings from th
 - The biome name sits under the luck number. The landing raises a dust puff, then the screen dims.
 
 ### Reveal
-What's built now is at the top of "Landing and arrival" in `GAME_SPEC.md` section 7 (2026-11-07). These are the notes from
-the reference. In order:
+What's built now is at the top of "Landing and arrival" in `GAME_SPEC.md` section 7 (2026-11-07). Since 2026-11-11 rare,
+big and first-time catches also get a showcase (item 9 there): close camera angles cut in on each luck label while the
+numbers climb, a monster that stands still, and a drawn backdrop behind it from the unveil (`RevealShowcase`,
+`RevealBackdrop`, `Config/Reveal` `showcase`). These are the notes from the reference. In order:
 1. Camera orbits the landed item. "tap to skip" shows on catches without a counter. (Corrected in
    `GAME_SPEC.md`: that "orbit" is the animal's walking view, and the full timing is there. Ours is built:
    `RevealWalk`, numbers in `Config/Reveal` `walk`, described in `GAME_SPEC.md` section 7.)

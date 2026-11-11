@@ -50,6 +50,7 @@ return {
 		throwsSinceRare = 0, -- throws in a row without a rare monster, for pity (Config/Hooks)
 		throwsSinceRarest = 0, -- throws in a row without a map's rarest monster, for the jackpot pity (Config/Hooks)
 		throwsSinceGift = 0, -- throws since the last surprise gift, every 60th is a Legendary or Mythic (Config/Hooks)
+		bigShotsLeft = -1, -- big shots not used yet (Config/Hooks bigShots); -1 = not decided: a save with nothing caught gets them all, an older one none
 		recentCatches = {}, -- ids of the last 2 monsters caught by throwing, newest first; less likely to come again (Config/Catch pick)
 		xpBoostEndsAt = 0, -- os.time() when the x2 XP from completing a world in the Index runs out (Config/Index)
 		luckyThrows = {}, -- lucky throws owned, count by multiplier as text ("100" = 2); LuckyThrows

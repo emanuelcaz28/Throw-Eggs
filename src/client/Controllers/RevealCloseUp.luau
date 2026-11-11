@@ -207,6 +207,47 @@ local function withQuery<T>(model: Model, check: () -> T): T
 	return result
 end
 
+-- Whether a camera standing at each of `spots` is clear of the monster's body, with `room` studs to spare (its real
+-- shape, like the checks below). With `target`, the camera must also see that point: nothing of the monster in the
+-- nearer half of the way to it. RevealShowcase uses it for its extra angles.
+function RevealCloseUp.clear(model: Model, spots: { Vector3 }, room: number, target: Vector3?): boolean
+	local probe = Instance.new("Part")
+	probe.Name = "RevealCameraProbe"
+	probe.Shape = Enum.PartType.Ball
+	probe.Anchored = true
+	probe.CanCollide = false
+	probe.CanQuery = false
+	probe.CanTouch = false
+	probe.Transparency = 1
+	probe.Size = Vector3.one * math.clamp(room * 2, 0.8, 64)
+	probe.Parent = workspace
+	local params = OverlapParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { model }
+	params.MaxParts = 1
+	local sight = RaycastParams.new()
+	sight.FilterType = Enum.RaycastFilterType.Include
+	sight.FilterDescendantsInstances = { model }
+	local ok, free = pcall(withQuery, model, function()
+		for _, spot in spots do
+			probe.CFrame = CFrame.new(spot)
+			if #workspace:GetPartsInPart(probe, params) > 0 then
+				return false
+			end
+			if target then
+				local way = target - spot
+				local hit = workspace:Raycast(spot, way, sight)
+				if hit and (hit.Position - spot).Magnitude < way.Magnitude * 0.5 then
+					return false
+				end
+			end
+		end
+		return true
+	end)
+	probe:Destroy()
+	return ok and free
+end
+
 -- Builds the caught monster right by the egg, at its real size, facing `approach` (the way it walked; the throw's way if
 -- unknown), and works out the camera's move. `band` is the part of the screen to frame them in at the end, as shares of
 -- its height from the top: {top, bottom for the smallest monsters, bottom for the biggest}. The final text covers the

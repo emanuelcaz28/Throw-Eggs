@@ -12,11 +12,14 @@ local CatchOdds = {}
 -- filter (lucky throws and the surprise gift), all optional: minRarity / maxRarity leave out monsters of a lower /
 -- higher rarity level (1 Common ... 8 Secret, the words in Config/RarityLadder); minPlace leaves out monsters more common
 -- than that place in their home map's list (DinoStats.rarityRank). Both go by the monster's home map, so they also work
--- in The Deep End's mixed list.
-export type Filter = { minRarity: number?, maxRarity: number?, minPlace: number? }
+-- in The Deep End's mixed list. only: just these monster ids (the starter run's missing monsters, Config/Hooks).
+export type Filter = { minRarity: number?, maxRarity: number?, minPlace: number?, only: { [string]: boolean }? }
 local function passes(dinoId: string, filter: Filter?): boolean
 	if not filter then
 		return true
+	end
+	if filter.only and not filter.only[dinoId] then
+		return false
 	end
 	local level = DinoStats.rarityLevel(dinoId) or 1
 	local place = DinoStats.rarityRank(dinoId) or 1

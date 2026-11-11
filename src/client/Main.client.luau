@@ -27,6 +27,8 @@ task.spawn(require(Controllers.ReadyPopupController).start) -- its check loop ne
 task.spawn(require(Controllers.AdminController).start) -- waits until the server says this player is an admin
 task.spawn(require(Controllers.AdminCommandController).start) -- the /give chat command, same wait
 require(Controllers.UiClickSound).start()
+require(Controllers.GameFeelSounds).start()
+require(Controllers.GameFeelJuice).start()
 require(Controllers.MusicController).start()
 require(Controllers.SettingsController).start()
 require(Controllers.PowerLimitController).start() -- after Training (its HUD button sits by Throw Power) and Index

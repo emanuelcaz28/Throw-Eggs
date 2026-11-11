@@ -341,7 +341,11 @@ https://www.figma.com/design/GkAQPam3aVAIkfHi8uUWfI):
    goes still and quiet for a moment. Then a flash, a boom and a roar: the view snaps wide at once, showing the whole monster,
    and the camera whips back with its biggest shake, its head roaring, as the final text lands. The camera ends low, looking
    up. It holds still there, with no circling.
-5. **Monsters are alive on camera**, playing their own idle and roaring at the unveil (`DinoLifeController.reveal`).
+5. **Monsters stand still while the numbers climb [Owner, 2026-11-11: "make the monster not move for a better shot"]**,
+   like a statue, so the close angles stay clean. **At the unveil they come alive:** they roar and keep playing their own
+   idle on the final screen [Owner, 2026-11-11, about the final screen: "I don't want him to stand still here"]
+   (`DinoLifeController.reveal`, `showcase` `stillClimb`, `freezeAfter` false). They roar rather than start an attack as
+   they're unveiled.
 6. **Rare and big catches set a mood from the first step of the walk:** the eyelids stay narrower, the world dims, a drone and
    a heartbeat build. The monster's colours sink a little until the unveil, but stay readable: a gold foot is a hint. Common
    catches get the same shape with no numbers, about 7 seconds in all.
@@ -354,6 +358,91 @@ https://www.figma.com/design/GkAQPam3aVAIkfHi8uUWfI):
    with them and the props spanning the corridor hide, so the real map stays as it is for everyone else. The walls open to 1.5
    times the monster's width (`opening`). A real wider map wasn't enough: a Unit of Doom on the last map is over 400 studs wide,
    past the island's edge, against an 88-stud corridor.
+
+9. **The showcase [Owner, 2026-11-11]. [Built]** (`RevealShowcase`, `RevealBackdrop`, `Config/Reveal` `showcase`; art drawn
+   in Figma "Throw Eggs - Reveal Showcase", https://www.figma.com/design/i7JF39IAKl4MzhPM4gdFyh, exported to
+   `assets/reveal/` and uploaded). The owner first asked for a nicer reveal with several camera angles, a monster that
+   doesn't move, better effects and visuals. A first version played the angles after the unveil with a fact text on each;
+   **the owner corrected it the same day: "the cinematic angles should happen while the numbers are going up and the luck
+   still goes up, not after he gets revealed", and no texts presenting the name, size, rarity and money: "just a better
+   visual for the final reveal".** So:
+   - **Who gets it** (`showcase.levels`): catches from 1 in 100, or Absolute Unit and bigger, or a monster caught for the
+     first time, or a Robux monster. Commoner catches are as before.
+   - **While the numbers climb, the camera cuts between close angles.** Each luck label that lands (LUCKY! up to
+     IMPOSSIBLE!) cuts to a new close angle on a part of the monster, with the label's own slam, flash and jolt plus speed
+     lines over the screen: its flank, its back legs from behind, its front feet from the other side, its back from above
+     (`details`). Each is a slow creep of about 2.5 seconds, then the camera goes back to the slow zoom out from the feet
+     (step 3), which carries on underneath. A rarer catch passes more labels, so it gets more angles (they go round again
+     after four). A big or new catch with no labels gets 1 to 3 cuts on the clock. **The face never shows:** an angle that
+     would show the monster's eyes, or put the camera inside it, is left out for that monster. The last 1.4 seconds always
+     belong to the feet, so the unveil still whips back from there.
+   - **Transitions between angles [Owner, 2026-11-11: "add transitions between the camera angles"]:** the camera never
+     jumps. It glides to the next angle in half a second, and back to the feet in 0.65, slow at either end with a light
+     blur in the middle. When the straight way there would pass through the monster, it whip-pans instead: it swings 40°
+     away the way it's heading, blurring hard, and swings in on the new angle from the other side, in 0.38 seconds
+     (`showcase` `transition`).
+   - **The monster stands still** all through the climb, then roars at the unveil and moves freely on the final screen.
+   - **No cinema bars [Owner, 2026-11-11: "I want those lines from above to be removed"]** (built, off: `cinemaBars`).
+   - **[Owner, 2026-11-11, after seeing it: the backdrop "to be removed as well"] The backdrop is off**
+     (`showcase.backdrop.enabled = false`): the monster ends in its real world with the old light rays behind it, as
+     before. What follows describes it when switched on. **The final reveal's visual: a backdrop that makes the monster
+     stand out on any world.** At the unveil everything
+     behind the monster is swapped for drawn art in its rarity's colours (turning rays, a soft light, dots): a screen-sized
+     picture standing in the world just behind it, so the monster, its egg and the ground in front stay real. **A dark
+     monster gets a bright backdrop and a white light from the camera; a bright one gets a dark backdrop.** From 1 in
+     1,000,000, Mega Chonk, or a Robux monster the backdrop is outer space with stars and an eclipse (a dark monster stands
+     in front of a blazing star instead, since a dark moon would swallow it). From 1 in 10,000 or Chonker, pieces of the
+     ground burst up round its feet and hang in the air. The dust slows to a quarter speed. The world's haze thins while the
+     backdrop is up. These catches don't get the old light rays. `showcase.backdrop.enabled = false` brings the real world
+     back.
+   - **No new texts.** The final text is the usual one and lands at the unveil, as before. Taps work as before.
+   - **Lighter mood:** the rare-catch darkness is weaker (`drama` `dim` 0.88/0.8/0.72, `shadow` 0.2, `hushDim` 0.45; they were
+     0.8/0.68/0.56, 0.45 and 0.3), so the feet can be seen.
+   - It adds no time to the reveal. Not yet seen on a phone.
+
+10. **The final screen, in 3D [Owner, 2026-11-11, after two earlier versions: "can you do the texts feel like they're in 3D
+   space? and make the rarity and the number the most important thing. I also want a new design on the texts. Mutations feel
+   like they're not special at all. The money/s should be placed under the monster"; before that: "keep '1 in' simple and
+   only change the other number's appearance, I don't want the numbers to zoom in and out"]. [Built]** (`RevealFinalCard`,
+   `RevealOdds`, `Config/Reveal` `finalCard`, `oddsFx`.) It replaces the centred stack described further down.
+   - **Fourth look [Owner, 2026-11-11: "it's hard to distinguish what's the name of the monster... it looks like I got the
+     'secret amethyst monster' instead of 'death knell'. The name of the monster should be above him. I want the rarity tags
+     to be the same design the game uses. I love that AMETHYST design. The 3D space is oriented too much on the sides. The
+     text for what type of luck I got should be more crazy."] [Built, checked on a flat copy in Studio; not yet seen by the
+     owner on a real catch]** The layout below replaces the left and right panels.
+   - **Polish [Owner, 2026-11-11, after seeing it on a catch: "make it more clean/polished so everything looks nice"] [Built]:**
+     a soft dark band sits behind the title and another along the bottom behind the luck, so the text reads over any
+     monster; the shout and the number are centred together; fewer, smaller glints on the mutation.
+   - **Camera angles only on a luck label [Owner, 2026-11-11: "only make them switch when the type of luck and that sound
+     effect of slamming happens"] [Built, not yet tried on a real throw]:** during the climb the camera changes angle only
+     at the moment a luck label slams in with its sound. It holds that angle until the next label or the unveil; it no
+     longer goes back to the feet on its own, and a catch with no luck labels gets no angle changes
+     (`showcase.labelCutsOnly`).
+   - **In 3D space:** the text stands on panels in the world a few studs in front of the camera, drawn over everything and
+     seen in real perspective: the title leans over the monster, the luck lies before its feet, facing the camera. They follow the camera, sway a little, and the title and the luck shout fly in
+     from near the lens and land with a bounce.
+   - **Solid letters:** every big word is a block: copies of it step down and back behind the face in a dark shade of its
+     colour, and the face is lit top to bottom; a white shine crosses the big words every few seconds.
+   - **Title, over the monster's head:** the monster's **NAME** is the headline, the biggest text there, standing just
+     above its head (it follows the head; a long name shrinks to fit). Under the name, one row says what it is: its
+     **rarity, drawn as the game's own rarity label** (same colours, glow and movement as on tags and in the Index), its
+     **MUTATION** in its own material with "MUTATION" small beside it (Gold gleams with glints; Ruby, Emerald, Diamond and
+     Amethyst are cut gems with facets, a gleam and glints; Shadow broods with a dark pulsing aura; Ghost flickers;
+     Bubblegum wobbles), then its size and NEW! as stickers. A message (a finished map, NEW BEST!) sits small over the name.
+   - **Luck, along the bottom (lucky catches) [Owner, 2026-11-11, after an IMPOSSIBLE catch: the letters' movement
+     "looks kind of weird", he wants it "visually better", not more movement or more effects; and the shout, "1 in" and
+     the number looked like separate pieces] [Built, checked on a flat copy in Studio; not yet seen by the owner on a real
+     catch]:** one centred block. On top **the luck shout** in one line of solid letters ("GODLY LUCK!!!"), standing still,
+     in its luck's colours, a white shine crossing it every few seconds and a soft burst of rays turning slowly behind;
+     IMPOSSIBLE's face is a rainbow drifting slowly along the whole word. Under it, as one line, **"1 in"** plainly and
+     **the number**, huge and solid. The digits drop in and land; from SUPER LUCKY! they roll like a slot machine and lock
+     left to right with a tick, and a thin glow breathes round them; from INSANE! the colour drifts; from GODLY! the
+     rainbow runs through them. Once landed nothing wobbles, shakes or hops; only the two rarest labels get two sparkles.
+   - **Money under the monster:** what it earns, in solid green, on a panel just under the monster's feet (kept clear of the
+     luck under it), rising into place.
+   - "tap to continue" small, flat, bottom centre. The camera frames the monster between the title and the luck. If the card ever fails,
+     the old centred text shows instead.
+   - Studio's screen capture doesn't draw panels like these; they were checked by laying a flat copy over the screen.
 
 **[Owner, 2026-11-07, tested on a phone]** The eyes closing, the cuts to black and every other full-screen cover reach the screen's
 real edges, past a phone's notch and round corners. They live on their own layers (`RevealBehind`, `RevealInFront`), and the text
@@ -467,7 +556,7 @@ heads sit too low to hide.
   aura's glowing edge, while the world dims and a drone and speeding heartbeat build. The name's letters hold back until late.
   Mega Chonk and up also shake the ground every 1.5 seconds. At the last number all goes black and quiet for 0.7 to 1.4 seconds (the
   hush), then a full flash, a boom, and the monster bursts into colour. Three levels (1 in 1,000, 1 in a million, 1 in 100 million, or the
-  sizes Chonker, Mega Chonk, Planet-Sized) go darker, hush longer and boom louder. Giants end seen head on and closer (`bigFill`).
+  sizes Chonker, Mega Chonk, Planet-Sized) go darker, hush longer and boom louder. Giants end seen head on (`bigFill`, 1 since 2026-11-11: any closer and the head went behind the name over it). What the reveal hides for the camera never leaves a hole: sight lines stop at the ground (corridor floor, arena floor, throw platform), a wall section hides whole with what stands on it, and floor is laid under every hidden wall for the length of the reveal (`hideBlockers`).
   Common catches stay as before. These are the game's first sounds, from Roblox's licensed libraries.
 - **[Owner]** The walk depends on the catch: a very rare monster starts far from the egg, and a very big one starts way
   above the map. It simulates the POV of each monster. Made in-game, not in Blender: it changes with every catch's
@@ -1019,6 +1108,23 @@ designed yet; the build plan is in `docs/RETENTION_PLAN.md`.
 - **[Built] Jackpot pity** (`Config/Hooks` jackpotPity, **[Owner, 2026-11-05]**): after 250 throws in a row without the
   map's rarest monster, the next throw is it ("JACKPOT STREAK!"), about 2 hours of play. With the new roll the rarest
   comes on its own about 1 in 250 to 1 in 900 throws on 6-monster maps, so this mostly helps the unlucky.
+- **[Built] Starter run** (`Config/Hooks` starterRun, **[Owner, 2026-11-10]** "on their third or fourth throw they
+  always get Compy, which makes no sense"; new players need better monsters and that dopamine to stay): a save's first
+  10 catches (the tutorial's two included) are never one of the map's 2 commonest monsters, and while a monster above
+  them (prizes not counted) is missing from the Index, the catch is one of the missing ones. On the Forest that makes
+  throws 3 and 4 the two of Stegosaurus, Velociraptor and Pteranodon the tutorial didn't give, each one NEW; the rest of
+  the 10 roll normally from Parasaurolophus up. Hidden like the gift. Tutorial throws, lucky throws and the new-world
+  gift keep their own rules.
+- **[Built] Big shots** (`Config/Hooks` bigShots, **[Owner, 2026-11-11]**): after the starter boosts, three fixed lucky
+  shots so new players feel great. Once a new player reaches map 2 and its new-world gift is caught, their next 3 plain
+  throws on map 2 or any later map give, in order, Absolute Unit + Gold, Chonker + Ruby, Mega Chonk + Diamond, each on
+  the rarest monster of the map it lands on (never its very rarest) whose $/s with that size and colour stays under 20x
+  the map's best normal monster (`incomeCap`, **[Owner, 2026-11-11]**: not always Scorchion, and not so rich it skips a
+  map). So the bigger the shot, the commoner the monster: map 2 gives Scorchion, T-Rex, Carnotaurus; map 3 Mossmaw,
+  Spinosaurus, Brachiosaurus; from map 3 on mostly Epic or better. Each earns about 14-19x the map's best normal monster,
+  about a good catch on the next map. A player
+  who throws once on map 2 and moves on keeps the other two for the next maps. A new world's gift or a lucky throw keeps
+  its own rules and the shot waits. Only saves started after this was added (`bigShotsLeft`). Hidden, like the gift.
 - **[Built] Surprise gift** (`Config/Hooks` surpriseGift, **[Owner, 2026-11-08]**): every 60th throw is a Legendary or a
   Mythic, never Ancient or Secret and nothing below Legendary. A fixed beat, not pity: catching a Legendary on your own
   doesn't move it. No countdown, "they should not see it coming", and nothing tells them it was a gift: no

@@ -21,8 +21,10 @@ local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 local RevealController = require(script.Parent.RevealController)
 local PerfectMoment = require(script.Parent.PerfectMoment)
+local GameFeelJuice = require(script.Parent.GameFeelJuice)
 local MusicController = require(script.Parent.MusicController)
 local RevealSound = require(script.Parent.RevealSound)
+local Sfx = require(script.Parent.Sfx)
 local ThrowCinematic = require(script.Parent.ThrowCinematic)
 
 local player = Players.LocalPlayer
@@ -455,6 +457,7 @@ function ThrowController.start()
 		if perfect then
 			hud.zone.BackgroundColor3 = GOLD
 			PerfectMoment.play()
+			GameFeelJuice.perfectHit(hud.meter, hud.zone) -- the burst on the meter itself
 		end
 		PopText.punch(hud.prompt)
 	end
@@ -617,7 +620,7 @@ function ThrowController.start()
 	end)
 
 	-- A throw from the tap to the end of its reveal, on the thrower's screen and everyone else's.
-	local function playThrow(thrower: Player, distance: number, _perfect: boolean, eggId: string)
+	local function playThrow(thrower: Player, distance: number, perfect: boolean, eggId: string)
 		local isMine = thrower == player
 		local lane = Throw.lane
 		local flight = Throw.flight
@@ -636,6 +639,9 @@ function ThrowController.start()
 			pendingCatch = nil -- an earlier throw's catch that came too late isn't this one's
 		end
 		local trail = ThrowCinematic.addTrail(egg)
+		if perfect then
+			GameFeelJuice.goldTrail(trail) -- a PERFECT throw flies gold, on every screen
+		end
 		-- The egg lands on the corridor floor, which is lower than the platform, on the lane's middle line.
 		local landY = lane.floorY + EGG_SIZE.Y / 2
 		local landing = lane.origin + lane.direction * distance
@@ -657,8 +663,10 @@ function ThrowController.start()
 		-- The egg is in the thrower's hand until the release, then flies from exactly there in a straight line (seen
 		-- from above) to where it lands, tumbling end over end from the way the hand held it. No jump or swerve.
 		local releasedAt, cameraFrom = windUp(thrower, egg, isMine, hud, if isMine then spot else nil)
+		local stopFlightSound: (() -> ())? = nil
 		if isMine then
 			MusicController.setThrown() -- the throwing music drops lower while the egg flies
+			stopFlightSound = Sfx.loop("eggFlight", duration + 1) -- the whoosh while it's in the air
 		end
 		local heldTurn = egg.CFrame.Rotation
 		local tumbleAxis = lane.direction:Cross(Vector3.yAxis).Unit
@@ -708,6 +716,9 @@ function ThrowController.start()
 		trail.Enabled = false
 		ThrowCinematic.landingEffects(Vector3.new(egg.Position.X, lane.floorY, egg.Position.Z))
 		RevealSound.eggDrop(isMine)
+		if stopFlightSound then
+			stopFlightSound()
+		end
 		if isMine then
 			MusicController.setThrowing(false) -- the egg has landed: the throwing music is cut off
 		end

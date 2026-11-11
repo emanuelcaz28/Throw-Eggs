@@ -107,4 +107,21 @@ function DinoRoll.rollCatch(biomeId: string, luck: number, minRank: number?, rec
 	}
 end
 
+-- A set catch (Config/Hooks bigShots): exactly this monster of the map's list, with this colour and size. Same shape
+-- as rollCatch.
+function DinoRoll.fixedCatch(biomeId: string, rank: number, mutation: string, size: string)
+	local dino = Dinos[biomeId][rank]
+	local entry = { id = dino.id, mutation = mutation, size = size }
+	local stats = DinoStats.describe(entry)
+	return {
+		id = entry.id,
+		rank = rank,
+		name = stats.name,
+		mutation = entry.mutation,
+		size = entry.size,
+		oneIn = stats.oneIn,
+		income = stats.income,
+	}
+end
+
 return DinoRoll

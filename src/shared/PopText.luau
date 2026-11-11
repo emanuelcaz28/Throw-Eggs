@@ -206,7 +206,11 @@ end
 
 -- A big moment in the upper middle of the screen: a title slamming in, with an optional detail line under it.
 -- fill is a colour or a UiKit gradient name (gold if left out).
+PopText.onShout = nil :: (() -> ())? -- set by the client's GameFeelSounds: the pop-up sound
 function PopText.shout(title: string, detail: string?, fill: (Color3 | string)?)
+	if PopText.onShout then
+		PopText.onShout()
+	end
 	local look = Pop.shout
 	local group = Instance.new("Frame")
 	group.Name = "Shout"

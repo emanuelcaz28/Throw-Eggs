@@ -50,6 +50,9 @@ local Shop = {
 	},
 	-- Asking Roblox which Game Passes a player owns can fail; a pass must never go missing because of that.
 	passCheck = { attempts = 5, retryDelay = 3 }, -- seconds; doubles after each failed attempt
+	-- After a pass is reported bought in the game, the server asks Roblox whether the player really owns it (the report
+	-- itself can be faked): this many times, this many seconds apart. Roblox can be slow to say yes after a real purchase.
+	passConfirm = { attempts = 12, every = 5 },
 	-- Lucky throws: each is for ONE throw, kept until used; the next throw always uses the biggest one
 	-- owned (LuckyThrows). The x number really multiplies that throw's luck, in the roll (DinoRoll) as well
 	-- as on screen; description must say truthfully what that does.

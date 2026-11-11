@@ -22,6 +22,34 @@ return {
 	surpriseGift = { throws = 60, minRarity = 5, maxRarity = 6, minPlace = 5, prizeOnlyRarity = 4 },
 	-- The first egg that lands in a biome you've never caught anything in hatches one of its rarest.
 	newMapGift = { rarest = 3 },
+	-- Starter run [Owner, 2026-11-10: "on their third or fourth throw they always get Compy, which makes no sense";
+	-- new players need better monsters and that dopamine to stay, docs/GROWTH_PLAYBOOK.md]. A save's first `catches`
+	-- catches (the tutorial's two included) never give one of the map's `skipCommonest` commonest monsters, and while
+	-- a monster above those (not counting the map's prizes) is still missing from the player's Index, the catch is one
+	-- of the missing ones: every early throw is a NEW monster, climbing to the map's rarest. After that, normal odds
+	-- from the third commonest up. The tutorial's set throws, a lucky throw and the new-map gift keep their own rules.
+	-- Hidden, like the surprise gift: it's never named on screen.
+	starterRun = { catches = 10, skipCommonest = 2, newFirst = true },
+	-- Big shots [Owner, 2026-11-11: after the starter boosts, three fixed lucky shots so new players feel great]. Once a
+	-- new player has caught something on map `fromMap` (its new-world gift comes first), their next plain throws that
+	-- land on that map or any later one give these, in order, with this size and colour. Throws that only land on map 1
+	-- don't use one, and a throw with another guarantee (a new world's gift, a lucky throw) keeps it and the shot waits.
+	-- Only saves started after this was added (Config/Save bigShotsLeft). Hidden, like the gift: the reveal shows the
+	-- size and colour, nothing says it was set.
+	-- The monster [Owner, 2026-11-11: never the map's rarest, and not always Scorchion, and not so rich it skips a map]:
+	-- the rarest one on the map it lands on, never its very rarest, whose $/s with the shot's size and colour stays at
+	-- or under incomeCap times the map's best normal monster (its rarest before the prizes, plain). The bigger the size
+	-- and colour, the commoner the monster, so map 2 gives Scorchion, then T-Rex, then Carnotaurus, and every shot earns
+	-- about 15x the map's best normal monster: a great pet, about a good catch on the next map.
+	bigShots = {
+		fromMap = 2,
+		incomeCap = 20,
+		shots = {
+			{ size = "AbsoluteUnit", mutation = "Gold" },
+			{ size = "Chonker", mutation = "Ruby" },
+			{ size = "MegaChonk", mutation = "Diamond" },
+		},
+	},
 	-- Landing this close before the next biome shows "SO CLOSE!" after the reveal.
 	almostThere = { studs = 60 },
 }

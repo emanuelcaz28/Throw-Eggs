@@ -8,6 +8,7 @@ local TeleportService = game:GetService("TeleportService")
 
 local Admin = require(ReplicatedStorage.Shared.Config.Admin)
 local Tutorial = require(ReplicatedStorage.Shared.Config.Tutorial)
+local RemoteGuard = require(script.Parent.RemoteGuard)
 local PlayerData = require(script.Parent.PlayerData)
 
 local AdminService = {}
@@ -88,7 +89,7 @@ function AdminService.start()
 	remote.Name = "Action"
 	remote.Parent = folder
 	folder.Parent = ReplicatedStorage
-	remote.OnServerEvent:Connect(onAction)
+	RemoteGuard.connect(remote, onAction)
 	PlayerData.wantsFreshSave = AdminService.joinedFresh
 	PlayerData.onLoaded(function(player: Player)
 		if AdminService.isAdmin(player) then

@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
+local RemoteGuard = require(script.Parent.RemoteGuard)
 local PlayerData = require(script.Parent.PlayerData)
 
 local EggService = {}
@@ -58,7 +59,7 @@ end
 
 function EggService.start()
 	makeRemotes()
-	remotes.EggAction.OnServerEvent:Connect(onAction)
+	RemoteGuard.connect(remotes.EggAction, onAction)
 	PlayerData.onLoaded(publish)
 end
 

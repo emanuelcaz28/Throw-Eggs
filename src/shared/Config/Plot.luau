@@ -9,7 +9,10 @@ local Plot = {
 	-- (2026-11-06) buys them around maps 2, 5, 8, 10 and 13: maxed about 14 hours into a 30-hour game.
 	upgradeBasePrice = 500000,
 	upgradePriceGrowth = 1000000,
-	backpackSize = 100, -- dinos held off the plot; a catch with no room is sold automatically
+	backpackSize = 100, -- dinos held off the plot: past this nothing more can be picked up off the base
+	-- A caught monster is still kept when the backpack is past its size, so a rare catch is never lost. Past this many
+	-- in the backpack a new catch is sold automatically, with a notice: it keeps the save from growing without end.
+	backpackHardCap = 1000,
 	-- Every catch goes into the backpack (hotbar) and onto the player's head once the reveal is done, so they place it
 	-- themselves, instead of landing straight on the base [Owner, 2026-11-08]. false: catches go on the base by themselves.
 	carryNewCatches = true,

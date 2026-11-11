@@ -17,6 +17,7 @@ local Map = require(ReplicatedStorage.Shared.Config.Map)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
+local RemoteGuard = require(script.Parent.RemoteGuard)
 local BaseSigns = require(script.Parent.BaseSigns)
 local PlayerData = require(script.Parent.PlayerData)
 local TutorialService = require(script.Parent.TutorialService)
@@ -533,7 +534,7 @@ end
 
 -- The Sell Stand: sells the backpack monsters with these keys at once. Monsters on the base and the carried one stay.
 local function sellMany(player: Player, data, keys: any)
-	if typeof(keys) ~= "table" or #keys > Plot.backpackSize then
+	if typeof(keys) ~= "table" or #keys > math.max(Plot.backpackSize, #data.dinos) then
 		return
 	end
 	local wanted = {}
@@ -561,7 +562,7 @@ end
 -- Feeds backpack monsters with these keys to a monster, for cash (Config/Chonk). Only what it takes to reach the top level
 -- is used. The carried monster and ones already fed stay out of it, and passes' monsters can't be fed or eaten.
 local function feed(player: Player, data, target, keys: any)
-	if typeof(keys) ~= "table" or #keys > Plot.backpackSize or DinoStats.special(target.id) then
+	if typeof(keys) ~= "table" or #keys > math.max(Plot.backpackSize, #data.dinos) or DinoStats.special(target.id) then
 		return
 	end
 	local level, food = target.chonk or 0, target.food or 0
@@ -662,6 +663,11 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 			entry.x = math.round(x * 10) / 10
 			entry.z = math.round(z * 10) / 10
 			changed(player, data)
+			-- The client's put-down sound listens for this (GameFeelSounds): the statues are rebuilt on every change, so
+			-- watching for a new statue missed it. PlacedKey goes first and says which monster it was (GameFeelJuice's dust
+			-- puff at its feet).
+			player:SetAttribute("PlacedKey", entry.key)
+			player:SetAttribute("PlacedTick", (player:GetAttribute("PlacedTick") or 0) + 1)
 		end
 	elseif action == "pickUp" then
 		-- Picked up off the base, it goes to the backpack and onto the player's head, ready to put down elsewhere.
@@ -718,10 +724,14 @@ function PlotService.addCatch(player: Player, catch, carry: boolean?): (string?,
 	elseif #plotted(data) < capacityOf(data) then
 		entry.onPlot = true
 		result = "plot"
-	elseif backpackCount(data) < Plot.backpackSize or catch.income then
-		result = "backpack" -- a bought monster always fits: it's never sold off for lack of room
+	elseif catch.bought or backpackCount(data) < Plot.backpackHardCap then
+		-- A bought monster always fits. A caught one is kept past the backpack's size too (a rare catch must never be
+		-- sold behind the player's back), up to a hard cap that keeps the save from growing without end.
+		result = "backpack"
 	else
-		earn(player, data, sellPrice(entry))
+		local price = sellPrice(entry)
+		earn(player, data, price)
+		PlotService.notify(player, `Backpack full: sold for {Format.cash(price)}. Sell some monsters to keep new ones.`, true)
 		return "sold"
 	end
 	data.nextDinoKey += 1
@@ -751,7 +761,7 @@ end
 -- The caller saves the data.
 function PlotService.addSpecial(player: Player, data, special): number
 	local income = math.max(bestIncome(data), special.minimumIncome) * special.share
-	PlotService.addCatch(player, { id = special.id, income = income })
+	PlotService.addCatch(player, { id = special.id, income = income, bought = true })
 	PlotService.notify(player, `{special.name} joined you! +{Format.cash(income)}/s`)
 	return income
 end
@@ -865,8 +875,8 @@ end
 function PlotService.start()
 	makeRemotes()
 	buildPlots()
-	remotes.DinoAction.OnServerEvent:Connect(onAction)
-	remotes.ClaimOffline.OnServerEvent:Connect(function(player)
+	RemoteGuard.connect(remotes.DinoAction, onAction)
+	RemoteGuard.connect(remotes.ClaimOffline, function(player)
 		local data = PlayerData.get(player)
 		if data and data.offlinePending > 0 then
 			local amount = data.offlinePending

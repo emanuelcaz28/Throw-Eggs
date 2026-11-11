@@ -14,6 +14,7 @@ local MAX_PUFF = 100 -- studs: Roblox's limit for a particle
 
 export type Dust = {
 	burst: (strength: number) -> (),
+	slow: (speed: number) -> (),
 	destroy: () -> (),
 }
 
@@ -60,6 +61,10 @@ function RevealDust.new(model: Model, groundY: number): Dust
 	return {
 		burst = function(strength: number)
 			emitter:Emit(math.round(settings.puffs[1] + (settings.puffs[2] - settings.puffs[1]) * strength))
+		end,
+		-- The dust in the air slows down, as if time did (the showcase's frozen moment): 1 is normal speed.
+		slow = function(speed: number)
+			emitter.TimeScale = math.clamp(speed, 0, 1)
 		end,
 		destroy = function()
 			pad:Destroy()

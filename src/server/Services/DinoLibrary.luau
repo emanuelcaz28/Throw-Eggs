@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 
+local RemoteGuard = require(script.Parent.RemoteGuard)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local PlayerData = require(script.Parent.PlayerData)
 
@@ -60,7 +61,7 @@ end
 -- The client asks for models it's about to show. Returns once they are on their way (instances replicate before the
 -- reply arrives).
 local function onAsk(player: Player, dinoIds: any): boolean
-	if typeof(dinoIds) ~= "table" or #dinoIds > MAX_PER_ASK then
+	if not RemoteGuard.allow(player, "DinoLibraryAsk", 20, 40) or typeof(dinoIds) ~= "table" or #dinoIds > MAX_PER_ASK then
 		return false
 	end
 	local ids = {}

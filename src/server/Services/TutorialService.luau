@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Tutorial = require(ReplicatedStorage.Shared.Config.Tutorial)
+local RemoteGuard = require(script.Parent.RemoteGuard)
 local Analytics = require(script.Parent.Analytics)
 local PlayerData = require(script.Parent.PlayerData)
 
@@ -163,7 +164,7 @@ function TutorialService.start()
 	stepRemote.Name = "Step"
 	stepRemote.Parent = folder
 	folder.Parent = ReplicatedStorage
-	stepRemote.OnServerEvent:Connect(onStep)
+	RemoteGuard.connect(stepRemote, onStep)
 	PlayerData.onLoaded(publish)
 	-- The onboarding funnel's first step, for players who haven't finished the tutorial (Analytics).
 	PlayerData.onLoaded(function(player, data)

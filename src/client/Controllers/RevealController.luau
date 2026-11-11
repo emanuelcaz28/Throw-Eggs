@@ -26,7 +26,10 @@ local RevealCloseUp = require(script.Parent.RevealCloseUp)
 local RevealDrama = require(script.Parent.RevealDrama)
 local RevealDust = require(script.Parent.RevealDust)
 local RevealOpening = require(script.Parent.RevealOpening)
+local Sfx = require(script.Parent.Sfx)
+local RevealFinalCard = require(script.Parent.RevealFinalCard)
 local RevealRays = require(script.Parent.RevealRays)
+local RevealShowcase = require(script.Parent.RevealShowcase)
 local RevealSound = require(script.Parent.RevealSound)
 local RevealWalk = require(script.Parent.RevealWalk)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
@@ -48,10 +51,6 @@ local LUCK_ABOVE_BOTTOM = 150 -- design pixels from the screen's bottom to the l
 local LUCK_ROW = 60 -- design pixels: the settled luck label's row, above the number
 local NUMBER_ROW = 140 -- and the number's
 local MIN_TEXT_BRIGHTNESS = 0.55 -- mutation names darker than this are lifted towards white
--- The final text's rows, in design pixels (as built in buildGui), from the screen's bottom edge up: its gap, "tap to
--- continue", the message, the odds, $/s, the name, size and mutation, then the tier sticker. The camera frames the
--- monster above them.
-local FINAL_ROWS = { gap = 16, hint = 30, message = 30, odds = 52, income = 44, name = 86, tags = 34, sticker = STICKER_ROW }
 local STORED_TEXT = {
 	backpack = "Plot full: sent to your backpack",
 	sold = "Plot and backpack full: sold",
@@ -111,6 +110,28 @@ end
 -- (statues placed during the reveal too, like the new catch going onto the base). Of the map's decorations, those in
 -- the line of sight from any of `eyes` (where the camera will be) to the monster (`box`, `size`) hide, and those it
 -- stands on. Returns the function that brings them all back.
+local GROUND_PIECES = { "kit_Floor", "kit_ArenaFloor", "kit_Platform" } -- never hidden: a sight line stops at them
+local WALL_PIECES = { "kit_WallWest", "kit_WallEast", "kit_ArenaFrontWest", "kit_ArenaFrontEast", "kit_ArenaWallWest", "kit_ArenaWallEast", "kit_ArenaWallBack" }
+
+local function isGround(part: Instance): boolean
+	for _, name in GROUND_PIECES do
+		if part:FindFirstAncestor(name) then
+			return true
+		end
+	end
+	return false
+end
+
+local function wallOf(part: Instance): Model?
+	for _, name in WALL_PIECES do
+		local wall = part:FindFirstAncestor(name)
+		if wall and wall:IsA("Model") then
+			return wall
+		end
+	end
+	return nil
+end
+
 local function hideBlockers(eyes: { Vector3 }, box: CFrame, size: Vector3): () -> ()
 	local hidden = {}
 	local function hide(part: Instance)
@@ -203,6 +224,14 @@ local function hideBlockers(eyes: { Vector3 }, box: CFrame, size: Vector3): () -
 					if not result then
 						break
 					end
+					-- [Owner, 2026-11-11: "the map being empty in certain spots"] A line that reaches the corridor's floor stops
+					-- there. The walk's lines aim under the ground; one that went on inside a floor section and crossed into the
+					-- next section entered it through its side, which counted as a wall and hid that whole section of floor.
+					-- The same goes for the arena's floor and the throw platform [2026-11-11]: they are ground too, and a giant's
+					-- far camera hid the platform's top.
+					if isGround(result.Instance) then
+						break
+					end
 					if result.Normal.Y < 0.7 then
 						hide(result.Instance)
 					end
@@ -212,9 +241,102 @@ local function hideBlockers(eyes: { Vector3 }, box: CFrame, size: Vector3): () -
 		end
 	end
 
+	-- [Owner, 2026-11-11: "the map missing from the reveal is still there"] A corridor wall is a solid block from under
+	-- the floor up to the rim, and the floor only reaches the walls' inner faces. Hiding a wall section for a camera
+	-- standing where it was left a hole down to nothing beside the floor. So where a wall section hides, the floor
+	-- carries on under it: a patch of the nearest floor section, on this screen only, until the reveal is over.
+	-- [2026-11-11, still seen by the owner] The same hole opened beside the arena's front walls, which had no patch; and
+	-- a wall could lose only its dirt, leaving its grass top and the trees on it hanging in the air. So a wall section
+	-- hides whole, with what stands on it, and every hidden wall gets the floor under it.
+	local patches = nil
+	local corridor = map and map:FindFirstChild("Corridor")
+	if map then
+		local walls = {}
+		for part in hidden do
+			local wall = wallOf(part)
+			if wall then
+				walls[wall] = true
+			end
+		end
+		-- The floors a patch can copy: the corridor's sections and the arena's.
+		local floors = {}
+		for _, piece in if corridor then corridor:GetChildren() else {} do
+			local part = if piece.Name == "kit_Floor" then piece:FindFirstChildWhichIsA("BasePart", true) else nil
+			if part then
+				table.insert(floors, part)
+			end
+		end
+		local arenaFloor = map:FindFirstChild("kit_ArenaFloor", true)
+		local arenaTop = nil
+		for _, part in if arenaFloor then arenaFloor:GetDescendants() else {} do
+			if part:IsA("BasePart") and (not arenaTop or part.Position.Y + part.Size.Y / 2 > arenaTop.Position.Y + arenaTop.Size.Y / 2) then
+				arenaTop = part
+			end
+		end
+		if arenaTop then
+			table.insert(floors, arenaTop)
+		end
+		local decor = {}
+		for _, folderName in BLOCKER_FOLDERS do
+			local folder = map:FindFirstChild(folderName)
+			for _, prop in if folder then folder:GetChildren() else {} do
+				if prop:IsA("PVInstance") then
+					table.insert(decor, prop)
+				end
+			end
+		end
+		for wall in walls do
+			for _, part in wall:GetDescendants() do
+				hide(part)
+			end
+			local frame, extent = wall:GetBoundingBox()
+			for _, prop in decor do
+				local offset = prop:GetPivot().Position - frame.Position
+				if math.abs(offset.X) <= extent.X / 2 and math.abs(offset.Z) <= extent.Z / 2 then
+					hide(prop)
+					for _, part in prop:GetDescendants() do
+						hide(part)
+					end
+				end
+			end
+			-- The floor nearest along the corridor.
+			local floor, nearest = nil, math.huge
+			for _, part in floors do
+				local away = math.max(math.abs(part.Position.Z - frame.Position.Z) - part.Size.Z / 2, 0)
+				if away < nearest then
+					floor, nearest = part, away
+				end
+			end
+			if floor then
+				if not patches then
+					patches = Instance.new("Folder")
+					patches.Name = "RevealWallFloor"
+					patches.Parent = workspace
+				end
+				local patch = Instance.new("Part")
+				patch.Name = "RevealFloor"
+				patch.Anchored = true
+				patch.CanCollide = false
+				patch.CanQuery = false
+				patch.CanTouch = false
+				patch.CastShadow = false
+				patch.Color = floor.Color
+				patch.Material = floor.Material
+				patch.MaterialVariant = floor.MaterialVariant
+				patch.Size = Vector3.new(extent.X, 1, extent.Z)
+				-- Its top a hair lower than the floor's, so it doesn't flicker against a floor strip of the opened corridor.
+				patch.CFrame = CFrame.new(frame.Position.X, floor.Position.Y + floor.Size.Y / 2 - 0.55, frame.Position.Z)
+				patch.Parent = patches
+			end
+		end
+	end
+
 	return function()
 		if added then
 			added:Disconnect()
+		end
+		if patches then
+			patches:Destroy()
 		end
 		for part, modifier in hidden do
 			if part.Parent then
@@ -613,6 +735,7 @@ local function buildGui()
 	black.Parent = inFront
 
 	return {
+		gui = gui,
 		walkGlow = walkGlow,
 		black = black,
 		scale = scale,
@@ -844,8 +967,9 @@ function RevealController.isPlaying(): boolean
 end
 
 -- The colour moment: a white flash, the rarity colour lights the screen's edges, light rays burst out behind the
--- monster. `strength` is 0 for a catch with no luck label up to 1 for the rarest label.
-local function colourMoment(rarity: string, stage, strength: number)
+-- monster. `strength` is 0 for a catch with no luck label up to 1 for the rarest label. `noRays` when the showcase's
+-- drawn backdrop stands behind the monster (RevealBackdrop): it has rays of its own.
+local function colourMoment(rarity: string, stage, strength: number, noRays: boolean?)
 	local pair = UiKit.RARITY[rarity]
 	local light, deep = Color3.fromHex(pair[1]), Color3.fromHex(pair[2])
 	hud.flash.BackgroundColor3 = WHITE
@@ -861,6 +985,10 @@ local function colourMoment(rarity: string, stage, strength: number)
 	end
 	if hud.rays then
 		hud.rays.destroy()
+	end
+	if noRays then
+		hud.rays = nil
+		return
 	end
 	-- Centred on the monster itself, not on the box round it and the egg.
 	local monsterBox, monsterSize = stage.model:GetBoundingBox()
@@ -993,6 +1121,13 @@ local function play(catch, egg: BasePart)
 	local dino = nil
 	local dust = nil -- thrown up off the ground when something big lands (RevealDust), once it stands there
 	local roarNow = nil -- makes the monster roar (DinoLifeController.reveal)
+	local holdStill = nil -- freezes it as it is, like a photo
+	-- [Owner, 2026-11-11] Catches that deserve it get a showcase: close camera angles on the monster while the numbers
+	-- climb, and a drawn backdrop behind it from the unveil (RevealShowcase). nil for a common catch.
+	local show = nil
+	local finalShown = false -- the final text is up
+	local finalShownAt = 0
+	local finalCard = nil
 	-- The shot from the feet (RevealCloseUp), set up once the walk is over. The slow zoom runs from zoomAt to the last
 	-- number; the final move goes from whipFrom to the end in whipLength seconds, quicker after a tap to skip.
 	local stage = nil
@@ -1060,6 +1195,9 @@ local function play(catch, egg: BasePart)
 			punch(impact.zoom[index] or 1, landsIn)
 			task.delay(landsIn, function()
 				RevealSound.slam(index, #Reveal.tiers) -- the hit lands with the label
+				if show and not cardShown then
+					show.cut(os.clock(), duration - climbed, true) -- and the camera cuts to a new angle on it
+				end
 				if dust and not cardShown then
 					dust.burst(strength)
 				end
@@ -1108,8 +1246,21 @@ local function play(catch, egg: BasePart)
 			RevealSound.plainReveal()
 		end
 		RevealSound.unveilSlam(math.clamp((finalTierIndex or 0) / #Reveal.tiers, 0, 1))
+		-- It stood still through the climb; now it comes alive and roars, and keeps moving on the final screen
+		-- [Owner, 2026-11-11]. Config/Reveal showcase freezeAfter can freeze it again.
+		if holdStill then
+			holdStill(false)
+		end
 		if roarNow then
-			roarNow()
+			roarNow(Reveal.showcase.still)
+		end
+		local freezeAfter = Reveal.showcase.freezeAfter
+		if freezeAfter then
+			task.delay(freezeAfter, function()
+				if holdStill and dino and dino.Parent then
+					holdStill(true)
+				end
+			end)
 		end
 		if hitsHard then
 			local strength = math.max(finalTierIndex / #Reveal.tiers, if walkPlan then walkPlan.bigness else 0)
@@ -1127,40 +1278,89 @@ local function play(catch, egg: BasePart)
 		end
 		hud.top.Visible = false
 		hud.letters.Visible = false
-		colourMoment(rarity, stage, finalTierIndex / #Reveal.tiers)
+		if dust then -- the dust thrown up hangs in the air
+			task.delay(Reveal.showcase.debris.fly, dust.slow, Reveal.showcase.dustSlow)
+		end
+		if show then
+			show.unveil(now) -- its drawn backdrop goes up behind the monster, under the flash
+		end
+		finalCard()
 		if drama then -- out of the black, the flash hits harder
 			hud.flash.BackgroundTransparency = 0.05
 			tween(hud.flash, Reveal.flashTime * 1.6, { BackgroundTransparency = 1 })
 		end
+	end
 
-		if finalTier then
-			local sticker = UiKit.tag(hud.stickerHolder, finalTier.sticker.label, finalTier.sticker.colors, 44, -4)
-			sticker.AnchorPoint = Vector2.new(0.5, 0.5)
-			sticker.Position = UDim2.fromScale(0.5, 0.5)
-			hud.sticker = sticker
+	-- The final text, written straight on the screen over the whole monster.
+	finalCard = function()
+		if finalShown then
+			return
 		end
-		hud.stickerHolder.Visible = finalTier ~= nil
+		finalShown = true
+		finalShownAt = os.clock()
+		colourMoment(rarity, stage, finalTierIndex / #Reveal.tiers, show ~= nil and show.hasBackdrop)
 
-		hud.sizeName.Visible = size ~= nil
-		hud.sizeName.Text = if size then size.name else ""
-		hud.mutation.Visible = mutation ~= nil
-		hud.mutation.Text = if mutation then mutation.name else ""
-		hud.mutation.TextColor3 = if mutation then readable(mutation.color) else WHITE
-		hud.name.Text = upperName
-		hud.name.TextColor3 = Color3.fromHex(UiKit.RARITY_TEXT[rarity])
-		hud.newTag.Visible = catch.isNew == true
-		hud.namePop.Scale = Reveal.namePop
-		tween(hud.namePop, 0.4, { Scale = 1 }, Enum.EasingStyle.Back)
-		hud.income.Text = `{Format.cash(catch.income)}/s`
-		hud.oddsRow.Visible = finalTier ~= nil
-		hud.finalOdds.Text = `1 in {Format.commas(catch.oneIn)}`
-		if finalTier then
-			hud.oddsGradient.Color = tierGradient(finalTier)
+		if catch.isNew then
+			Sfx.play("discovery") -- a new monster for the Index
 		end
+		-- [Owner, 2026-11-11: "I don't feel amazed"] The final text as a fighter's entrance (RevealFinalCard).
+		if hud.closeCard then
+			hud.closeCard()
+		end
+		local monsterBox, monsterSize = stage.model:GetBoundingBox()
+		local cardOk, close = pcall(RevealFinalCard.show, hud.gui, hud.scale, {
+			name = upperName,
+			rarity = rarity,
+			rarityWord = UiKit.rarityWord(catch.id),
+			rarityLook = UiKit.rarityLook(catch.id),
+			feet = monsterBox.Position - Vector3.new(0, monsterSize.Y / 2, 0),
+			head = monsterBox.Position + Vector3.new(0, monsterSize.Y / 2, 0),
+			size = size,
+			mutation = mutation,
+			isNew = catch.isNew == true,
+			income = `{Format.cash(catch.income)}/s`,
+			tier = finalTier,
+			level = finalTierIndex,
+			oneIn = catch.oneIn,
+			message = message,
+			onTick = function(pitch: number)
+				RevealSound.tick(pitch)
+			end,
+		})
+		if cardOk then
+			hud.closeCard = close
+		else
+			-- The old centred text, so a catch is never left without one.
+			warn(`[RevealController] Final card failed: {close}`)
+			if finalTier then
+				local sticker = UiKit.tag(hud.stickerHolder, finalTier.sticker.label, finalTier.sticker.colors, 44, -4)
+				sticker.AnchorPoint = Vector2.new(0.5, 0.5)
+				sticker.Position = UDim2.fromScale(0.5, 0.5)
+				hud.sticker = sticker
+			end
+			hud.stickerHolder.Visible = finalTier ~= nil
 
-		hud.message.Visible = message ~= nil
-		hud.message.Text = message or ""
-		hud.final.Visible = true
+			hud.sizeName.Visible = size ~= nil
+			hud.sizeName.Text = if size then size.name else ""
+			hud.mutation.Visible = mutation ~= nil
+			hud.mutation.Text = if mutation then mutation.name else ""
+			hud.mutation.TextColor3 = if mutation then readable(mutation.color) else WHITE
+			hud.name.Text = upperName
+			hud.name.TextColor3 = Color3.fromHex(UiKit.RARITY_TEXT[rarity])
+			hud.newTag.Visible = catch.isNew == true
+			hud.namePop.Scale = Reveal.namePop
+			tween(hud.namePop, 0.4, { Scale = 1 }, Enum.EasingStyle.Back)
+			hud.income.Text = `{Format.cash(catch.income)}/s`
+			hud.oddsRow.Visible = finalTier ~= nil
+			hud.finalOdds.Text = `1 in {Format.commas(catch.oneIn)}`
+			if finalTier then
+				hud.oddsGradient.Color = tierGradient(finalTier)
+			end
+
+			hud.message.Visible = message ~= nil
+			hud.message.Text = message or ""
+			hud.final.Visible = true
+		end
 	end
 
 	local function onTap()
@@ -1178,7 +1378,7 @@ local function play(catch, egg: BasePart)
 		end
 		if not cardShown then
 			showCard(true)
-		elseif now - cardShownAt >= Reveal.skipDelay and not finished then
+		elseif now - finalShownAt >= Reveal.skipDelay and not finished then
 			finished = true
 			done:Fire()
 		end
@@ -1258,24 +1458,43 @@ local function play(catch, egg: BasePart)
 	-- The camera frames the monster and the egg in the part of the screen the final text leaves free.
 	-- Small monsters stay clear of all of it, so the egg by their feet shows. Big ones fill more of the screen: their
 	-- feet may stand behind the sticker, the size line and the top half of the name (their egg is a speck anyway).
-	local belowName = FINAL_ROWS.gap + FINAL_ROWS.hint + FINAL_ROWS.income
-	if finalTier then
-		belowName += FINAL_ROWS.odds
-	end
-	if message then
-		belowName += FINAL_ROWS.message
-	end
-	local textHeight = belowName + FINAL_ROWS.name + FINAL_ROWS.tags + (if finalTier then FINAL_ROWS.sticker else 0)
+	-- The final card (RevealFinalCard) takes the bottom of the screen; small monsters are framed clear of it, big ones may
+	-- stand with their feet behind the name.
+	local textHeight, nameMiddle, titleHeight = RevealFinalCard.height(message ~= nil)
 	local screenHeight = math.max(camera.ViewportSize.Y, 1)
 	local band = {
-		(hud.inset + Reveal.closeUp.topGap * hud.scale) / screenHeight,
+		(hud.inset + (Reveal.closeUp.topGap + titleHeight) * hud.scale) / screenHeight, -- under the name over its head
 		1 - (textHeight + Reveal.closeUp.textGap) * hud.scale / screenHeight,
-		1 - (belowName + FINAL_ROWS.name / 2) * hud.scale / screenHeight,
+		1 - nameMiddle * hud.scale / screenHeight,
 	}
 	stage = RevealCloseUp.stage(catch, egg, walkPlan and walkPlan.approach, nil, band, wallHalf)
 	dino = stage.model
-	roarNow = DinoLifeController.reveal(stage.model)
+	roarNow, holdStill = DinoLifeController.reveal(stage.model)
+	if Reveal.showcase.stillClimb then
+		holdStill(true) -- [Owner, 2026-11-11] it doesn't move while the camera works round it
+	end
 	dust = RevealDust.new(stage.model, ground.Y)
+	-- Set up before the monster's colours sink (drama.shade): its backdrop is picked against its real colours.
+	local showOk, showMade = pcall(RevealShowcase.new, catch, stage, {
+		rarity = rarity,
+		tier = finalTier,
+		scale = hud.scale,
+		-- A cut that no luck label marks lands with its own flash, instant zoom, jolt and thud.
+		onCut = function()
+			local cut = Reveal.showcase.cut
+			hud.flash.BackgroundColor3 = WHITE
+			hud.flash.BackgroundTransparency = cut.flash
+			tween(hud.flash, cut.flashTime, { BackgroundTransparency = 1 })
+			punch(cut.zoom)
+			joltAt, joltAngle = os.clock(), math.rad(cut.jolt)
+			RevealSound.step(0.75)
+		end,
+	})
+	if showOk then
+		show = showMade
+	else
+		warn(`[RevealController] Showcase failed: {showMade}`)
+	end
 	if drama then
 		drama.shade(stage.model)
 	end
@@ -1285,9 +1504,13 @@ local function play(catch, egg: BasePart)
 		RevealCloseUp.cameraAt(stage, stage.countShare).Position,
 		RevealCloseUp.cameraAt(stage, 1).Position,
 	}
+	for _, spot in if show then show.spots else {} do
+		table.insert(cameraSpots, spot)
+	end
 	table.insert(hud.undo, hideBlockers(cameraSpots, monsterFrame, monsterExtent))
 	-- Seen from far off, a giant would be lost in the world's haze, so the haze thins the further back the camera ends.
-	camera:SetAttribute("HazeScale", math.clamp(Reveal.closeUp.clearDistance / stage.distance[2], Reveal.closeUp.minHaze, 1))
+	local furthest = math.max(stage.distance[2], if show then show.farthest else 0)
+	camera:SetAttribute("HazeScale", math.clamp(Reveal.closeUp.clearDistance / furthest, Reveal.closeUp.minHaze, 1))
 	camera.CameraType = Enum.CameraType.Scriptable
 	camera.CFrame = RevealCloseUp.cameraAt(stage, 0)
 	walking = false
@@ -1304,6 +1527,9 @@ local function play(catch, egg: BasePart)
 	end
 	hud.top.Visible = showCounter
 	hud.letters.Visible = true
+	if show then
+		show.arrive() -- its cinema bars slide in
+	end
 	if drama then
 		drama.climb(duration)
 		nextBeat = startedAt + impact.beatEvery[1]
@@ -1328,6 +1554,15 @@ local function play(catch, egg: BasePart)
 
 		camera.CameraType = Enum.CameraType.Scriptable -- in case anything else took the camera back
 		local view = RevealCloseUp.cameraAt(stage, pulled(now))
+		-- While the numbers climb, the showcase cuts to close angles on parts of the monster, then back to the feet.
+		local shotFieldOfView = nil
+		if show and not cardShown then
+			show.climb(now, progress, duration - climbed)
+			local shotView, shotLens = show.camera(now, view, fieldOfView)
+			if shotView then
+				view, shotFieldOfView = shotView, shotLens
+			end
+		end
 		if hud.rays then
 			hud.rays.update(now, view)
 		end
@@ -1366,7 +1601,10 @@ local function play(catch, egg: BasePart)
 			local eased = TweenService:GetValue(math.clamp((now - cardShownAt) / whipLength, 0, 1), Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
 			wide = unveilBy + (1 - unveilBy) * eased
 		end
-		camera.FieldOfView = math.min(fieldOfView * zoomNow(now) * wide, 115)
+		camera.FieldOfView = math.min((shotFieldOfView or fieldOfView) * zoomNow(now) * wide, 115)
+		if show then
+			show.render(now, camera) -- its backdrop follows the camera
+		end
 
 		if cardShown then
 			return
@@ -1418,6 +1656,10 @@ local function play(catch, egg: BasePart)
 	ContextActionService:UnbindAction(SKIP_ACTION)
 
 	-- The text goes at once, the screen fades to white, holds, then fades into the player's base.
+	if hud.closeCard then
+		hud.closeCard()
+		hud.closeCard = nil
+	end
 	hud.final.Visible = false
 	hud.top.Visible = false
 	hud.letters.Visible = false
@@ -1438,6 +1680,9 @@ local function play(catch, egg: BasePart)
 	end
 	if dust then
 		dust.destroy()
+	end
+	if show then
+		show.destroy()
 	end
 	if drama then
 		drama.destroy()
@@ -1482,6 +1727,12 @@ function RevealController.play(catch, egg: BasePart)
 		ContextActionService:UnbindAction(SKIP_ACTION)
 		if hud.fieldOfView then
 			workspace.CurrentCamera.FieldOfView = hud.fieldOfView
+		end
+		RevealShowcase.cleanUp()
+		RevealFinalCard.cleanUp()
+		if hud.closeCard then
+			pcall(hud.closeCard)
+			hud.closeCard = nil
 		end
 		for _, name in { "RevealDino", "RevealDust" } do
 			local leftover = workspace:FindFirstChild(name)

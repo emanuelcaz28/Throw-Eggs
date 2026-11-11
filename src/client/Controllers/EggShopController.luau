@@ -10,6 +10,7 @@ local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Hub = require(ReplicatedStorage.Shared.Config.Hub)
+local Sfx = require(script.Parent.Sfx)
 local Stall = require(ReplicatedStorage.Shared.Stall)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
 
@@ -146,6 +147,8 @@ function EggShopController.start()
 				end
 			elseif (player:GetAttribute("Cash") or 0) >= egg.price then
 				remotes.EggAction:FireServer("buy", egg.id)
+			else
+				Sfx.play("error") -- can't afford it yet
 			end
 		end)
 	end

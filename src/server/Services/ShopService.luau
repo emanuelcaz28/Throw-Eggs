@@ -4,6 +4,7 @@
 -- before saying so. That way a purchase is never lost or given twice.
 local MarketplaceService = game:GetService("MarketplaceService")
 local PolicyService = game:GetService("PolicyService")
+local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,6 +12,7 @@ local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Gifts = require(ReplicatedStorage.Shared.Gifts)
+local RemoteGuard = require(script.Parent.RemoteGuard)
 local Analytics = require(script.Parent.Analytics)
 local IndexService = require(script.Parent.IndexService)
 local LuckBoosts = require(ReplicatedStorage.Shared.LuckBoosts)
@@ -455,16 +457,103 @@ local function onProductPromptFinished(userId: number, productId: number, purcha
 	end
 end
 
+-- A Game Pass "purchased" report comes from the player's own device, so a cheat tool can fake it: before, a faked
+-- report gave the x2 passes and Gloomfin for free. Now the server asks Roblox whether the player really owns the pass.
+-- Roblox can take a little while to say yes after a real purchase, so it asks again for a while (Config/Shop
+-- passConfirm). A real buyer shouldn't wait for that: the x2 boosts switch on at once, once per pass per visit, and are
+-- taken back if Roblox never confirms. A pass's monster is saved for good, so it only comes once Roblox confirms.
+local confirmingPass: { [Player]: { [number]: boolean } } = {}
+local triedPass: { [Player]: { [number]: boolean } } = {}
+
+local function passAttributeFor(passId: number): string?
+	if passId == Shop.doubleCash.passId then
+		return "HasDoubleCash"
+	elseif passId == Shop.doubleTraining.passId then
+		return "HasDoubleTraining"
+	elseif passId == Shop.doublePower.passId then
+		return "HasDoublePower"
+	end
+	return nil
+end
+
+local function isOurPass(passId: number): boolean
+	if passAttributeFor(passId) then
+		return true
+	end
+	for _, special in Specials do
+		if special.passId == passId then
+			return true
+		end
+	end
+	return false
+end
+
+local function confirmPass(player: Player, passId: number): boolean
+	if RunService:IsStudio() then
+		return true -- a Studio test purchase is never really owned
+	end
+	for attempt = 1, Shop.passConfirm.attempts do
+		local ok, owns = pcall(function()
+			return MarketplaceService:UserOwnsGamePassAsync(player.UserId, passId)
+		end)
+		if ok and owns then
+			return true
+		end
+		if not player.Parent then
+			return false
+		end
+		if attempt < Shop.passConfirm.attempts then
+			task.wait(Shop.passConfirm.every)
+		end
+	end
+	return false
+end
+
 local function onPassPurchased(player: Player, passId: number, purchased: boolean)
 	Analytics.purchasePromptClosed(player, passId, Enum.InfoType.GamePass, purchased)
-	if purchased and passId ~= 0 and not table.find(Shop.ignorePassesFor, player.UserId) then
+	if not purchased or passId == 0 or not isOurPass(passId) or table.find(Shop.ignorePassesFor, player.UserId) then
+		return
+	end
+	confirmingPass[player] = confirmingPass[player] or {}
+	triedPass[player] = triedPass[player] or {}
+	if confirmingPass[player][passId] then
+		return
+	end
+	confirmingPass[player][passId] = true
+
+	-- The boost on at once, the first time this visit, if it wasn't on already (owned or gifted).
+	local attribute = passAttributeFor(passId)
+	local lent = attribute ~= nil and not triedPass[player][passId] and player:GetAttribute(attribute) ~= true
+	triedPass[player][passId] = true
+	if lent then
+		setPassAttribute(player, passId)
+	end
+
+	local owned = confirmPass(player, passId)
+	if confirmingPass[player] then
+		confirmingPass[player][passId] = nil
+	end
+	if not player.Parent then
+		return
+	end
+	if owned then
 		setPassAttribute(player, passId)
 		for _, special in Specials do
 			if passId == special.passId then
 				ShopService.giveSpecial(player, special)
 			end
 		end
+		return
 	end
+	warn(`[ShopService] {player.Name}: pass {passId} was reported bought but Roblox doesn't show it as owned`)
+	if lent and attribute then
+		player:SetAttribute(attribute, nil)
+		local data = PlayerData.get(player)
+		if data then
+			restoreGifted(player, data) -- a gifted copy of the pass stays on
+		end
+	end
+	PlotService.notify(player, "We couldn't confirm that purchase yet. If you bought it, rejoin and it will be there.", true)
 end
 
 local function onClaimStarter(player: Player)
@@ -526,12 +615,14 @@ function ShopService.start()
 	MarketplaceService.ProcessReceipt = ShopService.processReceipt
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(onPassPurchased)
 	MarketplaceService.PromptProductPurchaseFinished:Connect(onProductPromptFinished)
-	remotes.ClaimStarter.OnServerEvent:Connect(onClaimStarter)
-	remotes.Gift.OnServerEvent:Connect(onGift)
-	remotes.BuyRandom.OnServerEvent:Connect(onBuyRandom)
+	RemoteGuard.connect(remotes.ClaimStarter, onClaimStarter, 3, 6)
+	RemoteGuard.connect(remotes.Gift, onGift, 3, 6)
+	RemoteGuard.connect(remotes.BuyRandom, onBuyRandom, 3, 6)
 	Players.PlayerRemoving:Connect(function(player)
 		pendingGifts[player] = nil
 		policyAllowed[player] = nil
+		confirmingPass[player] = nil
+		triedPass[player] = nil
 	end)
 	PlayerData.onLoaded(onLoaded)
 	task.spawn(function()

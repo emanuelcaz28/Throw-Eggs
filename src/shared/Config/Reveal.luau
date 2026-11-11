@@ -67,13 +67,15 @@ return {
 	-- walk's eyelids stay down (a narrower, meaner look).
 	drama = {
 		levels = {
-			{ oneIn = 1000, scale = 2.2, dim = 0.8, hush = 0.6, minClimb = 9, boom = 0.6, lids = 0.09 },
-			{ oneIn = 1000000, scale = 3.2, dim = 0.68, hush = 0.9, minClimb = 13, boom = 0.8, lids = 0.12 },
-			{ oneIn = 100000000, scale = 5, dim = 0.56, hush = 1.3, minClimb = 16, boom = 1, lids = 0.15 },
+			-- [Owner, 2026-11-11: "make sure that monsters are visible"] dim was 0.8, 0.68, 0.56, shadow 0.45 and hushDim
+			-- 0.3: together they left under a third of the light on the rarest catches, and the feet could hardly be seen.
+			{ oneIn = 1000, scale = 2.2, dim = 0.88, hush = 0.6, minClimb = 9, boom = 0.6, lids = 0.09 },
+			{ oneIn = 1000000, scale = 3.2, dim = 0.8, hush = 0.9, minClimb = 13, boom = 0.8, lids = 0.12 },
+			{ oneIn = 100000000, scale = 5, dim = 0.72, hush = 1.3, minClimb = 16, boom = 1, lids = 0.15 },
 		},
 		darkenTime = 2.5, -- slowly, over the first steps of the walk
-		shadow = 0.45, -- how far the monster's colours sink towards black until the unveil, on top of the world's dimming
-		hushDim = 0.3, -- how much light is left while the world holds its breath
+		shadow = 0.2, -- how far the monster's colours sink towards black until the unveil, on top of the world's dimming
+		hushDim = 0.45, -- how much light is left while the world holds its breath
 		letterPower = 3, -- the name's letters hold back: they fill in at progress ^ this
 		heartSpeed = { 0.8, 1.7 }, -- the heartbeat's speed from the walk to the last number
 		heartVolume = 0.7,
@@ -227,6 +229,267 @@ return {
 		thickest = 0.5, -- how see-through it starts (0 = solid)
 		puffs = { 12, 60 }, -- how many, from a small hit to the biggest
 	},
+	-- [Owner, 2026-11-11] THE SHOWCASE: the cinematic side of the reveal (RevealShowcase, RevealBackdrop; art drawn in Figma
+	-- "Throw Eggs - Reveal Showcase", https://www.figma.com/design/i7JF39IAKl4MzhPM4gdFyh). First asked as "multiple angles,
+	-- make the monster not move for a better shot, better effects, fill the screen with better visuals", then corrected the
+	-- same day: "the cinematic angles should happen while the numbers are going up and the luck still goes up, not after he
+	-- gets revealed", and no texts presenting the name, size, rarity and money: "just a better visual for the final reveal".
+	-- So: while the numbers climb, each luck label that lands cuts to a close angle on a part of the monster, never its
+	-- face. At the unveil the world behind it is swapped for a drawn backdrop in its rarity's colours, so it always stands
+	-- out, and the final text lands at once. Angles in degrees, times in seconds.
+	showcase = {
+		-- Which catches get it. A catch reaches a level by its "1 in X" or its size mutation's scale, whichever is higher; a
+		-- monster caught for the first time gets at least the first level (isNew) and a Robux monster the last (special).
+		-- timedCuts: how many angles a catch with no luck labels gets (a big or new one; with labels, each label is a cut).
+		-- debris: pieces of ground hanging in the air at the unveil. cosmos: the backdrop is outer space with an eclipse.
+		-- Commoner catches get none of it.
+		levels = {
+			{ oneIn = 100, scale = 1.8, isNew = true, timedCuts = 1 },
+			{ oneIn = 10000, scale = 2.7, timedCuts = 2, debris = 26 },
+			{ oneIn = 1000000, scale = 5, special = true, timedCuts = 3, debris = 44, cosmos = true },
+		},
+		-- The monster stands still, like a statue, all through the climb (stillClimb), then comes alive at the unveil: it roars
+		-- and carries on with its own idle on the final screen [Owner, 2026-11-11: "I don't want him to stand still here",
+		-- about the final screen]. freezeAfter: seconds after the unveil it freezes again, or false to never freeze. still: it
+		-- doesn't start an attack as it's unveiled, so it roars instead.
+		-- [Owner, 2026-11-11] The camera changes angle only as a luck label slams in, with its sound: it holds that angle
+		-- until the next label or the unveil, and a catch with no luck labels gets no cuts (timedCuts is then unused).
+		labelCutsOnly = true,
+		stillClimb = true,
+		freezeAfter = false,
+		still = true,
+		-- The close angles of the climb, played in detailOrder, round again if there are more luck labels than angles. Each
+		-- frames a part of the monster: at = where its middle is {up, towards its front} and span = how much of it {across,
+		-- up, along}, as shares of the monster (0 is its middle, 0.5 its top or its nose). yaw: how far round from straight
+		-- in front the camera stands; elevation: how far above what it looks at; fill: how much of the free screen the part
+		-- fills; push: it starts this much further back and creeps in; turn: it starts this many degrees further round.
+		-- An angle that would show the monster's eyes, or put the camera inside it, is left out for that monster.
+		detailOrder = { "flank", "rear", "claw", "back" },
+		details = {
+			-- Its side: belly and legs, through a long lens.
+			flank = { time = 2.6, fieldOfView = 40, at = { -0.12, -0.14 }, span = { 0.3, 0.6, 0.4 }, yaw = 100, elevation = 1, fill = 0.95, push = 1.12, turn = 7 },
+			-- From behind, low, up its back legs and tail.
+			rear = { time = 2.6, fieldOfView = 55, at = { -0.2, -0.35 }, span = { 0.7, 0.55, 0.3 }, yaw = 158, elevation = 3, fill = 0.95, push = 1.12, turn = -8 },
+			-- Its front feet, from the other side.
+			claw = { time = 2.4, fieldOfView = 45, at = { -0.36, 0.3 }, span = { 0.6, 0.26, 0.3 }, yaw = -68, elevation = 2, fill = 0.95, push = 1.14, turn = -6 },
+			-- Its back and shoulders, from behind and above.
+			back = { time = 2.6, fieldOfView = 50, at = { 0.28, -0.05 }, span = { 0.6, 0.35, 0.6 }, yaw = -150, elevation = 26, fill = 0.95, push = 1.1, turn = 8 },
+		},
+		-- [Owner, 2026-11-11: "add transitions between the camera angles"] The camera glides to the next angle and back to
+		-- the feet, or whip-pans when a glide would pass through the monster: it swings whipAngle degrees away, blurring,
+		-- and swings in on the new angle from the other side. Times in seconds. blur: the blur at the peak of a whip
+		-- (Roblox BlurEffect size), glideBlur: the share of it a glide gets. checks: points tested along a glide's way.
+		-- whipOnly: always whip-pan.
+		transition = { glide = 0.5, glideBack = 0.65, whip = 0.38, whipAngle = 40, blur = 18, glideBlur = 0.35, checks = 8, whipOnly = false },
+		detailBottom = 0.62, -- they're framed above this share of the screen's height: the counter and the letters are below
+		detailLead = 1.4, -- a close angle ends at least this long before the last number: the unveil whips back from the feet
+		detailShortest = 1.1, -- ...and one that would be shorter than this isn't started
+		-- Each cut lands with a hit: a white flash, speed lines over the screen, an instant zoom and a camera jolt.
+		cut = { flash = 0.4, flashTime = 0.22, lines = 0.1, linesTime = 0.28, zoom = 0.9, jolt = 2.2 },
+		-- Black cinema bars at the screen's top and bottom while the numbers climb. [Owner, 2026-11-11: "I want those lines
+		-- from above to be removed"] Off; true brings them back.
+		cinemaBars = false,
+		bars = 0.085, -- each bar's share of the screen's height
+		barTime = 0.28,
+		-- The drawn backdrop behind the monster (RevealBackdrop). Set enabled to false to keep the real world behind it.
+		backdrop = {
+			enabled = false, -- [Owner, 2026-11-11: the backdrop behind the monster at the end "to be removed as well"]
+			pad = 0.12, -- it stands this share of the monster's size behind its furthest point, clear of a lashing tail
+			haze = 0.3, -- the world's haze thins to this share while it's up, or it would wash the backdrop out
+			darkBelow = 0.38, -- a monster darker than this (0 black to 1 white) gets a brighter backdrop, others a darker one
+			keyLight = 1.1, -- ...and a white light of this brightness from the camera, so its shape shows too
+			spin = 5, -- degrees a second the sunburst turns
+			flicker = 14, -- times a second the speed lines jump
+			streakSpeed = 0.9, -- screen heights a second the streaks fly sideways
+			starDrift = 0.012, -- screen heights a second the stars drift
+			images = { -- uploaded from assets/reveal/, white on see-through, tinted in the game
+				sunburst = "rbxassetid://71335050499467",
+				speedLines = "rbxassetid://77103256642553",
+				halftone = "rbxassetid://73008576912279",
+				glow = "rbxassetid://71295354462826",
+				corona = "rbxassetid://76741715438887",
+				stars = "rbxassetid://117559592495396",
+				streaks = "rbxassetid://138216328051858",
+			},
+		},
+		-- Pieces of the ground burst up round the feet at the unveil and hang in the air, hardly moving, while the camera
+		-- moves round them. Sizes are shares of the monster's height or width (the bigger).
+		debris = {
+			size = { 0.012, 0.035 },
+			smallest = 0.35, -- studs
+			speed = { 0.35, 0.95 }, -- how fast they fly up, in monster heights a second
+			fly = 0.28, -- seconds at full speed...
+			slowTo = 0.035, -- ...then time slows to this
+			slowTime = 0.25,
+			color = Color3.fromRGB(120, 112, 100), -- when the ground under the monster can't be found
+		},
+		dustSlow = 0.25, -- the dust thrown up at the unveil hangs too: its time runs this slow
+	},
+
+	-- [Owner, 2026-11-11: "I want the numbers to have more life at the final screen reveal, for bigger numbers, you can do
+	-- effects on those numbers and change their colors and doing some crazy stuff"] The "1 in X" on the final screen
+	-- (RevealOdds). Lists have one value per luck label, LUCKY! to IMPOSSIBLE!. Sizes in design pixels, times in seconds.
+	oddsFx = {
+		-- [Owner, 2026-11-11, second look] Only the number moves ("1 in" stays plain) and nothing zooms in and out.
+		stagger = 0.05, -- the digits drop in one after the other, this far apart...
+		drop = 26, -- ...from this many pixels up...
+		dropTurn = { 0, 0 }, -- ...this many degrees slanted at most (LUCKY! to IMPOSSIBLE!; 6 to 30 until 2026-11-11: it looked messy)...
+		dropTime = 0.45, -- ...landing with a bounce in this long
+		spacing = 2, -- pixels between characters
+		-- The digits roll like a slot machine, then lock left to right with a tick, over this long (0 = no roll).
+		roll = { 0, 0.7, 0.9, 1.1, 1.3, 1.6 },
+		rollStart = 0.2,
+		lockKick = 9, -- each digit kicks up this many pixels as it locks...
+		lockKickTime = 0.22, -- ...and falls back in this long
+		-- How the colour moves: "fixed" in the luck label's colour, "shift" drifting round it by `drift` of the colour
+		-- wheel, "rainbow" running through every colour at `rainbowSpeed` turns a second.
+		colors = { "fixed", "fixed", "shift", "shift", "rainbow", "rainbow" },
+		drift = 0.07,
+		rainbowSpeed = 0.35,
+		shineEvery = 1.6, -- a white shine sweeps across this often...
+		shineTime = 0.55, -- ...taking this long
+		-- [Owner, 2026-11-11: the wobbling looked "weird"; he wants it visually better, not busier] Once landed the digits
+		-- stay still: no wave, shake or hops, and fewer sparkles.
+		wave = { 0, 0, 0, 0, 0, 0 }, -- pixels the digits rise and fall in a wave...
+		waveSpeed = 5, -- ...this fast...
+		wavePhase = 0.55, -- ...each this far behind the one before
+		glow = { 0, 2, 3, 3, 4, 4 }, -- how wide the thin glow round them is (0 = none)...
+		glowRate = 1.1, -- ...breaths a second...
+		glowFrom = 0.65, -- ...from this see-through...
+		glowTo = 0.9, -- ...to this
+		jitter = { 0, 0, 0, 0, 0, 0 }, -- degrees each digit shakes...
+		hop = { 0, 0, 0, 0, 0, 0 }, -- ...and pixels it hops...
+		shakeEvery = 0.07, -- ...a fresh nudge this often
+		sparkles = { 0, 0, 0, 0, 2, 2 }, -- sparkles twinkling either side of the number...
+		sparkleSize = { 10, 20 }, -- ...pixels across at their biggest
+	},
+
+
+	-- [Owner, 2026-11-11: "I also want a change in these other texts and how they're positioned. I don't feel amazed"] The
+	-- final text, laid out like a fighter's entrance (RevealFinalCard): the name on a slash bottom left with the rarity word
+	-- above and stickers below, the luck bottom right. Design pixels (a 1280 x 720 screen), measured up from the card's
+	-- bottom edge, which sits `bottom` above the screen's; times in seconds.
+	finalCard = {
+		-- [Owner, 2026-11-11, fourth look: "it's hard to distinguish what's the name of the monster... it looks like I got the
+		-- 'secret amethyst monster' instead of 'death knell'. The name should be above him. The rarity tags the same design
+		-- the game uses. The 3D space is oriented too much on the sides. The text for what type of luck I got should be more
+		-- crazy."] Panels standing in the world in front of the camera: the title over the monster's head, the luck along
+		-- the bottom, the money under its feet. Design pixels on a 1280 x 720 screen, measured from the screen's bottom left;
+		-- angles in degrees, times in seconds.
+		depth = 3, -- studs in front of the camera the panels stand
+		margin = 8, -- from the screen's top edge
+		titlePitch = 9, -- the title's top leans towards the lens, looming over the monster
+		luckPitch = -9, -- the bottom panels' tops lean away, as if lying before its feet
+		slamFrom = 0.45, -- the title and the shout fly in from this share of the way nearer the lens...
+		slamTime = 0.35, -- ...in this long, landing with a bounce
+		sway = 1.5, -- then everything sways this many degrees...
+		swayRate = 0.7, -- ...this fast
+		titleAt = 0, -- when each appears, after the unveil
+		moneyAt = 0.3,
+		shoutAt = 0.35,
+		-- For framing the monster between the texts: how high the bottom text reaches, how low a giant's feet may go, and
+		-- how much of the top the title takes (the name and the row under it).
+		frameTop = 215, -- the luck block: number line + shout line (195 when they stood side by side)
+		frameFeet = 150,
+		frameHead = 166,
+		extrudeX = 0.6, -- solid letters step this far sideways for each pixel down
+		shineEvery = 2.8, -- a white shine crosses the big words this often...
+		shineTime = 0.6, -- ...taking this long
+		glintSize = { 12, 26 },
+		rowGlintSize = { 7, 13 }, -- smaller round the mutation in the row, so they don't cover its letters
+		-- A soft dark band behind the title and one along the bottom behind the luck, so the text reads over any monster.
+		shade = 0.5, -- how see-through at its darkest (0 = solid black)
+		titleShade = Vector2.new(2600, 300),
+		luckShade = Vector2.new(2600, 330),
+		pad = 10,
+		gap = 4,
+		-- TITLE: the NAME, then the row saying what it is (rarity, mutation, size, NEW!).
+		titleSize = Vector2.new(940, 210),
+		headGap = 4, -- its bottom this far over the monster's head...
+		titleLowest = 0.5, -- ...but never lower than this share of the screen's height
+		nameSize = 80, -- the headline; a long name shrinks to fit
+		nameDepth = 8,
+		nameStroke = 6,
+		nameAt = 0.05,
+		rowHeight = 54,
+		rowGap = 16,
+		rowAt = 0.3,
+		raritySize = 40, -- the game's rarity label (RarityLabel)
+		stickerSize = 22,
+		mutationSize = 44,
+		mutationDepth = 6,
+		mutationStroke = 4,
+		mutationCaption = 15,
+		messageSize = 20,
+		messageRow = 28,
+		-- The SIZE word: solid letters like the mutation's, with "SIZE" small beside it. By size id (Config/Catch sizes):
+		-- colors: its face, top to bottom; side: the solid part; depth: how thick; rumble: degrees it trembles in bursts;
+		-- glow: a pulsing aura. Bigger sizes run hotter and thicker.
+		sizeWordSize = 36,
+		sizeWordStroke = 4,
+		sizes = {
+			default = { colors = { "#ffffff", "#ffe9b8", "#f2b24a" }, side = "#6b4310", depth = 4 },
+			Thicc = { colors = { "#ffffff", "#fff0c4", "#ffcf5c" }, side = "#7a5200", depth = 4 },
+			AbsoluteUnit = { colors = { "#fff6dc", "#ffc861", "#ff9a1f" }, side = "#7a3d00", depth = 5 },
+			Chonker = { colors = { "#fff0d6", "#ffa64d", "#ff6a1f" }, side = "#7a2a00", depth = 6 },
+			MegaChonk = { colors = { "#ffe6d6", "#ff7a4d", "#f0321f" }, side = "#6b0f08", depth = 7, rumble = 1.5 },
+			PlanetSized = { colors = { "#f2fbff", "#7fe0ff", "#3a7dff", "#5a3ad6" }, side = "#1a1a66", depth = 8, rumble = 2 },
+			UnitOfDoom = { colors = { "#ffd0c2", "#ff3d2e", "#8a0010", "#2a0006" }, side = "#120003", depth = 9, rumble = 3, glow = "#ff2a1a" },
+		},
+		-- Each mutation's material. colors: its face, top to bottom; side: the solid part; facets: hard bands across it like
+		-- a cut gem; shine: a white gleam this often; glints: twinkling stars round it; glow: a dark pulsing aura; flicker:
+		-- fading in and out like a ghost; wobble: degrees it wobbles, like jelly.
+		mutations = {
+			Gold = { colors = { "#fffbe0", "#ffe36b", "#ffc21a", "#c98a0c" }, side = "#7a4d00", shine = 1.6, glints = 6 },
+			Ruby = { colors = { "#ffd6de", "#ff5c7c", "#ffd6de", "#e8264c", "#9c0020" }, side = "#5a0012", facets = true, shine = 2.2, glints = 5 },
+			Emerald = { colors = { "#d8ffe6", "#3fe07f", "#d8ffe6", "#1fb35c", "#0b6b33" }, side = "#053d1c", facets = true, shine = 2.2, glints = 5 },
+			Diamond = { colors = { "#ffffff", "#bfeeff", "#ffffff", "#7fd6ff", "#3aa4e6" }, side = "#1b5f8c", facets = true, shine = 1.4, glints = 8 },
+			Amethyst = { colors = { "#f1deff", "#b56bff", "#f1deff", "#8a3be8", "#4e1699" }, side = "#2c0b5c", facets = true, shine = 2.2, glints = 5 },
+			Bubblegum = { colors = { "#fff0fa", "#ff9ad6", "#ff5cb8" }, side = "#a3216b", wobble = 4 },
+			Shadow = { colors = { "#c9b8ff", "#6a4fd1", "#2a1a66" }, side = "#08031c", glow = "#9d6bff" },
+			Ghost = { colors = { "#ffffff", "#eef4ff", "#b8ccff" }, side = "#6f86c4", flicker = true },
+		},
+		-- LUCK: one centred block along the bottom, the shout over "1 in" and the NUMBER [Owner, 2026-11-11: side by side
+		-- they looked like two separate pieces].
+		luckBottom = 30, -- above the screen's bottom edge, clear of "tap to continue"
+		luckGap = -14, -- the shout's panel overlaps the number's by this much
+		shoutSize = Vector2.new(1100, 110),
+		-- The shout, one value per luck label from LUCKY! to IMPOSSIBLE LUCK!!!!.
+		shout = {
+			-- [Owner, 2026-11-11: letters dropping, waving, rocking and shaking one by one looked "weird"] One still line.
+			width = 820, -- a line that's wider shrinks to this
+			size = { 50, 54, 58, 62, 66, 70 }, -- its letters
+			depth = { 5, 6, 6, 7, 8, 8 }, -- how thick the solid letters are
+			stroke = 5,
+			tilt = -2, -- the whole shout leans a touch
+			rainbow = { false, false, false, false, false, true }, -- only IMPOSSIBLE's face is a rainbow, drifting along the word...
+			rainbowRate = 0.12, -- ...this many times round the colours a second
+			rays = { 0, 8, 10, 12, 16, 20 }, -- bars in the burst behind it...
+			rayLength = { 0, 120, 135, 150, 170, 190 }, -- ...this long from its middle...
+			rayWidth = 12,
+			rayStrength = 0.65, -- ...this see-through at the middle (0 = solid)...
+			raySpin = 12, -- ...turning this many degrees a second (40 until 2026-11-11)
+		},
+		numberPanel = Vector2.new(1100, 130),
+		numberSize = 84, -- the number's biggest size; a long one shrinks to fit
+		numberDepth = 10,
+		numberStroke = 6,
+		numberAt = 0.55,
+		oneInSize = 40, -- "1 in", on the number's line...
+		oneInGap = 10, -- ...this far before it
+		oneInStroke = 5,
+		-- MONEY, under the monster.
+		moneySize = Vector2.new(420, 72),
+		moneyDepth = 5,
+		moneyStroke = 5,
+		moneyBelowFeet = 6, -- its top this far under the monster's feet...
+		moneyLowest = 262, -- ...but never lower than this, clear of the luck under it...
+		moneyLowestPlain = 100, -- ...or than this on a catch with no luck label
+		hintSize = 18,
+		hintAbove = 4,
+	},
+
+
 	-- After the final tap: fade to white, hold, then fade into the player's base.
 	whiteIn = 0.3,
 	whiteHold = 0.5,
@@ -414,11 +677,13 @@ return {
 		skipTime = 0.5,
 		-- Where it ends: the monster and the egg fill the screen with margin to spare, from far enough back that
 		-- depthShare of their length is in front of the camera too, looking down from endElevation.
-		margin = 1.2, -- room over the head for its roar
+		margin = 1.45, -- room over the head for its roar and its name (1.2 until the name moved over its head, then 1.3; measured 2026-11-11: at 1.3 the head touched the name)
 		depthShare = 0.15,
 		endElevation = 4, -- low, looking up at the monster a little, so it towers and the egg shows above the text...
 		bigEndElevation = 1, -- ...and the biggest from right down on the ground, towering: no walls in the way now
-		bigFill = 0.7, -- the biggest end this much closer than a perfect fit, so they fill the screen
+		-- [Owner, 2026-11-11: "the text is covering the face of the monster... zoom out a little bit more on bigger monsters"]
+		-- 0.7 until then: a giant overflowed the frame and its head went behind the name.
+		bigFill = 1, -- the biggest end this much closer than a perfect fit (0.95 still put a giant's head 3% into the name)
 		-- They're framed in the part of the screen the final text leaves free, topGap design pixels under the top bar,
 		-- and never in less than minBand of the screen's height.
 		topGap = 12,

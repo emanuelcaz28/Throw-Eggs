@@ -14,7 +14,9 @@ local PowerLimit = require(ReplicatedStorage.Shared.Config.PowerLimit)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local CatchOdds = require(ReplicatedStorage.Shared.CatchOdds)
+local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local LuckyThrows = require(ReplicatedStorage.Shared.LuckyThrows)
+local RemoteGuard = require(script.Parent.RemoteGuard)
 local Analytics = require(script.Parent.Analytics)
 local DailyTasks = require(script.Parent.DailyTasks)
 local DinoLibrary = require(script.Parent.DinoLibrary)
@@ -182,7 +184,7 @@ local function onTap(player: Player, height: any, lucky: any)
 	remotes.Launched:FireAllClients(player, distance, Throw.isPerfect(height), egg.id)
 	FlightStreaming.follow(player, distance) -- the world loads ahead of the egg, not only round the player
 
-	task.delay(Throw.releaseDelay() + Throw.flightTime(distance), function()
+	local function land()
 		if states[player] ~= state then
 			return
 		end
@@ -237,6 +239,53 @@ local function onTap(player: Player, height: any, lucky: any)
 			reason, band = nil, nil
 		end
 
+		-- A new player's first catches (Config/Hooks starterRun): never the map's commonest, and a NEW monster while one
+		-- above them is missing from the Index. Only plain throws with no other guarantee; minRank keeps prizes out.
+		local starter = Hooks.starterRun
+		if data and not tutorial and luckyThrow == 1 and reason == nil and data.totalCaught < starter.catches then
+			local lastPlain = rarest(1)
+			local floor = math.min(starter.skipCommonest + 1, lastPlain)
+			minRank = math.max(minRank or 1, floor)
+			if starter.newFirst then
+				local missing, anyMissing = {}, false
+				for rank = minRank, lastPlain do
+					local dino = Dinos[pool][rank]
+					if not data.discovered[dino.id] then
+						missing[dino.id], anyMissing = true, true
+					end
+				end
+				if anyMissing then
+					band = { only = missing }
+				end
+			end
+		end
+
+		-- A new player's big shots (Config/Hooks bigShots): from map 2 on, after its new-world gift, the next plain throws
+		-- give a set size and colour on the rarest monster (never the map's very rarest) that stays under the income cap.
+		local shots = Hooks.bigShots
+		if data and data.bigShotsLeft == -1 then
+			data.bigShotsLeft = if data.totalCaught == 0 then #shots.shots else 0 -- only saves started after this existed
+		end
+		local bigShot = nil
+		local mapIndex = if deep then nil else table.find(Biomes, biome)
+		if data and data.bigShotsLeft > 0 and not tutorial and luckyThrow == 1 and reason ~= "newMap"
+			and mapIndex and mapIndex >= shots.fromMap
+		then
+			local dinos = Dinos[pool]
+			local shot = shots.shots[#shots.shots - data.bigShotsLeft + 1]
+			local cap = shots.incomeCap * dinos[rarest(1)].income
+			local pickRank = 1 -- the map's commonest if nothing fits (it always does with these numbers)
+			for rank = #dinos - 1, 1, -1 do -- rarest first, never the map's very rarest
+				local stats = DinoStats.describe({ id = dinos[rank].id, mutation = shot.mutation, size = shot.size })
+				if stats and stats.income <= cap then
+					pickRank = rank
+					break
+				end
+			end
+			bigShot = { rank = pickRank, size = shot.size, mutation = shot.mutation }
+			minRank, reason, band = nil, nil, nil
+		end
+
 		-- The big number is what players see; the roll counts luck from the biome's par (Luck.forRoll).
 		local rollLuck = Luck.forRoll(distance, egg.luckBonus) * timedLuck * luckyThrow
 		-- A lucky throw is a guaranteed hit (Config/Catch luckyHits). The luck shown leaves its x out [Owner, 2026-11-06].
@@ -244,6 +293,7 @@ local function onTap(player: Player, height: any, lucky: any)
 		local depth = if deep then DeepEnd.depthAt(reach) else 0
 		local catch = if tutorial and tutorial.kind == "first"
 			then TutorialService.plainCatch(pool, tutorial.rank)
+			elseif bigShot then DinoRoll.fixedCatch(pool, bigShot.rank, bigShot.mutation, bigShot.size)
 			else DinoRoll.rollCatch(pool, rollLuck, minRank, data and data.recentCatches, hit, DeepEnd.boostAt(reach), band)
 		catch.luck = Luck.at(distance) * Luck.eggFactor(egg.luckBonus, distance) * timedLuck
 		-- The surprise gift is never told to the client: it must look like a lucky catch [Owner, 2026-11-08].
@@ -255,6 +305,9 @@ local function onTap(player: Player, height: any, lucky: any)
 			-- plain throw. Throws on maps without the gift don't count.
 			data.throwsSinceGift = if reason == "gift" then 0 elseif giftMap then data.throwsSinceGift + 1 else data.throwsSinceGift
 			data.recentCatches = { catch.id, data.recentCatches[1] }
+			if bigShot then
+				data.bigShotsLeft -= 1
+			end
 			data.farthestThrow = math.max(data.farthestThrow, math.floor(reach))
 			if depth > data.deepestDepth then
 				data.deepestDepth = depth
@@ -323,6 +376,19 @@ local function onTap(player: Player, height: any, lucky: any)
 				end
 			end
 		end
+	end
+	-- If anything in the landing breaks, the player isn't left "in flight" for the rest of their visit: they can throw
+	-- again, and their screen stops waiting for the catch.
+	task.delay(Throw.releaseDelay() + Throw.flightTime(distance), function()
+		local ok, problem = xpcall(land, debug.traceback)
+		if not ok then
+			warn(`[ThrowService] {player.Name}: the landing failed: {problem}`)
+			if states[player] == state and state.phase == "flying" then
+				state.phase = "idle"
+				FlightStreaming.stop(player)
+				remotes.MeterCancel:FireClient(player)
+			end
+		end
 	end)
 end
 
@@ -385,9 +451,9 @@ function ThrowService.start()
 	makeRemotes()
 	buildLane()
 
-	remotes.Tap.OnServerEvent:Connect(onTap)
-	remotes.RevealDone.OnServerEvent:Connect(onRevealDone)
-	remotes.MeterDeclined.OnServerEvent:Connect(ThrowService.leaveMeter)
+	RemoteGuard.connect(remotes.Tap, onTap)
+	RemoteGuard.connect(remotes.RevealDone, onRevealDone)
+	RemoteGuard.connect(remotes.MeterDeclined, ThrowService.leaveMeter)
 	Players.PlayerAdded:Connect(addPlayer)
 	Players.PlayerRemoving:Connect(function(player)
 		states[player] = nil
