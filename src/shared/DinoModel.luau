@@ -69,8 +69,13 @@ function DinoModel.need(dinoIds: { string })
 	if not remote then
 		return -- an old server without DinoLibrary: everything is already in ReplicatedStorage
 	end
-	local ok = pcall(remote.InvokeServer, remote, missing)
-	if not ok then
+	local ok, accepted = pcall(remote.InvokeServer, remote, missing)
+	if not ok or accepted ~= true then
+		-- Turned down (too many asks at once) or failed: forget asking, so the next look asks again instead of these
+		-- monsters staying block models for the rest of the session.
+		for _, dinoId in missing do
+			asked[dinoId] = nil
+		end
 		return
 	end
 	local folder = Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild(DinoModel.TEMPLATE_GUI, ASK_WAIT)

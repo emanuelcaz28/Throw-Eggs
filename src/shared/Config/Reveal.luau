@@ -458,7 +458,7 @@ return {
 		shout = {
 			-- [Owner, 2026-11-11: letters dropping, waving, rocking and shaking one by one looked "weird"] One still line.
 			width = 820, -- a line that's wider shrinks to this
-			size = { 50, 54, 58, 62, 66, 70 }, -- its letters
+			size = { 46, 50, 53, 56, 60, 64 }, -- its letters [Owner, 2026-11-11: a bit smaller, it covered the money]
 			depth = { 5, 6, 6, 7, 8, 8 }, -- how thick the solid letters are
 			stroke = 5,
 			tilt = -2, -- the whole shout leans a touch
@@ -483,7 +483,9 @@ return {
 		moneyDepth = 5,
 		moneyStroke = 5,
 		moneyBelowFeet = 6, -- its top this far under the monster's feet...
-		moneyLowest = 262, -- ...but never lower than this, clear of the luck under it...
+		-- ...but its top never lower than this, so its whole height (moneySize.Y) clears the shout's top (luckBottom +
+		-- numberPanel.Y + luckGap + shoutSize.Y = 256) [Owner, 2026-11-11: GODLY LUCK covered the $/s; this was 262]...
+		moneyLowest = 336,
 		moneyLowestPlain = 100, -- ...or than this on a catch with no luck label
 		hintSize = 18,
 		hintAbove = 4,

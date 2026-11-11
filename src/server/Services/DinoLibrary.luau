@@ -37,7 +37,8 @@ local function folderOf(player: Player): ScreenGui?
 end
 
 -- Sends these monsters' models to the player, once each. Unknown ids (block-model monsters) are skipped.
-function DinoLibrary.give(player: Player, dinoIds: { string })
+-- spread: one model a frame (yields). Copying a whole Index page's eight at once cost the server ~12 ms in one frame.
+function DinoLibrary.give(player: Player, dinoIds: { string }, spread: boolean?)
 	if not library then
 		return
 	end
@@ -47,12 +48,23 @@ function DinoLibrary.give(player: Player, dinoIds: { string })
 	end
 	local sent = given[player] or {}
 	given[player] = sent
+	local copied = false
 	for _, dinoId in dinoIds do
 		if not sent[dinoId] then
-			sent[dinoId] = true
 			local template = library:FindFirstChild(`dino_{dinoId}`)
+			if template and spread and copied then
+				task.wait()
+				if not player.Parent or not folder.Parent then
+					return -- left, or the folder went: what wasn't sent can be asked for again
+				end
+			end
+			if sent[dinoId] then
+				continue -- another request sent it while this one waited
+			end
+			sent[dinoId] = true
 			if template then
 				template:Clone().Parent = folder
+				copied = true
 			end
 		end
 	end
@@ -70,7 +82,7 @@ local function onAsk(player: Player, dinoIds: any): boolean
 			table.insert(ids, dinoId)
 		end
 	end
-	DinoLibrary.give(player, ids)
+	DinoLibrary.give(player, ids, true)
 	return true
 end
 

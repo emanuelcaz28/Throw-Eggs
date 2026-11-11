@@ -128,7 +128,7 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
 ## Differentiators (things the reference doesn't have)
 
 - Steer the egg mid-flight (tap left/right) to hit boost rings / dodge obstacles.
-- Biome completion reward: x2 training XP for 15 minutes (no cash or luck from the Index).
+- Biome completion reward: x2 training XP for 15 minutes, collected by hand in the Index (no cash or luck from the Index).
 - Server-wide announcement for catches rarer than 1 in 1M.
 - Timed events (e.g. "Meteor Shower": 2x mutation chance for 10 min).
 
@@ -147,9 +147,11 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
 4. Reveal sequence (hangman letters + climbing "1 in X"). Spend real time here.
 5. Plot holding 8 dinos placed freely + $/s income, fenced, with capacity upgrades at its sign (`Config/Plot`).
 6. Egg Shop with one egg per map (15). (Buy any egg you can afford; each multiplies distance luck, counted against the egg made for the map it lands in, `Luck.forRoll`. Numbers live in `Config/Eggs`.)
-7. Index: one scrolling list of every map, its picture on a card at the panel's left edge and its monsters beside it in
-   rows of four, sorted by rarity, COMMON to MYTHIC (the boss), on real-model tiles (only maps near the screen hold live
-   models); it opens at your farthest map; completing a biome gives x2 training XP for 15 minutes (`Config/Index`).
+7. Index (v4, 2026-11-11): one map per page with its picture as the background; the selected monster on a pedestal
+   playing its idle, with name, rarity and odds; the map's 8 monsters as still cards; scroll (wheel or swipe) to change
+   map, ALL MAPS for a grid of every world; the Throw Power each map needs, and a lock on maps out of reach; a red dot
+   on the HUD button when a reward waits; completing a map lets you press its 2x TRAINING XP button (an egg cracks
+   open) for x2 training XP for 15 minutes (`Config/Index`, `IndexService` claim).
 8. Robux shop: x2 Cash, x2 Training, Server Luck x2, four cash packs (10 min to 30 h of the plot's $/s
    without events, each with a minimum), four Throw Power packs (+100 to +10,000 power, saved on top of the
    training level) and a free starter dino (`Config/Shop`).

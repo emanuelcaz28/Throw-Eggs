@@ -483,7 +483,8 @@ heads sit too low to hide.
 - **[Built]** The roll is decided on landing. The counter is suspense only.
 - **[Built]** Labels escalate: LUCKY! → SUPER LUCKY! → INSANE! → LEGENDARY! → GODLY!
 - **[Built]** Very rare catches get a light beam and a "YOU CAUGHT!" banner on the base (1 in 1K to 10K; rarer ones
-  get the lucky catch banner instead). Tapping skips ahead.
+  get the lucky catch banner instead). Tapping skips ahead. [Owner, 2026-11-11] The "YOU CAUGHT" banner looks like a
+  smaller lucky catch banner (shared code, `CatchBannerLook`), with the monster where the clover is, not a dark box.
 - **[Built]** The text follows mock-ups 15 to 16b: white dashes that fill with letters at the bottom centre, then the
   final moment and the final text with no panel (tier sticker on lucky catches, size and mutation, name in its rarity
   colour, NEW! on a first catch, $/s, the "1 in X" on lucky catches, tap to continue), then white for half a second.
@@ -1790,7 +1791,31 @@ the next size and its level.
   bigger, JACKPOT!). Boosts, packs and passes are card grids; the free starter monster idles on a pedestal. Effects only
   run while the panel is open (`DinoLifeController.showcase`).
 - **Not built yet:** more special monsters.
-- **Index [Built], [Owner, 2026-11-06]:** the tabs below are replaced. "Scrollable like it was in the very first version",
+- **Index [Built], [Owner, 2026-11-11]: a total redesign** (Figma "Throw Eggs - Index & Inventory", Index v4, row at
+  y=9000; `IndexController`). It replaces the scrolling list below.
+  - **One map fills the panel**, its picture as the background. Left: one monster with nothing behind or under it [Owner], the real model
+    playing its idle (**only the selected monster moves**; the cards are still), with its name, rarity and "1 in X"
+    written straight over the picture (no box, no "caught", no earnings). Right: the map's 8 monsters as cards; tap one
+    to put it on the pedestal. An uncaught one is a black shape named "???".
+  - **Scrolling changes map:** the mouse wheel, or a swipe up or down on a phone; the next map slides in and the
+    picture fades. A thin bar on the right shows where you are. **ALL MAPS** opens a grid of the 15 worlds (picture,
+    found bar, lock with "Needs N Power", red dot) to jump to one. It opens on a map with a reward waiting, else on a
+    new farthest map, else where you left it.
+  - **Throw Power per map:** a green pill under the name, "400 POWER NEEDED" (the map's start distance: a PERFECT throw
+    flies as far as your power; Forest says "NO POWER NEEDED"). A map you can't reach is darker with a lock, "TOO FAR
+    TO REACH" and a bar of your power against what it needs. No other helper text [Owner].
+  - **The reward is collected by hand:** under the cards is a plain **2x TRAINING XP** button. Grey until every monster
+    of the map is found; then green with a red dot. Pressing it cracks an egg open (`Config/Index` `rewardEgg`) and
+    starts the boost (`IndexRemotes.Claim`, checked on the server, once per map, saved in `indexClaimed`); after that
+    it is grey with a tick. Finishing a map only shouts "COMPLETE! Reward waiting in the Index". Maps finished before
+    this was built already gave their boost, so they start collected.
+  - **Red dot:** on the HUD's Index button with the number of rewards waiting, on ALL MAPS, on that map in the grid
+    and on its button.
+  - Rejected on the way [Owner]: a strip of map numbers under the header, a found-eggs row, "MAP 2 OF 15", "you have N
+    power", a boxed monster card, an egg-shaped reward card, a "COMPLETE!" ribbon on the reward.
+  - The background uses the card pictures stretched (`mapPictures`); taller shots can be set per map in
+    `Config/Index` `mapBackdrops`.
+- **Index, 2026-11-06 (replaced):** the tabs below are replaced. "Scrollable like it was in the very first version",
   with real map pictures, and "the maps to show on the left edge", ready for 8 monsters a map. Figma Index v2: one
   scrolling list; each map's in-game picture on a card flush with the panel's left edge (number, name, found bar, the XP
   reward) and its monsters beside it in rows of four. It opens at your farthest map. Only maps near the screen hold live
@@ -1803,7 +1828,8 @@ the next size and its level.
   its "1 in X" and its name; unseen ones are black silhouettes named "???" with their rarity and odds still shown.
   The total found sits in the header, the map's reward under its monsters. It opens on the farthest map you've
   found anything in. **[Owner, 2026-11-06]** Completing a world gives only
-  x2 training XP for 15 minutes (`Config/Index` xpBoost; shown in the boost row at the bottom): no cash or luck from the Index.
+  x2 training XP for 15 minutes (`Config/Index` xpBoost; shown in the boost row at the bottom): no cash or luck from the Index. **[Owner, 2026-11-11]** It is
+  collected by hand in the Index, not given the moment the world is completed.
 - **Timed events [Built], [Owner, 2026-11-05]:** every 15 minutes one starts and runs 5 minutes, taking turns:
   Double Luck (2x luck) and Ghost Rush (GHOST 10x likelier) (`Config/Events`, from the server clock, the same on
   every server). A shout when one starts and an icon at the bottom right with the time left; hover (PC) or tap

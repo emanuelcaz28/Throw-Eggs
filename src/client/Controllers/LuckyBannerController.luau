@@ -1,7 +1,8 @@
 -- The lucky catch banner (mock-ups 12 and 12b in design/ui-mockups/build.py): when anyone in the
 -- server catches something rare, a big banner drops in at the top centre for everyone, even while
 -- training. A clover overlaps its left side, a sticker with the luck tier sits on the top right,
--- and the panel takes the tier's colour.
+-- and the panel takes the tier's colour. The look is CatchBannerLook's, shared with your own smaller
+-- "YOU CAUGHT" banner.
 --
 -- One banner at a time; a rarer catch waiting in line goes first. Banners wait while your own
 -- egg flies and your own reveal plays, and your own catch is queued once its reveal is over. The banner
@@ -17,6 +18,7 @@ local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
+local CatchBannerLook = require(script.Parent.CatchBannerLook)
 local RevealController = require(script.Parent.RevealController)
 local ThrowCinematic = require(script.Parent.ThrowCinematic)
 
@@ -25,11 +27,7 @@ local settings = Reveal.luckyBanner
 
 local LuckyBannerController = {}
 
--- Design pixels, from the mock-up.
-local WIDTH, HEIGHT = 880, 196
-local PANEL_LEFT, PANEL_TOP, PANEL_HEIGHT = 78, 30, 150
-local CLOVER_SIZE = 176
-local RAINBOW_SECONDS = 4 -- one full turn of the GODLY panel's rainbow
+local HEIGHT = CatchBannerLook.HEIGHT
 
 local hud = nil
 local queue = {}
@@ -45,39 +43,6 @@ local function tween(instance: Instance, time: number, goal, style: Enum.EasingS
 	return created
 end
 
-local function tierFor(oneIn: number)
-	local current = nil
-	for _, tier in Reveal.tiers do
-		if oneIn >= tier.minOneIn then
-			current = tier
-		end
-	end
-	return current
-end
-
--- A ColorSequence through any number of hex colours, evenly spaced.
-local function sequence(colors: { string }): ColorSequence
-	local points = {}
-	for index, hex in colors do
-		table.insert(points, ColorSequenceKeypoint.new((index - 1) / (#colors - 1), Color3.fromHex(hex)))
-	end
-	return ColorSequence.new(points)
-end
-
--- One centred line of outlined text that shrinks if a long name wouldn't fit.
-local function line(parent: Instance, size: number, order: number, stroke: number?): TextLabel
-	local label = UiKit.text(parent, "", size)
-	label.LayoutOrder = order
-	label.TextScaled = true
-	local limit = Instance.new("UITextSizeConstraint")
-	limit.MaxTextSize = size
-	limit.Parent = label
-	if stroke then
-		label:FindFirstChildOfClass("UIStroke").Thickness = stroke
-	end
-	return label
-end
-
 local function buildGui()
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "LuckyBannerHud"
@@ -87,72 +52,14 @@ local function buildGui()
 	gui.DisplayOrder = 9 -- over the HUD and panels, under the reveal
 	gui.Parent = player:WaitForChild("PlayerGui")
 
-	local banner = Instance.new("Frame")
-	banner.Name = "LuckyBanner"
-	banner.AnchorPoint = Vector2.new(0.5, 0)
-	banner.Size = UDim2.fromOffset(WIDTH, HEIGHT)
-	banner.BackgroundTransparency = 1
-	banner.Visible = false
-	banner.Parent = gui
-	local scale = Instance.new("UIScale")
-	scale.Scale = UiKit.scale()
-	scale.Parent = banner
-
-	local panel = Instance.new("Frame")
-	panel.Name = "Panel"
-	panel.Position = UDim2.fromOffset(PANEL_LEFT, PANEL_TOP)
-	panel.Size = UDim2.fromOffset(WIDTH - 96, PANEL_HEIGHT)
-	panel.ClipsDescendants = true
-	panel.Parent = banner
-	local panelGradient = UiKit.gradient(panel, { "#ffffff", "#ffffff" })
-	UiKit.corner(panel, 32)
-	UiKit.stroke(panel, 6)
-	-- The glossy diagonal stripes on the right, as on the panel headers.
-	for i = 0, 4 do
-		local stripe = Instance.new("Frame")
-		stripe.BackgroundColor3 = Color3.new(1, 1, 1)
-		stripe.BackgroundTransparency = 0.78
-		stripe.BorderSizePixel = 0
-		stripe.Rotation = 25
-		stripe.Position = UDim2.new(0.66, i * 52, 0, -50)
-		stripe.Size = UDim2.fromOffset(26, PANEL_HEIGHT + 100)
-		stripe.Parent = panel
-	end
-
-	-- Three centred lines, nudged right of the clover.
-	local lines = Instance.new("Frame")
-	lines.BackgroundTransparency = 1
-	lines.Position = UDim2.fromOffset(64 + 24, 0)
-	lines.Size = UDim2.new(1, -64 - 48, 1, 0)
-	lines.ZIndex = 2
-	lines.Parent = panel
-	local layout = Instance.new("UIListLayout")
-	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.VerticalAlignment = Enum.VerticalAlignment.Center
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Padding = UDim.new(0, 0)
-	layout.Parent = lines
-	local who = line(lines, 28, 1)
-	local what = line(lines, 37, 2, 6)
-	local odds = line(lines, 40, 3)
-
-	local clover = UiKit.art(banner, "clover", "clover", {
-		position = UDim2.fromOffset(0, 4),
-		size = UDim2.fromOffset(CLOVER_SIZE, CLOVER_SIZE),
+	local parts = CatchBannerLook.build(gui, "LuckyBanner", UiKit.scale())
+	local clover = UiKit.art(parts.banner, "clover", "clover", {
+		position = parts.artPosition,
+		size = UDim2.fromOffset(CatchBannerLook.ART_SIZE, CatchBannerLook.ART_SIZE),
 	})
 	clover.ZIndex = 3
-
-	return {
-		banner = banner,
-		scale = scale,
-		panelGradient = panelGradient,
-		who = who,
-		what = what,
-		odds = odds,
-		clover = clover,
-		cloverModel = clover:FindFirstChildOfClass("Model"),
-		sticker = nil,
-	}
+	parts.cloverModel = clover:FindFirstChildOfClass("Model")
+	return parts
 end
 
 -- The catch line: size, mutation, then the dino, e.g. "HUGE DIAMOND SPINOSAURUS".
@@ -190,32 +97,14 @@ local function spinClover()
 end
 
 local function show(announcement)
-	local tier = tierFor(announcement.oneIn) or Reveal.tiers[#Reveal.tiers]
-
-	hud.who.Text = `{announcement.player} CAUGHT`
-	hud.what.Text = catchName(announcement)
-	hud.what.TextColor3 = Color3.fromHex(UiKit.RARITY_TEXT[UiKit.rarityOf(announcement.id)])
-	hud.odds.Text = `1 in {Format.short(announcement.oneIn)}`
-
-	local rainbow = #tier.panel > 2
-	hud.panelGradient.Color = sequence(tier.panel)
-	hud.panelGradient.Rotation = if rainbow then 10 else 90
-
-	if hud.sticker then
-		hud.sticker:Destroy()
-	end
-	local sticker = UiKit.tag(hud.banner, tier.sticker.label, tier.sticker.colors, 26, 7)
-	sticker.AnchorPoint = Vector2.new(1, 0)
-	sticker.Position = UDim2.new(1, 10, 0, 0)
-	sticker.ZIndex = 4
-	hud.sticker = sticker
-
-	local rainbowSpin = nil
-	if rainbow then
-		rainbowSpin = RunService.RenderStepped:Connect(function()
-			hud.panelGradient.Rotation = 10 + (os.clock() % RAINBOW_SECONDS) / RAINBOW_SECONDS * 360
-		end)
-	end
+	local stopRainbow = CatchBannerLook.paint(
+		hud,
+		`{announcement.player} CAUGHT`,
+		catchName(announcement),
+		announcement.id,
+		`1 in {Format.short(announcement.oneIn)}`,
+		announcement.oneIn
+	)
 
 	local hidden = UDim2.new(0.5, 0, 0, -(HEIGHT + 20) * hud.scale.Scale)
 	hud.banner.Position = hidden
@@ -233,9 +122,7 @@ local function show(announcement)
 	end
 	tween(hud.banner, settings.leaveTime, { Position = hidden }, Enum.EasingStyle.Quad, Enum.EasingDirection.In).Completed:Wait()
 	hud.banner.Visible = false
-	if rainbowSpin then
-		rainbowSpin:Disconnect()
-	end
+	stopRainbow()
 	return cut
 end
 

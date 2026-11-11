@@ -82,9 +82,10 @@ def frame(m):
         m.block("Wood", 0, 0.45, z, 17.8, 0.9, 0.9)
     for x in (-8.45, 8.45):
         for z in (2.45, 18.75):
-            m.block("Trim", x, 0.5, z, 1.15, 1.0, 1.15)
+            m.block("Trim", x, 0.5, z, 1.15, 1.1, 1.15)  # a touch deeper than the frame, so their backs don't flicker
     # The header plaque, gold bands top and bottom, with marquee bulbs along them.
-    m.block("Header", 0, 0.2, 21.45, 18.6, 1.4, 4.3)
+    # Its front stands 0.1 proud of the posts' fronts (y 0.9): level with them, the two flickered [Owner, 2026-11-11].
+    m.block("Header", 0, 0.3, 21.45, 18.6, 1.4, 4.3)
     m.block("HeaderDark", 0, -0.25, 21.45, 18.9, 1.0, 4.6)
     for z in (19.3, 23.6):
         m.block("Trim", 0, 0.25, z, 19.2, 1.7, 0.55)
@@ -116,15 +117,16 @@ def paw(m):
 def cash(m):
     """TOP MONEY: a stack of three bills and a gold coin."""
     z = MEDAL_Z
+    # Every layer's front is at least 0.04 from any other's, or they flicker [Owner, 2026-11-11].
     for i in range(3):
         x, dz = -0.35 + 0.3 * i, -0.55 + 0.42 * i
-        y = FACE_Y + 0.05 + 0.1 * i
-        m.block("IconDark", x, y - 0.02, z + dz, 3.0, 0.16, 1.45)
-        m.block("Icon", x, y + 0.04, z + dz, 2.8, 0.12, 1.25)
-        m.block("IconDark", x, y + 0.11, z + dz, 1.9, 0.04, 0.75)
-        disc(m, "IconLight", x, z + dz, 0.3, y + 0.1, y + 0.16, 10)
-    disc(m, "Trim", 1.15, z - 1.0, 0.62, FACE_Y + 0.25, FACE_Y + 0.5, 12)
-    disc(m, "TrimDark", 1.15, z - 1.0, 0.4, FACE_Y + 0.5, FACE_Y + 0.56, 12)
+        y = FACE_Y + 0.05 + 0.2 * i
+        m.block("IconDark", x, y - 0.02, z + dz, 3.0, 0.16, 1.45)  # front y + 0.06
+        m.block("Icon", x, y + 0.04, z + dz, 2.8, 0.12, 1.25)  # front y + 0.10
+        m.block("IconDark", x, y + 0.12, z + dz, 1.9, 0.04, 0.75)  # front y + 0.14
+        disc(m, "IconLight", x, z + dz, 0.3, y + 0.12, y + 0.2, 10)  # front y + 0.20, under the next bill's y + 0.26
+    disc(m, "Trim", 1.15, z - 1.0, 0.62, FACE_Y + 0.45, FACE_Y + 0.8, 12)
+    disc(m, "TrimDark", 1.15, z - 1.0, 0.4, FACE_Y + 0.8, FACE_Y + 0.86, 12)
 
 
 def clover(m):
@@ -142,8 +144,9 @@ def clover(m):
         vein_a, vein_b = out * 0.5, out * 1.05
         beam(m, "IconDark", (vein_a.x, FACE_Y + 0.17, z + vein_a.y), (vein_b.x, FACE_Y + 0.17, z + vein_b.y), 0.1, 0.05)
     disc(m, "IconDark", 0, z, 0.24, FACE_Y + 0.1, FACE_Y + 0.2, 10)
-    beam(m, "IconDark", (0.1, FACE_Y + 0.05, z - 0.3), (0.55, FACE_Y + 0.05, z - 1.25), 0.26, 0.2, 0.2)  # the stem
-    beam(m, "IconDark", (0.55, FACE_Y + 0.05, z - 1.25), (1.05, FACE_Y + 0.05, z - 1.6), 0.2, 0.2, 0.16)
+    # The stem, its front 0.05 proud of the leaves' (FACE_Y + 0.15): level with them, they flickered.
+    beam(m, "IconDark", (0.1, FACE_Y + 0.1, z - 0.3), (0.55, FACE_Y + 0.1, z - 1.25), 0.26, 0.2, 0.2)
+    beam(m, "IconDark", (0.55, FACE_Y + 0.1, z - 1.25), (1.05, FACE_Y + 0.1, z - 1.6), 0.2, 0.2, 0.16)
 
 
 ICONS = {"MostDinos": paw, "TopMoney": cash, "LuckiestCatch": clover}

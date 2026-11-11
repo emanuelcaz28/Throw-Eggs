@@ -203,6 +203,13 @@ function Throw.farthestLanding(): number
 	return Biomes[#Biomes].endDist - 100
 end
 
+-- Where luck is counted for a throw that would go `reach` studs. The egg itself stops at farthestLanding, just short of the
+-- end wall, but luck counts the real reach up to the last world's far end, so the strongest throw gets the full 50x
+-- [Owner, 2026-11-11: max power showed 49.7x].
+function Throw.luckDistance(reach: number): number
+	return math.min(reach, Biomes[#Biomes].endDist)
+end
+
 -- Seconds from the tap until the egg leaves the hand.
 function Throw.releaseDelay(): number
 	return Throw.windup.holdAfterTap + Throw.windup.releaseInClip

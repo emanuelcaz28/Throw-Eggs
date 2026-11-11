@@ -53,6 +53,8 @@ return {
 		bigShotsLeft = -1, -- big shots not used yet (Config/Hooks bigShots); -1 = not decided: a save with nothing caught gets them all, an older one none
 		recentCatches = {}, -- ids of the last 2 monsters caught by throwing, newest first; less likely to come again (Config/Catch pick)
 		xpBoostEndsAt = 0, -- os.time() when the x2 XP from completing a world in the Index runs out (Config/Index)
+		indexClaimed = {}, -- worlds whose x2 XP has been collected in the Index, by biome id
+		indexClaimsStarted = false, -- set once a save from before hand-collected rewards has had its finished worlds marked collected
 		luckyThrows = {}, -- lucky throws owned, count by multiplier as text ("100" = 2); LuckyThrows
 		luckDealBought = false, -- the one-time R$ 3 Luck x100 deal has been used
 		specialsGiven = {}, -- special monsters already given for their Game Pass, by id (Config/Specials)

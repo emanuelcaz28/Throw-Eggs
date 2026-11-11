@@ -620,7 +620,7 @@ function ThrowController.start()
 	end)
 
 	-- A throw from the tap to the end of its reveal, on the thrower's screen and everyone else's.
-	local function playThrow(thrower: Player, distance: number, perfect: boolean, eggId: string)
+	local function playThrow(thrower: Player, distance: number, perfect: boolean, eggId: string, luckDistance: number?)
 		local isMine = thrower == player
 		local lane = Throw.lane
 		local flight = Throw.flight
@@ -628,7 +628,9 @@ function ThrowController.start()
 		local arc = math.min(distance * flight.arcPerStud, flight.maxArc)
 		local eggConfig = DinoStats.findOption(Eggs, eggId) or Eggs[1]
 		-- The egg's share of the luck shown, against the egg made for the world it lands in (Luck.eggFactor).
-		local eggLuck = Luck.eggFactor(eggConfig.luckBonus, distance)
+		-- Luck counts the real reach, which can be a little past where the egg stops (Throw.luckDistance).
+		local luckStretch = (luckDistance or distance) / math.max(distance, 1)
+		local eggLuck = Luck.eggFactor(eggConfig.luckBonus, luckDistance or distance)
 		local egg = if isMine and heldEgg then heldEgg else makeEgg(eggConfig)
 		egg.Color = eggConfig.color
 		EggModel.dress(egg, eggConfig.id) -- the server's egg, should it differ from the one in the hand
@@ -700,7 +702,7 @@ function ThrowController.start()
 			egg.CFrame = CFrame.new(position) * tumble * heldTurn
 			if isMine and cameraFrom then
 				camera.CFrame = ThrowCinematic.flightCamera(cameraFrom, position, elapsed, duration)
-				local luck = Luck.at(travelled) * eggLuck * boughtLuck() -- a lucky throw's x isn't shown [Owner, 2026-11-06]
+				local luck = Luck.at(travelled * luckStretch) * eggLuck * boughtLuck() -- a lucky throw's x isn't shown [Owner, 2026-11-06]
 				hud.luckPanel.set(luck, Luck.biomeAt(travelled))
 				if travelled >= Throw.lastDoorAt and not burstThrough then
 					burstThrough = true

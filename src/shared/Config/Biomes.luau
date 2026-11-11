@@ -5,7 +5,7 @@
 -- standardScale = how big this biome's monsters are with no size mutation, against the first biome's.
 -- It grows slowly to 1.35x at map 7 (The Abyss) and stays there for every later map [Owner, 2026-11-09: was up to 2x
 -- at map 15, which made late Units of Doom 20x].
-return {
+local Biomes = {
 	{ id = "Forest",  name = "Forest",       startDist = 0,    endDist = 400,  luck = 3, standardScale = 1,   color = Color3.fromRGB(96, 158, 84) },
 	{ id = "Desert",   name = "Desert",       startDist = 400,  endDist = 900,  luck = 5, standardScale = 1.05, color = Color3.fromRGB(196, 170, 104) },
 	{ id = "Swamp",       name = "Swamp",        startDist = 900,  endDist = 1500, luck = 7, standardScale = 1.1, color = Color3.fromRGB(74, 104, 82) },
@@ -22,5 +22,15 @@ return {
 	{ id = "SporeHollow", name = "Spore Hollow", startDist = 13000, endDist = 14700, luck = 45, standardScale = 1.35, color = Color3.fromRGB(176, 236, 64) },
 	{ id = "WeepingDark", name = "The Weeping Dark", startDist = 14700, endDist = 16500, luck = 50, standardScale = 1.35, color = Color3.fromRGB(216, 228, 244) },
 	-- Not a world of its own monsters: Config/DeepEnd. rollFrom is the list in Config/Dinos its eggs roll.
-	{ id = "DeepEnd", name = "The Deep End", startDist = 16500, endDist = 18000, luck = 50, standardScale = 1.35, rollFrom = "DeepPool", color = Color3.fromRGB(150, 235, 215) },
+	-- hidden = true takes a world out of the game: not built, eggs never fly into it [Owner, 2026-11-11: hide map 16].
+	-- Set it to false to bring the world back.
+	{ id = "DeepEnd", name = "The Deep End", startDist = 16500, endDist = 18000, luck = 50, standardScale = 1.35, rollFrom = "DeepPool", color = Color3.fromRGB(150, 235, 215), hidden = true },
 }
+
+for index = #Biomes, 1, -1 do
+	if Biomes[index].hidden then
+		table.remove(Biomes, index)
+	end
+end
+
+return Biomes

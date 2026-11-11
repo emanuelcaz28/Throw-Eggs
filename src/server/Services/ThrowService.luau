@@ -181,7 +181,8 @@ local function onTap(player: Player, height: any, lucky: any)
 	if hitPerfect then
 		DailyTasks.count(player, "perfects")
 	end
-	remotes.Launched:FireAllClients(player, distance, Throw.isPerfect(height), egg.id)
+	local luckDistance = Throw.luckDistance(reach)
+	remotes.Launched:FireAllClients(player, distance, Throw.isPerfect(height), egg.id, luckDistance)
 	FlightStreaming.follow(player, distance) -- the world loads ahead of the egg, not only round the player
 
 	local function land()
@@ -287,7 +288,7 @@ local function onTap(player: Player, height: any, lucky: any)
 		end
 
 		-- The big number is what players see; the roll counts luck from the biome's par (Luck.forRoll).
-		local rollLuck = Luck.forRoll(distance, egg.luckBonus) * timedLuck * luckyThrow
+		local rollLuck = Luck.forRoll(luckDistance, egg.luckBonus) * timedLuck * luckyThrow
 		-- A lucky throw is a guaranteed hit (Config/Catch luckyHits). The luck shown leaves its x out [Owner, 2026-11-06].
 		local hit = if luckyThrow > 1 then DinoRoll.luckyHit(luckyThrow) else nil
 		local depth = if deep then DeepEnd.depthAt(reach) else 0
@@ -295,7 +296,7 @@ local function onTap(player: Player, height: any, lucky: any)
 			then TutorialService.plainCatch(pool, tutorial.rank)
 			elseif bigShot then DinoRoll.fixedCatch(pool, bigShot.rank, bigShot.mutation, bigShot.size)
 			else DinoRoll.rollCatch(pool, rollLuck, minRank, data and data.recentCatches, hit, DeepEnd.boostAt(reach), band)
-		catch.luck = Luck.at(distance) * Luck.eggFactor(egg.luckBonus, distance) * timedLuck
+		catch.luck = Luck.at(luckDistance) * Luck.eggFactor(egg.luckBonus, luckDistance) * timedLuck
 		-- The surprise gift is never told to the client: it must look like a lucky catch [Owner, 2026-11-08].
 		catch.guarantee = if reason == "gift" then nil else reason
 		if data then

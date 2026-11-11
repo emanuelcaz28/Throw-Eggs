@@ -678,7 +678,7 @@ function RevealFinalCard.show(gui: ScreenGui, scale: number, info): () -> ()
 		local lowest = if shoutPanel then look.moneyLowest else look.moneyLowestPlain
 		local feet = onScreen(info.feet) or Vector2.new(width / 2, lowest)
 		local rise = ease((t - look.moneyAt) / 0.5)
-		local spotY = math.clamp(feet.Y - look.moneyBelowFeet, lowest, height * 0.55) - (1 - rise) * 60
+		local spotY = math.clamp(feet.Y - look.moneyBelowFeet, lowest, math.max(height * 0.55, lowest)) - (1 - rise) * 60
 		placePanel(money, camera, scale, Vector2.new(math.clamp(feet.X, width * 0.35, width * 0.65), spotY), sway * 0.5, look.luckPitch * 0.6, 0)
 		money.surface.Enabled = t >= look.moneyAt
 		for _, effect in effects do

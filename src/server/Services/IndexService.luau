@@ -1,6 +1,8 @@
--- The Dino Index: which dinos a player has ever caught, and the timed XP boost for completing a world.
+-- The Dino Index: which dinos a player has ever caught, and the timed XP boost for completing a world, which the
+-- player collects by hand in the Index [Owner, 2026-11-11] (the 2x TRAINING XP button, IndexController).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Index = require(ReplicatedStorage.Shared.Config.Index)
 local PlayerData = require(script.Parent.PlayerData)
@@ -8,6 +10,7 @@ local PlayerData = require(script.Parent.PlayerData)
 local IndexService = {}
 
 local changedRemote: RemoteEvent
+local claimRemote: RemoteEvent
 
 local function biomeComplete(data, biomeId: string): boolean
 	local dinos = Dinos[biomeId]
@@ -32,8 +35,9 @@ function IndexService.hasCaughtIn(data, biomeId: string): boolean
 	return false
 end
 
+-- The client gets what's been found and which worlds' rewards have been collected.
 local function publish(player: Player, data)
-	changedRemote:FireClient(player, data.discovered)
+	changedRemote:FireClient(player, data.discovered, data.indexClaimed)
 end
 
 -- Records a catch. Returns whether it's new, and the name of the biome it completed, if any.
@@ -44,13 +48,31 @@ function IndexService.discover(player: Player, dinoId: string, biome): (boolean,
 	end
 	data.discovered[dinoId] = true
 	publish(player, data)
-	if not biomeComplete(data, biome.id) then
+	-- A completed world's x2 XP isn't given here: it waits in the Index until the player collects it (claim below).
+	if not biomeComplete(data, biome.id) or data.indexClaimed[biome.id] then
 		return true, nil
 	end
-	-- The world's x2 XP (Config/Index xpBoost), added to any that's still running.
+	return true, biome.name
+end
+
+-- The player pressed a completed world's 2x TRAINING XP button: its boost (Config/Index xpBoost) starts now, added to
+-- any that's still running. Once per world.
+local function claim(player: Player, biomeId: unknown)
+	local data = PlayerData.get(player)
+	if not data or typeof(biomeId) ~= "string" or data.indexClaimed[biomeId] or not biomeComplete(data, biomeId) then
+		return
+	end
+	local isWorld = false -- Dinos has lists that aren't a world's own (The Deep End's pool): only real worlds pay
+	for _, biome in Biomes do
+		isWorld = isWorld or biome.id == biomeId
+	end
+	if not isWorld then
+		return
+	end
+	data.indexClaimed[biomeId] = true
 	data.xpBoostEndsAt = math.max(data.xpBoostEndsAt, os.time()) + Index.xpBoost.seconds
 	IndexService.publishXpBoost(player, data)
-	return true, biome.name
+	publish(player, data)
 end
 
 -- Training XP multiplier from completing a world, while it runs.
@@ -69,6 +91,15 @@ local function onLoaded(player: Player, data)
 	for _, entry in data.dinos do
 		data.discovered[entry.id] = true
 	end
+	-- Saves from before rewards were collected by hand: the worlds they had already completed gave their boost then.
+	if not data.indexClaimsStarted then
+		data.indexClaimsStarted = true
+		for _, biome in Biomes do
+			if biomeComplete(data, biome.id) then
+				data.indexClaimed[biome.id] = true
+			end
+		end
+	end
 	publish(player, data)
 	IndexService.publishXpBoost(player, data)
 end
@@ -79,6 +110,10 @@ function IndexService.start()
 	changedRemote = Instance.new("RemoteEvent")
 	changedRemote.Name = "IndexChanged"
 	changedRemote.Parent = folder
+	claimRemote = Instance.new("RemoteEvent")
+	claimRemote.Name = "Claim"
+	claimRemote.Parent = folder
+	claimRemote.OnServerEvent:Connect(claim)
 	folder.Parent = ReplicatedStorage
 	PlayerData.onLoaded(onLoaded)
 end

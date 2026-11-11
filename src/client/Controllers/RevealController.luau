@@ -16,7 +16,6 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
-local Index = require(ReplicatedStorage.Shared.Config.Index)
 local Reveal = require(ReplicatedStorage.Shared.Config.Reveal)
 local DinoLifeController = require(script.Parent.DinoLifeController)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
@@ -27,6 +26,7 @@ local RevealDrama = require(script.Parent.RevealDrama)
 local RevealDust = require(script.Parent.RevealDust)
 local RevealOpening = require(script.Parent.RevealOpening)
 local Sfx = require(script.Parent.Sfx)
+local CatchBannerLook = require(script.Parent.CatchBannerLook)
 local RevealFinalCard = require(script.Parent.RevealFinalCard)
 local RevealRays = require(script.Parent.RevealRays)
 local RevealShowcase = require(script.Parent.RevealShowcase)
@@ -45,7 +45,7 @@ local LETTER_POP = 1.3 -- a letter lands this big and settles back to normal siz
 local LETTER_SIZE = 64
 local LABEL_WIGGLE = 3 -- degrees the luck label rocks either way
 local NEW_COLORS = { "#ffc14d", "#ff7a2f" }
-local BANNER_HEIGHT = 132
+local BANNER_SHRINK = 0.62 -- the "YOU CAUGHT" banner next to the lucky catch banner
 local STICKER_ROW = 84
 local LUCK_ABOVE_BOTTOM = 150 -- design pixels from the screen's bottom to the luck label and counter, clear of the letters
 local LUCK_ROW = 60 -- design pixels: the settled luck label's row, above the number
@@ -677,42 +677,19 @@ local function buildGui()
 	})
 	washFade.Parent = wash
 
-	-- Back on the plot, very rare catches keep a "YOU CAUGHT!" banner up for a while.
-	local banner = Instance.new("Frame")
-	banner.Name = "CaughtBanner"
-	banner.AnchorPoint = Vector2.new(0.5, 0)
-	banner.Size = UDim2.fromOffset(660, BANNER_HEIGHT)
-	banner.BackgroundColor3 = UiKit.PANEL
-	banner.Visible = false
-	banner.Parent = gui
-	UiKit.corner(banner, 28)
-	UiKit.stroke(banner, 5)
-	addScale(banner, scale)
-	local bannerEdge = Instance.new("Frame")
-	bannerEdge.BackgroundTransparency = 1
-	bannerEdge.Position = UDim2.fromOffset(4, 4)
-	bannerEdge.Size = UDim2.new(1, -8, 1, -8)
-	bannerEdge.Parent = banner
-	UiKit.corner(bannerEdge, 24)
-	UiKit.stroke(bannerEdge, 4, UiKit.PANEL_EDGE)
-	local bannerTile = Instance.new("Frame")
-	bannerTile.BackgroundTransparency = 1
-	bannerTile.Position = UDim2.fromOffset(16, 16)
-	bannerTile.Size = UDim2.fromOffset(100, 100)
-	bannerTile.Parent = banner
-	local caught = UiKit.text(banner, "YOU CAUGHT!", 22, UiKit.GOLD, Enum.TextXAlignment.Left)
-	caught.Position = UDim2.fromOffset(132, 12)
-	caught.Size = UDim2.new(1, -148, 0, 28)
-	local bannerName = UiKit.text(banner, "", 30, nil, Enum.TextXAlignment.Left)
-	bannerName.Position = UDim2.fromOffset(132, 40)
-	bannerName.Size = UDim2.new(1, -148, 0, 38)
-	bannerName.TextScaled = true
-	local bannerNameLimit = Instance.new("UITextSizeConstraint")
-	bannerNameLimit.MaxTextSize = 30
-	bannerNameLimit.Parent = bannerName
-	local bannerOdds = UiKit.text(banner, "", 26, UiKit.GOLD, Enum.TextXAlignment.Left)
-	bannerOdds.Position = UDim2.fromOffset(132, 82)
-	bannerOdds.Size = UDim2.new(1, -148, 0, 36)
+	-- Back on the plot, very rare catches keep a "YOU CAUGHT" banner up for a while: the lucky catch banner's look,
+	-- smaller (a little less small on phones, so the words stay readable), with the monster where its clover is.
+	local caughtBanner = CatchBannerLook.build(gui, "CaughtBanner", math.min(scale, math.max(scale * BANNER_SHRINK, 0.4)))
+	local bannerArt = Instance.new("Frame")
+	bannerArt.Name = "Monster"
+	bannerArt.BackgroundTransparency = 1
+	-- A bit bigger than the clover's square, round the same centre: a long monster fills less of a square.
+	local artSize = CatchBannerLook.ART_SIZE * 1.3
+	local grow = (artSize - CatchBannerLook.ART_SIZE) / 2
+	bannerArt.Position = caughtBanner.artPosition - UDim2.fromOffset(grow, grow)
+	bannerArt.Size = UDim2.fromOffset(artSize, artSize)
+	bannerArt.ZIndex = 3
+	bannerArt.Parent = caughtBanner.banner
 
 	local flash = Instance.new("Frame")
 	flash.Name = "Flash"
@@ -769,10 +746,8 @@ local function buildGui()
 		sticker = nil,
 		wash = wash,
 		rays = nil,
-		banner = banner,
-		bannerTile = bannerTile,
-		bannerName = bannerName,
-		bannerOdds = bannerOdds,
+		caughtBanner = caughtBanner,
+		bannerArt = bannerArt,
 		flash = flash,
 	}
 end
@@ -1008,29 +983,32 @@ local function clearColourMoment()
 	end
 end
 
--- Slides the "YOU CAUGHT!" banner down from the top, and back up after a while.
+-- Slides the "YOU CAUGHT" banner down from the top, and back up after a while.
 local function showCaughtBanner(catch, fullName: string)
 	bannerShows += 1
 	local show = bannerShows
-	for _, child in hud.bannerTile:GetChildren() do
+	local parts = hud.caughtBanner
+	for _, child in hud.bannerArt:GetChildren() do
 		child:Destroy()
 	end
-	UiKit.dinoTile(hud.bannerTile, catch.id, catch.name, 100, 100, { mutation = catch.mutation })
-	hud.bannerName.Text = fullName
-	hud.bannerOdds.Text = `1 in {Format.commas(catch.oneIn)}`
+	local view = UiKit.monster(hud.bannerArt, catch.id, { mutation = catch.mutation })
+	view.ZIndex = 3
+	local stopRainbow = CatchBannerLook.paint(parts, "YOU CAUGHT", fullName, catch.id, `1 in {Format.commas(catch.oneIn)}`, catch.oneIn)
 
-	local hidden = UDim2.new(0.5, 0, 0, -(BANNER_HEIGHT + 20) * hud.scale)
-	hud.banner.Position = hidden
-	hud.banner.Visible = true
-	tween(hud.banner, 0.45, { Position = UDim2.new(0.5, 0, 0, hud.inset + 12) }, Enum.EasingStyle.Back)
+	local hidden = UDim2.new(0.5, 0, 0, -(CatchBannerLook.HEIGHT + 20) * parts.scale.Scale)
+	parts.banner.Position = hidden
+	parts.banner.Visible = true
+	tween(parts.banner, 0.45, { Position = UDim2.new(0.5, 0, 0, hud.inset + 6) }, Enum.EasingStyle.Back)
 	task.delay(Reveal.caughtBannerTime, function()
 		if show ~= bannerShows then
+			stopRainbow()
 			return
 		end
-		tween(hud.banner, 0.3, { Position = hidden }, Enum.EasingStyle.Quad, Enum.EasingDirection.In).Completed:Wait()
+		tween(parts.banner, 0.3, { Position = hidden }, Enum.EasingStyle.Quad, Enum.EasingDirection.In).Completed:Wait()
 		if show == bannerShows then
-			hud.banner.Visible = false
+			parts.banner.Visible = false
 		end
+		stopRainbow()
 	end)
 end
 
@@ -1099,7 +1077,7 @@ local function play(catch, egg: BasePart)
 	-- Only catches that show the counter get a luck label, sticker and odds at the end.
 	local finalTier = if showCounter then tierFor(catch.oneIn) else nil
 	local message = if catch.completedBiome
-		then `{catch.completedBiome} complete! x{Index.xpBoost.multiplier} XP for {Index.xpBoost.seconds // 60} min`
+		then `{catch.completedBiome} complete! Reward waiting in the Index`
 		elseif catch.newBest and not catch.isNew then "NEW BEST!"
 		else STORED_TEXT[catch.storedIn]
 	local finalTierIndex = if finalTier then table.find(Reveal.tiers, finalTier) else 0
