@@ -25,6 +25,13 @@ local Shop = {
 		description = "Every full bar gives double power, forever",
 		multiplier = 2,
 	},
+	-- [Owner, 2026-11-12] Leash other players and drag them round (LeashService, Config/Troll playerLeash). Pure
+	-- trolling: it earns nothing. No gift product and no Shop card yet: the Leash button offers it.
+	playerLeash = {
+		passId = 2083136270, -- "Player Leash"
+		name = "Player Leash",
+		description = "Leash other players and drag them around",
+	},
 	-- [Owner, 2026-11-05] The Prism Egg: a Developer Product bought again and again, like the reference's Rainbow Egg.
 	-- It hatches at once into one of the special monsters below (Config/Specials), rolled on the server. Roblox wants
 	-- the odds shown before buying, so the card shows these: keep them true, in %, adding up to 100.

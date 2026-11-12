@@ -25,8 +25,10 @@ local CompetitionService = require(script.Parent.CompetitionService)
 local EggService = require(script.Parent.EggService)
 local FlightStreaming = require(script.Parent.FlightStreaming)
 local IndexService = require(script.Parent.IndexService)
+local LeashService = require(script.Parent.LeashService)
 local PlayerData = require(script.Parent.PlayerData)
 local PlotService = require(script.Parent.PlotService)
+local RagdollService = require(script.Parent.RagdollService)
 local ShopService = require(script.Parent.ShopService)
 local TrainingService = require(script.Parent.TrainingService)
 local TutorialService = require(script.Parent.TutorialService)
@@ -111,7 +113,10 @@ local function isOnPad(player: Player): boolean
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	-- A ragdolled player, or one holding a leash, never counts as on the platform, so they can't start a throw
+	-- [Owner, 2026-11-12].
 	return root ~= nil and humanoid ~= nil and humanoid.Health > 0 and Throw.onPlatform(root.Position)
+		and not RagdollService.isRagdolled(player) and not LeashService.isHolding(player)
 end
 
 -- The player is home again: the catch goes onto their head, ready to place, and the next throw can start once the
@@ -295,7 +300,7 @@ local function onTap(player: Player, height: any, lucky: any)
 		local catch = if tutorial and tutorial.kind == "first"
 			then TutorialService.plainCatch(pool, tutorial.rank)
 			elseif bigShot then DinoRoll.fixedCatch(pool, bigShot.rank, bigShot.mutation, bigShot.size)
-			else DinoRoll.rollCatch(pool, rollLuck, minRank, data and data.recentCatches, hit, DeepEnd.boostAt(reach), band)
+			else DinoRoll.rollCatch(pool, rollLuck, minRank, data and data.recentCatches, hit, DeepEnd.boostAt(reach), band, player)
 		catch.luck = Luck.at(luckDistance) * Luck.eggFactor(egg.luckBonus, luckDistance) * timedLuck
 		-- The surprise gift is never told to the client: it must look like a lucky catch [Owner, 2026-11-08].
 		catch.guarantee = if reason == "gift" then nil else reason
@@ -451,6 +456,7 @@ end
 function ThrowService.start()
 	makeRemotes()
 	buildLane()
+	RagdollService.addBlocker(ThrowService.isThrowing) -- no ragdoll from the tap until the reveal is done
 
 	RemoteGuard.connect(remotes.Tap, onTap)
 	RemoteGuard.connect(remotes.RevealDone, onRevealDone)

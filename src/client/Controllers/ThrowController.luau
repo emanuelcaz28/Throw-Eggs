@@ -24,8 +24,9 @@ local PerfectMoment = require(script.Parent.PerfectMoment)
 local GameFeelJuice = require(script.Parent.GameFeelJuice)
 local MusicController = require(script.Parent.MusicController)
 local RevealSound = require(script.Parent.RevealSound)
-local Sfx = require(script.Parent.Sfx)
 local ThrowCinematic = require(script.Parent.ThrowCinematic)
+local ThrowAreaPrivacy = require(script.Parent.ThrowAreaPrivacy)
+local FlightFx = require(ReplicatedStorage.Shared.Config.FlightFx)
 
 local player = Players.LocalPlayer
 
@@ -622,6 +623,9 @@ function ThrowController.start()
 	-- A throw from the tap to the end of its reveal, on the thrower's screen and everyone else's.
 	local function playThrow(thrower: Player, distance: number, perfect: boolean, eggId: string, luckDistance: number?)
 		local isMine = thrower == player
+		if not isMine and ThrowAreaPrivacy.inArea() then
+			return -- I'm in the throwing area, where the other throwers are hidden: their egg isn't shown either
+		end
 		local lane = Throw.lane
 		local flight = Throw.flight
 		local duration = Throw.flightTime(distance)
@@ -665,10 +669,8 @@ function ThrowController.start()
 		-- The egg is in the thrower's hand until the release, then flies from exactly there in a straight line (seen
 		-- from above) to where it lands, tumbling end over end from the way the hand held it. No jump or swerve.
 		local releasedAt, cameraFrom = windUp(thrower, egg, isMine, hud, if isMine then spot else nil)
-		local stopFlightSound: (() -> ())? = nil
 		if isMine then
 			MusicController.setThrown() -- the throwing music drops lower while the egg flies
-			stopFlightSound = Sfx.loop("eggFlight", duration + 1) -- the whoosh while it's in the air
 		end
 		local heldTurn = egg.CFrame.Rotation
 		local tumbleAxis = lane.direction:Cross(Vector3.yAxis).Unit
@@ -685,6 +687,11 @@ function ThrowController.start()
 
 		local startedAt = os.clock()
 		local burstThrough = false
+		local world = Luck.biomeAt(0) -- the world the egg is over; each new one tints the streak, and on my screen rings and chimes
+		local streakTinted = not perfect -- a PERFECT throw's streak stays gold
+		if streakTinted then
+			ThrowCinematic.tintTrail(trail, world.color)
+		end
 		while true do
 			local elapsed = os.clock() - startedAt
 			local t = math.min(elapsed / duration, 1)
@@ -694,14 +701,26 @@ function ThrowController.start()
 			local height = releasedAt.Y + (landY - releasedAt.Y) * t + arc * 4 * t * (1 - t)
 			local along = releasedAt:Lerp(touchdown, share)
 			local position = Vector3.new(along.X, height, along.Z)
+			-- The camera follows only part of the rise and fall, so the arc shows on screen (Config/FlightFx arcFollow).
+			local followed = Vector3.new(along.X, height - arc * 4 * t * (1 - t) * (1 - FlightFx.arcFollow), along.Z)
 			local grow = math.clamp(t / Throw.windup.eggBlend, 0, 1)
 			local eased = grow * grow * (3 - 2 * grow)
 			egg.Size = EGG_SIZE * (Throw.windup.heldScale + (1 - Throw.windup.heldScale) * eased)
 			-- Spins with the distance covered, so it turns fastest out of the hand and slows as the egg does.
 			local tumble = CFrame.fromAxisAngle(tumbleAxis, -flight.spin * duration * share)
 			egg.CFrame = CFrame.new(position) * tumble * heldTurn
+			local over = Luck.biomeAt(travelled)
+			if over ~= world then
+				world = over
+				if streakTinted then
+					ThrowCinematic.tintTrail(trail, over.color)
+				end
+				if isMine and not over.hidden then -- The Deep End gets the door's burst instead
+					ThrowCinematic.worldGate(egg, over.color)
+				end
+			end
 			if isMine and cameraFrom then
-				camera.CFrame = ThrowCinematic.flightCamera(cameraFrom, position, elapsed, duration)
+				camera.CFrame = ThrowCinematic.flightCamera(cameraFrom, followed, elapsed, duration)
 				local luck = Luck.at(travelled * luckStretch) * eggLuck * boughtLuck() -- a lucky throw's x isn't shown [Owner, 2026-11-06]
 				hud.luckPanel.set(luck, Luck.biomeAt(travelled))
 				if travelled >= Throw.lastDoorAt and not burstThrough then
@@ -718,9 +737,6 @@ function ThrowController.start()
 		trail.Enabled = false
 		ThrowCinematic.landingEffects(Vector3.new(egg.Position.X, lane.floorY, egg.Position.Z))
 		RevealSound.eggDrop(isMine)
-		if stopFlightSound then
-			stopFlightSound()
-		end
 		if isMine then
 			MusicController.setThrowing(false) -- the egg has landed: the throwing music is cut off
 		end

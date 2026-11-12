@@ -8,6 +8,7 @@ return {
 		hideDinos = false, -- other players' dinos stay hidden: "Other bases look empty to you. Helps on slow phones."
 		powerLimitOn = false, -- eggs never fly past powerLimit (Config/PowerLimit)
 		powerLimit = 0, -- in power; 0 until the player first sets one
+		leashMe = true, -- "Let players leash me": off, and nobody can leash this player (Config/Troll playerLeash)
 	},
 	step = 5, -- the sliders move in steps of this many percent
 	-- The highest each number may be (the lowest is 0). Volumes are percent.

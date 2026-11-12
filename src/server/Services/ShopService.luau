@@ -38,8 +38,9 @@ local function makeRemotes()
 	local folder = Instance.new("Folder")
 	folder.Name = "ShopRemotes"
 	-- Gift: client asks to gift (productId, receiver's UserId). Shout: server shows a big moment (title, detail).
+	-- GiftToast: the small gift notification at the top right (title, detail; GiftToastController).
 	-- BuyRandom: client asks to buy a paid random item (productId); the server checks the policy, then prompts.
-	for _, name in { "ClaimStarter", "StarterClaimed", "Gift", "Shout", "BuyRandom" } do
+	for _, name in { "ClaimStarter", "StarterClaimed", "Gift", "Shout", "BuyRandom", "GiftToast" } do
 		local remote = Instance.new("RemoteEvent")
 		remote.Name = name
 		remote.Parent = folder
@@ -234,11 +235,8 @@ end
 local function announceGift(from: Player, to: Player, productId: number)
 	local item = Gifts.find(productId)
 	local name = if item then item.name else "a gift"
-	if productId == Shop.prismEgg.productId then
-		PlotService.notify(to, `{from.DisplayName} gifted you a {name}!`) -- the hatch has the shout
-	else
-		remotes.Shout:FireClient(to, `GIFT FROM {string.upper(from.DisplayName)}!`, name)
-	end
+	-- The small gift notification; a Prism Egg's hatch still has its own shout after it.
+	remotes.GiftToast:FireClient(to, `GIFT FROM {string.upper(from.DisplayName)}!`, name)
 	PlotService.notify(from, `Gift sent to {to.DisplayName}!`)
 end
 
@@ -303,6 +301,9 @@ local function setPassAttribute(player: Player, passId: number)
 	if passId == Shop.doublePower.passId then
 		player:SetAttribute("HasDoublePower", true)
 	end
+	if passId == Shop.playerLeash.passId then
+		player:SetAttribute("HasPlayerLeash", true)
+	end
 end
 
 -- Whether the player owns a pass, asking again if Roblox doesn't answer.
@@ -342,7 +343,7 @@ function ShopService.giveSpecial(player: Player, special)
 end
 
 local function checkOwnedPasses(player: Player)
-	for _, pass in { Shop.doubleCash, Shop.doubleTraining, Shop.doublePower } do
+	for _, pass in { Shop.doubleCash, Shop.doubleTraining, Shop.doublePower, Shop.playerLeash } do
 		if pass.passId ~= 0 and ownsPass(player, pass) then
 			setPassAttribute(player, pass.passId)
 		end
@@ -472,6 +473,8 @@ local function passAttributeFor(passId: number): string?
 		return "HasDoubleTraining"
 	elseif passId == Shop.doublePower.passId then
 		return "HasDoublePower"
+	elseif passId == Shop.playerLeash.passId then
+		return "HasPlayerLeash"
 	end
 	return nil
 end

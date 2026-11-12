@@ -362,6 +362,27 @@ function SettingsController.start()
 		end
 	end)
 
+	if require(ReplicatedStorage.Shared.Config.Troll).enabled then -- hidden with the rest of it while false
+		-- Let players leash me (Config/Troll playerLeash). On unless the player turns it off.
+		UiKit.divider(list, "Trolling", ROW_WIDTH).LayoutOrder = 60
+		local leashFrame = row(list, "🪢", 104, 61)
+		local leashLabel = title(leashFrame, "Let players leash me", 26, 290)
+		leashLabel.Size = UDim2.new(0, 290, 0, 36)
+		leashLabel.Position = UDim2.fromOffset(94, 16)
+		local leashNote = UiKit.muted(leashFrame, "Off: nobody can leash you and drag you around.", 16, Enum.TextXAlignment.Left)
+		leashNote.Position = UDim2.fromOffset(94, 54)
+		leashNote.Size = UDim2.new(0, 290, 0, 42)
+		local _, showLeash = toggle(leashFrame, SettingsState.get("leashMe") ~= false, function(on)
+			SettingsState.set("leashMe", on)
+			send("leashMe")
+		end)
+		SettingsState.changed:Connect(function(key, value)
+			if key == "leashMe" then
+				showLeash(value ~= false)
+			end
+		end)
+	end
+
 	-- Hiding follows the dinos as they appear, and the player's own plot as it's given.
 	for _, model in CollectionService:GetTagged(DinoLife.tag) do
 		task.defer(applyHidden, model)

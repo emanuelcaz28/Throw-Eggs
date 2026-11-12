@@ -409,7 +409,7 @@ local function fillChances(list: ScrollingFrame, width: number, multiplier: numb
 	local pool = biome.rollFrom or biome.id
 	local egg = DinoStats.findOption(Eggs, eggId) or Eggs[1]
 	local luck = Luck.forRoll(Throw.luckDistance(reach), egg.luckBonus) * LuckBoosts.multiplier(player, workspace:GetServerTimeNow())
-	local plain = CatchOdds.plain(pool, luck, Events.mutationBoosts(), DeepEnd.boostAt(reach))
+	local plain = CatchOdds.plain(pool, luck, Events.mutationBoosts(player), DeepEnd.boostAt(reach))
 	local lucky = CatchOdds.lucky(pool, luck, multiplier)
 	local minOneIn = CatchOdds.hitFor(multiplier) or 0
 	local order = 0

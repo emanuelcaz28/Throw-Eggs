@@ -290,6 +290,14 @@ reveal; your own catch appears once you've tapped through it. Limit and timings 
 - **[Seen]** The bars and Throw Power go away as it starts. The camera begins low, climbs high behind the item
   looking down the valley, then drops low again as it comes down.
 - **[Seen]** A thin white line trails along the floor behind the item, and white lines cross the floor at intervals.
+- **[Built, 2026-11-11] The flight made worth watching** (**[Owner]**: "something clean, actually nice";
+  `Config/FlightFx`, `ThrowCinematic`). The streak is a tapering comet with a soft glow, its tail tinted the colour of
+  the world below (PERFECT stays gold). Entering a new world, a ring in the world's colour bursts round the egg and
+  rides with it, leaving a short wake of sparks. The camera follows 65% of the egg's rise and fall, so the arc shows.
+  **[Owner, 2026-11-11]** No flight sounds wanted: a chime-per-world version was built and removed.
+- **[Built, 2026-11-12] Throwing alone** (**[Owner]**; `ThrowAreaPrivacy`): while you stand on the throw platform,
+  other players on it are hidden on your screen (bodies and names), and their throws aren't shown to you. Players
+  outside the throwing area still see everyone, throwers included. Only your screen changes.
 - **[Seen]** The luck number sits in a see-through rounded panel whose tint changes per world. Under it, a dark
   strip holds the world's name in that world's colour, with a small icon.
 - **[Seen]** Luck climbs fast and then slows right down. Half-second readings from one throw at 6883 power:
@@ -1830,6 +1838,14 @@ the next size and its level.
   found anything in. **[Owner, 2026-11-06]** Completing a world gives only
   x2 training XP for 15 minutes (`Config/Index` xpBoost; shown in the boost row at the bottom): no cash or luck from the Index. **[Owner, 2026-11-11]** It is
   collected by hand in the Index, not given the moment the world is completed.
+- **Gifts for staying [Built, not play-tested], [Owner, 2026-11-12]** (`Config/PlayGifts`; to keep a new player past
+  10 minutes): once per save, counted in minutes of play after the tutorial. A free x100 lucky throw at 8 minutes and a
+  free x500 at 20 (**[Owner, 2026-11-12]** x500, not x100), shown as a gift icon counting down in the boost row, with the gift notification when it arrives. At 5 minutes the
+  player's own first event (Double Luck, 5 minutes, only for them) starts, unless a real event is running then.
+- **Gift notification [Built], [Owner, 2026-11-12]** (Figma "Throw Eggs - Pop-up Text", `Gift Toast` 20:140;
+  `GiftToastController`): a small card at the top right for free play gifts and gifts from other players, not a big
+  shout. It slides in from the right with a small overshoot, the gift tile pops, a shine sweeps once, it stays 4 s and
+  slides out; tap closes it. Several queue, and it waits while a reveal or the tutorial is on screen.
 - **Timed events [Built], [Owner, 2026-11-05]:** every 15 minutes one starts and runs 5 minutes, taking turns:
   Double Luck (2x luck) and Ghost Rush (GHOST 10x likelier) (`Config/Events`, from the server clock, the same on
   every server). A shout when one starts and an icon at the bottom right with the time left; hover (PC) or tap

@@ -10,14 +10,14 @@ local LuckBoosts = {}
 
 export type Boost = { name: string, multiplier: number, endsAt: number, event: boolean? }
 
-function LuckBoosts.active(_player: Player, now: number): { Boost }
+function LuckBoosts.active(player: Player, now: number): { Boost }
 	local list = {}
 	local endsAt = ReplicatedStorage:GetAttribute("ServerLuckEndsAt")
 	if endsAt and endsAt > now then
 		table.insert(list, { name = "Server Luck", multiplier = Shop.serverLuck.multiplier, endsAt = endsAt })
 	end
 	-- A luck event (Config/Events). Its end is on the events' clock, so it's turned back into server time.
-	local event, eventEndsAt = Events.active()
+	local event, eventEndsAt = Events.active(player)
 	if event and event.luck then
 		table.insert(list, { name = event.name, multiplier = event.luck, endsAt = eventEndsAt - Events.now() + now, event = true })
 	end

@@ -109,6 +109,11 @@ function TutorialService.plainCatch(pool: string, rank: number)
 	return { id = dino.id, rank = rank, name = stats.name, oneIn = stats.oneIn, income = stats.income }
 end
 
+-- Whether the tutorial is over (or was never shown).
+function TutorialService.finished(data): boolean
+	return stateOf(data).step >= Tutorial.doneStep
+end
+
 -- Whether the next catch goes onto the player's head for them to place, instead of straight onto the base.
 function TutorialService.carriesCatch(data): boolean
 	return Tutorial.carryCatches and stateOf(data).throws < 2

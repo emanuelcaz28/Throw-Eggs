@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Training = require(ReplicatedStorage.Shared.Config.Training)
 local BaseKit = require(ReplicatedStorage.Shared.BaseKit)
 local RemoteGuard = require(script.Parent.RemoteGuard)
+local RagdollService = require(script.Parent.RagdollService)
 local DailyTasks = require(script.Parent.DailyTasks)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Plot = require(ReplicatedStorage.Shared.Config.Plot)
@@ -253,7 +254,7 @@ local function step(dt: number)
 			local root, humanoid = rootOf(player)
 			if training[player] and (not root or training[player] ~= plotIndex) then
 				stopTraining(player, false)
-			elseif not training[player] and root and humanoid and plotIndex then
+			elseif not training[player] and root and humanoid and plotIndex and not RagdollService.isRagdolled(player) then
 				if World.isOnPad(player, Training.rackPosition(plotIndex), rack.padRadius, rack.padHeight) then
 					startTraining(player, plotIndex, root, humanoid)
 				end

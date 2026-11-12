@@ -5,9 +5,11 @@
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
+local FlightFx = require(ReplicatedStorage.Shared.Config.FlightFx)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Throw = require(ReplicatedStorage.Shared.Config.Throw)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
@@ -103,26 +105,113 @@ function ThrowCinematic.flightCamera(from: CFrame, egg: Vector3, elapsed: number
 	return from:Lerp(CFrame.lookAt(eye, target), smooth(elapsed / settings.riseTime))
 end
 
--- The white streak behind the egg, off until the egg leaves the hand.
-function ThrowCinematic.addTrail(egg: BasePart): Trail
-	local settings = Throw.flight.trail
+local function streak(egg: BasePart, width: number): Trail
 	local top = Instance.new("Attachment")
-	top.Position = Vector3.new(0, settings.width / 2, 0)
+	top.Position = Vector3.new(0, width / 2, 0)
 	top.Parent = egg
 	local bottom = Instance.new("Attachment")
-	bottom.Position = Vector3.new(0, -settings.width / 2, 0)
+	bottom.Position = Vector3.new(0, -width / 2, 0)
 	bottom.Parent = egg
 	local trail = Instance.new("Trail")
 	trail.Attachment0 = top
 	trail.Attachment1 = bottom
-	trail.Color = ColorSequence.new(Color3.new(1, 1, 1))
-	trail.Transparency = NumberSequence.new(settings.transparency, 1)
-	trail.Lifetime = settings.lifetime
 	trail.FaceCamera = true
-	trail.LightEmission = 0.4
 	trail.Enabled = false
 	trail.Parent = egg
 	return trail
+end
+
+-- The streak behind the egg, off until the egg leaves the hand: a white comet tapering to a point (Config/FlightFx
+-- trail), with a wide soft glow round it that copies its colour and follows it on and off.
+function ThrowCinematic.addTrail(egg: BasePart): Trail
+	local settings = Throw.flight.trail
+	local look = FlightFx.trail
+	local trail = streak(egg, settings.width)
+	trail.Color = ColorSequence.new(Color3.new(1, 1, 1))
+	trail.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, settings.transparency),
+		NumberSequenceKeypoint.new(0.6, (settings.transparency + 1) / 2),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	trail.WidthScale = NumberSequence.new(1, look.taper)
+	trail.Lifetime = settings.lifetime
+	trail.LightEmission = 0.6
+	trail.Name = "Streak"
+
+	local glow = streak(egg, look.glow.width)
+	glow.Name = "StreakGlow"
+	glow.Transparency = NumberSequence.new(look.glow.transparency, 1)
+	glow.WidthScale = NumberSequence.new(1, 0.3)
+	glow.Lifetime = look.glow.lifetime
+	glow.LightEmission = 1
+	glow.Color = trail.Color
+	trail:GetPropertyChangedSignal("Color"):Connect(function()
+		glow.Color = trail.Color
+	end)
+	trail:GetPropertyChangedSignal("Enabled"):Connect(function()
+		glow.Enabled = trail.Enabled
+	end)
+	return trail
+end
+
+-- Leans the streak's tail to the colour of the world the egg is over; the head stays white.
+function ThrowCinematic.tintTrail(trail: Trail, color: Color3)
+	trail.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.new(1, 1, 1):Lerp(color, FlightFx.trail.tint))
+end
+
+-- The egg has crossed into a new world: a ring in the world's colour bursts out round it and rides along with it, and
+-- it leaves a short wake of sparks behind (Config/FlightFx gate).
+function ThrowCinematic.worldGate(egg: BasePart, color: Color3)
+	local settings = FlightFx.gate
+	local direction = Throw.lane.direction
+	-- A thin disc facing down the lane (a cylinder's round faces are on its X axis).
+	local facing = CFrame.Angles(0, math.atan2(-direction.X, -direction.Z) + math.pi / 2, 0)
+	local ring = Instance.new("Part")
+	ring.Name = "WorldGate"
+	ring.Shape = Enum.PartType.Cylinder
+	ring.Anchored = true
+	ring.CanCollide = false
+	ring.CanQuery = false
+	ring.CanTouch = false
+	ring.CastShadow = false
+	ring.Material = Enum.Material.ForceField -- glows brightest at its edge, like a ring
+	ring.Color = color:Lerp(Color3.new(1, 1, 1), 0.2)
+	ring.Transparency = settings.startTransparency
+	ring.Size = Vector3.new(0.2, 2, 2)
+
+	local sparks = Instance.new("ParticleEmitter")
+	sparks.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	sparks.Color = ColorSequence.new(Color3.new(1, 1, 1), color)
+	sparks.LightEmission = 1
+	sparks.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.4), NumberSequenceKeypoint.new(1, 0) })
+	sparks.Transparency = NumberSequence.new(0, 1)
+	sparks.Lifetime = NumberRange.new(0.35, 0.7)
+	sparks.Speed = NumberRange.new(8, 22)
+	sparks.SpreadAngle = Vector2.new(180, 180)
+	sparks.Drag = 4
+	sparks.Rate = settings.sparks / settings.sparkTime
+	sparks.Parent = ring
+
+	local function place()
+		ring.CFrame = CFrame.new(egg.Position - direction * settings.behind) * facing
+	end
+	place()
+	ring.Parent = workspace
+	local info = TweenInfo.new(settings.time, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+	TweenService:Create(ring, info, { Size = Vector3.new(0.2, settings.radius * 2, settings.radius * 2), Transparency = 1 }):Play()
+	local follow = RunService.RenderStepped:Connect(function()
+		if egg.Parent then
+			place()
+		end
+	end)
+	task.delay(settings.sparkTime, function()
+		sparks.Enabled = false
+	end)
+	task.delay(settings.time, function()
+		follow:Disconnect()
+		ring.Transparency = 1
+		Debris:AddItem(ring, 0.8) -- the last sparks fade out
+	end)
 end
 
 -- The egg bursts through the Last Door into The Deep End: the screen flashes mint-white, which also hides the camera

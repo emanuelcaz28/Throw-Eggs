@@ -30,8 +30,6 @@ return {
 		popup = { id = "rbxassetid://109791938627797", volume = 0.6, pitch = { 0.98, 1.03 } }, -- [Owner, 2026-11-10] "sound-12" (assets/sounds/popup.mp3)
 		-- Tried to buy an egg or a squat rack upgrade without enough cash.
 		error = { id = "rbxassetid://121739806488164", volume = 0.3, pitch = { 1, 1 } }, -- [Owner, 2026-11-10] "Error Sound Effect - Soundspace Sound Effects"
-		-- Loops while your own egg is in the air, from the release to the landing (ThrowController).
-		eggFlight = { id = "", volume = 0.4, pitch = { 0.97, 1.03 } }, -- ElevenLabs, assets/sounds/eggflight_loop_*.mp3
 	},
 	squatClimb = 0.35, -- the squat pop is this much higher-pitched on a nearly full bar than on an empty one
 	cashMinGap = 0.25, -- seconds: cash sounds closer together than this play once (no machine-gun on a big sale)

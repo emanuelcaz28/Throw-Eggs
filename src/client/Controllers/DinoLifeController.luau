@@ -19,6 +19,7 @@ local Config = ReplicatedStorage.Shared.Config
 local DinoLife = require(Config.DinoLife)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local Plot = require(Config.Plot)
+local Troll = require(Config.Troll)
 
 local DinoLifeController = {}
 
@@ -1574,6 +1575,8 @@ local function steerFrom(state, wanted: Vector3, distance: number, ring): Vector
 	return (wanted + side * lateral).Unit
 end
 
+local HOME_DROP = 40 -- studs a second a released monster comes down to its plot's ground
+
 local function moveAlong(state, dt: number)
 	state.turning = false
 	if state.attacking then
@@ -1627,6 +1630,11 @@ local function moveAlong(state, dt: number)
 		state.target = nil
 		state.gait = 1
 		state.idleLeft = idleTime()
+		if state.hurry then -- home after a leash: back on its plot's ground
+			state.hurry = nil
+			state.position = Vector3.new(state.position.X, state.homeY, state.position.Z)
+			placeModel(state)
+		end
 		return
 	end
 	-- Getting no closer (walled in by others): it stops. In the circle it settles where it is and turns to its owner.
@@ -1655,8 +1663,56 @@ local function moveAlong(state, dt: number)
 	local slowing = math.clamp(distance / (state.speed * DinoLife.steer.slowSeconds), DinoLife.steer.minPace, 1)
 	local pace = math.max(state.facing:Dot(wanted), 0) * slowing
 	state.gait = math.max(pace, 0.5)
+	local hurry = state.hurry
+	if hurry then
+		-- Hurrying home after a leash (release): faster, and coming down (or up) to its plot's ground as it goes.
+		pace *= hurry
+		local y = state.position.Y
+		y += math.clamp(state.homeY - y, -HOME_DROP * dt, HOME_DROP * dt)
+		state.position = Vector3.new(state.position.X, y, state.position.Z)
+	end
 	state.position += state.facing * state.speed * pace * dt
 	placeModel(state)
+end
+
+-- A leashed monster is a ragdoll: every bone hangs loose on a spring. Each one swings toward wherever "down" is
+-- for the body right now (gravity, plus being yanked, flung or stopped dead), overshoots and wobbles, so legs, tail
+-- and head trail behind a drag, splay in a tumble and droop when it lies on its side. One rule for every monster,
+-- whatever its bones (Config/Troll limp). `down` is that direction in the model's own space, about 1 long at rest;
+-- nil once it's let go, when the bones swing back to their own pose and the ragdoll fades out.
+local function flop(state, dt: number, down: Vector3?)
+	local limp = state.limp
+	local settings = Troll.limp
+	local targetX, targetZ = 0, 0
+	if down then
+		local right = if state.turned then -down.X else down.X
+		local ahead = if state.turned then down.Z else -down.Z
+		targetX = math.clamp(math.atan2(ahead, -down.Y), -settings.maxAngle, settings.maxAngle)
+		targetZ = math.clamp(-math.atan2(right, -down.Y), -settings.maxAngle, settings.maxAngle)
+		limp.weight = math.min(1, limp.weight + dt / settings.fadeIn)
+	else
+		limp.weight -= dt / settings.fadeOut
+		if limp.weight <= 0 then
+			state.limp = nil
+			return
+		end
+	end
+	local steps = math.clamp(math.ceil(dt * 60), 1, 6)
+	local h = dt / steps
+	for _, entry in state.bones do
+		local rate, reach = entry.limpRate, entry.limpReach
+		local x, z, vx, vz = entry.limpX, entry.limpZ, entry.limpVX, entry.limpVZ
+		local drag = 2 * settings.damping * rate
+		for _ = 1, steps do
+			vx += (rate * rate * (targetX * reach - x) - drag * vx) * h
+			vz += (rate * rate * (targetZ * reach - z) - drag * vz) * h
+			x += vx * h
+			z += vz * h
+		end
+		local most = settings.maxAngle * 1.3
+		entry.limpX, entry.limpZ = math.clamp(x, -most, most), math.clamp(z, -most, most)
+		entry.limpVX, entry.limpVZ = vx, vz
+	end
 end
 
 local function pose(state, dt: number)
@@ -1686,6 +1742,7 @@ local function pose(state, dt: number)
 	state.thrashClock = (state.thrashClock + dt) % 4
 	local p, t, s = state.stride, state.idleClock, state.thrashClock
 	sa = sa or s
+	local limp = state.limp
 	for _, entry in state.bones do
 		local wx, wy, wz, wb, ws = entry.walk(p)
 		local ix, iy, iz, ib, is = entry.idle(t)
@@ -1746,6 +1803,10 @@ local function pose(state, dt: number)
 				* CFrame.fromAxisAngle(entry.roll, g * ay)
 				* CFrame.fromAxisAngle(entry.yaw, g * az)
 		end
+		if limp then
+			transform *= CFrame.fromAxisAngle(entry.pitch, entry.limpX * limp.weight)
+				* CFrame.fromAxisAngle(entry.roll, entry.limpZ * limp.weight)
+		end
 		entry.bone.Transform = transform
 	end
 end
@@ -1768,7 +1829,8 @@ local function step(dt: number)
 		local inView = distance <= state.reach
 			or math.acos(math.clamp(offset:Dot(look) / distance, -1, 1)) <= halfView + math.asin(state.reach / distance)
 		local shown = state.shown
-		local skip = if shown then (if shown() then 1 else math.huge)
+		local skip = if state.held then 1 -- leashed: it follows its tumbling body every frame
+			elseif shown then (if shown() then 1 else math.huge)
 			elseif not inView and not state.mine then DinoLife.offScreenFrameSkip -- your own carried one hides on cue (ride)
 			elseif distance > DinoLife.farDistance
 			then DinoLife.farFrameSkip
@@ -1777,7 +1839,24 @@ local function step(dt: number)
 		if state.frame % skip == 0 then
 			local elapsed = state.pending
 			state.pending = 0
-			if carrier then
+			if state.held then
+				local at = state.held()
+				state.model:PivotTo(at)
+				state.position = at.Position
+				-- Which way is "down" for its loose bones: gravity, less however its body is being thrown about.
+				local limp = state.limp
+				local seconds = math.max(elapsed, 1 / 240)
+				local velocity = (at.Position - limp.last) / seconds
+				local push = (velocity - limp.velocity) / seconds
+				if push.Magnitude > Troll.limp.maxPush then
+					push = push.Unit * Troll.limp.maxPush
+				end
+				limp.last, limp.velocity = at.Position, velocity
+				flop(state, elapsed, at:VectorToObjectSpace(Vector3.new(0, -workspace.Gravity, 0) - push) / workspace.Gravity)
+			elseif state.limp then
+				flop(state, elapsed, nil) -- let go: its bones swing back
+				moveAlong(state, elapsed)
+			elseif carrier then
 				ride(state)
 			else
 				moveAlong(state, elapsed)
@@ -1785,6 +1864,85 @@ local function step(dt: number)
 			pose(state, elapsed)
 		end
 	end
+end
+
+-- The walking monster on a plot nearest a point, for the Leash button (LeashController).
+function DinoLifeController.nearest(plotIndex: number, from: Vector3): Model?
+	local best, bestDistance = nil, math.huge
+	for _, state in plotMembers[plotIndex] or {} do
+		local distance = flat(state.position - from).Magnitude
+		if not state.held and distance < bestDistance then
+			best, bestDistance = state.model, distance
+		end
+	end
+	return best
+end
+
+-- A leashed monster stops deciding where it goes: every frame it stands where `where` says, tumbling and all, and
+-- its bones go limp (flop). False if this isn't a walking plot monster.
+function DinoLifeController.hold(model: Model, where: () -> CFrame): boolean
+	local state = dinos[model]
+	if not state or not state.plotIndex or state.carrier then
+		return false
+	end
+	if not state.held then
+		state.homeY = state.position.Y
+	end
+	if not state.limp then
+		for _, entry in state.bones do
+			if not entry.limpRate then
+				-- Each bone swings at its own pace, so they never move as one. A bone that carries others (spine, neck,
+				-- thigh) only gives a little: the loose ends do the flailing.
+				local settings = Troll.limp
+				local carries = entry.bone:FindFirstChildWhichIsA("Bone") ~= nil
+				entry.limpRate = settings.rate * (0.7 + 0.6 * math.random())
+				entry.limpReach = if carries then settings.innerReach else 1
+			end
+			entry.limpX, entry.limpZ, entry.limpVX, entry.limpVZ = 0, 0, 0, 0
+		end
+		state.limp = { weight = 0, last = state.position, velocity = Vector3.zero }
+	end
+	state.held = where
+	state.target = nil
+	state.walking = false
+	state.gait = 1
+	return true
+end
+
+-- A knock: every loose bone is thrown out of place, harder the harder the hit (0 to 1), and wobbles back (flop).
+-- For a slam into the ground or a wall, and the shake as it gets up.
+function DinoLifeController.jolt(model: Model, strength: number)
+	local state = dinos[model]
+	if not state or not state.limp then
+		return
+	end
+	local kick = Troll.limp.joltAngle * strength
+	for _, entry in state.bones do
+		entry.limpVX += (math.random() * 2 - 1) * kick * entry.limpRate * entry.limpReach
+		entry.limpVZ += (math.random() * 2 - 1) * kick * entry.limpRate * entry.limpReach
+	end
+end
+
+-- Let go: it stands up where it lies, facing the way it was, and hurries back to a spot on its plot at `hurry` times
+-- its walking speed.
+function DinoLifeController.release(model: Model, hurry: number)
+	local state = dinos[model]
+	if not state or not state.held then
+		return
+	end
+	state.held = nil
+	state.walking = false
+	state.gait = 1
+	local look = flat(model:GetPivot().LookVector)
+	if look.Magnitude > 0.05 then
+		state.facing = if state.turned then -look.Unit else look.Unit
+	end
+	state.hurry = hurry
+	state.target = wanderSpot(state)
+	state.stuck = 0
+	state.closest = math.huge
+	state.pending = 0
+	placeModel(state)
 end
 
 -- A monster shown in the UI (the Shop's ViewportFrames): it plays its own idle where it stands, for ever (swimmers

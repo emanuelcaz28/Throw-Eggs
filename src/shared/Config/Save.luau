@@ -63,6 +63,9 @@ return {
 		dailyTaskDay = -1, -- the UTC day number the daily tasks below belong to (DailyTasks)
 		dailyTaskCounts = {}, -- how far each is today, by task id
 		dailyTasksDone = false, -- whether today's x2 XP has been given
+		playGiftSeconds = 0, -- seconds played since the tutorial ended, while a gift for staying is still owed (Config/PlayGifts)
+		playGiftsGiven = 0, -- how many of its free lucky throws have been given
+		firstEventDone = false, -- the player's own first event has started (or a real one was running then)
 		dailyStreak = 0, -- the last daily reward day claimed, 1 to 7 (Config/Daily)
 		dailyLastDay = -1, -- the UTC day number (os.time() // 86400) of the last daily claim
 		settings = Settings.defaults, -- music and sound effect volume, hide other players' dinos (Config/Settings)

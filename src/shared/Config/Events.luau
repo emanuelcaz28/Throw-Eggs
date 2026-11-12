@@ -37,15 +37,31 @@ local function eventOfSlot(slot: number)
 	return Events.list[slot % #Events.list + 1]
 end
 
--- The event running right now and when it ends (on Events.now's clock), or nil.
-function Events.active(): (any?, number?)
+-- A new player's own first event (Config/PlayGifts firstEvent): PlayGiftService sets these attributes on the player.
+local function ownEvent(player: Player?, now: number): (any?, number?)
+	local id = player and player:GetAttribute("FirstEventId")
+	local endsAt = player and player:GetAttribute("FirstEventEndsAt")
+	local left = if id and endsAt then endsAt - workspace:GetServerTimeNow() else 0
+	if left > 0 then
+		for _, event in Events.list do
+			if event.id == id then
+				return event, now + left
+			end
+		end
+	end
+	return nil, nil
+end
+
+-- The event running right now and when it ends (on Events.now's clock), or nil. With a player, their own first
+-- event counts too when no real one is running.
+function Events.active(player: Player?): (any?, number?)
 	local now = Events.now()
 	local slot = now // Events.every
 	local startsAt = slot * Events.every
 	if now - startsAt < Events.seconds then
 		return eventOfSlot(slot), startsAt + Events.seconds
 	end
-	return nil, nil
+	return ownEvent(player, now)
 end
 
 -- The next event to start and when it starts.
@@ -55,14 +71,14 @@ function Events.upcoming(): (any, number)
 end
 
 -- boost is "luck"; 1 when no event gives it.
-function Events.multiplier(boost: string): number
-	local event = Events.active()
+function Events.multiplier(boost: string, player: Player?): number
+	local event = Events.active(player)
 	return if event and event[boost] then event[boost] else 1
 end
 
 -- Per-mutation chance multipliers of the running event ({ Ghost = 10 }), or an empty table.
-function Events.mutationBoosts(): { [string]: number }
-	local event = Events.active()
+function Events.mutationBoosts(player: Player?): { [string]: number }
+	local event = Events.active(player)
 	return if event and event.mutations then event.mutations else {}
 end
 

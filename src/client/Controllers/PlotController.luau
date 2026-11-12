@@ -893,7 +893,7 @@ function PlotController.start()
 			clearGhost()
 			aim = nil
 			hud.hint.Visible = false
-			setHovered(if not dino and not isTraining() and UserInputService.MouseEnabled then statueAt(UserInputService:GetMouseLocation()) else nil)
+			setHovered(if not dino and not isTraining() and not player:GetAttribute("LeashArmed") and UserInputService.MouseEnabled then statueAt(UserInputService:GetMouseLocation()) else nil)
 			return
 		end
 		setHovered(nil)
@@ -931,6 +931,9 @@ function PlotController.start()
 		if gameProcessed or isTraining() then -- training: no stray equips or pick-ups (PlotService refuses them too)
 			return
 		end
+		if player:GetAttribute("LeashArmed") and input.UserInputType == Enum.UserInputType.MouseButton1 then
+			return -- the Leash is on: clicks take hold of monsters and throw them (LeashController)
+		end
 		for index, keyCode in HOTBAR_KEYS do
 			if input.KeyCode == keyCode then
 				equipSlot(index)
@@ -954,7 +957,7 @@ function PlotController.start()
 	-- nothing carried picks up the monster tapped. Phones have no hover, so the tap itself picks the spot. Touch
 	-- positions leave out the top bar, while the camera's ray needs the whole screen.
 	UserInputService.TouchTap:Connect(function(positions, gameProcessed)
-		if gameProcessed or #positions ~= 1 or isTraining() then
+		if gameProcessed or #positions ~= 1 or isTraining() or player:GetAttribute("LeashArmed") then
 			return
 		end
 		local point = positions[1] + GuiService:GetGuiInset()

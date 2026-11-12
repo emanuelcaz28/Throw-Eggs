@@ -68,7 +68,7 @@ DinoRoll.luckyHit = CatchOdds.luckyHit
 -- band: a CatchOdds filter, only monsters it lets through (the surprise gift, Config/Hooks).
 -- A lucky throw on a map with no monster as rare as its line asks gets the map's rarest word and bigger sizes
 -- (CatchOdds.luckyFilter), exactly as its Details panel shows.
-function DinoRoll.rollCatch(biomeId: string, luck: number, minRank: number?, recent: { string }?, hit, extraBoost: number?, band)
+function DinoRoll.rollCatch(biomeId: string, luck: number, minRank: number?, recent: { string }?, hit, extraBoost: number?, band, player: Player?)
 	local filter, sizeBoost = nil, nil
 	if hit then
 		local short
@@ -90,7 +90,7 @@ function DinoRoll.rollCatch(biomeId: string, luck: number, minRank: number?, rec
 		entry = { id = dino.id, mutation = mutationId, size = sizeId }
 	else
 		local luckBoost = math.max(luck, 1) ^ Catch.luckPower * (extraBoost or 1)
-		local mutation = rollExtra(Catch.mutations, luckBoost, Events.mutationBoosts())
+		local mutation = rollExtra(Catch.mutations, luckBoost, Events.mutationBoosts(player))
 		local size = rollExtra(Catch.sizes, luckBoost)
 		entry = { id = dino.id, mutation = mutation and mutation.id, size = size and size.id }
 	end

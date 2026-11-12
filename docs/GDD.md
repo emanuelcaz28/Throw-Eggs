@@ -158,6 +158,10 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
    While aiming, the luck offer sells the x100 and x500 throws, with DETAILS showing the real chances (`LuckOfferController`, `CatchOdds`). One the player owns shows a pulsing USE button; picked (ON) it makes that throw a guaranteed PERFECT, and the pick ends with the throw or Back to Plot.
 9. Timed events: one every 15 minutes for 5 minutes, taking turns: Double Luck (2x luck) and Ghost Rush (GHOST 10x
    likelier), from the server clock (`Config/Events`); an icon at the bottom right explains it on hover or tap.
+   Gifts for staying (`Config/PlayGifts`, PlayGiftService): free lucky throws at 8 and 20 minutes of play on a visible
+   countdown (gift icon in the boost row), and a new player's own first event at 5 minutes (player attributes read by
+   `Events.active(player)`). Both play gifts and gifts from players show as the small Gift Toast at the top right
+   (`GiftToastController`, remote ShopRemotes.GiftToast).
    After the last world: The Deep End behind the Last Door, with endless Depth (`Config/DeepEnd`, `docs/GAME_SPEC.md` section 9).
 10. Arena leaderboards (along the right-hand wall, seen from the platform): MOST POWER (Throw Power), TOP MONEY (money earned) and LUCKIEST CATCH (rarest
     "1 in X"), top 10 across all servers, refreshed every minute (`Config/Leaderboards`).
@@ -307,3 +311,45 @@ not to copy: chunky, bright and readable from far away.
   with the thrown item lying next to it.
 - Training: two white pillars with coloured rings and a bar, a big "LEVEL UP! Throw Power +5" over the
   player, a purple tap bubble "x2", a red STOP button and a long "Level 641 507M/1.81B" bar at the bottom.
+
+## Trolling: ragdoll (step 1 of leash + ragdoll, 2026-11-12)
+- Ragdoll button in the left column under Shop: the player goes limp with a small hop, gets up on a second press or
+  after 6 s. Nothing is earned or lost. Numbers in `Config/Troll.luau`.
+- `RagdollService` (server) decides and loosens the joints; `RagdollController` (client) lets the body fall.
+- Throw area safety: no ragdoll on or near the throw platform, during a throw/reveal, or while training; a ragdolled
+  player can't start a throw (`ThrowService.isOnPad`); an invisible wall (`ThrowAreaWall`) stops ragdolled bodies only.
+- Leash (step 2, 2026-11-12): the Leash button beside Ragdoll (shown near your plot) leashes your nearest monster.
+  It tumbles behind you on a rope for up to 10 s, flies on for a moment when let go, then stands up and hurries home.
+  It keeps earning; nothing is saved. `LeashService` (server) only decides who holds which monster (`LeashedBy`
+  attribute); `LeashController` (client) makes the rope and an invisible physics ball the monster is drawn on
+  (`DinoLifeController.hold/release`). The ball passes through players (collision groups in `RagdollService`).
+- Leash and the throw area: a holder can't start a throw, walking into the area lets the monster go, and the wall
+  keeps its body out. Going limp or training drops the rope too.
+- Anyone's monsters (step 3, 2026-11-12): the Leash button works near any plot with monsters. A monster rests 5 s
+  after its owner leashed it and 20 s after anyone else did; a player waits 3 s between leashes; a player's monsters
+  can't be leashed while that player is in the throwing area, throwing or in a reveal.
+- Player leash (step 4, 2026-11-12): with the "Player Leash" game pass (`Config/Shop` playerLeash) the Leash button
+  also leashes the nearest player within 14 studs: they go limp and are dragged on a rope for up to 6 s. Without the
+  pass the button offers it when a player is the only thing in reach. No Shop card or gift product yet.
+- Victim's protection: 20 s immune after getting up; can't be leashed at the throw, while training, limp or already
+  leashed; Settings > "Let players leash me" (on by default). A pass owner waits 15 s between players.
+- How it works: `LeashService` forces the ragdoll and names the holder on the victim's character (`LeashedBy`). Every
+  screen draws the rope; only the victim's own screen ties a real one, so the holder feels no weight. Not built yet: fling scaled by power, crumple on a slam.
+- Monster ragdoll (2026-11-12): a leashed monster's bones all go limp on springs (`DinoLifeController` flop, numbers
+  in `Config/Troll` limp): legs, tail and head trail behind a drag, splay in a tumble and droop when it lies on its
+  side. One rule for every monster, no per-monster animation.
+- Slam: when its body stops or turns hard, its bones are knocked out of place and it is stunned (harder hit, longer).
+- Throw: letting go with the button flings it the way the holder faces. Speed grows with the holder's Throw Power by
+  its number of digits, 35 to 105 studs a second (server, `LeashService` flingSpeed), so it stays on the map.
+- Getting up: it lies crumpled 0.5 to 1.9 s, heaves up with a hop, sways dizzily about a second, then hurries home.
+  A shake-off at 10 s just drops it, no fling.
+- Leash rework (2026-11-12, after the owner's grab-and-throw reference video): the Leash button is now a switch (green
+  dot = on) that stays on. While on, a click/tap on any monster at any distance takes hold of it (holder within 220
+  studs of its plot); it floats on a line where the cursor points (phones: middle of the screen), and the next click
+  throws it with the speed and direction the cursor gave it, times a Throw Power boost (1 to 1.6, capped at 160
+  studs/s). It then rolls to a stop, lies crumpled, gets up dizzy and hurries home. While the switch is on, clicks
+  don't pick monsters up (`LeashArmed`, read by `PlotController`). The holder's aim goes to the server ~10 times a
+  second (`LeashAim`) so other screens follow. Player leash (pass): click a player within 14 studs while on.
+  This replaces the earlier rope-drag and nearest-monster button described above.
+- HIDDEN (2026-11-12): all of the trolling above (ragdoll, leash, player leash, its setting) is switched off with
+  `enabled = false` at the top of `Config/Troll.luau`. Set it to true to bring it all back.

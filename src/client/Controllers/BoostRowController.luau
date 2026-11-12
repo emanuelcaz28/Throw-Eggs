@@ -257,7 +257,7 @@ local function activeBoosts()
 	local list = {}
 	local now = workspace:GetServerTimeNow()
 
-	local event, eventEndsAt = Events.active()
+	local event, eventEndsAt = Events.active(player)
 	if event and eventEndsAt then
 		local left = clock(eventEndsAt - Events.now())
 		table.insert(list, {
@@ -300,6 +300,22 @@ local function activeBoosts()
 			title = `x{multiplier} XP`,
 			what = `Every squat gives {multiplier}x XP`,
 			when = `Ends in {left}`,
+		})
+	end
+
+	-- The next free lucky throw for staying (Config/PlayGifts), counting down.
+	local giftAt, giftLuck = player:GetAttribute("PlayGiftAt"), player:GetAttribute("PlayGiftLuck")
+	if giftAt and giftLuck then
+		local left = clock(giftAt - now)
+		local look = Boosts.luckyThrows[giftLuck]
+		table.insert(list, {
+			id = `PlayGift{giftLuck}`,
+			emoji = "🎁",
+			color = if look then look.color else Boosts.serverLuck.color,
+			pill = left,
+			title = `FREE x{giftLuck} LUCKY THROW`,
+			what = "A gift for playing: one throw with huge luck",
+			when = `Yours in {left} · keep playing`,
 		})
 	end
 

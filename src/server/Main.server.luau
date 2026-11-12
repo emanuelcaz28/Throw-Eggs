@@ -6,6 +6,10 @@ require(Services.MapService).start()
 require(Services.PlayerData).start()
 require(Services.AdminService).start()
 require(Services.TutorialService).start()
+if require(game:GetService("ReplicatedStorage").Shared.Config.Troll).enabled then -- hidden while false (Config/Troll)
+	require(Services.RagdollService).start() -- before Training and Throw, which ask it who is ragdolled
+	require(Services.LeashService).start() -- after Ragdoll
+end
 require(Services.TrainingService).start()
 require(Services.IndexService).start()
 require(Services.PlotService).start()
@@ -15,6 +19,7 @@ require(Services.ShopService).start()
 require(Services.AdminCommands).start() -- after AdminService and ShopService
 require(Services.DailyService).start()
 require(Services.DailyTasks).start()
+require(Services.PlayGiftService).start()
 require(Services.LeaderboardService).start()
 require(Services.BestCatchService).start()
 require(Services.LeaderstatsService).start()

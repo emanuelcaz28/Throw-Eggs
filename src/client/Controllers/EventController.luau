@@ -2,6 +2,7 @@
 -- on the world while it runs. Its icon is in the row at the bottom (BoostRowController). The server applies the
 -- boosts itself.
 local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -22,7 +23,7 @@ function EventController.start()
 	local shownId: string? = nil
 	local joined = false -- an event already running when you join gets its icon and tint but no shout
 	RunService.Heartbeat:Connect(function()
-		local event = Events.active()
+		local event = Events.active(Players.LocalPlayer)
 		local id = if event then event.id else nil
 		if id ~= shownId then
 			shownId = id
