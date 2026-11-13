@@ -799,7 +799,7 @@ def sheet(m, role, grid, bones, thick=0.14):
     skin(m, role, verts, faces, groups)
 
 
-def beast_head(m, y, zm, length, width, height, gape=-0.7, upper="Body", lower=None, brow="Accent", eye=0.5, teeth=8, fang=1.0, socket=1.8, throat=1.0):
+def beast_head(m, y, zm, length, width, height, gape=-0.7, upper="Body", lower=None, brow="Accent", eye=0.5, teeth=8, fang=1.0, socket=1.8, throat=1.0, tooth=1.0, layer=0.04):
     """A bare head that is mostly mouth, for the Maul monsters: a wedge of skull, small slit eyes in black sockets under a brow
     slanting hard to the nose, rows of long teeth and a lower jaw hanging wide. y and zm: the back of the jaw hinge. Call it on the
     Head bone; it makes the Jaw."""
@@ -811,7 +811,7 @@ def beast_head(m, y, zm, length, width, height, gape=-0.7, upper="Body", lower=N
         look = Vector((side * 0.34, 0.93, -0.1))
         at = Vector((side * math.cos(0.72) * ew / 2 * 0.92, ey, ez + math.sin(0.72) * eh / 2 * 0.92))
         egg(m, "Socket", tuple(at), eye * socket, eye * 0.9, eye * socket * 0.7, 10, 5)
-        slit_eye(m, tuple(at + look * eye * 0.5), eye, look, side, iris="EyeColour", lid_role=upper, top=0.56, tilt=0.88, low=0.44, slit=0.2)
+        slit_eye(m, tuple(at + look * eye * 0.5), eye, look, side, iris="EyeColour", lid_role=upper, top=0.56, tilt=0.88, low=0.44, slit=0.2, layer=layer)
         sweep_fine(m, brow, [((side * width * 0.46, y + length * 0.36, ez + eh * 0.5), height * 0.06, height * 0.06), ((side * width * 0.34, y + length * 0.46, ez + eh * 0.6), height * 0.3, height * 0.24), ((side * width * 0.14, y + length * 0.6, ez + eh * 0.42), height * 0.24, height * 0.2), ((side * width * 0.02, y + length * 0.72, ez + eh * 0.18), height * 0.05, height * 0.05)], sides=6, per=2)
         egg(m, "Mouth", (side * width * 0.09, y + length * 0.985, zm + height * 0.3), width * 0.04, width * 0.05, height * 0.06, 10, 5)
     sweep(m, "Mouth", [((0, y + length * 0.02, zm + 0.04), width * 0.62, 0.3), ((0, y + length * 0.7, zm + 0.04), width * 0.42, 0.26), ((0, y + length * 0.96, zm + 0.1), width * 0.16, 0.2)], sides=8)
@@ -823,7 +823,7 @@ def beast_head(m, y, zm, length, width, height, gape=-0.7, upper="Body", lower=N
     for side in (-1, 1):
         for k in range(teeth):
             t = 0.3 + 0.68 * k / (teeth - 1)  # none further back: the corners of the mouth cover them
-            tall = height * (0.34 + 0.16 * (k % 2)) * (1.7 * fang if k == teeth - 2 else 1.0)
+            tall = tooth * height * (0.34 + 0.16 * (k % 2)) * (1.7 * fang if k == teeth - 2 else 1.0)
             x, yy = side * rim(t, 0.78), y + length * t
             sabre(m, "Teeth", [(x, yy, zm + 0.1), (x, yy + 0.04, zm - tall * 0.5), (x, yy + 0.2 * height * 0.2, zm - tall)], height * 0.17 * (1.4 if k == teeth - 2 else 1.0), 4, sides=5)
     m.use("Jaw", (0, y + length * 0.04, zm - 0.02), "Head")
@@ -834,7 +834,7 @@ def beast_head(m, y, zm, length, width, height, gape=-0.7, upper="Body", lower=N
     for side in (-1, 1):
         for k in range(teeth - 1):
             t = 0.32 + 0.62 * k / (teeth - 2)
-            tall = height * (0.3 + 0.14 * (k % 2)) * (1.6 * fang if k == teeth - 3 else 1.0)
+            tall = tooth * height * (0.3 + 0.14 * (k % 2)) * (1.6 * fang if k == teeth - 3 else 1.0)
             x, yy = side * rim(t, 0.66), y + length * t
             sabre(m, "Teeth", [(x, yy, z + height * 0.13), (x, yy + 0.03, z + height * 0.13 + tall * 0.5), (x, yy - 0.05, z + height * 0.13 + tall)], height * 0.15, 4, sides=5)
     swing(m, ["Jaw"], (0, y + length * 0.04, zm - 0.02), gape)

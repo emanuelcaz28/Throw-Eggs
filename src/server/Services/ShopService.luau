@@ -10,7 +10,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
-local Format = require(ReplicatedStorage.Shared.Format)
 local Gifts = require(ReplicatedStorage.Shared.Gifts)
 local RemoteGuard = require(script.Parent.RemoteGuard)
 local Analytics = require(script.Parent.Analytics)
@@ -40,13 +39,22 @@ local function makeRemotes()
 	-- Gift: client asks to gift (productId, receiver's UserId). Shout: server shows a big moment (title, detail).
 	-- GiftToast: the small gift notification at the top right (title, detail; GiftToastController).
 	-- BuyRandom: client asks to buy a paid random item (productId); the server checks the policy, then prompts.
-	for _, name in { "ClaimStarter", "StarterClaimed", "Gift", "Shout", "BuyRandom", "GiftToast" } do
+	-- Moment: server tells the buyer's (or a gift's receiver's) screen what they just got, to show it (PurchaseMoments).
+	for _, name in { "ClaimStarter", "StarterClaimed", "Gift", "Shout", "BuyRandom", "GiftToast", "Moment" } do
 		local remote = Instance.new("RemoteEvent")
 		remote.Name = name
 		remote.Parent = folder
 		remotes[name] = remote
 	end
 	folder.Parent = ReplicatedStorage
+end
+
+-- Shows a player what they just got (PurchaseMoments on their screen; the looks are in Config/ShopMoments).
+-- kind: "prism", "special", "pass", "cash", "power", "luck" or "serverLuck". from: the giver, when it's a gift.
+local function showMoment(player: Player, kind: string, details: { [string]: any }, from: Player?)
+	details.kind = kind
+	details.from = if from then from.DisplayName else nil
+	remotes.Moment:FireClient(player, details)
 end
 
 local function serverLuckActive(): boolean
@@ -66,10 +74,11 @@ local function serverLuckSecondsLeft(): number
 	return math.max((ReplicatedStorage:GetAttribute(LUCK_ATTRIBUTE) or 0) - workspace:GetServerTimeNow(), 0)
 end
 
-local function grantServerLuck(_player: Player, data)
+local function grantServerLuck(player: Player, data)
 	local start = math.max(ReplicatedStorage:GetAttribute(LUCK_ATTRIBUTE) or 0, workspace:GetServerTimeNow())
 	ReplicatedStorage:SetAttribute(LUCK_ATTRIBUTE, start + Shop.serverLuck.seconds)
 	data.serverLuckLeft += Shop.serverLuck.seconds
+	showMoment(player, "serverLuck", {})
 end
 
 -- Server Luck runs for the whole server, but each buyer also keeps in their save the time they paid
@@ -132,8 +141,9 @@ function ShopService.takeLuckyThrow(player: Player, data, picked: number?): numb
 	return 1
 end
 
--- Hatches a Prism Egg into one of its monsters by its odds (Config/Shop prismEgg), with a shout. The caller saves.
-local function hatchPrismEgg(player: Player, data)
+-- Hatches a Prism Egg into one of its monsters by its odds (Config/Shop prismEgg). The monster is decided and given
+-- here; the egg's opening on the player's screen is only show. The caller saves.
+local function hatchPrismEgg(player: Player, data, from: Player?)
 	local hatches = Shop.prismEgg.hatches
 	local hatched = hatches[#hatches]
 	local roll = math.random() * 100
@@ -146,26 +156,32 @@ local function hatchPrismEgg(player: Player, data)
 	end
 	local special = DinoStats.special(hatched.id)
 	local income = PlotService.addSpecial(player, data, special)
-	remotes.Shout:FireClient(player, `{string.upper(special.name)}!`, `{special.share * 100}% of your best: +{Format.cash(income)}/s`)
+	showMoment(player, "prism", { id = special.id, income = income }, from)
 end
 
--- Gives a Game Pass's special monster, only ever once. The caller saves.
-local function giveSpecialTo(player: Player, data, special)
+-- Gives a Game Pass's special monster, only ever once. The caller saves. show: play its moment on the player's
+-- screen (a purchase or a gift while they play, not a pass found when they join).
+local function giveSpecialTo(player: Player, data, special, show: boolean?, from: Player?)
 	player:SetAttribute(`Owns{special.id}`, true)
 	if not data.specialsGiven[special.id] then
 		data.specialsGiven[special.id] = true
-		PlotService.addSpecial(player, data, special)
+		local income = PlotService.addSpecial(player, data, special)
+		if show then
+			showMoment(player, "special", { id = special.id, income = income }, from)
+		end
 	end
 end
 
 -- A Game Pass gifted by another player (Gifts.passes): kept in the save, so it lasts like a bought one.
-local function giveGiftedPass(player: Player, data, pass)
+local function giveGiftedPass(player: Player, data, pass, from: Player?)
 	data.giftedPasses[pass.key] = true
 	player:SetAttribute(pass.attribute, true)
+	showMoment(player, "pass", { key = pass.key }, from)
 end
 
--- What each Developer Product gives, by product id.
-local function grantFor(productId: number): ((Player, any) -> ())?
+-- What each Developer Product gives, by product id. Each is called with the player who gets it, their save and, for
+-- a gift, the player it's from.
+local function grantFor(productId: number): ((Player, any, Player?) -> ())?
 	if productId == 0 then
 		return nil
 	end
@@ -174,15 +190,15 @@ local function grantFor(productId: number): ((Player, any) -> ())?
 	end
 	for _, pass in Gifts.passes do
 		if productId == Shop[pass.key].giftProductId then
-			return function(player, data)
-				giveGiftedPass(player, data, pass)
+			return function(player, data, from)
+				giveGiftedPass(player, data, pass, from)
 			end
 		end
 	end
 	for _, special in Specials do
 		if special.passId and productId == special.giftProductId then
-			return function(player, data)
-				giveSpecialTo(player, data, special)
+			return function(player, data, from)
+				giveSpecialTo(player, data, special, true, from)
 			end
 		end
 	end
@@ -191,8 +207,9 @@ local function grantFor(productId: number): ((Player, any) -> ())?
 	end
 	for _, item in Shop.luckyThrows do
 		if productId == item.productId then
-			return function(player, data)
+			return function(player, data, from)
 				ShopService.addLuckyThrows(player, data, item.multiplier, 1)
+				showMoment(player, "luck", { multiplier = item.multiplier, amount = 1 }, from)
 			end
 		end
 		if productId == item.dealProductId then
@@ -201,20 +218,23 @@ local function grantFor(productId: number): ((Player, any) -> ())?
 				data.luckDealBought = true
 				player:SetAttribute(DEAL_ATTRIBUTE, true)
 				ShopService.addLuckyThrows(player, data, item.multiplier, 1)
+				showMoment(player, "luck", { multiplier = item.multiplier, amount = 1 })
 			end
 		end
 	end
 	for _, pack in Shop.cashPacks do
 		if productId == pack.productId then
-			return function(player, data)
-				PlotService.payCashPack(player, data, pack)
+			return function(player, data, from)
+				local amount = PlotService.payCashPack(player, data, pack)
+				showMoment(player, "cash", { amount = amount, art = pack.art }, from)
 			end
 		end
 	end
 	for _, pack in Shop.powerPacks do
 		if productId == pack.productId then
-			return function(player, data)
+			return function(player, data, from)
 				TrainingService.addBonusPower(player, data, pack.amount)
+				showMoment(player, "power", { amount = pack.amount, art = pack.art }, from)
 			end
 		end
 	end
@@ -235,7 +255,7 @@ end
 local function announceGift(from: Player, to: Player, productId: number)
 	local item = Gifts.find(productId)
 	local name = if item then item.name else "a gift"
-	-- The small gift notification; a Prism Egg's hatch still has its own shout after it.
+	-- The small gift notification; what was given also plays its own moment on the receiver's screen (showMoment).
 	remotes.GiftToast:FireClient(to, `GIFT FROM {string.upper(from.DisplayName)}!`, name)
 	PlotService.notify(from, `Gift sent to {to.DisplayName}!`)
 end
@@ -267,12 +287,29 @@ function ShopService.processReceipt(info)
 
 	if not data.receipts[info.PurchaseId] then
 		local receiver = giftReceiver(player, info.ProductId)
-		local receiverData = receiver and receiver.Parent and PlayerData.get(receiver)
-		if receiver and receiverData then
-			grant(receiver, receiverData)
+		local function receiverData()
+			return receiver and receiver.Parent and PlayerData.get(receiver)
+		end
+		if receiver and receiverData() then
+			-- A gift: the buyer's receipt is saved BEFORE the receiver gets anything. The other way round, a failed save
+			-- of the buyer left no trace of the purchase, so Roblox's next try gave the item to the buyer as well.
 			data.receipts[info.PurchaseId] = true
-			announceGift(player, receiver, info.ProductId)
-			PlayerData.saveNow(receiver)
+			if not PlayerData.saveNow(player) then
+				data.receipts[info.PurchaseId] = nil
+				if not pendingGifts[player] then
+					pendingGifts[player] = { productId = info.ProductId, to = receiver, at = os.clock() } -- still a gift on the next try
+				end
+				return Enum.ProductPurchaseDecision.NotProcessedYet
+			end
+			local theirs = receiverData() -- saving takes a moment: they may have left meanwhile
+			if theirs then
+				grant(receiver, theirs, player)
+				announceGift(player, receiver, info.ProductId)
+				PlayerData.saveNow(receiver)
+				return Enum.ProductPurchaseDecision.PurchaseGranted
+			end
+			PlotService.notify(player, `{receiver.DisplayName} left, so the gift is yours`)
+			grant(player, data)
 		else
 			-- Not a gift, or its receiver left before it arrived: the buyer keeps it.
 			if receiver then
@@ -329,14 +366,15 @@ local function ownsPass(player: Player, pass): boolean
 	return false
 end
 
--- Gives a special monster for its pass, only ever once, and saves straight away.
-function ShopService.giveSpecial(player: Player, special)
+-- Gives a special monster for its pass, only ever once, and saves straight away. show: play its moment on the
+-- player's screen (when they just bought it in the game).
+function ShopService.giveSpecial(player: Player, special, show: boolean?)
 	local data = PlayerData.get(player)
 	if not data then
 		return
 	end
 	local given = data.specialsGiven[special.id]
-	giveSpecialTo(player, data, special)
+	giveSpecialTo(player, data, special, show)
 	if not given then
 		PlayerData.saveNow(player)
 	end
@@ -530,6 +568,11 @@ local function onPassPurchased(player: Player, passId: number, purchased: boolea
 	triedPass[player][passId] = true
 	if lent then
 		setPassAttribute(player, passId)
+		for _, pass in Gifts.passes do
+			if Shop[pass.key].passId == passId then
+				showMoment(player, "pass", { key = pass.key })
+			end
+		end
 	end
 
 	local owned = confirmPass(player, passId)
@@ -543,7 +586,7 @@ local function onPassPurchased(player: Player, passId: number, purchased: boolea
 		setPassAttribute(player, passId)
 		for _, special in Specials do
 			if passId == special.passId then
-				ShopService.giveSpecial(player, special)
+				ShopService.giveSpecial(player, special, true)
 			end
 		end
 		return

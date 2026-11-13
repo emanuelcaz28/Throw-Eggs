@@ -34,13 +34,10 @@ local function watchCash()
 	player:GetAttributeChangedSignal("Cash"):Connect(function()
 		local cash = number("Cash")
 		if last then
-			local change = cash - last
-			local tick = number("Income")
-			if change < 0 then
+			-- Only spending makes a sound: no sound for gains (owner 2026-11-12, the $/s tick kept slipping
+			-- through and chimed every second; PlotController floats no +$ for the same reason).
+			if cash < last then
 				play("purchase")
-			elseif change > 0 and math.abs(change - tick) > math.max(1, tick * 0.001) then
-				-- The per-second income is left out, the same rule as the floating +$ (PlotController).
-				play("cash")
 			end
 		end
 		last = cash

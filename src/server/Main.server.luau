@@ -5,6 +5,7 @@ require(Services.LightingService).start()
 require(Services.MapService).start()
 require(Services.PlayerData).start()
 require(Services.AdminService).start()
+require(Services.FilmingService).start() -- Studio only, Workspace StudioFilming (Config/Filming)
 require(Services.TutorialService).start()
 if require(game:GetService("ReplicatedStorage").Shared.Config.Troll).enabled then -- hidden while false (Config/Troll)
 	require(Services.RagdollService).start() -- before Training and Throw, which ask it who is ragdolled
@@ -17,6 +18,7 @@ require(Services.EggService).start()
 require(Services.HubService).start()
 require(Services.ShopService).start()
 require(Services.AdminCommands).start() -- after AdminService and ShopService
+require(Services.AdminBoostService).start() -- the admin panel's server boosts and gifts, same order
 require(Services.DailyService).start()
 require(Services.DailyTasks).start()
 require(Services.PlayGiftService).start()

@@ -15,8 +15,8 @@ local HomeController = {}
 
 local player = Players.LocalPlayer
 
-local WIDTH = 220
-local HEIGHT = 50
+local WIDTH = 150
+local HEIGHT = 36
 local EDGE = 12 -- gap to the screen's bottom
 
 function HomeController.start()
@@ -31,6 +31,14 @@ function HomeController.start()
 	local scale = HudStyle.scale()
 	local button = UiKit.button(gui, "BACK TO PLOT", "blue", math.floor(WIDTH * scale), math.floor(HEIGHT * scale))
 	button.Name = "BackToPlot"
+	button.TextColor3 = Color3.new(1, 1, 1)
+	for _, child in button:GetChildren() do
+		-- The label outline is the Contextual stroke (the button's own border is the Border one).
+		if child:IsA("UIStroke") and child.ApplyStrokeMode == Enum.ApplyStrokeMode.Contextual then
+			child.Color = Color3.new(0, 0, 0)
+			child.Thickness = 2
+		end
+	end
 	button.AnchorPoint = Vector2.new(0.5, 1)
 	button.Position = UDim2.new(0.5, 0, 1, -EDGE * scale)
 

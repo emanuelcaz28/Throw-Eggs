@@ -11,9 +11,9 @@ local CatchOdds = {}
 -- (Config/Luck forRoll) with every boost multiplied in. recent: the ids of the last catches, newest first.
 -- filter (lucky throws and the surprise gift), all optional: minRarity / maxRarity leave out monsters of a lower /
 -- higher rarity level (1 Common ... 8 Secret, the words in Config/RarityLadder); minPlace leaves out monsters more common
--- than that place in their home map's list (DinoStats.rarityRank). Both go by the monster's home map, so they also work
+-- than that place in their home map's list (DinoStats.rarityRank), maxPlace those rarer than it. All go by the monster's home map, so they also work
 -- in The Deep End's mixed list. only: just these monster ids (the starter run's missing monsters, Config/Hooks).
-export type Filter = { minRarity: number?, maxRarity: number?, minPlace: number?, only: { [string]: boolean }? }
+export type Filter = { minRarity: number?, maxRarity: number?, minPlace: number?, maxPlace: number?, only: { [string]: boolean }? }
 local function passes(dinoId: string, filter: Filter?): boolean
 	if not filter then
 		return true
@@ -24,7 +24,7 @@ local function passes(dinoId: string, filter: Filter?): boolean
 	local level = DinoStats.rarityLevel(dinoId) or 1
 	local place = DinoStats.rarityRank(dinoId) or 1
 	return not ((filter.minRarity and level < filter.minRarity) or (filter.maxRarity and level > filter.maxRarity)
-		or (filter.minPlace and place < filter.minPlace))
+		or (filter.minPlace and place < filter.minPlace) or (filter.maxPlace and place > filter.maxPlace))
 end
 
 function CatchOdds.monsters(biomeId: string, luck: number, minRank: number?, recent: { string }?, filter: Filter?): { number }
@@ -87,10 +87,14 @@ end
 -- rarest word instead, with big sizes made far likelier (Config/Catch shortMapSizeBoost) [Owner, 2026-11-08].
 function CatchOdds.luckyFilter(biomeId: string, hit): (Filter?, boolean)
 	if not hit.minRarity then
+		-- No rarity word asked (the daily x50): only its places in the map's list, if it names any.
+		if hit.minPlace or hit.maxPlace then
+			return { minPlace = hit.minPlace, maxPlace = hit.maxPlace }, false
+		end
 		return nil, false
 	end
 	local top = DinoStats.topRarityLevel(biomeId)
-	return { minRarity = math.min(hit.minRarity, top), minPlace = hit.minPlace }, top < hit.minRarity
+	return { minRarity = math.min(hit.minRarity, top), minPlace = hit.minPlace, maxPlace = hit.maxPlace }, top < hit.minRarity
 end
 
 -- Every colour and size that make this monster's catch at least 1 in `minOneIn`, each weighted by how likely it

@@ -10,6 +10,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Filming = require(ReplicatedStorage.Shared.Config.Filming)
 local Save = require(ReplicatedStorage.Shared.Config.Save)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local Specials = require(ReplicatedStorage.Shared.Config.Specials)
@@ -171,6 +172,18 @@ local function load(player: Player)
 	if adminFresh then
 		store, reason = nil, "admin test: a new save, never read or written"
 	end
+	-- Studio filming mode (Config/Filming): play a copy of the real save that is never written, and leave its lock
+	-- alone. No save to copy (API access off) gives a new memory-only save below.
+	local filmingCopy = false
+	if store and RunService:IsStudio() and workspace:GetAttribute(Filming.attribute) == true then
+		local ok, record = pcall(function()
+			return store:GetAsync(keyFor(player.UserId))
+		end)
+		if ok and record then
+			data, filmingCopy = withDefaults(record.data), true
+		end
+		store, reason = nil, "filming mode: a copy of the save, never written"
+	end
 	if store then
 		for attempt = 1, Save.loadAttempts do
 			data, reason = tryAcquire(store, player.UserId, token)
@@ -199,7 +212,7 @@ local function load(player: Player)
 	end
 
 	local session: Session
-	if readOnlyCopy then
+	if readOnlyCopy or filmingCopy then
 		session = { token = token, data = withoutPasses(player, applyResets(player, data)), memoryOnly = true, released = false }
 	elseif data then
 		session = { token = token, data = withoutPasses(player, applyResets(player, data)), memoryOnly = false, released = false }

@@ -1,7 +1,7 @@
 -- The Dino Index panel, from Figma "Throw Eggs - Index & Inventory" (Index v4) [Owner, 2026-11-11: a total redesign].
 -- One map fills the panel, its picture as the background. Left: one monster standing over the map, the real model playing its
 -- idle, with its name, rarity and odds under it. Right: the map's 8 monsters as still cards; tapping one puts it on
--- the spotlight. Under them the 2x TRAINING XP button, which goes green once the map is complete and is pressed to
+-- the spotlight. Under them the reward button (+10% CASH FOREVER, with the timed 2x training XP), which goes green once the map is complete and is pressed to
 -- collect the boost (an egg cracks open). Scrolling (mouse wheel, or a swipe up or down) moves to the next map; ALL
 -- MAPS opens a grid of every world. A map too far to reach shows a lock and your Throw Power against what it needs.
 -- A red dot on the HUD's Index button counts the rewards waiting. Display only: the server decides what's been found
@@ -43,6 +43,8 @@ local TILE_GAP = Vector2.new(11, 12)
 local TILES = Vector2.new(470, 104) -- the first card's corner
 local TILE_COLUMNS = 4
 local XP_BUTTON = { y = 556, height = 80 } -- as wide as the cards above it
+-- What a completed world's button gives (Config/Index cashBonus); the timed XP boost comes with it.
+local CASH_REWARD = `+{math.round(Index.cashBonus.perWorld * 100)}% CASH FOREVER`
 local THUMB = Vector2.new(190, 164) -- a map in the ALL MAPS grid
 local THUMB_PITCH = Vector2.new(202, 176)
 local THUMB_COLUMNS = 5
@@ -392,10 +394,10 @@ local function buildReward()
 	local words = frame(centre, "Words", 0, -218, 0, 0)
 	local wordsScale = Instance.new("UIScale")
 	wordsScale.Parent = words
-	local reward = UiKit.text(words, `{Index.xpBoost.multiplier}x TRAINING XP`, 76, Color3.fromRGB(226, 190, 255))
+	local reward = UiKit.text(words, CASH_REWARD, 76, Color3.fromRGB(226, 190, 255))
 	reward.AnchorPoint = Vector2.new(0.5, 0.5)
 	reward.Size = UDim2.fromOffset(900, 96)
-	local detail = UiKit.text(words, `for {math.round(Index.xpBoost.seconds / 60)} minutes  ·  the timer has started`, 22)
+	local detail = UiKit.text(words, `and {Index.xpBoost.multiplier}x training XP for {math.round(Index.xpBoost.seconds / 60)} minutes  ·  the timer has started`, 22)
 	detail.AnchorPoint = Vector2.new(0.5, 0.5)
 	detail.Position = UDim2.fromOffset(0, 62)
 	detail.Size = UDim2.fromOffset(900, 30)
@@ -795,7 +797,7 @@ function IndexController.start()
 		-- The reward: grey until every monster is found, then green and waiting to be pressed; grey with a tick after.
 		local width = TILE_COLUMNS * TILE.X + (TILE_COLUMNS - 1) * TILE_GAP.X
 		local ready = isWaiting(biome)
-		local xp = UiKit.button(root, `{Index.xpBoost.multiplier}x TRAINING XP`, if ready then "green" else GREY, width, XP_BUTTON.height, 36)
+		local xp = UiKit.button(root, CASH_REWARD, if ready then "green" else GREY, width, XP_BUTTON.height, 36)
 		xp.Name = "XpButton"
 		xp.Position = UDim2.fromOffset(TILES.X, XP_BUTTON.y)
 		if ready then

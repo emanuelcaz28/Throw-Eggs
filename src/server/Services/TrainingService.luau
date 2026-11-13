@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Training = require(ReplicatedStorage.Shared.Config.Training)
+local AdminBoosts = require(ReplicatedStorage.Shared.AdminBoosts)
 local BaseKit = require(ReplicatedStorage.Shared.BaseKit)
 local RemoteGuard = require(script.Parent.RemoteGuard)
 local RagdollService = require(script.Parent.RagdollService)
@@ -107,11 +108,11 @@ local function rootOf(player: Player): (BasePart?, Humanoid?)
 	return root, humanoid
 end
 
--- The x2 Training pass, times the x2 XP from completing a world in the Index while it runs.
+-- The x2 Training pass, times the x2 XP from completing a world in the Index while it runs, times an admin's XP boost.
 local function passMultiplier(player: Player): number
 	local pass = if player:GetAttribute("HasDoubleTraining") then Shop.doubleTraining.multiplier else 1
 	local data = PlayerData.get(player)
-	return pass * (if data then IndexService.xpMultiplier(data) else 1)
+	return pass * (if data then IndexService.xpMultiplier(data) else 1) * AdminBoosts.multiplier("xp")
 end
 
 local function xpPerRep(player: Player, data): number
@@ -348,6 +349,15 @@ function TrainingService.start()
 				publish(player, data)
 			end
 		end)
+	end)
+	-- An admin started or stopped an XP boost: everyone's "+XP per squat" changes.
+	AdminBoosts.changed(function()
+		for _, player in Players:GetPlayers() do
+			local data = PlayerData.get(player)
+			if data then
+				publish(player, data)
+			end
+		end
 	end)
 	RemoteGuard.connect(remotes.StopTraining, function(player)
 		stopTraining(player, true)

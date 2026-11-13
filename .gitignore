@@ -14,3 +14,6 @@ design/world/models/anim_frames/
 
 # Python
 __pycache__/
+
+# TikTok recordings and edits (big video files, docs/FILMING.md)
+recordings/

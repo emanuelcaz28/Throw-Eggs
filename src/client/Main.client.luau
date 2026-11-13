@@ -2,6 +2,7 @@ local Controllers = script.Parent.Controllers
 
 require(Controllers.SettingsState).start() -- first: the volume groups every sound plays through
 
+require(Controllers.LowDetail).start() -- right after the settings: Low detail applies before the world is drawn
 require(Controllers.SkyController).start()
 require(Controllers.PropMotionController).start()
 require(Controllers.TrainingController).start()
@@ -28,6 +29,7 @@ task.spawn(require(Controllers.TutorialController).start) -- waits for the save,
 task.spawn(require(Controllers.ReadyPopupController).start) -- its check loop never returns
 task.spawn(require(Controllers.AdminController).start) -- waits until the server says this player is an admin
 task.spawn(require(Controllers.AdminCommandController).start) -- the /give chat command, same wait
+task.spawn(require(Controllers.FilmingController).start) -- Studio only, Workspace StudioFilming (Config/Filming)
 require(Controllers.UiClickSound).start()
 require(Controllers.GameFeelSounds).start()
 require(Controllers.GameFeelJuice).start()

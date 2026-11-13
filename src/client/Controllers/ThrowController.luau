@@ -12,6 +12,7 @@ local UserInputService = game:GetService("UserInputService")
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local EggModel = require(ReplicatedStorage.Shared.EggModel)
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
+local HudStyle = require(ReplicatedStorage.Shared.HudStyle)
 local Luck = require(ReplicatedStorage.Shared.Config.Luck)
 local PopText = require(ReplicatedStorage.Shared.PopText)
 local LuckBoosts = require(ReplicatedStorage.Shared.LuckBoosts)
@@ -353,7 +354,36 @@ local cancelMeter: () -> () = function() end
 -- Back to Plot (HomeController) shows while the meter is up, and whenever the player stands on the throw platform
 -- outside a throw, so there's always a way out of the throwing area [player feedback, 2026-11-08]. Never from the
 -- tap until the reveal is over.
+-- In the throwing area, Throw Power (with LIMIT) sits at the very bottom of the screen [owner, 2026-11-12], and the
+-- cash goes up into the spot it leaves; the $/s line is hidden there. Back to the usual spots everywhere else.
+local powerLow: boolean? = nil
+local function placePowerStat(low: boolean)
+	if powerLow == low then
+		return
+	end
+	local gui = player.PlayerGui
+	local power = gui:FindFirstChild("TrainingHud") and gui.TrainingHud:FindFirstChild("PowerStat")
+	local plotHud = gui:FindFirstChild("PlotHud")
+	local cash = plotHud and plotHud:FindFirstChild("CashStat")
+	local income = plotHud and plotHud:FindFirstChild("Income")
+	if not (power and cash and income) then
+		return -- not built yet; tried again next frame
+	end
+	powerLow = low
+	local scale = HudStyle.scale()
+	if low then
+		power.Position = UDim2.new(0, 16, 1, -12 * scale)
+		cash.Position = UDim2.new(0, 16, 1, -(12 + 52 + 8) * scale)
+		income.Visible = false
+	else
+		power.Position = UDim2.new(0, 16, 1, -98 * scale)
+		cash.Position = UDim2.new(0, 16, 1, -income.Size.Y.Offset - 12)
+		income.Visible = true
+	end
+end
+
 local function updateHomeButton(onPlatform: boolean)
+	placePowerStat(onPlatform or meterTaken)
 	local home = player.PlayerGui:FindFirstChild("HomeHud")
 	local shown = if meterTaken then not tapSent else onPlatform and not throwBusy
 	if home and home.Enabled ~= shown then

@@ -37,7 +37,8 @@ MAP_OF_FILE = {"forest_models": "01_Forest", "world_kit": "01_Forest", "desert_m
                "swamp_monsters": "03_Swamp", "frozen_peaks_monsters": "05_FrozenPeaks", "shadow_bog_monsters": "06_ShadowBog",
                "abyss_monsters": "07_Abyss", "starfall_crater_monsters": "08_StarfallCrater",
                "eclipse_temple_monsters": "09_EclipseTemple", "forbidden_library_monsters": "10_ForbiddenLibrary",
-               "midnight_carnival_monsters": "11_MidnightCarnival", "clockwork_citadel_monsters": "12_ClockworkCitadel",
+               "midnight_carnival_monsters": "11_MidnightCarnival",  # the original six, polished 2026-11-12 (the fright set, midnight_carnival_fright, was turned down)
+               "clockwork_citadel_monsters": "12_ClockworkCitadel",
                "thorn_kingdom_monsters": "13_ThornKingdom",
                "spore_hollow_toxic": "14_SporeHollow",  # all 8, the toxic set (2026-11-10); spore_hollow_monsters and _7_8 are the old looks, not exported any more
                "weeping_dark_dread": "15_WeepingDark",  # the first 7, the dread set (2026-11-10); weeping_dark_monsters is the old looks, not exported any more

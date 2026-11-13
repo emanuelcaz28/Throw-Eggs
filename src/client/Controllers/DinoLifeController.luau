@@ -20,6 +20,8 @@ local DinoLife = require(Config.DinoLife)
 local DinoModel = require(ReplicatedStorage.Shared.DinoModel)
 local Plot = require(Config.Plot)
 local Troll = require(Config.Troll)
+local LowDetail = require(script.Parent.LowDetail)
+local LOW = require(Config.Settings).lowDetailLook.monsters
 
 local DinoLifeController = {}
 
@@ -1343,6 +1345,117 @@ local MARKED = {
 	Strike = { Jaw = track(STRIKE_JAW) }, -- flung wide, then bitten shut
 }
 
+-- The shop's four special monsters (Config/Specials) each have an attack nothing else has [Owner, 2026-11-12], 4 seconds long,
+-- played once every DinoLife.attackCycle like every other attack. Nothing leaves the body. The same as FRENZY, HOODED, LOOPER and
+-- BAITER in assets/models/build_special_monsters.py, number for number, whose preview moves them alike.
+-- In a function of its own, added to MARKED: a script can only hold 200 locals at its top level, and this one is nearly there.
+;(function()
+	local function shaken(points: { { number } }, speed: number, reach: number, slot: number?, phase: number?) -- a wave that only runs while its envelope is up
+		local where, late = slot or PITCH, phase or 0
+		return function(s: number)
+			return slotted(where, reach * keys((s / 4) % 1, points) * sin(speed * QUARTER * s - late))
+		end
+	end
+
+	-- Gloomfin (Dorsal, its fin): the death roll. It draws back, hits you like a train, and rolls over twice with its jaws going, tail
+	-- thrashing; one last bite and a shake, and it drifts home.
+	local FRENZY_AHEAD = { { 0, 0 }, { 0.14, -2.2 }, { 0.2, 7 }, { 0.62, 7 }, { 0.68, 8.2 }, { 0.78, 8.2 }, { 1, 0 } }
+	local FRENZY_LEAN = { { 0, 0 }, { 0.14, 0.18 }, { 0.2, -0.1 }, { 0.62, -0.1 }, { 0.68, 0.14 }, { 0.8, 0 }, { 1, 0 } }
+	local FRENZY_ROLL = { { 0, 0 }, { 0.2, 0 }, { 0.6, 4 * math.pi }, { 1, 4 * math.pi } }
+	local FRENZY_ROLLING = { { 0, 0 }, { 0.2, 0 }, { 0.26, 1 }, { 0.56, 1 }, { 0.62, 0 }, { 1, 0 } }
+	local FRENZY_SHAKE = { { 0, 0 }, { 0.66, 0 }, { 0.69, 1 }, { 0.78, 1 }, { 0.84, 0 }, { 1, 0 } }
+	local FRENZY_JAW = { { 0, 0 }, { 0.14, -0.5 }, { 0.2, -0.5 }, { 0.23, 0.3 }, { 0.26, 0 }, { 0.6, 0 }, { 0.64, -0.55 }, { 0.68, 0.42 }, { 0.8, 0.42 }, { 1, 0 } }
+	local FRENZY_FIN = { { 0, 0 }, { 0.14, -0.45 }, { 0.2, 0.5 }, { 0.6, 0.5 }, { 0.8, 0 }, { 1, 0 } }
+	local FRENZY = {
+		Swim = stacked(beat(FRENZY_AHEAD, 4, AHEAD), beat(FRENZY_LEAN, 4), beat(FRENZY_ROLL, 4, ROLL), shaken(FRENZY_SHAKE, 20, 0.16, YAW)),
+		Jaw = stacked(beat(FRENZY_JAW, 4), shaken(FRENZY_ROLLING, 16, 0.26)),
+		Dorsal = shaken(FRENZY_ROLLING, 12, 0.14, ROLL),
+		FinL = beat(FRENZY_FIN, 4, ROLL, -1.0),
+		FinR = beat(FRENZY_FIN, 4, ROLL),
+	}
+	for i = 1, 4 do
+		FRENZY["Tail" .. i] = stacked(shaken(FRENZY_ROLLING, 12, 0.3 + 0.05 * i, YAW, 0.8 * i), shaken(FRENZY_SHAKE, 20, 0.2, YAW, 0.8 * i))
+	end
+
+	-- Duskeel (HoodL and R, its frill): the hooded strike. It rears like a cobra and throws its hood wide, sways, strikes down ahead of
+	-- it, rears again and strikes to the side.
+	local HOOD_REAR = { { 0, 0 }, { 0.22, 1 }, { 0.5, 1 }, { 0.55, 0 }, { 0.62, 0.8 }, { 0.7, 0.8 }, { 0.745, 0 }, { 0.84, 0 }, { 1, 0 } }
+	local HOOD_STRIKE = { { 0, 0 }, { 0.5, 0 }, { 0.55, 1 }, { 0.58, 1 }, { 0.62, 0 }, { 0.7, 0 }, { 0.745, 1 }, { 0.82, 1 }, { 0.92, 0 }, { 1, 0 } }
+	local HOOD_FLARE = { { 0, 0 }, { 0.18, 1 }, { 0.84, 1 }, { 1, 0 } }
+	local HOOD_SWAY = { { 0, 0 }, { 0.2, 0 }, { 0.26, 1 }, { 0.45, 1 }, { 0.5, 0 }, { 1, 0 } }
+	local HOOD_SIDE = { { 0, 0 }, { 0.62, 0 }, { 0.7, 0.4 }, { 0.82, 0.4 }, { 1, 0 } }
+	local HOOD_JAW = { { 0, 0 }, { 0.22, -0.35 }, { 0.5, -0.45 }, { 0.555, 0.45 }, { 0.6, 0.45 }, { 0.66, -0.4 }, { 0.7, -0.45 }, { 0.75, 0.45 }, { 0.84, 0.45 }, { 1, 0 } }
+	local HOODED = {
+		Swim = stacked(beat(HOOD_REAR, 4, RISE, 1.6), beat(HOOD_REAR, 4, AHEAD, -1.4), beat(HOOD_STRIKE, 4, AHEAD, 5.5), beat(HOOD_REAR, 4, PITCH, 0.16), beat(HOOD_SIDE, 4, YAW)),
+		Neck1 = stacked(beat(HOOD_REAR, 4, PITCH, 0.5), beat(HOOD_STRIKE, 4, PITCH, -0.24), shaken(HOOD_SWAY, 4, 0.3, YAW)),
+		Neck2 = stacked(beat(HOOD_REAR, 4, PITCH, 0.22), beat(HOOD_STRIKE, 4, PITCH, -0.12), shaken(HOOD_SWAY, 4, -0.12, YAW)),
+		Neck3 = beat(HOOD_REAR, 4, PITCH, -0.45),
+		Head = stacked(beat(HOOD_REAR, 4, PITCH, -0.2), beat(HOOD_STRIKE, 4, PITCH, 0.1)),
+		Jaw = beat(HOOD_JAW, 4),
+		HoodL = stacked(beat(HOOD_FLARE, 4, YAW, -0.95), shaken(HOOD_FLARE, 24, 0.07, YAW)),
+		HoodR = stacked(beat(HOOD_FLARE, 4, YAW, 0.95), shaken(HOOD_FLARE, 24, -0.07, YAW)),
+	}
+	for i = 1, 4 do
+		HOODED["Tail" .. i] = shaken(HOOD_FLARE, 6, 0.1 + 0.04 * i, YAW, 0.8 * i)
+	end
+
+	-- Umbray (Stinger, the end of its tail): the loop and the sting. It dips, beats its wings once and loops the loop, tail curled under
+	-- it; as it levels out the tail whips over its back and the stinger stabs twice.
+	local LOOP_R = 4 -- the loop's radius, studs at the first map's size
+	local LOOP_TURN = { { 0, 0 }, { 0.14, -0.22 }, { 0.2, -0.22 }, { 0.56, TAU }, { 1, TAU } }
+	local LOOP_LIFT = { { 0, 0 }, { 0.14, -0.6 }, { 0.3, 1.5 }, { 0.84, 1.5 }, { 1, 0 } }
+	local LOOP_BEATING = { { 0, 0 }, { 0.2, 0 }, { 0.26, 1 }, { 0.54, 1 }, { 0.6, 0 }, { 1, 0 } }
+	local LOOP_WING = { { 0, 0 }, { 0.14, -0.5 }, { 0.21, 0.42 }, { 0.3, 0 }, { 0.56, 0 }, { 0.62, -0.3 }, { 0.84, -0.3 }, { 1, 0 } }
+	local LOOP_CURL = { { 0, 0 }, { 0.2, 0.3 }, { 0.56, 0.3 }, { 0.63, 0.72 }, { 0.66, 1 }, { 0.7, 1 }, { 0.74, 0.7 }, { 0.77, 1 }, { 0.84, 1 }, { 1, 0 } }
+	local LOOP_STAB = { { 0, 0 }, { 0.63, 0 }, { 0.66, 1 }, { 0.7, 1 }, { 0.74, 0 }, { 0.77, 1 }, { 0.84, 1 }, { 0.9, 0 }, { 1, 0 } }
+	local LOOP_JAW = { { 0, 0 }, { 0.2, -0.3 }, { 0.56, -0.3 }, { 0.63, -0.45 }, { 0.66, 0.35 }, { 0.72, -0.3 }, { 0.77, 0.35 }, { 0.86, 0.35 }, { 1, 0 } }
+	local LOOPER = {
+		-- The body goes round a circle as it turns over, so it flies the loop instead of spinning on the spot.
+		Swim = function(s: number)
+			local u = (s / 4) % 1
+			local turn = keys(u, LOOP_TURN)
+			return turn, 0, 0, LOOP_R * sin(turn), LOOP_R * (1 - cos(turn)) + keys(u, LOOP_LIFT), 0
+		end,
+		Jaw = beat(LOOP_JAW, 4),
+		FinL = stacked(beat(LOOP_WING, 4, ROLL, -1.0), shaken(LOOP_BEATING, 10, -0.45, ROLL)),
+		FinR = stacked(beat(LOOP_WING, 4, ROLL), shaken(LOOP_BEATING, 10, 0.45, ROLL)),
+		FlipperFL = shaken(LOOP_BEATING, 10, -0.35, ROLL, 0.9),
+		FlipperFR = shaken(LOOP_BEATING, 10, 0.35, ROLL, 0.9),
+		Stinger = beat(LOOP_STAB, 4, AHEAD, -1.6),
+	}
+	for i, curl in { 0.5, 0.7, 0.8, 0.9 } do
+		LOOPER["Tail" .. i] = beat(LOOP_CURL, 4, PITCH, -curl)
+	end
+
+	-- Dreadlure (Bait, the threads under its lure): the bait. It shuts that mouth for once, sinks, and dangles its lure out in front,
+	-- twitching; then the mouth is all there is: it takes everything in front of it, shakes it, and backs away.
+	local BAIT_SHUT = { { 0, 0 }, { 0.12, 0.5 }, { 0.5, 0.5 }, { 0.535, -0.5 }, { 0.56, -0.5 }, { 0.6, 0.55 }, { 0.66, 0.2 }, { 0.7, 0.55 }, { 0.8, 0.3 }, { 1, 0 } }
+	local BAIT_AHEAD = { { 0, 0 }, { 0.12, -0.5 }, { 0.5, -2 }, { 0.58, 8 }, { 0.78, 8 }, { 1, 0 } }
+	local BAIT_RISE = { { 0, 0 }, { 0.12, -0.6 }, { 0.5, -0.8 }, { 0.58, 0.8 }, { 0.78, 0.4 }, { 1, 0 } }
+	local BAIT_LEAN = { { 0, 0 }, { 0.5, -0.05 }, { 0.54, 0.14 }, { 0.6, -0.1 }, { 0.78, -0.05 }, { 1, 0 } }
+	local BAIT_DANGLE = { { 0, 0 }, { 0.12, -0.42 }, { 0.5, -0.48 }, { 0.56, 0.5 }, { 0.78, 0.3 }, { 1, 0 } }
+	local BAIT_TWITCH = { { 0, 0 }, { 0.1, 0 }, { 0.16, 1 }, { 0.46, 1 }, { 0.5, 0 }, { 1, 0 } }
+	local BAIT_SHAKE = { { 0, 0 }, { 0.58, 0 }, { 0.61, 1 }, { 0.74, 1 }, { 0.8, 0 }, { 1, 0 } }
+	local BAIT_FIN = { { 0, 0 }, { 0.12, 0.2 }, { 0.5, 0.2 }, { 0.56, -0.6 }, { 0.78, -0.3 }, { 1, 0 } }
+	local BAITER = {
+		Swim = stacked(beat(BAIT_AHEAD, 4, AHEAD), beat(BAIT_RISE, 4, RISE), beat(BAIT_LEAN, 4), shaken(BAIT_SHAKE, 20, 0.15, YAW)),
+		Jaw = beat(BAIT_SHUT, 4),
+		Lure = stacked(beat(BAIT_DANGLE, 4), shaken(BAIT_TWITCH, 6, 0.14, YAW)),
+		LureTip = stacked(beat(BAIT_DANGLE, 4, PITCH, 0.6), shaken(BAIT_TWITCH, 12, 0.22)),
+		Bait = stacked(shaken(BAIT_TWITCH, 16, 0.4), shaken(BAIT_TWITCH, 12, 0.3, ROLL, 1.0)),
+		FinL = beat(BAIT_FIN, 4, ROLL, -1.0),
+		FinR = beat(BAIT_FIN, 4, ROLL),
+	}
+	for i = 1, 4 do
+		BAITER["Tail" .. i] = shaken(BAIT_SHAKE, 12, 0.22 + 0.04 * i, YAW, 0.8 * i)
+	end
+
+	MARKED.Dorsal = FRENZY
+	MARKED.HoodL = HOODED
+	MARKED.Stinger = LOOPER
+	MARKED.Bait = BAITER
+end)()
+
 local function add(model: Model)
 	-- A monster with Stay set (the server's best catch on its pedestal) idles where it is and never walks. One with
 	-- Carried set rides on a player's head (PlotService): it walks while they move and idles while they stand.
@@ -1820,6 +1933,7 @@ local function step(dt: number)
 	local aspect = viewport.X / math.max(viewport.Y, 1)
 	local halfView = math.atan(math.tan(math.rad(camera.FieldOfView) / 2) * math.sqrt(1 + aspect * aspect))
 	updateRings()
+	local pace = if LowDetail.on() then LOW else DinoLife -- Low detail (Settings): far monsters move less smoothly, sooner
 	for _, state in dinos do
 		state.pending += dt
 		state.frame += 1
@@ -1831,10 +1945,10 @@ local function step(dt: number)
 		local shown = state.shown
 		local skip = if state.held then 1 -- leashed: it follows its tumbling body every frame
 			elseif shown then (if shown() then 1 else math.huge)
-			elseif not inView and not state.mine then DinoLife.offScreenFrameSkip -- your own carried one hides on cue (ride)
-			elseif distance > DinoLife.farDistance
-			then DinoLife.farFrameSkip
-			elseif distance > DinoLife.nearDistance then DinoLife.midFrameSkip
+			elseif not inView and not state.mine then pace.offScreenFrameSkip -- your own carried one hides on cue (ride)
+			elseif distance > pace.farDistance
+			then pace.farFrameSkip
+			elseif distance > pace.nearDistance then pace.midFrameSkip
 			else 1
 		if state.frame % skip == 0 then
 			local elapsed = state.pending

@@ -6,6 +6,7 @@ local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local Index = require(ReplicatedStorage.Shared.Config.Index)
 local PlayerData = require(script.Parent.PlayerData)
+local RemoteGuard = require(script.Parent.RemoteGuard)
 
 local IndexService = {}
 
@@ -55,8 +56,9 @@ function IndexService.discover(player: Player, dinoId: string, biome): (boolean,
 	return true, biome.name
 end
 
--- The player pressed a completed world's 2x TRAINING XP button: its boost (Config/Index xpBoost) starts now, added to
--- any that's still running. Once per world.
+-- The player pressed a completed world's reward button: its cash bonus counts from now on (cashMultiplier; the base's
+-- $/s follows within a second, PlotService), and its XP boost (Config/Index xpBoost) starts, added to any that's
+-- still running. Once per world.
 local function claim(player: Player, biomeId: unknown)
 	local data = PlayerData.get(player)
 	if not data or typeof(biomeId) ~= "string" or data.indexClaimed[biomeId] or not biomeComplete(data, biomeId) then
@@ -73,6 +75,18 @@ local function claim(player: Player, biomeId: unknown)
 	data.xpBoostEndsAt = math.max(data.xpBoostEndsAt, os.time()) + Index.xpBoost.seconds
 	IndexService.publishXpBoost(player, data)
 	publish(player, data)
+end
+
+-- What collected worlds multiply the base's $/s by, for good (Config/Index cashBonus): 1 with none, 1.1 with one...
+-- A world counts while its reward is collected and every one of its monsters is still in the Index.
+function IndexService.cashMultiplier(data): number
+	local worlds = 0
+	for _, biome in Biomes do
+		if data.indexClaimed[biome.id] and biomeComplete(data, biome.id) then
+			worlds += 1
+		end
+	end
+	return 1 + Index.cashBonus.perWorld * worlds
 end
 
 -- Training XP multiplier from completing a world, while it runs.
@@ -113,7 +127,7 @@ function IndexService.start()
 	claimRemote = Instance.new("RemoteEvent")
 	claimRemote.Name = "Claim"
 	claimRemote.Parent = folder
-	claimRemote.OnServerEvent:Connect(claim)
+	RemoteGuard.connect(claimRemote, claim, 3, 6)
 	folder.Parent = ReplicatedStorage
 	PlayerData.onLoaded(onLoaded)
 end

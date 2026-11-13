@@ -14,6 +14,7 @@ from mathutils.bvhtree import BVHTree
 
 GAP = 0.03  # how close counts as fighting, in studs at the built size (check_flicker_monsters.GAP)
 STEP = 0.06  # how far each layer is lifted off the one under it, in studs at the built size
+MAX_LIFTS = 3  # the most times one piece is lifted
 # Which colour lies on which: lower numbers are underneath. A role not listed sits at 3, and between two at the same number the
 # smaller one is on top.
 RANK = {"Body": 0, "Skin": 0, "Shell": 0, "Fur": 0, "Belly": 2, "Accent": 2, "Accent2": 2, "Sail": 2, "Plate": 2,
@@ -84,7 +85,9 @@ def _pass(armature, meshes, pieces, area_of, before):
             for _, _, j, _ in tree.find_nearest_range(p, GAP):
                 if j is None or owner[j][0] == owner[i][0] or normals[j].length < 1e-9:
                     continue
-                if abs(n.dot(normals[j].normalized())) < 0.96:
+                if n.dot(normals[j].normalized()) < 0.96:
+                    # Only faces looking the same way can fight (check_flicker_monsters' test): back to back, one is always
+                    # culled. Lifting those too pushed stacked eyes and tooth roots apart pass after pass (map 11, 2026-11-12).
                     continue
                 # The two lie together. Lift toward the side that can be seen (both sides of a thin sheet on a body can't).
                 up, down = open_air(p, n), open_air(p, -n)
@@ -113,6 +116,11 @@ def _pass(armature, meshes, pieces, area_of, before):
         starts.append(total)
         total += len(mesh.data.vertices)
     for (mi, pid), spots in pushes.items():
+        # At most MAX_LIFTS lifts a piece: a shine on a pupil on an eye needs three; more is a piece being shoved on through
+        # whatever it meets next (a tooth went through the mouth, the face and into the nose, map 11, 2026-11-12).
+        if before[("passes", mi, pid)].count(1) >= MAX_LIFTS:
+            continue
+        before[("passes", mi, pid)].append(1)
         before[(mi, pid)].extend(d for _, d, _ in spots[:8])
         mesh = meshes[mi]
         inverse = mesh.matrix_world.inverted()

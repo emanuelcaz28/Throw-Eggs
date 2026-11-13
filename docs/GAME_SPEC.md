@@ -1071,7 +1071,8 @@ designed yet; the build plan is in `docs/RETENTION_PLAN.md`.
   number on screen. (Before, each had a fixed outcome: x100 always the 4th or 5th rarest with Gold, Ruby or Diamond,
   x500 always the map's rarest in a rare colour and size, so the friends' 20 gifted x500s hatched the same monster 20
   times.) Each is rolled like any throw:
-  - **x50** (daily reward): 50x luck.
+  - **x50** (daily reward): 50x luck. **[Owner, 2026-11-13]** Always the map's best normal monster (its 6th), never a
+    prize, with a colour or a size: see "Paid luck must beat free luck" below.
   - **x100:** 100x luck. At a map's start mostly its 3rd and 2nd rarest, the rarest about 1 in 10; at its far end the
     two rarest about equally. A colour on a third to a half of them.
   - **x500:** 500x luck. The two rarest about equally, the third now and then, a colour on 70%. About a third land
@@ -1096,6 +1097,25 @@ designed yet; the build plan is in `docs/RETENTION_PLAN.md`.
   throw is a 100% Epic and big sizes are far likelier (`Config/Catch` `shortMapSizeBoost` = 1: every size as likely as
   the others). On map 1: x100 gives each size about 17% (Unit of Doom was 0.1%), x500 gives Mega Chonk or bigger 84%
   of the time. Details shows it per map, because it reads the same `CatchOdds` code.
+- **[Owner, 2026-11-13] Paid luck must beat free luck.** The point of the luck system: plain luck is not so lucky
+  that nobody buys x100 and x500, and free players don't get too much power. Checked against the roll's own code:
+  plain luck is weak as meant (the map's best normal monster comes from the 250-throw guarantee, a prize about once in
+  a whole game), but five things worked against the shop. **[Built, not tested in Studio]**
+  - **x100 and x500 always give one of the map's two prizes** (its 7th or 8th; `Config/Catch` `luckyHits` `minPlace` 7),
+    with a colour and a size as before. From map 6 on a x100 used to pay 5x to 6x the map's best normal monster (160x
+    on map 1), less than the next map's free first catch, with a prize 4% of the time. Now, against the map's best
+    normal monster: x100 about 16x and x500 about 90x on every map from the 4th on (maps 1 to 3 as before: 160x, 72x,
+    50x and 400x, 290x, 180x). Shop text: "one of the map's 2 rarest monsters, 1 in 1M+" / "1 in 100M+".
+  - **The daily x50 is always the map's best normal monster** (its 6th: `minPlace` 6, `maxPlace` 6), in a colour or a
+    size that makes it 1 in 100,000 or rarer: about 3.5x that monster plain (was about 2x, often a common monster in a
+    rare colour). Never a prize: prizes are what Robux buys. Day 7 stays a x500.
+  - **Server Luck x2 lasts 20 minutes** (was 3: about 9 throws for R$ 29).
+  - **The free x500 comes later, for new players only:** the free x100 stays at 8 minutes of play and the x500 comes
+    30 minutes after it, at 38 (was 20: it arrived while a new map was minutes away, on top of the starter run, the big
+    shots and the new-world gifts). Saves that had already played keep 8 and 20 (`Config/PlayGifts`
+    `luckyThrowsBefore`, save field `playGiftPlan`).
+  - The play simulation is unchanged by this: an average free player still reaches map 15 in about 21.7 h.
+  - Left as they are, on purpose: Double Luck and Ghost Rush do little, and prizes almost never come from plain throws.
 - **[Built] Luck offer, [Owner, 2026-11-06]** (`LuckOfferController`, Figma "Throw Eggs - Shop" Luck offer v2, from the
   owner's recording of the reference): while aiming, and only then, two glowing pills in the top left sell x100 and x500
   (rainbow rim, halo, rays, shine, sparkles, clover bob), with the R$ 3 deal on x100 until it's used. Prices come from
@@ -1618,6 +1638,14 @@ with a flash (`ThrowCinematic.doorBurst`). The door itself is unchanged.
 
 **[Seen]** The reference's gear icon sits next to Throw Power, and spending shows a red "-$X" floating up from cash.
 
+**[Built, 2026-11-13] Low detail, [Owner]** "a switchable option in settings, not automatically". A switch in the gear's
+Settings panel, under **Performance** (the old "Bases" heading, with "Hide other players' dinos"), off by default and
+saved (`Config/Settings` `lowDetail`, `LowDetail`). On that player's screen only: no glow or sun rays, no shadows from
+the map, no clouds, moving props stand still, and monsters further than 50 studs move less smoothly (120 normally).
+Turning it off puts everything back. Nothing about the game itself changes. Measured in Studio at the start of the lane:
+589 of 1,896 loaded map parts cast a shadow; with the switch on, none. The switch's own logic is tested; the row was
+not clicked through by hand, and no frame rate was measured on a real phone.
+
 **[Built]** Pop-up text, designed in Figma ([Throw Eggs - Pop-up Text](https://www.figma.com/design/RPcPJ7Qm7DBI6957rW04cG),
 where each motion plays) and built in `PopText` with its looks and timings in `Config/Pop`. No panel behind any of it,
 just a thick ink outline and a hard shadow:
@@ -1752,13 +1780,13 @@ the next size and its level.
   until `board_HighestIncome` and `board_FarthestThrow` are made in `build_leaderboards.py`.
 
 - **Egg Shop [Built]:** one egg per map, see The economy above.
-- **Robux Shop [Built]:** x2 Cash, x2 Training, x2 Power, lucky throws x100 (R$ 3 once, then R$ 9) and x500 (one throw each), Server Luck x2 (3 min; was 15 until 2026-11-09), 4 cash packs, 4 Throw Power packs, free starter dino.
+- **Robux Shop [Built]:** x2 Cash, x2 Training, x2 Power, lucky throws x100 (R$ 3 once, then R$ 9) and x500 (one throw each), Server Luck x2 (20 min since 2026-11-13; was 3, and 15 until 2026-11-09), 4 cash packs, 4 Throw Power packs, free starter dino.
   Product ids still have to be created on the Creator Dashboard.
   **[Owner, 2026-11-05]** Everything bought comes back after leaving. Server Luck runs for the whole server, and the
   buyer also keeps the time they haven't used (it only counts down while they play): it starts again when they next
   join, even if the old server closed. Game Passes are checked on join, with retries if Roblox doesn't answer.
 - **Special monsters [Built], [Owner, 2026-11-05]:** Game Passes at the top of the Shop, bought once (a pass bought on
-  the Store page counts, given on the next join). They can't be sold. They belong to no map and earn a share of your best monster (`Config/Specials`). The income is fixed when bought and saved on the monster;
+  the Store page counts, given on the next join). They can't be sold. They belong to no map and earn a share of your best monster (`Config/Specials`). ~~The income is fixed when bought~~ **[Owner, 2026-11-12]** The income is saved on the monster and follows your best monster: whenever your monsters change (a catch, a placement, a sale, a feed) it is worked out again as its share of the best you own, so its $/s tag and what it pays go up; it never goes down (`PlotService.refreshSpecials`);
   other special monsters never count as "best", so buying a second can't multiply the first. A bought monster always
   fits: it goes to the backpack if the base is full. First one: **Gloomfin**, 900%, a dark shark floating clear of the
   ground with red glowing eyes (`assets/models/build_special_monsters.py`; our name, the owner may rename it). Its
@@ -1767,6 +1795,16 @@ the next size and its level.
   under hard brows and bone horns, a torn bone-edged dorsal fin, bone spikes, burning gills and slashes, and foam
   dripping from its jaws. It swims and hovers like The Abyss's monsters, and its foam's Drip bone gives it The
   Weeping Dark's RAGE on top: every 4 seconds it lunges and bites, snapping between, its tail cracking.
+- **The shop four, better looking and with their own attacks [Built, not imported yet], [Owner, 2026-11-12]:** all four specials got
+  more to look at (tiger bands over the dark back, a burning crack across the skull; Gloomfin small under-fins, jaw spurs and
+  veins in its dorsal fin; Duskeel a cobra hood with a false eye and a burning sail edge; Umbray burning wing edges and a
+  harpoon stinger; Dreadlure belly lights and bait threads under its lure) and an attack nothing else has, 4 seconds, once per
+  `DinoLife.attackCycle`, nothing leaving the body. A marker bone picks it (`MARKED` in `DinoLifeController`, mirrored in
+  `build_special_monsters.py`): **Gloomfin** `Dorsal`, the death roll (draws back, rams, rolls twice biting, last bite and shake;
+  this replaces RAGE, its Drip bone is gone); **Duskeel** `HoodL`, the hooded strike (rears like a cobra, hood wide, strikes
+  ahead then to the side); **Umbray** `Stinger`, the loop and the sting (loops the loop, tail whips over its back, stabs twice);
+  **Dreadlure** `Bait`, the bait (shuts its mouth, dangles its lure, then lunges and takes everything in front). Until the new
+  FBX files are imported the old models keep their old moves.
 - **Prism Egg [Built], [Owner, 2026-11-05]:** a Robux egg (Developer Product) bought again and again, like the
   reference's Rainbow Egg, on a card under the pass monsters. It hatches at once, rolled on the server, into one of
   three special monsters of Gloomfin's dark family: **Duskeel** 150% (70%), **Umbray** 300% (25%), **Dreadlure** 700%
@@ -1836,11 +1874,16 @@ the next size and its level.
   its "1 in X" and its name; unseen ones are black silhouettes named "???" with their rarity and odds still shown.
   The total found sits in the header, the map's reward under its monsters. It opens on the farthest map you've
   found anything in. **[Owner, 2026-11-06]** Completing a world gives only
-  x2 training XP for 15 minutes (`Config/Index` xpBoost; shown in the boost row at the bottom): no cash or luck from the Index. **[Owner, 2026-11-11]** It is
+  x2 training XP for 15 minutes (`Config/Index` xpBoost; shown in the boost row at the bottom): no cash or luck from the Index. **[Owner, 2026-11-13]** Replaced: a
+  world needs both its prize monsters, which now come from x100 and x500 throws (section 8b), and 15 minutes of XP was
+  too little for that. Every collected world now also gives **+10% cash, forever** (`Config/Index` `cashBonus`,
+  `IndexService.cashMultiplier`, applied in `PlotService`): +150% with all 15, on top of x2 Cash. Cash was chosen
+  because it barely changes how fast anyone finishes. The button reads "+10% CASH FOREVER"; the XP boost still comes with
+  it. Still no luck from the Index. **[Built]** maths tested in Studio; the button was not pressed in a play test. **[Owner, 2026-11-11]** It is
   collected by hand in the Index, not given the moment the world is completed.
 - **Gifts for staying [Built, not play-tested], [Owner, 2026-11-12]** (`Config/PlayGifts`; to keep a new player past
   10 minutes): once per save, counted in minutes of play after the tutorial. A free x100 lucky throw at 8 minutes and a
-  free x500 at 20 (**[Owner, 2026-11-12]** x500, not x100), shown as a gift icon counting down in the boost row, with the gift notification when it arrives. At 5 minutes the
+  free x500 at 38 (**[Owner, 2026-11-12]** x500, not x100; **[Owner, 2026-11-13]** 30 minutes after the x100, was 20; players who already played keep 20, section 8b), shown as a gift icon counting down in the boost row, with the gift notification when it arrives. At 5 minutes the
   player's own first event (Double Luck, 5 minutes, only for them) starts, unless a real event is running then.
 - **Gift notification [Built], [Owner, 2026-11-12]** (Figma "Throw Eggs - Pop-up Text", `Gift Toast` 20:140;
   `GiftToastController`): a small card at the top right for free play gifts and gifts from other players, not a big

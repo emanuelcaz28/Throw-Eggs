@@ -1,6 +1,12 @@
--- The Dino Index. Completing a world gives only a timed XP boost: no cash or luck, on the owner's word. The player
--- collects it by hand, with the world's 2x TRAINING XP button [Owner, 2026-11-11].
+-- The Dino Index. The player collects a completed world's reward by hand, with the world's button [Owner, 2026-11-11].
+-- [Owner, 2026-11-13] It was only a timed XP boost ("no cash or luck"). A world needs both its prize monsters, which
+-- now really come from x100 and x500 throws (Config/Catch luckyHits), and 15 minutes of XP was too little for that:
+-- every collected world now also gives more cash, for good. Cash barely changes how fast anyone finishes (the x2 Cash
+-- pass moves map 15 from 20.6 h to 19.9 h), so it's a reward to show off, not a shortcut. Still no luck.
 return {
+	-- Every collected world adds this share to everything the base earns, forever (IndexService.cashMultiplier,
+	-- PlotService): 0.1 = +10% a world, +150% with all 15. It adds up world by world and multiplies with x2 Cash.
+	cashBonus = { perWorld = 0.1 },
 	-- Completing a world doubles training XP for a while (not permanent). Time away counts down too.
 	xpBoost = { multiplier = 2, seconds = 15 * 60 },
 	-- The egg that cracks open when a world's reward is collected (an id from Config/Eggs).

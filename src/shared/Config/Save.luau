@@ -65,6 +65,7 @@ return {
 		dailyTasksDone = false, -- whether today's x2 XP has been given
 		playGiftSeconds = 0, -- seconds played since the tutorial ended, while a gift for staying is still owed (Config/PlayGifts)
 		playGiftsGiven = 0, -- how many of its free lucky throws have been given
+		playGiftPlan = -1, -- which times its free lucky throws follow (Config/PlayGifts): 2 = luckyThrows, 1 = luckyThrowsBefore (a save that had already played before 2026-11-13); -1 = not decided
 		firstEventDone = false, -- the player's own first event has started (or a real one was running then)
 		dailyStreak = 0, -- the last daily reward day claimed, 1 to 7 (Config/Daily)
 		dailyLastDay = -1, -- the UTC day number (os.time() // 86400) of the last daily claim

@@ -29,6 +29,7 @@ from build_forest import Model  # noqa: E402
 from build_spore_hollow_monsters import egg  # noqa: E402
 from build_thorn_kingdom_monsters import point  # noqa: E402
 from rare_kit import beast_head, curve, jointed, ring_round, sabre, slit_eye, sweep, sweep_fine, swing  # noqa: E402
+from build_spore_hollow_toxic import grounded  # noqa: E402
 
 RENDERS = HERE.parent.parent / "design" / "world" / "monsters_midnight_carnival_7_8"
 BLEND = "midnight_carnival_monsters_7_8"  # for check_map.py and export_fbx.py
@@ -69,11 +70,9 @@ def last_laugh():
     rings = [((0, -9.0, 7.6), 4.6, 4.6), ((0, -6.6, 8.0), 6.8, 6.4), ((0, -2.6, 9.0), 6.2, 6.4), ((0, 1.2, 10.2), 7.8, 8.4), ((0, 3.8, 10.6), 8.0, 8.2), ((0, 6.0, 10.5), 7.2, 7.0), ((0, 7.8, 10.5), 6.6, 6.0), ((0, 9.0, 10.8), 6.4, 5.2)]
     sweep_fine(m, "Body", rings, ["Spine", "Spine", "Spine", "Spine", "Maul", "Neck", "Neck", "Neck"], sides=16, under="Belly", under_faces=5)
     # A ridge of dark mane down its back, a low keel standing clear of the hide.
-    sweep_fine(m, "Accent", [((0, -6.6, 11.1), 0.8, 0.9), ((0, -2.6, 12.4), 1.1, 1.2), ((0, 1.2, 14.7), 1.3, 1.4)], sides=6)
-    m.bone = "Maul"
-    sweep_fine(m, "Accent", [((0, 1.2, 14.7), 1.3, 1.4), ((0, 3.8, 15.0), 1.2, 1.3)], sides=6, per=2)
-    m.bone = "Neck"
-    sweep_fine(m, "Accent", [((0, 3.8, 15.0), 1.2, 1.3), ((0, 6.0, 14.3), 1.0, 1.1), ((0, 7.8, 13.7), 0.5, 0.5)], sides=6, per=2)
+    # One strip over three bones, so it stretches with the lunge instead of breaking into three (2026-11-12).
+    sweep_fine(m, "Accent", [((0, -6.6, 11.1), 0.8, 0.9), ((0, -2.6, 12.4), 1.1, 1.2), ((0, 1.2, 14.7), 1.3, 1.4), ((0, 3.8, 15.0), 1.2, 1.3),
+                             ((0, 6.0, 14.3), 1.0, 1.1), ((0, 7.8, 13.7), 0.5, 0.5)], ["Spine", "Spine", "Maul", "Maul", "Neck", "Neck"], sides=6)
     m.bone = "Spine"
     for name, side, y, top, hind in (("FrontL", -1, 2.6, 8.4, False), ("FrontR", 1, 2.6, 8.4, False), ("BackL", -1, -6.4, 7.0, True), ("BackR", 1, -6.4, 7.0, True)):
         x = side * 3.2
@@ -83,15 +82,19 @@ def last_laugh():
         foot = Vector((x + side * 0.3, y + 0.8, 0.5))
         egg(m, "Body", (x * 0.92, y, top + 0.7), 1.9, 3.0, 3.0, 12, 7)
         limb(m, "Body", [Vector((x, y, top)), knee, ankle, foot], (3.0, 2.1, 1.5, 1.8))
-        talons(m, foot + Vector((0, 0.9, -0.1)), (0, 1, -0.3), 4, 0.6, 1.5, 0.5)
+        talons(m, foot + Vector((0, 0.0 if hind else 0.45, -0.1)), (0, 1, -0.3), 4, 0.5, 1.5, 0.5)  # rooted in the foot (they stood clear of the hind feet)
     m.bone = "Spine"
     tail = [(p, w, w) for p, w in zip(curve([(0, -8.8, 8.8), (0, -11.0, 8.0), (0, -12.6, 6.6), (0, -13.4, 5.0)], 8), (2.0, 1.9, 1.8, 1.8, 1.9, 1.9, 1.4, 0.3))]
     jointed(m, "Accent", ["Tail1", "Tail2", "Tail3"], tail)
     m.use("Head", (0, 7.8, 9.8), "Neck")
-    beast_head(m, 7.6, 9.2, 8.8, 7.6, 3.8, gape=-0.72, upper="Body", lower="Accent", brow="Accent", eye=0.5, teeth=9, fang=1.1)
+    beast_head(m, 7.6, 9.2, 8.8, 7.6, 3.8, gape=-0.6, upper="Body", lower="Accent", brow="Accent", eye=0.8, teeth=9, fang=1.1, tooth=0.6, layer=0.08)  # 2026-11-12 polish: eyes you can see, teeth that fit
+    for side in (-1, 1):  # an upper lip along the teeth: beast_head's upper teeth hung below the skull (2026-11-12)
+        rim = [((side * 7.6 / 2 * (0.78 - 0.5 * t * t), 7.6 + 8.8 * t, 9.2 + 0.45), 1.0, 1.1) for t in (0.26, 0.44, 0.62, 0.8, 0.97)]
+        sweep_fine(m, "Body", rim, sides=8, per=2)
     for side in (-1, 1):  # round ears, flat back
         egg(m, "Accent", (side * 3.2, 8.4, 13.2), 1.1, 0.5, 1.5, 8, 5)
     m.head_centre = (0, 13.0, 9.8)
+    grounded(m)  # its talons went under the floor
     return m
 
 
@@ -105,8 +108,9 @@ def unbearable():
     m.joint("Maul", (0, -0.4, 11.0), "Spine")
     m.joint("Neck", (0, 3.0, 14.2), "Maul")
     # One huge body from the hips up over the shoulders and forward into the neck.
-    rings = [((0, -3.0, 5.4), 7.6, 6.6), ((0, -2.2, 7.6), 10.8, 8.8), ((0, -0.8, 10.4), 12.4, 9.4), ((0, 0.6, 12.8), 14.8, 9.8), ((0, 2.0, 14.6), 12.6, 8.6), ((0, 3.4, 15.6), 9.8, 7.4), ((0, 4.5, 15.7), 9.0, 6.8)]
-    sweep_fine(m, "Body", rings, ["Spine", "Spine", "Spine", "Maul", "Maul", "Neck", "Neck"], sides=18, up=(0, -0.3, 1))
+    rings = [((0, -3.0, 5.4), 7.6, 6.6), ((0, -2.2, 7.6), 10.8, 8.8), ((0, -0.8, 10.4), 12.4, 9.4), ((0, 0.6, 12.8), 14.8, 9.8), ((0, 2.0, 14.6), 12.6, 8.6), ((0, 3.4, 15.6), 9.8, 7.4), ((0, 4.5, 15.7), 9.0, 6.8),
+             ((0, 5.8, 15.4), 8.0, 6.0)]  # the last ring rides the Head, so no gap opens at the neck when it turns its head (2026-11-12)
+    sweep_fine(m, "Body", rings, ["Spine", "Spine", "Spine", "Maul", "Maul", "Neck", "Neck", "Head"], sides=18, up=(0, -0.3, 1))
     m.bone = "Spine"
     for letter, side in (("L", -1), ("R", 1)):
         hip = Vector((side * 3.8, -2.2, 6.6))
@@ -118,7 +122,7 @@ def unbearable():
         limb(m, "Body", [knee, ankle], (4.2, 3.6))
         foot = Vector((side * 4.8, 0.4, 0.8))
         sweep_fine(m, "Accent", [(tuple(foot + Vector((0, -2.2, 0))), 3.6, 1.8), (tuple(foot), 4.2, 1.6), (tuple(foot + Vector((0, 2.0, -0.2))), 4.0, 1.1)], sides=10, per=2)
-        talons(m, foot + Vector((0, 2.4, -0.2)), (0, 1, -0.3), 4, 0.95, 1.9, 0.7)
+        talons(m, foot + Vector((0, 1.8, -0.2)), (0, 1, -0.3), 4, 0.95, 1.9, 0.7)  # rooted in the foot, not 0.4 in front of it (2026-11-12)
     for letter, side in (("L", -1), ("R", 1)):
         shoulder, elbow, wrist = Vector((side * 6.6, 1.6, 14.0)), Vector((side * 10.4, 3.4, 11.0)), Vector((side * 10.0, 8.0, 10.4))
         m.use(f"Arm{letter}", tuple(shoulder), "Maul")
@@ -127,10 +131,11 @@ def unbearable():
         egg(m, "Accent", tuple(hand), 2.5, 2.0, 1.5, 10, 6)
         talons(m, hand + Vector((0, 1.4, 0)), (0, 1, -0.2), 5, 0.98, 3.4, 0.86)
     m.use("Head", (0, 4.4, 13.8), "Neck")
-    beast_head(m, 4.0, 12.6, 6.8, 9.6, 5.0, gape=-0.78, upper="Body", lower="Accent", brow="Accent", eye=0.5, teeth=8, fang=1.25, throat=0.7)
+    beast_head(m, 4.0, 12.6, 6.8, 9.6, 5.0, gape=-0.62, upper="Body", lower="Accent", brow="Accent", eye=0.8, teeth=8, fang=1.25, throat=0.7, tooth=0.55, layer=0.08)  # 2026-11-12 polish: no tusks
     for side in (-1, 1):  # small round ears
         egg(m, "Accent", (side * 4.0, 4.4, 18.0), 1.4, 0.7, 1.4, 10, 5)
     m.head_centre = (0, 9.0, 13.8)
+    grounded(m)  # its talons went under the floor
     return m
 
 

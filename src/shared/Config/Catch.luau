@@ -50,14 +50,21 @@ return {
 	-- minRarity: no monster below this rarity word (1 Common, 2 Uncommon, 3 Rare, 4 Epic, 5 Legendary, Config/RarityLadder).
 	-- A map with no monster that rare (maps 1 and 2 top out at Epic) gives its rarest word instead, with
 	-- shortMapSizeBoost below [Owner, 2026-11-08: "100% chance for an epic for the first maps and waaay higher chances
-	-- of a big size monster"]. minPlace: and no monster more common than this place in its map's list, so late maps,
-	-- where every word is Legendary or higher, still give their rarer half as before.
+	-- of a big size monster"]. minPlace: and no monster more common than this place in its map's list; maxPlace: and none
+	-- rarer than this place.
+	-- [Owner, 2026-11-13] Plain luck stays weak so the paid throws are worth buying, and a paid throw must be worth the
+	-- same on every map. From map 6 on a x100 paid only 5x to 6x the map's best normal monster (160x on map 1), less than
+	-- the next map's free first catch, and gave a prize monster 4% of the time. So x100 and x500 now always give one of
+	-- the map's two prizes (minPlace 7: its 7th or 8th, Config/Dinos): about 16x and 90x the best normal monster on
+	-- every map from the 4th on. The daily x50 paid about 2x and was often a common monster in a rare colour; it is
+	-- now always the map's best normal monster (its 6th) with a colour or a size, about 3x, and never a prize: prizes
+	-- are what Robux buys.
 	-- colourAndSize: always a colour and a size, never "No colour" or "Normal size" [Owner, 2026-11-07: x100 and
 	-- x500 must give 0% Common to Epic, no colour and normal size].
 	luckyHits = {
-		{ multiplier = 500, minOneIn = 100000000, minRarity = 5, minPlace = 5, colourAndSize = true }, -- 1 in 100 million or rarer: GODLY!, sometimes IMPOSSIBLE!
-		{ multiplier = 100, minOneIn = 1000000, minRarity = 5, minPlace = 5, colourAndSize = true }, -- 1 in a million or rarer: GODLY!
-		{ multiplier = 50, minOneIn = 100000 }, -- the daily reward's: 1 in 100,000 or rarer, LEGENDARY!
+		{ multiplier = 500, minOneIn = 100000000, minRarity = 5, minPlace = 7, colourAndSize = true }, -- 1 in 100 million or rarer: GODLY!, sometimes IMPOSSIBLE!
+		{ multiplier = 100, minOneIn = 1000000, minRarity = 5, minPlace = 7, colourAndSize = true }, -- 1 in a million or rarer: GODLY!
+		{ multiplier = 50, minOneIn = 100000, minPlace = 6, maxPlace = 6 }, -- the daily reward's: the map's 6th, 1 in 100,000 or rarer, LEGENDARY!
 	},
 	-- On a map that falls short of a lucky throw's minRarity, each size's chance is also multiplied by its own
 	-- "1 in X" to this power. At 1 every size is as likely as the others: on map 1 a x100 gives Unit of Doom about

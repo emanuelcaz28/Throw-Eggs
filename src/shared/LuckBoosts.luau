@@ -3,6 +3,7 @@
 -- ReplicatedStorage; clients can't change it, so the server's rolls read it too. One-throw boosts are LuckyThrows.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local AdminBoosts = require(script.Parent.AdminBoosts)
 local Events = require(script.Parent.Config.Events)
 local Shop = require(script.Parent.Config.Shop)
 
@@ -15,6 +16,11 @@ function LuckBoosts.active(player: Player, now: number): { Boost }
 	local endsAt = ReplicatedStorage:GetAttribute("ServerLuckEndsAt")
 	if endsAt and endsAt > now then
 		table.insert(list, { name = "Server Luck", multiplier = Shop.serverLuck.multiplier, endsAt = endsAt })
+	end
+	-- An admin's server luck (admin panel, AdminBoosts).
+	local adminLuck, adminEndsAt = AdminBoosts.get("luck", now)
+	if adminLuck and adminEndsAt then
+		table.insert(list, { name = "Admin Luck", multiplier = adminLuck, endsAt = adminEndsAt })
 	end
 	-- A luck event (Config/Events). Its end is on the events' clock, so it's turned back into server time.
 	local event, eventEndsAt = Events.active(player)

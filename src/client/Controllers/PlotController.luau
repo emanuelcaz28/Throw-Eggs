@@ -974,9 +974,10 @@ function PlotController.start()
 			send("placeAt", dino.key, spot.x, spot.z)
 		end
 	end)
-	-- Spending floats a red "-$X" up beside the cash and other gains a green "+$X", but not the plot's $/s
-	-- ticking in every second (PlotService pays exactly the Income attribute each second). A rise in $/s floats
-	-- up beside the $/s line. Both start past the end of the longer number.
+	-- Spending floats a red "-$X" up beside the cash. Gains float nothing (owner 2026-11-12: the +$ every second
+	-- was annoying; telling the $/s tick from other gains by comparing it with Income failed whenever Income
+	-- changed). Sales, offline cash and cash packs have their own notice or moment. A rise in $/s floats up
+	-- beside the $/s line. Both start past the end of the longer number.
 	local lastCash: number? = nil
 	local lastIncome: number? = nil
 	local function moneyPop(text: string, color: Color3, row: TextLabel)
@@ -987,11 +988,8 @@ function PlotController.start()
 		local cash = player:GetAttribute("Cash") or 0
 		if lastCash then
 			local change = cash - lastCash
-			local tick = player:GetAttribute("Income") or 0
 			if change < 0 then
 				moneyPop(`-{Format.cash(-change)}`, Pop.colors.spent, hud.cash)
-			elseif change > 0 and math.abs(change - tick) > math.max(1, tick * 0.001) then
-				moneyPop(`+{Format.cash(change)}`, Pop.colors.cash, hud.cash)
 			end
 		end
 		lastCash = cash

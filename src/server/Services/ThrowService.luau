@@ -4,6 +4,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local AdminBoosts = require(ReplicatedStorage.Shared.AdminBoosts)
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local DeepEnd = require(ReplicatedStorage.Shared.Config.DeepEnd)
 local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
@@ -23,6 +24,7 @@ local DinoLibrary = require(script.Parent.DinoLibrary)
 local DinoRoll = require(script.Parent.DinoRoll)
 local CompetitionService = require(script.Parent.CompetitionService)
 local EggService = require(script.Parent.EggService)
+local FilmingService = require(script.Parent.FilmingService)
 local FlightStreaming = require(script.Parent.FlightStreaming)
 local IndexService = require(script.Parent.IndexService)
 local LeashService = require(script.Parent.LeashService)
@@ -142,6 +144,7 @@ local function onTap(player: Player, height: any, lucky: any)
 	end
 	-- height ~= height is only true for NaN.
 	local power = TrainingService.getThrowPower(player)
+	power = power and power * AdminBoosts.multiplier("power") -- an admin's server power boost (admin panel)
 	if typeof(height) ~= "number" or height ~= height or os.clock() - state.aimStartedAt < Throw.meter.minTime
 		or not isOnPad(player) or not power
 	then
@@ -170,6 +173,11 @@ local function onTap(player: Player, height: any, lucky: any)
 	local reach = PowerLimit.apply(fullReach, settings.powerLimitOn, settings.powerLimit)
 	local limited = reach < fullReach
 	local distance = math.min(reach, Throw.farthestLanding())
+	-- Studio filming mode (FilmingService): the egg lands in the picked monster's map, whatever the power.
+	local filmed = FilmingService.pick(player)
+	if filmed then
+		fullReach, reach, distance, limited = filmed.distance, filmed.distance, filmed.distance, false
+	end
 
 	-- The egg in hand when it leaves counts, even if the player swaps mid-flight.
 	local egg = EggService.equipped(player)
@@ -297,13 +305,15 @@ local function onTap(player: Player, height: any, lucky: any)
 		-- A lucky throw is a guaranteed hit (Config/Catch luckyHits). The luck shown leaves its x out [Owner, 2026-11-06].
 		local hit = if luckyThrow > 1 then DinoRoll.luckyHit(luckyThrow) else nil
 		local depth = if deep then DeepEnd.depthAt(reach) else 0
-		local catch = if tutorial and tutorial.kind == "first"
+		local catch = if filmed and filmed.biome == pool
+			then DinoRoll.fixedCatch(pool, filmed.rank, filmed.mutation :: any, filmed.size :: any)
+			elseif tutorial and tutorial.kind == "first"
 			then TutorialService.plainCatch(pool, tutorial.rank)
 			elseif bigShot then DinoRoll.fixedCatch(pool, bigShot.rank, bigShot.mutation, bigShot.size)
 			else DinoRoll.rollCatch(pool, rollLuck, minRank, data and data.recentCatches, hit, DeepEnd.boostAt(reach), band, player)
 		catch.luck = Luck.at(luckDistance) * Luck.eggFactor(egg.luckBonus, luckDistance) * timedLuck
 		-- The surprise gift is never told to the client: it must look like a lucky catch [Owner, 2026-11-08].
-		catch.guarantee = if reason == "gift" then nil else reason
+		catch.guarantee = if reason == "gift" or filmed then nil else reason
 		if data then
 			data.throwsSinceRare = if catch.rank >= rarest(Hooks.pity.rarest) then 0 else data.throwsSinceRare + 1
 			data.throwsSinceRarest = if catch.rank >= rarest(Hooks.jackpotPity.rarest) then 0 else data.throwsSinceRarest + 1

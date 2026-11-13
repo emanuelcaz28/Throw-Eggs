@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 local Biomes = require(ReplicatedStorage.Shared.Config.Biomes)
 local LightingConfig = require(ReplicatedStorage.Shared.Config.Lighting)
 local Map = require(ReplicatedStorage.Shared.Config.Map)
+local LowDetail = require(script.Parent.LowDetail)
 
 local SkyController = {}
 
@@ -155,6 +156,14 @@ function SkyController.start()
 	folder.Parent = workspace
 
 	RunService.Heartbeat:Connect(function(dt)
+		-- Low detail (Settings): no clouds at all.
+		local low = LowDetail.on()
+		if low ~= (folder.Parent == nil) then
+			folder.Parent = if low then nil else workspace
+		end
+		if low then
+			return
+		end
 		for _, cloud in clouds do
 			-- Drift, and when far enough, start over from the other side of the start point.
 			cloud.travelled = (cloud.travelled + cloud.speed * dt) % settings.wrap

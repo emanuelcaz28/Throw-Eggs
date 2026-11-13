@@ -20,6 +20,7 @@ local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local RemoteGuard = require(script.Parent.RemoteGuard)
 local BaseSigns = require(script.Parent.BaseSigns)
 local PlayerData = require(script.Parent.PlayerData)
+local IndexService = require(script.Parent.IndexService)
 local TutorialService = require(script.Parent.TutorialService)
 local World = require(ReplicatedStorage.Shared.World)
 
@@ -179,6 +180,23 @@ local function bestIncome(data): number
 	return best
 end
 
+-- [Owner, 2026-11-12] A special monster follows the player's best monster: whenever the monsters change (a new catch, one
+-- placed, sold or fed) its income is worked out again as its share of the best, so the $/s over its head and the money it
+-- pays go up as the player catches better ones. It only ever goes up: selling or feeding away the best monster never takes
+-- money off something bought with Robux. Before this the income was written once, when bought, and never changed.
+local function refreshSpecials(data)
+	local best = bestIncome(data)
+	for _, entry in data.dinos do
+		local special = DinoStats.special(entry.id)
+		if special then
+			local income = math.max(best, special.minimumIncome) * special.share
+			if income > (entry.income or 0) then
+				entry.income = income
+			end
+		end
+	end
+end
+
 -- The plot's $/s with every lasting bonus, but not the timed event's.
 local function baseIncome(player: Player, data): number
 	local total = 0
@@ -186,7 +204,7 @@ local function baseIncome(player: Player, data): number
 		total += incomeOf(entry)
 	end
 	local passMultiplier = if player:GetAttribute("HasDoubleCash") then Shop.doubleCash.multiplier else 1
-	return total * passMultiplier
+	return total * passMultiplier * IndexService.cashMultiplier(data) -- worlds completed in the Index (Config/Index cashBonus)
 end
 
 local function totalIncome(player: Player, data): number
@@ -409,6 +427,7 @@ end
 
 local function changed(player: Player, data)
 	updateSpots(data)
+	refreshSpecials(data) -- before the statues and the list are rebuilt, so both show the new $/s
 	-- A carried dino that was placed, sold or moved by Equip Best is no longer carried.
 	local heldKey = held[player]
 	if heldKey then
@@ -697,8 +716,10 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 end
 
 -- Pays a Shop cash pack: minutes of the plot's $/s without events (Config/Shop). The caller saves the data.
-function PlotService.payCashPack(player: Player, data, pack)
-	earn(player, data, Shop.cashPackAmount(pack, baseIncome(player, data)))
+function PlotService.payCashPack(player: Player, data, pack): number
+	local amount = Shop.cashPackAmount(pack, baseIncome(player, data))
+	earn(player, data, amount)
+	return amount
 end
 
 -- A short message above the player's hotbar, like "Plot upgraded!". bad shows it in red, for things that
@@ -757,7 +778,7 @@ function PlotService.putAway(player: Player)
 	end
 end
 
--- Gives a Config/Specials monster, its income fixed now at its share of the player's best, and returns that income.
+-- Gives a Config/Specials monster, its income its share of the player's best now (it grows later, refreshSpecials), and returns that income.
 -- The caller saves the data.
 function PlotService.addSpecial(player: Player, data, special): number
 	local income = math.max(bestIncome(data), special.minimumIncome) * special.share

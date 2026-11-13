@@ -35,6 +35,10 @@ shared/Roles.luau, all there already). Skin roles Body, Accent, Belly and Claw t
 paint, gold, stripes, hats and coats keep their colour. Built at the first map's size; the game scales them by
 Config/Biomes standardScale. 1 Blender unit = 1 stud, models face +Y, feet on Z = 0.
 
+Polished 2026-11-12 (the owner turned down a full redesign, build_midnight_carnival_fright.py: "i want their old designs ... all i
+wanted was an improvement for their flaws"): round eyes with a shine instead of square ones, the scowl eased a little, the painted grin
+kept on the face, rounder balls and balloons, Grinmaster's whip over and behind its head instead of through its face.
+
 No stud texture in this file (kit.PREVIEW_STUDS off): plain colours, and the studs come only from Studio's shared
 "Studs" material.
 """
@@ -53,7 +57,7 @@ from build_desert import beam, quad_legs  # noqa: E402
 from build_eclipse_temple_monsters import at, face_box, feather, grow, round_slab  # noqa: E402
 from build_forbidden_library import tube  # noqa: E402
 from build_forest import Model, biped_legs, tail  # noqa: E402
-from build_starfall_crater import ball, flat_ring, gem  # noqa: E402
+from build_starfall_crater import ball as chunky_ball, flat_ring, gem  # noqa: E402
 from build_volcano import prism, top_of  # noqa: E402
 from face_kit import classic_mouth, icicle, top_nostrils  # noqa: E402
 from map_kit import limb, plate  # noqa: E402
@@ -86,6 +90,11 @@ def monster(name, **colours):
     return Model(name, {**FACE, **colours})
 
 
+def ball(m, role, x, y, z, r, sides=8, rings=5):
+    """starfall's chunky ball, rounder (2026-11-12 polish: the 6-sided balls read as rough lumps)."""
+    chunky_ball(m, role, x, y, z, r, max(sides * 2, 12), max(rings * 2, 8))
+
+
 # ---------------------------------------------------------------------- the carnival face
 
 
@@ -105,19 +114,23 @@ def neon_eye(m, origin, normal, size, inner=1, white=True, look=(0.0, 0.0), lid=
     A black harlequin diamond painted round it (diamond), a white eye or a black socket (far fiercer), a glowing
     neon-pink iris with a pinprick pupil, and a lid and brow slanting down towards the nose (slant: angry)."""
     if diamond:
-        rhombus(m, "Makeup", at(origin, normal, 0, 0, 0.01), normal, size * 1.55, size * 1.9, 0.02)
+        rhombus(m, "Makeup", at(origin, normal, 0, 0, -0.005), normal, size * 1.55, size * 1.9, 0.09)
     w, h = size * 1.0, size * 0.95
-    face_box(m, "EyeWhite" if white else "Socket", origin, normal, 0, 0, 0.03, w, h, 0.08)
-    c = at(origin, normal, look[0] * w * 0.28, look[1] * h * 0.28, 0.07)
-    nv = {"y": Vector((0, 1, 0)), "+x": Vector((1, 0, 0)), "-x": Vector((-1, 0, 0))}[normal]
-    round_slab(m, "EyeGlow", tuple(Vector(c) + nv * 0.02), normal, size * 0.33, 0.04)
-    face_box(m, "Pupil", c, normal, 0, 0, 0.05, size * 0.12, size * 0.12, 0.05)
+    # 2026-11-12 polish: round eyes (the square whites and square pupils looked odd), a shine, the scowl eased a little.
+    # Every layer's front 0.04 in front of the one under it (diamond 0.04, white 0.09, iris 0.13, pupil 0.17, shine 0.21, lid 0.25,
+    # brow 0.29), and every layer's back sunk into the head at its own depth, so no two faces ever lie flat against each other:
+    # export_fbx's flicker lift pushes such pairs apart, one after another up the stack, and scattered the eye in game (2026-11-12).
+    round_slab(m, "EyeWhite" if white else "Socket", at(origin, normal, 0, 0, 0.02), normal, size * 0.5, 0.14, 18)
+    c = at(origin, normal, look[0] * w * 0.28, look[1] * h * 0.28, 0.0)
+    round_slab(m, "EyeGlow", at(c, normal, 0, 0, 0.035), normal, size * 0.33, 0.19, 16)
+    round_slab(m, "Pupil", at(c, normal, 0, 0, 0.05), normal, size * 0.13, 0.24, 12)
+    round_slab(m, "EyeWhite", at(c, normal, inner * -size * 0.12, size * 0.12, 0.065), normal, size * 0.07, 0.29, 8)
     top = h / 2 + size * 0.04
-    dz = slant * size * 0.3
+    dz = slant * 0.7 * size * 0.3
 
     def tilted(role, bottom, thick_top, depth, n):
-        outer = at(origin, normal, -inner * (w / 2 + size * 0.05), 0, n)
-        inner_p = at(origin, normal, inner * (w / 2 + size * 0.05), 0, n)
+        outer = at(origin, normal, -inner * (w / 2 + size * 0.14), 0, n)  # well past the eye's edge, not flush with it
+        inner_p = at(origin, normal, inner * (w / 2 + size * 0.14), 0, n)
         bo, bi = bottom + dz, bottom - dz
         to, ti = thick_top + dz * 0.5, thick_top - dz * 0.5
         if normal == "y":
@@ -128,15 +141,19 @@ def neon_eye(m, origin, normal, size, inner=1, white=True, look=(0.0, 0.0), lid=
                      (inner_p[1], inner_p[0], inner_p[2] + (bi + ti) / 2, depth, ti - bi))
 
     if lid > 0:
-        tilted(lid_role, top - h * lid - size * 0.04, top + size * 0.02, 0.16, 0.08)
+        tilted(lid_role, top - h * lid - size * 0.04, top + size * 0.02, 0.35, 0.075)
     if brow is not None:
-        tilted(brow_role, top + brow * size, top + brow * size + size * 0.24, size * 0.3, 0.12)
+        tilted(brow_role, top + brow * size, top + brow * size + size * 0.24, 0.4, 0.09)
 
 
-def painted_grin(m, front, mouth_z, half, rise, reach=0.25, stroke=0.11):
-    """Crimson greasepaint carrying the mouth's corners up the cheeks, on a face looking +Y at y = front."""
+def painted_grin(m, front, mouth_z, half, rise, reach=0.25, stroke=0.11, edge=None, start=0.0):
+    """Crimson greasepaint carrying the mouth's corners up the cheeks, on a face looking +Y at y = front. edge: half the face's
+    width; the stroke stops inside it (2026-11-12 polish: it stuck out into the air past the cheek)."""
+    if edge:
+        half = min(half, edge - stroke * 1.6)
+        reach = max(0.0, min(reach, edge - stroke * 0.8 - half))
     for side in (-1, 1):
-        a = (side * half, front + 0.02, mouth_z)
+        a = (side * half, front + 0.02, mouth_z + start)  # start: above the lips, clear of the side teeth
         b = (side * (half + reach), front + 0.02, mouth_z + rise)
         beam(m, "Paint", a, b, 0.06, stroke)
         m.block("Paint", *b, stroke * 1.2, 0.06, stroke * 1.2)
@@ -144,14 +161,33 @@ def painted_grin(m, front, mouth_z, half, rise, reach=0.25, stroke=0.11):
 
 def fang_row(m, xs, y, edge, length, width, down):
     """A row of needle teeth across the front of a jaw, from its edge at z = edge, pointing down or up."""
-    for x in xs:
+    for x in xs:  # each root sunk 0.08 into the jaw: a root lying flat on it was pushed off at export (2026-11-12)
         if down:
-            m.loft_z("Teeth", (edge - length, x, y, 0.03, 0.03), (edge, x, y, width, width))
+            m.loft_z("Teeth", (edge - length, x, y, 0.03, 0.03), (edge + 0.08, x, y, width * (1 + 0.08 / length), width * (1 + 0.08 / length)))
         else:
-            m.loft_z("Teeth", (edge, x, y, width, width), (edge + length, x, y, 0.03, 0.03))
+            m.loft_z("Teeth", (edge - 0.08, x, y, width * (1 + 0.08 / length), width * (1 + 0.08 / length)), (edge + length, x, y, 0.03, 0.03))
 
 
-def sausage(m, role, a, b, r, sides=8):
+def ankles(m, legs, width, role="Belly"):
+    """quad_legs leaves thin legs (width under ~1) standing 0.17 above their foot pads: a short ankle joins them (2026-11-12)."""
+    for name, x, y in legs:
+        m.bone = name
+        m.block(role, x, y, 0.22, width * 0.66, width * 0.66, 0.26)
+    m.bone = "Spine"
+
+
+def coil(m, role, x, y, z0, z1, r, wire, turns):
+    """A steel spring from z0 up to z1, one wire wound round (x, y), joined end to end (2026-11-12: the old stack of loose rings
+    left the head floating over the box)."""
+    n = int(turns * 16)
+    pts = [(x + r * math.cos(k / 16 * math.tau), y + r * math.sin(k / 16 * math.tau), z0 + (z1 - z0) * k / n) for k in range(n + 1)]
+    for a, b in zip(pts, pts[1:]):
+        tube(m, role, a, b, wire, wire, 8)
+    for p in pts[::4]:
+        ball(m, role, *p, wire, 6, 3)
+
+
+def sausage(m, role, a, b, r, sides=16):
     """A twisted balloon: a round tube with rounded ends."""
     tube(m, role, a, b, r, r, sides)
     ball(m, role, *a, r, sides, 4)
@@ -168,6 +204,7 @@ def jack_snap():
     m = monster("dino_JackSnap", Body=CRIMSON, Accent=CRIMSON_DARK, Belly=CREAM, Claw="#2a1a22", Teal=TEAL, Spring="#c9c2d6")
     m.joint("Spine", (0, 0, 1.2))
     quad_legs(m, 0.72, 0.62, 0.72, -0.62, 1.05, 0.42)
+    ankles(m, [("FrontL", -0.72, 0.62), ("FrontR", 0.72, 0.62), ("BackL", -0.72, -0.62), ("BackR", 0.72, -0.62)], 0.42)
     m.block("Body", 0, 0, 2.05, 2.1, 2.1, 1.9)
     for z in (1.12, 2.98):
         m.block("Trim", 0, 0, z, 2.22, 2.22, 0.16)
@@ -184,8 +221,7 @@ def jack_snap():
     ball(m, "Belly", 1.62, 0.2, 1.5, 0.16, 6, 4)
 
     m.use("Neck", (0, 0.1, 3.0))
-    for k in range(5):  # the spring
-        flat_ring(m, "Spring", 0.05 * (-1) ** k, 0.1, 3.2 + k * 0.3, 0.42, 0.13, 0.13, 10)
+    coil(m, "Spring", 0, 0.1, 3.0, 4.2, 0.42, 0.07, 4.5)  # the spring, from the lid's rim up into the ruff
     w, d, h = 1.7, 1.45, 1.5
     yc, zc = 0.3, 5.0
     m.head_joint(yc, d, zc, h)
@@ -196,18 +232,18 @@ def jack_snap():
     mouth_z, gap = zc - 0.33, 0.28
 
     def lower_fangs(m, front, mouth_z, gap, lower_length):
-        fang_row(m, (-0.44, -0.22, 0.0, 0.22, 0.44), front + lower_length - 0.1, mouth_z - gap / 2 - 0.02, 0.22, 0.15, False)
+        fang_row(m, (-0.44, -0.22, 0.0, 0.22, 0.44), front + 0.9 * 0.38 + 0.05, mouth_z - gap / 2 - 0.02, 0.22, 0.15, False)
 
     classic_mouth(m, front, mouth_z, w, 0.38, 1.4, 0.22, 0.24, gap, upper="Face", lower="Face", tooth=0.17, per_side=4, lower_teeth=True,
                   tongue=True, skull_d=d, on_jaw=lower_fangs)
-    fang_row(m, (-0.55, -0.33, -0.11, 0.11, 0.33, 0.55), front + 0.3, mouth_z + gap / 2 + 0.02, 0.24, 0.16, True)
-    painted_grin(m, front, mouth_z, 0.72, 0.42)
+    fang_row(m, (-0.5, -0.3, -0.1, 0.1, 0.3, 0.5), front + 0.9 * 0.38 + 0.05, mouth_z + gap / 2 + 0.02, 0.24, 0.16, True)  # just past the dark mouth block, clear of the paint (2026-11-12)
+    painted_grin(m, front, mouth_z, 0.72, 0.42, edge=w / 2)
     for side in (-1, 1):
         neon_eye(m, (side * 0.42, front, zc + 0.3), "y", 0.46, -side, white=True, lid=0.2, slant=1.0, brow=0.06)
         ball(m, "Hair", side * (w / 2 + 0.12), yc - 0.15, zc + 0.3, 0.42, 8, 5)
         ball(m, "Hair", side * (w / 2 + 0.05), yc - 0.35, zc - 0.1, 0.32, 8, 5)
     ball(m, "Nose", 0, front + 0.36, zc + 0.12, 0.22, 8, 5)
-    prism(m, "Teal", 0.15, yc - 0.1, zc + h / 2 - 0.05, zc + h / 2 + 1.1, 0.5, 0.05, 8, 0, (0.35, -0.2))  # its cone hat
+    prism(m, "Teal", 0.15, yc - 0.1, zc + h / 2 - 0.05, zc + h / 2 + 1.1, 0.5, 0.05, 16, 0, (0.35, -0.2))  # its cone hat
     ball(m, "Bulb", 0.5, yc - 0.3, zc + h / 2 + 1.15, 0.16, 6, 4)
     m.head_centre = (0, front + 0.2, zc + 0.1)
     return m
@@ -228,12 +264,12 @@ def popcorn_fiend():
         m.loft_z("Belly", (z0, 0, 0, w0, d0), (z1, 0, 0, w1, d1))
         for s in (-1, 1):
             for u in ((-0.38, 0.38) if s > 0 and not front_stripes else (-0.38, 0.0, 0.38)):
-                m.loft_z("Body", (z0, u * w0, s * (d0 / 2 + 0.01), 0.2 * w0, 0.04), (z1, u * w1, s * (d1 / 2 + 0.01), 0.2 * w1, 0.04))
-            for u in (-0.38, 0.0, 0.38):
-                m.loft_z("Body", (z0, s * (w0 / 2 + 0.01), u * d0, 0.04, 0.2 * d0), (z1, s * (w1 / 2 + 0.01), u * d1, 0.04, 0.2 * d1))
+                m.loft_z("Body", (z0 + 0.05, u * w0, s * (d0 / 2 + 0.03), 0.2 * w0, 0.06), (z1 - 0.05, u * w1, s * (d1 / 2 + 0.03), 0.2 * w1, 0.06))
+            for u in (-0.38, 0.0, 0.38):  # (0.06 proud of the box and short of its ends: flush, and the flicker lift moved the box and everything on it)
+                m.loft_z("Body", (z0 + 0.05, s * (w0 / 2 + 0.03), u * d0, 0.06, 0.2 * d0), (z1 - 0.05, s * (w1 / 2 + 0.03), u * d1, 0.06, 0.2 * d1))
 
     striped_box(0.85, 1.72, 1.6, 1.8, 1.4, 1.55, False)
-    m.block("Mouth", 0, 0, 1.75, 1.6, 1.35, 0.08)
+    m.block("Mouth", 0, 0, 1.75, 1.6, 1.1, 0.08)  # front at 0.55, so the teeth fit between it and the box front
     m.block("Lamp", 0, -0.1, 1.78, 1.0, 0.8, 0.04)  # the warm light in its throat
     for side in (-1, 1):  # grabby arms
         m.use("ArmL" if side < 0 else "ArmR", (side * 0.85, 0.2, 1.5))
@@ -243,22 +279,28 @@ def popcorn_fiend():
             m.loft_y("Claw", (1.0, side * 1.35 + off, 1.25, 0.09, 0.09), (1.3, side * 1.38 + off, 1.18, 0.02, 0.02))
     m.bone = "Spine"
     m.use("Jaw", (0, 0.3, 1.72), "Spine")  # in front of the Spine: the game tells which way it faces from the Jaw
-    fang_row(m, (-0.6, -0.3, 0.0, 0.3, 0.6), 0.72, 1.7, 0.3, 0.2, False)
+    fang_row(m, (-0.6, -0.3, 0.0, 0.3, 0.6), 0.62, 1.7, 0.3, 0.2, False)  # just inside the box's front, not flush with it
     fang_row(m, (-0.55, 0.55), 0.25, 1.7, 0.26, 0.18, False)
     m.bone = "Spine"
     m.use("Head", (0, 0.0, 1.85), "Spine")
     striped_box(1.85, 3.2, 1.82, 2.1, 1.57, 1.8, True)
-    m.block("Trim", 0, 0, 3.17, 2.18, 1.88, 0.14)
-    fang_row(m, (-0.75, -0.45, -0.15, 0.15, 0.45, 0.75), 0.74, 1.88, 0.34, 0.22, True)
-    for x in (-0.9, 0.9):
+    m.block("Trim", 0, 0, 3.17, 2.3, 2.0, 0.14)
+    fang_row(m, (-0.75, -0.45, -0.15, 0.15, 0.45, 0.75), 0.62, 1.88, 0.34, 0.22, True)
+    for x in (-0.75, 0.75):  # inside the box's sides, not flush with them
         fang_row(m, (x,), 0.2, 1.88, 0.3, 0.2, True)
     for side in (-1, 1):
-        neon_eye(m, (side * 0.42, 0.86, 2.62), "y", 0.5, -side, white=True, lid=0.22, slant=1.1, brow=0.04, lid_role="Belly", diamond=False)
+        neon_eye(m, (side * 0.42, 0.93, 2.62), "y", 0.5, -side, white=True, lid=0.22, slant=1.1, brow=0.04, lid_role="Belly", diamond=False)  # on the stripes, not flush
     m.loft_z("Popcorn", (3.15, 0, 0, 2.0, 1.7), (3.55, 0, 0, 1.4, 1.1))
+    heap = []
     for i in range(30):  # the heap of popcorn on its head
-        x, y = rng.uniform(-0.95, 0.95), rng.uniform(-0.8, 0.8)
-        z = 3.3 + rng.uniform(0.0, 0.5) * (1.2 - abs(x) * 0.5 - abs(y) * 0.5)
-        ball(m, "Butter" if i % 5 == 0 else "Popcorn", x, y, z, rng.uniform(0.2, 0.3), 6, 4)
+        for _ in range(60):  # a buttered kernel sits well into its neighbours or clear of them, never just touching (that flickers)
+            x, y = rng.uniform(-0.95, 0.95), rng.uniform(-0.8, 0.8)
+            z = 3.3 + rng.uniform(0.0, 0.5) * (1.2 - abs(x) * 0.5 - abs(y) * 0.5)
+            r = rng.uniform(0.2, 0.3)
+            if i % 5 or all((Vector((x, y, z)) - c).length < 0.7 * (r + q) or (Vector((x, y, z)) - c).length > r + q + 0.06 for c, q in heap):
+                break
+        heap.append((Vector((x, y, z)), r))
+        ball(m, "Butter" if i % 5 == 0 else "Popcorn", x, y, z, r, 6, 4)
     for x, y, length in ((-1.0, 0.5, 0.6), (1.03, -0.3, 0.8), (0.4, 0.9, 0.5)):  # butter running down
         icicle(m, "Butter", x, y, 3.15, length, 0.18)
     m.head_centre = (0, 0.9, 2.5)
@@ -301,11 +343,11 @@ def twisty():
     mouth_z, gap = zc - 0.25, 0.2
 
     def lower_fangs(m, front, mouth_z, gap, lower_length):
-        fang_row(m, (-0.24, -0.08, 0.08, 0.24), front + lower_length - 0.08, mouth_z - gap / 2 - 0.02, 0.18, 0.12, False)
+        fang_row(m, (-0.24, -0.08, 0.08, 0.24), front + 0.9 * 0.7 + 0.05, mouth_z - gap / 2 - 0.02, 0.18, 0.12, False)
 
     classic_mouth(m, front, mouth_z, w, 0.7, 0.75, 0.24, 0.22, gap, upper="Body", lower="Belly", tooth=0.13, per_side=5, lower_teeth=True,
                   tongue=True, grin=0.22, skull_d=d, on_jaw=lower_fangs)
-    fang_row(m, (-0.27, -0.13, 0.0, 0.13, 0.27), front + 0.6, mouth_z + gap / 2 + 0.02, 0.2, 0.11, True)
+    fang_row(m, (-0.25, -0.12, 0.0, 0.12, 0.25), front + 0.9 * 0.7 + 0.05, mouth_z + gap / 2 + 0.02, 0.2, 0.11, True)  # just past the dark mouth block (2026-11-12)
     ball(m, "Accent", 0, front + 0.75, mouth_z + gap / 2 + 0.3, 0.15, 6, 4)  # a knot for a nose
     for side in (-1, 1):
         neon_eye(m, (side * 0.3, 2.37, zc + 0.3), "y", 0.34, -side, white=False, lid=0.3, slant=1.0, brow=0.0, lid_role="Body",
@@ -326,6 +368,7 @@ def nightmare_mare():
     m = monster("dino_NightmareMare", Body="#efe8dc", Accent="#a99abb", Belly="#f8f2e8", Claw="#1a1222", Saddle=CRIMSON, Pole=GOLD)
     m.joint("Spine", (0, 0, 2.7))
     quad_legs(m, 0.5, 1.2, 0.5, -1.35, 2.5, 0.42)
+    ankles(m, [("FrontL", -0.5, 1.2), ("FrontR", 0.5, 1.2), ("BackL", -0.5, -1.35), ("BackR", 0.5, -1.35)], 0.42)
     for end, y in (("Front", 1.2), ("Back", -1.35)):  # gilded hooves
         for side in (-1, 1):
             m.bone = end + ("L" if side < 0 else "R")
@@ -347,7 +390,7 @@ def nightmare_mare():
     m.block("Trim", 0, 0, top + 0.25, 1.36, 1.26, 0.06)
     m.block("Pole", 0, 0.05, 5.3, 0.22, 0.22, 4.6)  # the carousel's brass pole, still through its back
     for z in range(6):
-        m.block("TrimDark", 0, 0.05, 3.6 + z * 0.6, 0.26, 0.26, 0.12)
+        m.block("TrimDark", 0, 0.05, 3.6 + z * 0.6, 0.32, 0.32, 0.12)
     ball(m, "Pole", 0, 0.05, 7.7, 0.3, 8, 5)
     tail(m, (-1.55, 3.0, 0.3, 0.3), (-2.6, 2.2, 0.15, 0.15), 3)
     m.bone = "Tail3"
@@ -374,7 +417,7 @@ def nightmare_mare():
     y = front + 0.45  # a crimson noseband
     m.block("Saddle", 0, y, mouth_z + gap / 2 + 0.13, snout["width"](y) + 0.06, 0.14, 0.32)
     for side in (-1, 1):
-        neon_eye(m, (side * (w / 2), yc + 0.15, zc + 0.15), "+x" if side > 0 else "-x", 0.38, 1, white=False, lid=0.3, slant=1.1, brow=0.0,
+        neon_eye(m, (side * (w / 2), yc + 0.1, zc + 0.15), "+x" if side > 0 else "-x", 0.38, 1, white=False, lid=0.3, slant=1.1, brow=0.0,
                  lid_role="Body", brow_role="Accent")
         round_slab(m, "Trim", (side * (w / 2 + 0.02), yc - 0.25, zc - 0.25), "+x" if side > 0 else "-x", 0.14, 0.04)
         prism(m, "Body", side * 0.25, yc - 0.25, zc + h / 2 - 0.05, zc + h / 2 + 0.55, 0.16, 0.03, 4, 0, (side * 0.08, -0.12))
@@ -393,7 +436,7 @@ def grinmaster():
     biped_legs(m, 0.45, 0.0, 3.25, 0.55, 1.7, 0.36, 1.05, 0.26)
     for side in (-1, 1):  # black boots over its feet
         m.bone = "ShinL" if side < 0 else "ShinR"
-        m.block("Accent", side * 0.45, 1.05 * 0.22, 0.15, 0.36 * 1.5 + 0.06, 1.05 + 0.06, 0.34)
+        m.block("Accent", side * 0.45, 1.05 * 0.22, 0.17, 0.36 * 1.5 + 0.12, 1.05 + 0.12, 0.34)
     m.bone = "Spine"
     m.loft_z("Coat", (3.0, 0, 0, 1.5, 0.95), (5.7, 0, 0.05, 2.1, 1.2))
     m.loft_z("Belly", (3.9, 0, 0.55, 0.5, 0.08), (5.6, 0, 0.66, 0.7, 0.08))
@@ -417,7 +460,7 @@ def grinmaster():
             m.block("Belly", 1.45, 1.1, 4.4, 0.36, 0.14, 0.36)
             m.block("Glove", 1.45, 1.35, 4.45, 0.36, 0.38, 0.36)
             beam(m, "Whip", (1.45, 1.35, 4.35), (1.5, 1.55, 5.0), 0.12)
-            limb(m, "Whip", [(1.5, 1.55, 5.0), (1.2, 2.3, 6.3), (0.0, 2.6, 7.3), (-1.2, 1.9, 7.5), (-1.8, 0.8, 6.7), (-1.7, 0.4, 6.1)], 0.09, 0.04)
+            limb(m, "Whip", [(1.5, 1.55, 5.0), (1.75, 1.3, 6.4), (1.3, -0.3, 7.7), (0.0, -1.5, 8.1), (-1.2, -1.3, 7.5), (-1.8, -0.6, 6.7)], 0.09, 0.04)  # over and behind its head (2026-11-12: it ran through its face)
         else:  # reaching for you with long clawed fingers
             beam(m, "Coat", (-1.4, 0.3, 4.3), (-1.3, 1.1, 4.6), 0.34, None, 0.3)
             m.block("Belly", -1.3, 1.2, 4.6, 0.36, 0.14, 0.36)
@@ -437,12 +480,12 @@ def grinmaster():
     mouth_z, gap = zc - 0.45, 0.3
 
     def lower_fangs(m, front, mouth_z, gap, lower_length):
-        fang_row(m, (-0.36, -0.18, 0.0, 0.18, 0.36), front + lower_length - 0.1, mouth_z - gap / 2 - 0.02, 0.24, 0.14, False)
+        fang_row(m, (-0.36, -0.18, 0.0, 0.18, 0.36), front + 0.9 * 0.35 + 0.05, mouth_z - gap / 2 - 0.02, 0.24, 0.14, False)
 
     classic_mouth(m, front, mouth_z, w, 0.35, 1.15, 0.22, 0.3, gap, upper="Face", lower="Face", tooth=0.15, per_side=4, lower_teeth=True,
                   tongue=True, grin=0.3, skull_d=d, on_jaw=lower_fangs)
-    fang_row(m, (-0.45, -0.27, -0.09, 0.09, 0.27, 0.45), front + 0.27, mouth_z + gap / 2 + 0.02, 0.26, 0.14, True)
-    painted_grin(m, front, mouth_z, 0.6, 0.4, 0.15)
+    fang_row(m, (-0.42, -0.25, -0.08, 0.08, 0.25, 0.42), front + 0.9 * 0.35 + 0.05, mouth_z + gap / 2 + 0.02, 0.26, 0.14, True)  # just past the dark mouth block (2026-11-12)
+    painted_grin(m, front, mouth_z, 0.6, 0.45, 0.15, edge=w / 2, start=gap / 2 + 0.08)
     for side in (-1, 1):  # a curled moustache
         beam(m, "Accent", (0, front + 0.37, mouth_z + 0.32), (side * 0.5, front + 0.3, mouth_z + 0.3), 0.18, 0.14, 0.12)
         beam(m, "Accent", (side * 0.5, front + 0.3, mouth_z + 0.3), (side * 0.66, front + 0.25, mouth_z + 0.56), 0.12, 0.1, 0.05)
@@ -451,7 +494,7 @@ def grinmaster():
     m.loft_y("Face", (front, 0, zc + 0.1, 0.22, 0.3), (front + 0.35, 0, zc - 0.02, 0.06, 0.08))  # a sharp nose
     m.block("Hat", 0, yc - 0.05, zc + h / 2 + 0.06, 1.7, 1.55, 0.12)  # its top hat
     m.loft_z("Hat", (zc + h / 2 + 0.1, 0, yc - 0.05, 1.1, 1.0), (zc + h / 2 + 1.7, 0, yc - 0.1, 1.25, 1.15))
-    m.loft_z("Coat", (zc + h / 2 + 0.12, 0, yc - 0.05, 1.14, 1.04), (zc + h / 2 + 0.45, 0, yc - 0.06, 1.17, 1.07))
+    m.loft_z("Coat", (zc + h / 2 + 0.12, 0, yc - 0.05, 1.2, 1.1), (zc + h / 2 + 0.45, 0, yc - 0.06, 1.23, 1.13))
     m.block("Trim", 0, yc + 0.48, zc + h / 2 + 0.29, 0.3, 0.06, 0.24)
     feather(m, (0.45, yc - 0.1, zc + h / 2 + 0.4), (0.8, yc - 0.6, zc + h / 2 + 1.9), 0.32, (1, 0, 0), "Neon", "Neon", 0.3)
     m.head_centre = (0, front + 0.3, zc + 0.1)
@@ -486,8 +529,8 @@ def big_top_terror():
         u, t = Vector((math.cos(a), math.sin(a), 0)), Vector((-math.sin(a), math.cos(a), 0))
         centre = Vector((0, -0.1, 0))
         if k % 2 == 0:
-            plate(m, "TentStripe", tuple(centre + u * (3.1 * c15 + 0.04) + Vector((0, 0, base + 0.95))),
-                  tuple(centre + u * (0.25 * c15 + 0.04) + Vector((0, 0, base + 4.5))), tuple(t), 1.45, 0.08, 0.06)
+            plate(m, "TentStripe", tuple(centre + u * (3.1 * c15 + 0.09) + Vector((0, 0, base + 0.95))),
+                  tuple(centre + u * (0.25 * c15 + 0.09) + Vector((0, 0, base + 4.5))), tuple(t), 1.45, 0.08, 0.06)
             plate(m, "TentStripe", tuple(centre + u * (2.9 * c15 + 0.04) + Vector((0, 0, base + 0.05))),
                   tuple(centre + u * (2.9 * c15 + 0.04) + Vector((0, 0, base + 0.85))), tuple(t), 1.35, 1.35, 0.06)
         edge = centre + u * (3.1 * c15 + 0.06) + Vector((0, 0, base + 0.9))
@@ -523,12 +566,12 @@ def big_top_terror():
 
     def lower_fangs(m, front, mouth_z, gap, lower_length):  # fangs, and pink neon glowing in its throat
         m.block("Neon", 0, front + lower_length * 0.4, mouth_z - gap / 2 + 0.06, 1.5, lower_length * 0.6, 0.06)
-        fang_row(m, (-0.9, -0.54, -0.18, 0.18, 0.54, 0.9), front + lower_length - 0.15, mouth_z - gap / 2 - 0.02, 0.5, 0.3, False)
+        fang_row(m, (-0.9, -0.54, -0.18, 0.18, 0.54, 0.9), front + 0.9 * 0.6 + 0.05, mouth_z - gap / 2 - 0.02, 0.5, 0.3, False)
 
     classic_mouth(m, front, mouth_z, w, 0.6, 2.5, 0.36, 0.42, gap, upper="Face", lower="Face", tooth=0.34, per_side=5, lower_teeth=True,
                   tongue=False, skull_d=d, on_jaw=lower_fangs)
-    fang_row(m, (-1.08, -0.72, -0.36, 0.0, 0.36, 0.72, 1.08), front + 0.45, mouth_z + gap / 2 + 0.02, 0.56, 0.32, True)
-    painted_grin(m, front, mouth_z, 1.27, 0.75, 0.2, 0.18)
+    fang_row(m, (-1.0, -0.66, -0.33, 0.0, 0.33, 0.66, 1.0), front + 0.9 * 0.6 + 0.05, mouth_z + gap / 2 + 0.02, 0.56, 0.32, True)  # just past the dark mouth block, clear of the paint (2026-11-12)
+    painted_grin(m, front, mouth_z, 1.27, 0.8, 0.2, 0.18, edge=w / 2, start=gap / 2 + 0.1)
     for side in (-1, 1):
         neon_eye(m, (side * 0.75, front, zc + 0.6), "y", 0.72, -side, white=False, lid=0.3, slant=1.15, brow=0.0)
         ball(m, "Hair", side * 1.7, yc - 0.2, zc + 0.6, 0.85, 8, 5)

@@ -7,14 +7,14 @@ local Shop = {
 		passId = 2067284134, -- "x2 Cash"
 		giftProductId = 3728639517, -- gift x2 Cash
 		name = "x2 Cash",
-		description = "All dinos earn double, forever",
+		description = "All monsters earn double", -- its card says FOREVER
 		multiplier = 2,
 	},
 	doubleTraining = {
 		passId = 2068562099, -- "x2 Training"
 		giftProductId = 3728639599, -- gift x2 Training
 		name = "x2 Training",
-		description = "Every rep gives double XP, forever",
+		description = "Every rep gives double XP",
 		multiplier = 2,
 	},
 	-- [Owner] Doubles the Throw Power every full bar on the squat rack gives (Config/Training).
@@ -22,7 +22,7 @@ local Shop = {
 		passId = 2071212524, -- "x2 Power", R$ 139
 		giftProductId = 3728639807, -- gift x2 Power
 		name = "x2 Power",
-		description = "Every full bar gives double power, forever",
+		description = "Every full bar gives double power",
 		multiplier = 2,
 	},
 	-- [Owner, 2026-11-12] Leash other players and drag them round (LeashService, Config/Troll playerLeash). Pure
@@ -50,9 +50,9 @@ local Shop = {
 		name = "Server Luck x2",
 		-- Roblox wants a luck boost's effect in numbers before buying: x2 luck doubles a rare monster's weight in the roll, and
 		-- 2 ^ Catch.luckPower is about 1.3.
-		description = "3 min for everyone: rare monsters about 2x likelier, colours and sizes 1.3x",
+		description = "20 min for everyone: rare monsters about 2x likelier, colours and sizes 1.3x",
 		multiplier = 2,
-		seconds = 3 * 60, -- buying again while active adds more time [Owner, 2026-11-09: was 15 min]
+		seconds = 20 * 60, -- buying again while active adds more time [Owner, 2026-11-13: 20 min; 3 min was about 9 throws for R$ 29]
 		settleEvery = 5, -- seconds between updates of each buyer's saved time left
 	},
 	-- Asking Roblox which Game Passes a player owns can fail; a pass must never go missing because of that.
@@ -71,14 +71,14 @@ local Shop = {
 			productId = 3728190780, -- "Luck x100"
 			dealProductId = 3728190387, -- "ONE TIME DEAL LUCK x100"
 			dealTag = "ONE TIME DEAL!",
-			description = "Any throw you pick: a guaranteed 1 in 1M+ catch",
-			colours = { "#e0a8ff", "#8a3fd6" },
+			description = "Any throw you pick: one of the map's 2 rarest monsters, 1 in 1M+",
+			colours = { "#c58bff", "#6a2fd0" },
 		},
 		{
 			multiplier = 500,
 			productId = 3728240108, -- "Luck x500", R$ 39
-			description = "Any throw you pick: a guaranteed 1 in 100M+ catch",
-			colours = { "#fff1a8", "#ffb21a" },
+			description = "Any throw you pick: one of the map's 2 rarest monsters, 1 in 100M+",
+			colours = { "#ffd95a", "#ff8a1f" },
 		},
 	},
 	-- Cash packs: Developer Products that pay this many minutes of the plot's $/s (events not
@@ -120,7 +120,7 @@ local Shop = {
 	ignorePassesFor = { 234533860 },
 	starterDino = {
 		name = "Free Starter Dino",
-		description = "A free Gallimimus to start your plot",
+		description = "A free Gallimimus to start your base",
 		id = "Gallimimus",
 		biomeId = "Forest",
 	},

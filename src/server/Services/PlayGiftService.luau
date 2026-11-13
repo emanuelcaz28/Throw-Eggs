@@ -17,12 +17,22 @@ local PlayGiftService = {}
 local TICK = 1 -- seconds
 local DRIFT = 2 -- seconds the shown arrival time may be off before it's set again
 
+-- The times this save's free throws follow: a new player's, or the ones from before 2026-11-13 for a save that had
+-- already played by then [Owner, 2026-11-13: "only apply this for new players"]. Decided once, the first time the
+-- save is seen: a save with nothing caught and no minutes counted is new.
+local function throwsOf(data)
+	if data.playGiftPlan == -1 then
+		data.playGiftPlan = if data.totalCaught == 0 and data.playGiftSeconds == 0 and data.playGiftsGiven == 0 then 2 else 1
+	end
+	return if data.playGiftPlan == 1 then PlayGifts.luckyThrowsBefore else PlayGifts.luckyThrows
+end
+
 local function finished(data): boolean
-	return data.playGiftsGiven >= #PlayGifts.luckyThrows and data.firstEventDone
+	return data.playGiftsGiven >= #throwsOf(data) and data.firstEventDone
 end
 
 local function publish(player: Player, data)
-	local nextThrow = PlayGifts.luckyThrows[data.playGiftsGiven + 1]
+	local nextThrow = throwsOf(data)[data.playGiftsGiven + 1]
 	if not nextThrow then
 		player:SetAttribute("PlayGiftAt", nil)
 		player:SetAttribute("PlayGiftLuck", nil)
@@ -51,7 +61,7 @@ local function step(player: Player, data, seconds: number)
 		end
 	end
 
-	local nextThrow = PlayGifts.luckyThrows[data.playGiftsGiven + 1]
+	local nextThrow = throwsOf(data)[data.playGiftsGiven + 1]
 	if nextThrow and data.playGiftSeconds >= nextThrow.at then
 		data.playGiftsGiven += 1
 		ShopService.addLuckyThrows(player, data, nextThrow.multiplier, 1)

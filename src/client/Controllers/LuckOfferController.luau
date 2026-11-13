@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local AdminBoosts = require(ReplicatedStorage.Shared.AdminBoosts)
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local DeepEnd = require(ReplicatedStorage.Shared.Config.DeepEnd)
 local CatchOdds = require(ReplicatedStorage.Shared.CatchOdds)
@@ -392,7 +393,7 @@ end
 -- How far this player can throw right now, a perfect throw, and where that lands (Config/DeepEnd). The Power Limit
 -- stops it short, the same as on the server (Config/PowerLimit).
 local function bestLanding(): (number, number)
-	local full = (player:GetAttribute("ThrowPower") or 0) * Throw.meter.perfectMultiplier
+	local full = (player:GetAttribute("ThrowPower") or 0) * AdminBoosts.multiplier("power") * Throw.meter.perfectMultiplier
 	local reach = PowerLimit.apply(full, SettingsState.get("powerLimitOn"), SettingsState.get("powerLimit"))
 	return math.min(reach, Throw.farthestLanding()), reach
 end

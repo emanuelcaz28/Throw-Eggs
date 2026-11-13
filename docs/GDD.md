@@ -158,7 +158,7 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
    While aiming, the luck offer sells the x100 and x500 throws, with DETAILS showing the real chances (`LuckOfferController`, `CatchOdds`). One the player owns shows a pulsing USE button; picked (ON) it makes that throw a guaranteed PERFECT, and the pick ends with the throw or Back to Plot.
 9. Timed events: one every 15 minutes for 5 minutes, taking turns: Double Luck (2x luck) and Ghost Rush (GHOST 10x
    likelier), from the server clock (`Config/Events`); an icon at the bottom right explains it on hover or tap.
-   Gifts for staying (`Config/PlayGifts`, PlayGiftService): free lucky throws at 8 and 20 minutes of play on a visible
+   Gifts for staying (`Config/PlayGifts`, PlayGiftService): free lucky throws at 8 and 38 minutes of play (8 and 20 for saves from before 2026-11-13) on a visible
    countdown (gift icon in the boost row), and a new player's own first event at 5 minutes (player attributes read by
    `Events.active(player)`). Both play gifts and gifts from players show as the small Gift Toast at the top right
    (`GiftToastController`, remote ShopRemotes.GiftToast).

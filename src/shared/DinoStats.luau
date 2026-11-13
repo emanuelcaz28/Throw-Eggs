@@ -139,7 +139,7 @@ end
 function DinoStats.describe(entry)
 	local special = DinoStats.special(entry.id)
 	if special then
-		return { name = special.name, income = entry.income or 0, oneIn = 1 } -- its income was fixed when bought
+		return { name = special.name, income = entry.income or 0, oneIn = 1 } -- its share of the owner's best monster, kept up to date by PlotService.refreshSpecials
 	end
 	local dino = dinosById[entry.id]
 	if not dino then

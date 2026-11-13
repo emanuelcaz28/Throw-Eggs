@@ -7,8 +7,7 @@ Saves special_monsters.blend and renders to design/world/monsters_special/.
 
   Gloomfin   the Game Pass shark, the most aggressive of them (owner, 2026-11-06): hunched and scarred, a mouth that is
              most of its face hanging open on crooked teeth, slit eyes under bone horns, a torn bone-edged dorsal fin,
-             burning gills and slashes, foam dripping from its jaws. It floats well clear of the ground, and its Drip
-             bone gives it The Weeping Dark's RAGE: it lunges and bites every 4 seconds.
+             burning gills and slashes. It floats well clear of the ground.
 
 The Prism Egg's three (Config/Specials), the same dark family and the same red, each with a shape of its own:
 
@@ -17,7 +16,13 @@ The Prism Egg's three (Config/Specials), the same dark family and the same red, 
   Dreadlure  900%: a hulking anglerfish that is mostly mouth, rows of fangs, an eye in its throat, a lure in a cage of bone.
 
 They have a Swim bone, so they move with The Abyss's swim and hover (DinoLifeController SWIM and HOVER): tail beats, fins
-sway, and once per idle loop it rears up and lunges, jaw wide. 1 Blender unit = 1 stud, models face +Y, ground at Z = 0.
+sway, and once per idle loop it rears up and lunges, jaw wide.
+
+2026-11-12 (owner: "even better looking, and their own special animation"): tiger bands over the back, a burning crack across
+each skull, and one new thing each (Gloomfin's under-fins and fin veins, Duskeel's hood, Umbray's burning wing edges and
+harpoon stinger, Dreadlure's belly lights and bait threads). Each also has an attack of its own, picked by a marker bone:
+Dorsal the death roll, HoodL the hooded strike, Stinger the loop and the sting, Bait the bait (see "their own attacks" below).
+QUICK=1 POSE="1.3 2.2" renders stills of the attack at those seconds. 1 Blender unit = 1 stud, models face +Y, ground at Z = 0.
 """
 import math
 import os
@@ -39,6 +44,8 @@ from build_starfall_crater import ball, gem  # noqa: E402
 from build_thorn_kingdom_monsters import aim, blade, fcurves_of, glare, lash, point, thrash  # noqa: E402
 from build_weeping_dark_monsters import DRIP, rage, rage_maw  # noqa: E402
 from monster_stage import build_and_render, light_up, set_sky  # noqa: E402
+import rare_kit  # noqa: E402
+from rare_kit import AHEAD, PITCH, RISE, ROLL, YAW, W, beat, keys, stacked, wave  # noqa: E402
 
 RENDERS = HERE.parent.parent / "design" / "world" / "monsters_special"
 GLOW_ROLES = {"EyeGlow", "Glow", "Shine"}
@@ -85,6 +92,7 @@ def gloomfin():
     hull(m, rings, bones, sides=(8, 6))
     embers(m, rings, bones, 1.7, 5.6, 0.55, 0.45, 0.11)
     belly_line(m, rings, bones, 0.0, 7.0)
+    stripes(m, rings, bones, 1.2, 5.6, 0.5, 0.42, 0.24)
 
     # Five burning gill slits a side, raked back like slashes.
     for k in range(5):
@@ -102,20 +110,37 @@ def gloomfin():
             strut(m, "Claw", a_, b_, 0.09, 0.05, bone_at(bones, 1.5 + 0.2 * k), bone_at(bones, 2.2 + 0.2 * k))
 
     # The dorsal fin: tall and swept back, a bone spine down its leading edge and its trailing edge torn to tatters.
-    m.bone = "Swim"
+    # It's on a bone of its own (Dorsal), which is also the marker for its own attack, the death roll (FRENZY).
     top = rings[1][2] + rings[1][4] / 2 - 0.2
+    m.use("Dorsal", (0, -0.4, top), "Swim")
     fin = [(top, -0.4, 0.3, 2.6), (top + 1.0, -1.0, 0.2, 1.5), (top + 1.9, -1.7, 0.11, 0.65), (top + 2.5, -2.3, 0.05, 0.12)]
     fin_z(m, "Body", fin)
     lead = [Vector((0, y + d / 2, h)) for h, y, _, d in fin]
     for p_, q_ in zip(lead, lead[1:]):
-        strut(m, "Claw", p_ + Vector((0, 0.06, 0)), q_ + Vector((0, 0.06, 0)), 0.2, 0.12, "Swim", "Swim")
+        strut(m, "Claw", p_ + Vector((0, 0.06, 0)), q_ + Vector((0, 0.06, 0)), 0.2, 0.12, "Dorsal", "Dorsal")
     point(m, "Claw", tuple(lead[-1]), tuple(lead[-1] + Vector((0, -0.8, 0.2))), 0.14)
     for h, y, _, d in fin[:3]:
         edge = Vector((0, y - d / 2 + 0.15, h + 0.15))
         blade(m, "Body", tuple(edge), tuple(edge + Vector((0, -0.75, -0.3))), (0, 0, 1), 0.42, 0.08)
+    for k in range(3):  # veins burning through the fin, raked back like the gills
+        q = 0.16 + 0.24 * k
+        h, y, thick, deep = (fin[0][i] + (fin[2][i] - fin[0][i]) * q for i in range(4))
+        for side in (-1, 1):
+            x = side * (thick / 2 + 0.005)
+            beam(m, "Glow", (x, y + deep * 0.28, h + 0.2), (x, y - deep * 0.3, h - 0.25), 0.05, 0.14, 0.02)
     # Bone spikes up the back to the fin, and down the tail behind it.
     spines(m, rings, bones, [(0.25, 0.42), (0.6, 0.55)], sail=False, width=0.26)
     spines(m, rings, bones, [(3.0, 0.62), (3.6, 0.55), (4.2, 0.48), (4.8, 0.38), (5.4, 0.3), (6.0, 0.24)], sail=False, width=0.24)
+
+    # Small fins under it: a pair behind the belly and one under the tail, so it reads as a shark from below and the side.
+    for side in (-1, 1):
+        base, _ = on_skin(rings, 3.3, -62 if side > 0 else 242, -0.06)
+        m.bone = bone_at(bones, 3.3)
+        blade(m, "Body", tuple(base), tuple(base + Vector((side * 0.75, -1.25, -0.7))), (side, 0.4, 0.2), 0.62, 0.09)
+        point(m, "Claw", tuple(base + Vector((0, 0.2, 0))), tuple(base + Vector((side * 0.8, -1.2, -0.75))), 0.11)
+    base, _ = on_skin(rings, 4.6, 270, -0.05)
+    m.bone = bone_at(bones, 4.6)
+    blade(m, "Body", tuple(base + Vector((0, 0.3, 0))), tuple(base + Vector((0, -0.95, -0.7))), (0, 1, 0), 0.6, 0.09)
 
     # Long pectoral fins like sickles, a bone edge in front and tatters behind, on the Fin bones.
     for side, letter in ((-1, "L"), (1, "R")):
@@ -159,18 +184,21 @@ def gloomfin():
     rage_maw(m, f, 2.15, 2.2, 1.25, 0.28, 0.34, rng, gape=0.16, drop=0.45, upper="Accent", lower="Belly", tooth=0.42, per_side=7, eye=0.24,
              on_jaw=cheeks_and_throat, back_h=0.62)
     m.bone = "Head"
-    shell(m, "Body", [(0, 2.75, 0.42, 0.5, 0.3), (0, 2.3, 0.5, 1.15, 0.62), (0, 1.5, 0.62, 1.85, 1.05), (0, 0.7, 0.72, 2.25, 1.45),
-                      (0, -0.1, 0.78, 2.35, 1.8), (0, -0.5, 0.7, 2.3, 1.9)], -40, 220, 8, f=f)
+    skull = [(0, 2.75, 0.42, 0.5, 0.3), (0, 2.3, 0.5, 1.15, 0.62), (0, 1.5, 0.62, 1.85, 1.05), (0, 0.7, 0.72, 2.25, 1.45),
+             (0, -0.1, 0.78, 2.35, 1.8), (0, -0.5, 0.7, 2.3, 1.9)]
+    shell(m, "Body", skull, -40, 220, 8, f=f)
+    # A crack burning down its skull, forking either side: the plain dark forehead was the dullest thing about it from the front.
+    cracks(m, f, skull, [[(1.5, 92), (2.2, 80), (2.9, 97), (3.6, 85), (4.5, 96)], [(2.2, 80), (2.75, 60)], [(3.6, 85), (4.1, 112)]], 0.13)
     for side in (-1, 1):
+        for k in range(2):  # bone spurs off the hinge of the jaw, swept back
+            point(m, "Claw", f.at(side * 1.0, 0.25 - 0.4 * k, 0.2 + 0.25 * k), f.at(side * (1.6 - 0.15 * k), -0.75 - 0.4 * k, 0.15 + 0.35 * k), 0.26 - 0.06 * k)
         # Turned well forward, so its glare meets you from the front as well as the side.
         glare(m, f.at(side * 0.9, 1.35, 0.88), f.r @ Vector((side * 0.62, 0.7, 0.3)), 0.5, -side, slant=0.8, spikes=0)
         for k, (y0, length) in enumerate(((0.45, 1.0), (0.0, 0.7))):  # bone horns swept back off the brow
             base = Vector(f.at(side * (0.8 - 0.1 * k), y0, 1.3))
             point(m, "Claw", tuple(base), tuple(base + Vector((side * 0.3, -length, 0.45 * length))), 0.22 - 0.05 * k)
         point(m, "Claw", f.at(side * 0.22, 2.25, 0.62), f.at(side * 0.3, 2.05, 0.95), 0.13)  # knobs down the snout
-    # The Drip bone, with nothing on it: the dripping foam was taken off (2026-11-09), but the bone keeps RAGE on.
-    m.use("Drip", f.at(-1.0, 0.3, -0.08), "Head")
-    m.bone = "Head"
+    # No Drip bone any more (2026-11-12): The Weeping Dark's RAGE gave way to an attack of its own, the death roll (FRENZY).
     m.head_centre = tuple(f.at(0, 1.2, 0.4))
     return grow(m, GLOOMFIN_GROW)
 
@@ -181,7 +209,7 @@ def gloomfin():
 BONE, BONE_DARK, ASH = "#ddd5c2", "#9b9384", "#8b90a4"
 COLOURS = dict(Body="#1c1e2b", Accent="#0e0f18", Belly=ASH, Claw=BONE, Sail="#4a1420", EyeGlow="#ff1a2e", Pupil="#16000a", Slit="#16000a",
                Socket="#07060b", Highlight="#ffd6d6", Glow="#ff2438", Shine="#ffb0a0", Mouth="#16060c", Tongue="#8c1a2c", Teeth="#f2ecdd",
-               Sinew="#5e0f1c")
+               Sinew="#5e0f1c", Stripe="#333a58")
 SPLIT = -22  # where the dark back meets the pale belly, in degrees round the body
 
 
@@ -300,7 +328,7 @@ def belly_line(m, rings, bones, t0, t1, step=0.5, width=0.1):
             t += step
 
 
-def spines(m, rings, bones, spots, sail=True, lean=0.45, width=0.3):
+def spines(m, rings, bones, spots, sail=True, lean=0.45, width=0.3, edge=0.0):
     """Bone spikes up the back: spots are (ring, length). A dark red sail stretches between them, and each has a glowing tip."""
     tips = []
     for t, length in spots:
@@ -314,6 +342,45 @@ def spines(m, rings, bones, spots, sail=True, lean=0.45, width=0.3):
         for (a, ta, ba), (b, tb, bb) in zip(tips, tips[1:]):
             mid = a.lerp(ta, 0.7), b.lerp(tb, 0.7)
             panel(m, "Sail", [a, mid[0], mid[1], b], 0.06, [ba, ba, bb, bb])
+            if edge:  # the sail's top edge burns: stopping short of the spikes, or glow, sail and bone all fight where they meet
+                strut(m, "Glow", mid[0].lerp(mid[1], 0.2), mid[0].lerp(mid[1], 0.8), edge, edge, ba, bb)
+
+
+def skin_line(m, role, rings, bones, spots, w0, w1=None, out=0.02, thick=0.05, f=None):
+    """A band lying flat on the skin through spots (ring, degrees round), tapering from w0 to w1 and following the body's
+    curve: stripes, burning cracks, glowing dots. bones gives each ring its bone; f builds it on a head made in a turned frame."""
+    w1 = w0 if w1 is None else w1
+    pts = []
+    for t, angle in spots:
+        q, n = on_skin(rings, t, angle, out)
+        pts.append((Vector(f.at(*q)), f.r @ n) if f else (q, n))
+    count = len(pts) - 1
+    for i in range(count):
+        (a, na), (b, nb) = pts[i], pts[i + 1]
+        along = (b - a).normalized()
+        sa, sb = na.cross(along).normalized(), nb.cross(along).normalized()
+        wa, wb = w0 + (w1 - w0) * i / count, w0 + (w1 - w0) * (i + 1) / count
+        ba = bone_at(bones, spots[i][0]) if bones else m.bone
+        bb = bone_at(bones, spots[i + 1][0]) if bones else m.bone
+        m.bone = ba
+        panel(m, role, [a - sa * wa / 2, a + sa * wa / 2, b + sb * wb / 2, b - sb * wb / 2], thick, [ba, ba, bb, bb])
+
+
+def stripes(m, rings, bones, t0, t1, step=0.55, reach=0.4, width=0.26, top=82, low=56):
+    """Tiger bands raked back down both sides of the back, a shade lighter than the hide, so the dark back isn't one flat colour."""
+    t = t0
+    while t < t1:
+        for flip in (0, 1):
+            a, b = (top, low) if not flip else (180 - top, 180 - low)
+            mid = (a + b) / 2
+            skin_line(m, "Stripe", rings, bones, [(t, a), (t + reach / 2, mid), (t + reach, b)], width, width * 0.25, 0.022)
+        t += step
+
+
+def cracks(m, f, skull, lines, width=0.13):
+    """Burning cracks across the top of a skull: each line is spots (ring, degrees round) on the head's shell."""
+    for spots in lines:
+        skin_line(m, "Glow", skull, None, spots, width, width * 0.35, 0.02, 0.05, f)
 
 
 def barbel(m, n, start, points, w0, parent, bead=0.2):
@@ -343,17 +410,43 @@ def duskeel():
     hull(m, rings, bones)
     embers(m, rings, bones, 1.2, 10.0, 0.62, 0.55, 0.13)
     belly_line(m, rings, bones, 0.0, 12.0)
-    spines(m, rings, bones, [(0.4 + i * 0.74, 1.75 - abs(i - 3) * 0.1 - max(i - 6, 0) * 0.16) for i in range(15)], width=0.3)
+    stripes(m, rings, bones, 1.3, 10.6, 0.6, 0.45, 0.2, 68, 52)
+    spines(m, rings, bones, [(0.4 + i * 0.74, 1.75 - abs(i - 3) * 0.1 - max(i - 6, 0) * 0.16) for i in range(15)], width=0.3, edge=0.16)
     # The tail ends in a bone blade with a red edge.
     m.bone = "Tail4"
     tail = Vector(rings[-1][:3])
     blade(m, "Claw", tuple(tail - Vector((0, -0.6, 0))), tuple(tail + Vector((-0.1, -2.0, 0.25))), (0, 0, 1), 1.0, 0.14)
-    # Small fans behind the head, on the Fin bones.
+    # The hood: a frill of bone rays and red skin either side of its neck, swept back at rest, a false eye burning on each
+    # face. It's on the Hood bones, which are the marker for its own attack: it rears, throws the hood wide and strikes (HOODED).
+    up = Vector((0, 0, 1))
     for side, letter in ((-1, "L"), (1, "R")):
-        root, _ = on_skin(rings, 1.5, 0 if side > 0 else 180, -0.1)
-        m.use(f"Fin{letter}", tuple(root), "Neck2")
+        hood = f"Hood{letter}"
+        root, _ = on_skin(rings, 0.9, 8 if side > 0 else 172, -0.12)
+        m.use(hood, tuple(root), "Neck2")
+        centre = Vector((side * 0.42, -1, -0.2)).normalized()
+        lift = (up - centre * up.dot(centre)).normalized()
+        rays = []
+        for deg, length in ((64, 2.3), (36, 3.0), (8, 3.4), (-20, 3.1), (-48, 2.4)):
+            tip = root + (centre * math.cos(math.radians(deg)) + lift * math.sin(math.radians(deg))) * length
+            strut(m, "Claw", root, tip, 0.3, 0.2, hood, hood)  # rays, rim and eye all stand well clear of the thin skin between them, or they flicker
+            rays.append(tip)
+        for a, b in zip(rays, rays[1:]):
+            dip = a.lerp(b, 0.5).lerp(root, 0.2)
+            panel(m, "Sail", [root, a.lerp(root, 0.06), dip, b.lerp(root, 0.06)], 0.04)
+            for p_, q_ in ((a.lerp(root, 0.07), dip), (dip, b.lerp(root, 0.07))):  # its edge burns
+                strut(m, "Glow", p_, q_, 0.17, 0.17, hood, hood)
+        across = centre.cross(lift).normalized()
+        for face in (-1, 1):  # the false eye, on both faces: one shows at rest, the other when the hood is thrown open
+            c = root + centre * 1.85 + lift * 0.25 + across * (face * 0.11)
+            blade(m, "Glow", tuple(c - lift * 0.62), tuple(c + lift * 0.62), tuple(centre), 0.62, 0.05)
+            c = c + across * (face * 0.09)
+            blade(m, "Slit", tuple(c - lift * 0.42), tuple(c + lift * 0.42), tuple(centre), 0.16, 0.04)
+    # Small fans low on its sides, on the Fin bones.
+    for side, letter in ((-1, "L"), (1, "R")):
+        root, _ = on_skin(rings, 3.6, -12 if side > 0 else 192, -0.1)
+        m.use(f"Fin{letter}", tuple(root), "Swim")
         for k, spread in enumerate((-0.5, -0.1, 0.32)):
-            tip = root + Vector((side * (1.6 - k * 0.12), -0.55 - k * 0.3, spread * 1.5))
+            tip = root + Vector((side * (1.6 - k * 0.12), -0.55 - k * 0.3, spread * 1.5 - 0.5))
             blade(m, "Sail" if k != 1 else "Accent", tuple(root), tuple(tip), (0, 0.3, 1), 0.72, 0.08)
             point(m, "Claw", tuple(root), tuple(tip + (tip - root) * 0.08), 0.14)
     # The head, looking down its nose at you.
@@ -362,8 +455,9 @@ def duskeel():
     f = Frame(m, origin, aim((0, 1, -0.2)))
     rage_maw(m, f, 1.75, 2.45, 0.95, 0.24, 0.32, rng, gape=0.14, drop=0.56, upper="Accent", lower="Belly", tooth=0.46, per_side=6, eye=0.2)
     m.bone = "Head"
-    shell(m, "Body", [(0, 2.55, 0.34, 0.62, 0.36), (0, 1.9, 0.5, 1.12, 0.74), (0, 1.0, 0.62, 1.62, 1.14), (0, 0.1, 0.68, 1.82, 1.46),
-                      (0, -0.7, 0.62, 1.66, 1.6)], -42, 222, 8, f=f)
+    skull = [(0, 2.55, 0.34, 0.62, 0.36), (0, 1.9, 0.5, 1.12, 0.74), (0, 1.0, 0.62, 1.62, 1.14), (0, 0.1, 0.68, 1.82, 1.46), (0, -0.7, 0.62, 1.66, 1.6)]
+    shell(m, "Body", skull, -42, 222, 8, f=f)
+    cracks(m, f, skull, [[(1.2, 92), (1.9, 81), (2.6, 97), (3.4, 86)], [(1.9, 81), (2.35, 60)], [(2.6, 97), (3.0, 118)]], 0.11)
     for side in (-1, 1):
         m.bone = "Head"  # barbel() leaves m.bone on the whisker's last bone: without this the second eye and horn rode the whisker
         glare(m, f.at(side * 0.66, 1.15, 0.88), f.r @ Vector((side * 0.72, 0.62, 0.22)), 0.44, -side, slant=0.72, spikes=0)
@@ -397,6 +491,7 @@ def umbray():
     hull(m, rings, bones)
     spines(m, rings, bones, [(0.9 + i * 0.62, 1.5 - abs(i - 3) * 0.22) for i in range(8)], sail=False, width=0.34)
     belly_line(m, rings, bones, 0.5, 5.5)
+    stripes(m, rings, bones, 1.0, 4.4, 0.5, 0.45, 0.3, 80, 50)
 
     # The tail: a long tapering whip on the Tail bones, rising a little, barbs near the end.
     tail = [(0, -4.1, z, 0.56, 0.36), (0, -5.8, z + 0.1, 0.42, 0.3), (0, -7.6, z + 0.3, 0.32, 0.24), (0, -9.4, z + 0.6, 0.24, 0.18),
@@ -405,9 +500,14 @@ def umbray():
     for k, name in enumerate(("Tail1", "Tail2", "Tail3", "Tail4")):
         m.joint(name, tail[k][:3], "Swim" if k == 0 else f"Tail{k}")
     shell(m, "Accent", tail, sides=6, bones=tail_bones)
-    m.bone = "Tail4"
+    # The stinger: a bone harpoon with a burning heart and two hooks, on a bone of its own (Stinger), which is also the marker
+    # for its own attack: it loops the loop, whips its tail over its back and stabs (LOOPER).
     end = Vector(tail[-1][:3])
-    blade(m, "Claw", tuple(end + Vector((0, 0.5, -0.1))), tuple(end + Vector((0, -2.0, 0.55))), (1, 0, 0), 0.95, 0.14)
+    m.use("Stinger", tuple(end), "Tail4")
+    blade(m, "Claw", tuple(end + Vector((0, 0.5, -0.1))), tuple(end + Vector((0, -2.6, 0.7))), (1, 0, 0), 1.15, 0.18)
+    ball(m, "Glow", end.x, end.y - 0.1, end.z + 0.05, 0.3, 6, 4)
+    for side in (-1, 1):
+        point(m, "Claw", tuple(end + Vector((side * 0.1, -0.5, 0.1))), tuple(end + Vector((side * 1.0, 0.75, 0.1))), 0.22)
     for k, y in enumerate((-8.2, -9.2, -10.1)):
         c = Vector((0, y, z + 0.42 + 0.17 * k * 2))
         for side in (-1, 1):
@@ -440,6 +540,9 @@ def umbray():
             strut(m, "Glow", root, scallop.lerp(root, 0.08) + Vector((0, 0, 0.12)), 0.12, 0.05, ba, bb)
             mid = root.lerp(T[i], 0.5).lerp(top, 0.2)
             strut(m, "Glow", mid, mid.lerp(T[i], 0.6), 0.09, 0.04, ba, ba)
+            rim = Vector((0, 0, 0.13))  # the scalloped back edge burns
+            strut(m, "Glow", T[i] + rim, scallop + rim, 0.1, 0.1, ba, bb)
+            strut(m, "Glow", scallop + rim, T[i + 1] + rim, 0.1, 0.1, bb, bb)
             m.bone = bb
             point(m, "Claw", tuple(L[i + 1] + Vector((0, 0.1, 0.1))), tuple(L[i + 1] + Vector((side * 0.3, 0.75, 0.42))), 0.24)
         m.bone = outer
@@ -450,7 +553,9 @@ def umbray():
     f = Frame(m, (0, 2.9, z - 0.14), aim((0, 1, -0.08)))
     rage_maw(m, f, 2.7, 1.45, 2.1, 0.2, 0.3, rng, gape=0.12, drop=0.42, upper="Accent", lower="Belly", tooth=0.4, per_side=7, eye=0.2)
     m.bone = "Head"
-    shell(m, "Body", [(0, 1.55, 0.3, 1.9, 0.26), (0, 0.9, 0.4, 2.55, 0.56), (0, 0.1, 0.46, 3.0, 0.82), (0, -0.8, 0.46, 3.3, 0.96)], -30, 210, 8, f=f)
+    skull = [(0, 1.55, 0.3, 1.9, 0.26), (0, 0.9, 0.4, 2.55, 0.56), (0, 0.1, 0.46, 3.0, 0.82), (0, -0.8, 0.46, 3.3, 0.96)]
+    shell(m, "Body", skull, -30, 210, 8, f=f)
+    cracks(m, f, skull, [[(0.5, 91), (1.1, 84), (1.7, 95), (2.4, 88)], [(1.1, 84), (1.6, 66)], [(1.7, 95), (2.2, 113)]], 0.12)
     for side in (-1, 1):
         m.bone = "Head"  # barbel() leaves m.bone on the whisker's last bone: without this the second eye and horn rode the whisker
         glare(m, f.at(side * 1.05, 0.25, 0.78), f.r @ Vector((side * 0.55, 0.72, 0.42)), 0.46, -side, slant=0.72, spikes=0)
@@ -486,7 +591,13 @@ def dreadlure():
     hull(m, rings, bones, sides=(9, 6))
     embers(m, rings, bones, 0.5, 5.6, 0.52, 0.42, 0.26)
     belly_line(m, rings, bones, 0.0, 6.5, 0.5, 0.2)
-    spines(m, rings, bones, [(0.7 + i * 0.62, 4.2 - abs(i - 2) * 0.5 - max(i - 4, 0) * 0.3) for i in range(9)], width=0.72, lean=0.55)
+    stripes(m, rings, bones, 0.9, 5.0, 0.5, 0.4, 0.62, 80, 58)
+    spines(m, rings, bones, [(0.7 + i * 0.62, 4.2 - abs(i - 2) * 0.5 - max(i - 4, 0) * 0.3) for i in range(9)], width=0.72, lean=0.55, edge=0.16)
+    # Lights along its pale belly, like the things that live where no light reaches.
+    for k in range(9):
+        t = 0.5 + 0.52 * k
+        for angle in (-42, 222):
+            skin_line(m, "Glow", rings, bones, [(t, angle), (t + 0.2 - 0.012 * k, angle)], 0.5 - 0.035 * k, None, 0.03, 0.07)
     # Scars across its flanks.
     for t, angle, side in ((1.4, 52, 1), (2.3, 38, 1), (1.9, 128, -1), (3.0, 140, -1)):
         a, out = on_skin(rings, t, angle, 0.02)
@@ -530,7 +641,11 @@ def dreadlure():
 
     rage_maw(m, f, 7.3, 4.3, 4.6, 0.5, 0.9, rng, gape=0.5, drop=0.62, upper="Accent", lower="Accent", tooth=1.5, per_side=7, eye=0.85, jaw_long=1.14, on_jaw=chin)
     m.bone = "Head"
-    shell(m, "Body", [(0, 4.45, 0.72, 3.8, 0.75), (0, 3.7, 1.15, 5.2, 1.8), (0, 2.5, 1.65, 6.4, 3.1), (0, 1.1, 2.05, 7.2, 4.3), (0, -0.3, 2.3, 7.5, 5.2)], -50, 230, 10, f=f)
+    skull = [(0, 4.45, 0.72, 3.8, 0.75), (0, 3.7, 1.15, 5.2, 1.8), (0, 2.5, 1.65, 6.4, 3.1), (0, 1.1, 2.05, 7.2, 4.3), (0, -0.3, 2.3, 7.5, 5.2)]
+    shell(m, "Body", skull, -50, 230, 10, f=f)
+    # Cracks burning out across its skull from the root of the lure.
+    cracks(m, f, skull, [[(2.1, 82), (1.6, 70), (1.0, 62), (0.5, 66)], [(2.1, 98), (1.6, 110), (1.0, 118), (0.5, 114)], [(1.6, 70), (1.5, 54)], [(1.6, 110), (1.5, 126)],
+                         [(2.8, 90), (3.2, 80), (3.7, 93)]], 0.22)
     for side in (-1, 1):
         m.bone = "Head"  # barbel() leaves m.bone on the whisker's last bone: without this the second eye and horn rode the whisker
         # On the skin (the dome is 2.6 out at this height), looking out, forward and a little up.
@@ -559,6 +674,14 @@ def dreadlure():
         top = end + Vector((0.28 * math.cos(a), 0.28 * math.sin(a), -0.1))
         wide = bulb + Vector((1.0 * math.cos(a), 1.0 * math.sin(a), 0.1))
         limb(m, "Claw", [tuple(top), tuple(wide), tuple(bulb + Vector((0.42 * math.cos(a), 0.42 * math.sin(a), -1.05)))], 0.17, 0.03)
+    # The bait: three burning threads trailing under the lure, on a bone of their own (Bait), which is also the marker for its
+    # own attack: it shuts its mouth, dangles the bait, and then takes everything in front of it (BAITER).
+    m.use("Bait", tuple(bulb + Vector((0, 0, -0.9))), "LureTip")
+    for k in range(3):
+        a = k * math.tau / 3 + 0.5
+        base = bulb + Vector((0.2 * math.cos(a), 0.2 * math.sin(a), -0.85))
+        point(m, "Glow", tuple(base), tuple(base + Vector((0.5 * math.cos(a), 0.5 * math.sin(a), -1.9 - 0.4 * (k % 2)))), 0.26)
+    m.bone = "Head"
     m.head_centre = tuple(f.at(0, 3.0, 1.2))
     return m
 
@@ -566,24 +689,141 @@ def dreadlure():
 ALL = [gloomfin, duskeel, umbray, dreadlure]  # studio_tidy.py reads the colours from here
 
 
+# ---------------------------------------------------------------------- their own attacks
+#
+# Each of the four has an attack nothing else in the game has (owner, 2026-11-12), 4 seconds long, played once every
+# DinoLife.attackCycle like every other attack. A marker bone picks the table, the way rare_kit's MARKED does; the tables are
+# the same as FRENZY, HOODED, LOOPER and BAITER in DinoLifeController, number for number. Nothing leaves the body.
+
+
+def shaken(points, speed, reach, slot=PITCH, phase=0.0):
+    """A wave that only runs while its envelope (keys over the 4 seconds) is up: a chomping jaw, a thrashing tail, a shaken head."""
+    def move(s):
+        out = [0.0] * 6
+        out[slot] = reach * keys((s / 4) % 1, points) * math.sin(speed * W * s - phase)
+        return tuple(out)
+    return move
+
+
+# Gloomfin (Dorsal, its fin): the death roll. It draws back, hits you like a train, and rolls over twice with its jaws going,
+# tail thrashing; one last bite and a shake, and it drifts home.
+FRENZY_AHEAD = [(0, 0), (0.14, -2.2), (0.2, 7), (0.62, 7), (0.68, 8.2), (0.78, 8.2), (1, 0)]
+FRENZY_LEAN = [(0, 0), (0.14, 0.18), (0.2, -0.1), (0.62, -0.1), (0.68, 0.14), (0.8, 0), (1, 0)]
+FRENZY_ROLL = [(0, 0), (0.2, 0), (0.6, 4 * math.pi), (1, 4 * math.pi)]
+FRENZY_ROLLING = [(0, 0), (0.2, 0), (0.26, 1), (0.56, 1), (0.62, 0), (1, 0)]
+FRENZY_SHAKE = [(0, 0), (0.66, 0), (0.69, 1), (0.78, 1), (0.84, 0), (1, 0)]
+FRENZY_JAW = [(0, 0), (0.14, -0.5), (0.2, -0.5), (0.23, 0.3), (0.26, 0), (0.6, 0), (0.64, -0.55), (0.68, 0.42), (0.8, 0.42), (1, 0)]
+FRENZY_FIN = [(0, 0), (0.14, -0.45), (0.2, 0.5), (0.6, 0.5), (0.8, 0), (1, 0)]
+FRENZY = {
+    "Swim": stacked(beat(FRENZY_AHEAD, 4, AHEAD), beat(FRENZY_LEAN, 4), beat(FRENZY_ROLL, 4, ROLL), shaken(FRENZY_SHAKE, 20, 0.16, YAW)),
+    "Jaw": stacked(beat(FRENZY_JAW, 4), shaken(FRENZY_ROLLING, 16, 0.26)),
+    "Dorsal": shaken(FRENZY_ROLLING, 12, 0.14, ROLL),
+    "FinL": beat(FRENZY_FIN, 4, ROLL, -1.0),
+    "FinR": beat(FRENZY_FIN, 4, ROLL),
+}
+for i in range(1, 5):
+    FRENZY[f"Tail{i}"] = stacked(shaken(FRENZY_ROLLING, 12, 0.3 + 0.05 * i, YAW, 0.8 * i), shaken(FRENZY_SHAKE, 20, 0.2, YAW, 0.8 * i))
+
+# Duskeel (HoodL and R, its frill): the hooded strike. It rears like a cobra and throws its hood wide, sways, strikes down
+# ahead of it, rears again and strikes to the side.
+HOOD_REAR = [(0, 0), (0.22, 1), (0.5, 1), (0.55, 0), (0.62, 0.8), (0.7, 0.8), (0.745, 0), (0.84, 0), (1, 0)]
+HOOD_STRIKE = [(0, 0), (0.5, 0), (0.55, 1), (0.58, 1), (0.62, 0), (0.7, 0), (0.745, 1), (0.82, 1), (0.92, 0), (1, 0)]
+HOOD_FLARE = [(0, 0), (0.18, 1), (0.84, 1), (1, 0)]
+HOOD_SWAY = [(0, 0), (0.2, 0), (0.26, 1), (0.45, 1), (0.5, 0), (1, 0)]
+HOOD_SIDE = [(0, 0), (0.62, 0), (0.7, 0.4), (0.82, 0.4), (1, 0)]
+HOOD_JAW = [(0, 0), (0.22, -0.35), (0.5, -0.45), (0.555, 0.45), (0.6, 0.45), (0.66, -0.4), (0.7, -0.45), (0.75, 0.45), (0.84, 0.45), (1, 0)]
+HOODED = {
+    "Swim": stacked(beat(HOOD_REAR, 4, RISE, 1.6), beat(HOOD_REAR, 4, AHEAD, -1.4), beat(HOOD_STRIKE, 4, AHEAD, 5.5), beat(HOOD_REAR, 4, PITCH, 0.16),
+                    beat(HOOD_SIDE, 4, YAW)),
+    "Neck1": stacked(beat(HOOD_REAR, 4, PITCH, 0.5), beat(HOOD_STRIKE, 4, PITCH, -0.24), shaken(HOOD_SWAY, 4, 0.3, YAW)),
+    "Neck2": stacked(beat(HOOD_REAR, 4, PITCH, 0.22), beat(HOOD_STRIKE, 4, PITCH, -0.12), shaken(HOOD_SWAY, 4, -0.12, YAW)),
+    "Neck3": beat(HOOD_REAR, 4, PITCH, -0.45),
+    "Head": stacked(beat(HOOD_REAR, 4, PITCH, -0.2), beat(HOOD_STRIKE, 4, PITCH, 0.1)),
+    "Jaw": beat(HOOD_JAW, 4),
+    "HoodL": stacked(beat(HOOD_FLARE, 4, YAW, -0.95), shaken(HOOD_FLARE, 24, 0.07, YAW)),
+    "HoodR": stacked(beat(HOOD_FLARE, 4, YAW, 0.95), shaken(HOOD_FLARE, 24, -0.07, YAW)),
+}
+for i in range(1, 5):
+    HOODED[f"Tail{i}"] = shaken(HOOD_FLARE, 6, 0.1 + 0.04 * i, YAW, 0.8 * i)
+
+# Umbray (Stinger, the end of its tail): the loop and the sting. It dips, beats its wings once and loops the loop, tail curled
+# under it; as it levels out the tail whips over its back and the stinger stabs twice, ahead of its own horns.
+LOOP_R = 4.0  # the loop's radius, studs at the first map's size
+LOOP_TURN = [(0, 0), (0.14, -0.22), (0.2, -0.22), (0.56, 2 * math.pi), (1, 2 * math.pi)]
+LOOP_LIFT = [(0, 0), (0.14, -0.6), (0.3, 1.5), (0.84, 1.5), (1, 0)]
+LOOP_BEATING = [(0, 0), (0.2, 0), (0.26, 1), (0.54, 1), (0.6, 0), (1, 0)]
+LOOP_WING = [(0, 0), (0.14, -0.5), (0.21, 0.42), (0.3, 0), (0.56, 0), (0.62, -0.3), (0.84, -0.3), (1, 0)]
+LOOP_CURL = [(0, 0), (0.2, 0.3), (0.56, 0.3), (0.63, 0.72), (0.66, 1), (0.7, 1), (0.74, 0.7), (0.77, 1), (0.84, 1), (1, 0)]
+LOOP_STAB = [(0, 0), (0.63, 0), (0.66, 1), (0.7, 1), (0.74, 0), (0.77, 1), (0.84, 1), (0.9, 0), (1, 0)]
+LOOP_JAW = [(0, 0), (0.2, -0.3), (0.56, -0.3), (0.63, -0.45), (0.66, 0.35), (0.72, -0.3), (0.77, 0.35), (0.86, 0.35), (1, 0)]
+
+
+def loop_the_loop(s):
+    """The body goes round a circle as it turns over, so it flies the loop instead of spinning on the spot."""
+    u = (s / 4) % 1
+    turn = keys(u, LOOP_TURN)
+    return turn, 0.0, 0.0, LOOP_R * math.sin(turn), LOOP_R * (1 - math.cos(turn)) + keys(u, LOOP_LIFT), 0.0
+
+
+LOOPER = {
+    "Swim": loop_the_loop,
+    "Jaw": beat(LOOP_JAW, 4),
+    "FinL": stacked(beat(LOOP_WING, 4, ROLL, -1.0), shaken(LOOP_BEATING, 10, -0.45, ROLL)),
+    "FinR": stacked(beat(LOOP_WING, 4, ROLL), shaken(LOOP_BEATING, 10, 0.45, ROLL)),
+    "FlipperFL": shaken(LOOP_BEATING, 10, -0.35, ROLL, 0.9),
+    "FlipperFR": shaken(LOOP_BEATING, 10, 0.35, ROLL, 0.9),
+    "Stinger": beat(LOOP_STAB, 4, AHEAD, -1.6),
+}
+for i, curl in enumerate((0.5, 0.7, 0.8, 0.9), 1):
+    LOOPER[f"Tail{i}"] = beat(LOOP_CURL, 4, PITCH, -curl)
+
+# Dreadlure (Bait, the threads under its lure): the bait. It shuts that mouth for once, sinks, and dangles its lure out in front,
+# twitching; then the mouth is all there is: it takes everything in front of it, shakes it, and backs away.
+BAIT_SHUT = [(0, 0), (0.12, 0.5), (0.5, 0.5), (0.535, -0.5), (0.56, -0.5), (0.6, 0.55), (0.66, 0.2), (0.7, 0.55), (0.8, 0.3), (1, 0)]
+BAIT_AHEAD = [(0, 0), (0.12, -0.5), (0.5, -2), (0.58, 8), (0.78, 8), (1, 0)]
+BAIT_RISE = [(0, 0), (0.12, -0.6), (0.5, -0.8), (0.58, 0.8), (0.78, 0.4), (1, 0)]
+BAIT_LEAN = [(0, 0), (0.5, -0.05), (0.54, 0.14), (0.6, -0.1), (0.78, -0.05), (1, 0)]
+BAIT_DANGLE = [(0, 0), (0.12, -0.42), (0.5, -0.48), (0.56, 0.5), (0.78, 0.3), (1, 0)]
+BAIT_TWITCH = [(0, 0), (0.1, 0), (0.16, 1), (0.46, 1), (0.5, 0), (1, 0)]
+BAIT_SHAKE = [(0, 0), (0.58, 0), (0.61, 1), (0.74, 1), (0.8, 0), (1, 0)]
+BAIT_FIN = [(0, 0), (0.12, 0.2), (0.5, 0.2), (0.56, -0.6), (0.78, -0.3), (1, 0)]
+BAITER = {
+    "Swim": stacked(beat(BAIT_AHEAD, 4, AHEAD), beat(BAIT_RISE, 4, RISE), beat(BAIT_LEAN, 4), shaken(BAIT_SHAKE, 20, 0.15, YAW)),
+    "Jaw": beat(BAIT_SHUT, 4),
+    "Lure": stacked(beat(BAIT_DANGLE, 4), shaken(BAIT_TWITCH, 6, 0.14, YAW)),
+    "LureTip": stacked(beat(BAIT_DANGLE, 4, PITCH, 0.6), shaken(BAIT_TWITCH, 12, 0.22)),
+    "Bait": stacked(shaken(BAIT_TWITCH, 16, 0.4), shaken(BAIT_TWITCH, 12, 0.3, ROLL, 1.0)),
+    "FinL": beat(BAIT_FIN, 4, ROLL, -1.0),
+    "FinR": beat(BAIT_FIN, 4, ROLL),
+}
+for i in range(1, 5):
+    BAITER[f"Tail{i}"] = shaken(BAIT_SHAKE, 12, 0.22 + 0.04 * i, YAW, 0.8 * i)
+
+# A special with one of these bones has the rest of its body moved by that bone's table. The same four lines as in MARKED in DinoLifeController.
+SPECIAL_MOVES = {"Dorsal": FRENZY, "HoodL": HOODED, "Stinger": LOOPER, "Bait": BAITER}
+rare_kit.MARKED.update(SPECIAL_MOVES)
+
+
 def swim_and_thrash(a, f):
     swim_pose(a, f)
-    extras(a, f)
+    extras(a, f, False)
 
 
 def hover_and_thrash(a, f):
     hover_pose(a, f)
-    extras(a, f)
+    extras(a, f, True)
 
 
-def extras(a, f):
-    """On top of the swim or hover, as DinoLifeController adds them: barbels (Lash bones) thrash, and a Drip bone (Gloomfin's
-    foam) turns on The Weeping Dark's rage and the dripping."""
+def extras(a, f, idle):
+    """On top of the swim or hover, as DinoLifeController adds them: barbels (Lash bones) sway, and each one's own attack
+    (the preview plays it over and over; the game plays it once every DinoLife.attackCycle)."""
     names = {bone.name for bone in a.pose.bones}
     if any(name.startswith("Lash") for name in names):
         thrash(a, f)
     if names & DRIP.keys():
         rage(a, f)
+    if names & SPECIAL_MOVES.keys():
+        rare_kit.sway(a, f, idle)
 
 
 def animate(armature):
@@ -628,6 +868,20 @@ def quick_preview(models, out):
         head = root.location + Vector(model.head_centre)
         size = max(3.2, (high.z - low.z) * 0.5)
         kit.shoot(scene, f"{model.name}_front", head + Vector((0, 1, 0.08)) * size * 2.2, head, (760, 760), 50)
+    for model, root in zip(models, roots):  # POSE="0.5 1.6 2.4": each one's own attack, side on, at these seconds into it
+        low, high = kit.bounds(root)
+        centre = (low + high) / 2 + Vector((0, 3, 1.5))
+        reach = max((high - low).length, 3)
+        for s_ in os.environ.get("POSE", "").split():
+            kit.set_visible(roots, [root])
+            for bone in root.pose.bones:
+                bone.rotation_mode = "XYZ"
+                bone.rotation_euler = (0, 0, 0)
+                bone.location = (0, 0, 0)
+            frame = round(float(s_) * 30)
+            rare_kit.sway(root, frame, True)
+            scene.frame_set(frame)
+            kit.shoot(scene, f"{model.name}_pose_{s_}", centre + Vector((1.2, 0.08, 0.12)) * reach * 1.2, centre, (520, 520), 50)
     kit.set_visible(roots, roots)
     for model in models:
         boxes = [v for vs, _ in model.parts.values() for v in vs]

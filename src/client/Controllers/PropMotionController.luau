@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 
 local PropMotion = require(ReplicatedStorage.Shared.Config.PropMotion)
 local Roles = require(ReplicatedStorage.Shared.Roles)
+local LowDetail = require(script.Parent.LowDetail)
 
 local PropMotionController = {}
 
@@ -172,6 +173,9 @@ function PropMotionController.start()
 	local parts: { BasePart } = {}
 	local cframes: { CFrame } = {}
 	RunService.RenderStepped:Connect(function()
+		if LowDetail.on() then
+			return -- Low detail (Settings): props stand still where they are
+		end
 		local t = os.clock() - start
 		local camera = workspace.CurrentCamera.CFrame.Position
 		local count = 0

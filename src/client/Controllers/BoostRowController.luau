@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
+local AdminBoosts = require(ReplicatedStorage.Shared.AdminBoosts)
 local Boosts = require(ReplicatedStorage.Shared.Config.Boosts)
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
 local Events = require(ReplicatedStorage.Shared.Config.Events)
@@ -284,6 +285,49 @@ local function activeBoosts()
 			title = `SERVER LUCK x{multiplier}`,
 			what = `Rare monsters about {multiplier}x likelier for everyone here`,
 			when = `Ends in {left} · buying more adds time`,
+		})
+	end
+
+	-- Boosts an admin gave this server (admin panel, AdminBoosts).
+	local adminLuck, adminLuckEnds = AdminBoosts.get("luck", now)
+	if adminLuck and adminLuckEnds then
+		local left = clock(adminLuckEnds - now)
+		table.insert(list, {
+			id = `AdminLuck{adminLuck}`, -- a new multiplier draws a new icon
+			art = "clover",
+			multiplier = adminLuck,
+			color = Boosts.serverLuck.color,
+			pill = left,
+			title = `SERVER LUCK x{Format.short(adminLuck)}`,
+			what = `A gift for this server: rare monsters about {Format.short(adminLuck)}x likelier`,
+			when = `Ends in {left}`,
+		})
+	end
+	local adminPower, adminPowerEnds = AdminBoosts.get("power", now)
+	if adminPower and adminPowerEnds then
+		local left = clock(adminPowerEnds - now)
+		table.insert(list, {
+			id = "AdminPower",
+			emoji = "💪",
+			color = Color3.fromRGB(255, 150, 90),
+			pill = left,
+			title = `x{Format.short(adminPower)} POWER`,
+			what = `A gift for this server: every egg flies {Format.short(adminPower)}x farther`,
+			when = `Ends in {left}`,
+		})
+	end
+	local adminXp, adminXpEnds = AdminBoosts.get("xp", now)
+	if adminXp and adminXpEnds then
+		local left = clock(adminXpEnds - now)
+		table.insert(list, {
+			id = `AdminXp{adminXp}`,
+			art = "bolt",
+			multiplier = adminXp,
+			color = Boosts.xp.color,
+			pill = left,
+			title = `x{Format.short(adminXp)} TRAINING XP`,
+			what = `A gift for this server: every squat gives {Format.short(adminXp)}x XP`,
+			when = `Ends in {left}`,
 		})
 	end
 

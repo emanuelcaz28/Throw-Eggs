@@ -16,7 +16,7 @@ local SettingsController = {}
 
 local player = Players.LocalPlayer
 
-local PANEL = Vector2.new(680, 560)
+local PANEL = Vector2.new(680, 676) -- 560 before the Low detail row
 local ROW_WIDTH = PANEL.X - 44
 local GEAR_PADDING = 8 -- px the gear stays inside the top bar row, top and bottom together
 local SLIDER_WIDTH = 230
@@ -341,7 +341,7 @@ function SettingsController.start()
 		return if percent == 0 then "🔇" else "🔊"
 	end)
 
-	UiKit.divider(list, "Bases", ROW_WIDTH).LayoutOrder = 4
+	UiKit.divider(list, "Performance", ROW_WIDTH).LayoutOrder = 4 -- was "Bases": both rows are for slow devices
 
 	-- Hide other players' dinos.
 	local frame = row(list, "🦖", 104, 5)
@@ -359,6 +359,24 @@ function SettingsController.start()
 		if key == "hideDinos" then
 			showSwitch(value == true)
 			applyAllHidden()
+		end
+	end)
+
+	-- Low detail (LowDetail): fewer effects on this player's own screen. A switch, never automatic [Owner, 2026-11-13].
+	local lowFrame = row(list, "⚡", 104, 6)
+	local lowLabel = title(lowFrame, "Low detail", 26, 290)
+	lowLabel.Size = UDim2.new(0, 290, 0, 36)
+	lowLabel.Position = UDim2.fromOffset(94, 16)
+	local lowNote = UiKit.muted(lowFrame, "No shadows, glow or clouds, props stand still. Runs smoother.", 16, Enum.TextXAlignment.Left)
+	lowNote.Position = UDim2.fromOffset(94, 54)
+	lowNote.Size = UDim2.new(0, 290, 0, 42)
+	local _, showLow = toggle(lowFrame, SettingsState.get("lowDetail") == true, function(on)
+		SettingsState.set("lowDetail", on)
+		send("lowDetail")
+	end)
+	SettingsState.changed:Connect(function(key, value)
+		if key == "lowDetail" then
+			showLow(value == true)
 		end
 	end)
 

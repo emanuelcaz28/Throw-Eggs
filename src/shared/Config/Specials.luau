@@ -1,5 +1,6 @@
--- Special monsters: from no map, earning a share of the buyer's best monster. The income is fixed when given and saved
--- on the monster, and other special monsters never count as "best", so one can't multiply another. Ids are saved, so
+-- Special monsters: from no map, earning a share of the owner's best monster. The income is saved on the monster and
+-- follows the best monster up as better ones are caught, never down [Owner, 2026-11-12] (PlotService.refreshSpecials);
+-- other special monsters never count as "best", so one can't multiply another. Ids are saved, so
 -- never rename one. Models: assets/models/build_special_monsters.py.
 --   With a passId: a Game Pass, bought once.
 --   With an egg: hatched from that Robux egg (Config/Shop prismEgg), which can be bought again and again.
@@ -13,7 +14,7 @@ return {
 		giftProductId = 3728641289, -- "Gift Gloomfin", priced like the pass (Config/Shop explains)
 		share = 9, -- 900% of your best monster's $/s
 		minimumIncome = 100, -- counted as the best monster's $/s for a player with nothing better yet
-		description = "The angriest shark there is. It bites every 4 seconds",
+		description = "The angriest shark there is. It rams, rolls and bites",
 	},
 	-- The Prism Egg's three: Gloomfin's dark family (owner's choice, 2026-11-05).
 	{
