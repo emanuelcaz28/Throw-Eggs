@@ -4,6 +4,7 @@
 --   WorldProgress: the first time a player's egg lands in each world (ThrowService). One session per player.
 --   RobuxPurchase: a purchase window closing, then whether it was bought (ShopService), named by product.
 -- Never renumber a step once the game is published: the dashboard keeps history by step number. Add new steps at the end.
+-- Also the Economy dashboard (every Cash source and sink) and an EconomyProblem watchdog: see ECONOMY below.
 local AnalyticsService = game:GetService("AnalyticsService")
 local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -109,8 +110,115 @@ function Analytics.purchasePromptClosed(player: Player, id: number, infoType: En
 	end)
 end
 
+-- ECONOMY (Analytics -> Economy): every Cash source and sink, logged from the server where the cash changes.
+-- Sources: plot income (summed and sent once a minute: one event a second per player would hit Roblox's rate limit),
+-- selling monsters, Robux cash packs, offline earnings. Sinks: rack upgrades, eggs, plot upgrades, feeding.
+-- Never rename an item once published: the dashboard groups history by name.
+-- Watchdog: each change is checked against the last balance seen. Cash that changed with no logged reason (a code path
+-- that skips these calls), went below zero, or isn't a number logs an "EconomyProblem" custom event (Analytics ->
+-- Custom Events, split by CustomField01 = reason) and a warning in the server log. Each reason logs once per player
+-- per session.
+local CURRENCY = "Cash"
+local INCOME_FLUSH = 60 -- seconds of plot income summed into one event
+local FIELD2 = Enum.AnalyticsCustomFieldKeys.CustomField02.Name
+
+type Wallet = { expected: number?, pendingIncome: number, incomeSince: number, balance: number, reported: { [string]: boolean } }
+local wallets: { [Player]: Wallet } = {}
+
+local function walletOf(player: Player): Wallet
+	local wallet = wallets[player]
+	if not wallet then
+		wallet = { pendingIncome = 0, incomeSince = os.clock(), balance = 0, reported = {} }
+		wallets[player] = wallet
+	end
+	return wallet
+end
+
+local function problem(player: Player, reason: string, item: string, detail: string)
+	local wallet = walletOf(player)
+	if wallet.reported[reason] then
+		return
+	end
+	wallet.reported[reason] = true
+	warn(`Economy problem for {player.Name}: {reason} ({item}) {detail}`)
+	safely(function()
+		AnalyticsService:LogCustomEvent(player, "EconomyProblem", 1, { [FIELD1] = reason, [FIELD2] = item })
+	end)
+end
+
+-- Checks the new balance against the last one seen plus this change (delta: + earned, - spent).
+local function check(player: Player, delta: number, balance: number, item: string)
+	local wallet = walletOf(player)
+	if balance ~= balance or math.abs(balance) == math.huge then
+		problem(player, "Cash not a number", item, tostring(balance))
+	elseif balance < 0 then
+		problem(player, "Negative cash", item, tostring(balance))
+	elseif wallet.expected then
+		local drift = balance - (wallet.expected + delta)
+		if math.abs(drift) > 1 + math.abs(balance) * 1e-9 then -- doubles round on big balances
+			problem(player, "Untracked cash change", item, `off by {drift}`)
+		end
+	end
+	wallet.expected = balance
+	wallet.balance = balance
+end
+
+local function logEconomy(player: Player, flow: Enum.AnalyticsEconomyFlowType, amount: number, balance: number,
+	transaction: Enum.AnalyticsEconomyTransactionType, item: string)
+	if not (amount > 0) or amount == math.huge or balance ~= balance or math.abs(balance) == math.huge then
+		return -- check() reports bad numbers; Roblox rejects them
+	end
+	safely(function()
+		AnalyticsService:LogEconomyEvent(player, flow, CURRENCY, amount, balance, transaction.Name, item)
+	end)
+end
+
+local function flushIncome(player: Player)
+	local wallet = wallets[player]
+	if not wallet or wallet.pendingIncome <= 0 then
+		return
+	end
+	local amount = wallet.pendingIncome
+	wallet.pendingIncome = 0
+	wallet.incomeSince = os.clock()
+	logEconomy(player, Enum.AnalyticsEconomyFlowType.Source, amount, wallet.balance,
+		Enum.AnalyticsEconomyTransactionType.Gameplay, "Plot Income")
+end
+
+-- The plot's per-second income was paid. balance: the player's cash after it.
+function Analytics.income(player: Player, amount: number, balance: number)
+	check(player, amount, balance, "Plot Income")
+	local wallet = walletOf(player)
+	wallet.pendingIncome += amount
+	if os.clock() - wallet.incomeSince >= INCOME_FLUSH then
+		flushIncome(player)
+	end
+end
+
+-- Cash earned. how: "Gameplay", "IAP" or "TimedReward" (Enum.AnalyticsEconomyTransactionType). item: what paid it.
+function Analytics.cashIn(player: Player, amount: number, balance: number, how: string, item: string)
+	check(player, amount, balance, item)
+	logEconomy(player, Enum.AnalyticsEconomyFlowType.Source, amount, balance,
+		Enum.AnalyticsEconomyTransactionType[how], item)
+end
+
+-- Cash spent. how: "Shop" or "ContextualPurchase". item: what was bought.
+function Analytics.cashOut(player: Player, amount: number, balance: number, how: string, item: string)
+	check(player, -amount, balance, item)
+	logEconomy(player, Enum.AnalyticsEconomyFlowType.Sink, amount, balance,
+		Enum.AnalyticsEconomyTransactionType[how], item)
+end
+
+-- Cash changed on purpose without being a real source or sink (an admin's test cash): the watchdog starts over here.
+function Analytics.cashReset(player: Player, balance: number)
+	walletOf(player).expected = balance
+	walletOf(player).balance = balance
+end
+
 Players.PlayerRemoving:Connect(function(player)
 	worldLogged[player] = nil
+	flushIncome(player)
+	wallets[player] = nil
 end)
 
 return Analytics

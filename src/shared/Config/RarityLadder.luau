@@ -4,6 +4,9 @@
 -- Rules that name a rarity follow these words: the surprise gift (Config/Hooks) and x100/x500 lucky throws
 -- (Config/Catch luckyHits). The Deep End mixes every map, so its monsters keep their home map's word.
 -- C Common, U Uncommon, R Rare, E Epic, L Legendary, M Mythic, A Ancient, S Secret.
+-- [Owner, 2026-11-14] Four more words above Secret, only for the end-game maps' 9th to 12th monsters (Config/Dinos
+-- apex): N Nightmare, D Doomsday, O Oblivion, X Unknown. And no Mythic from The Weeping Dark on.
+-- A new 12-monster map: its first 8 letters one step up from the map before, then N D O X (docs/MAP_RECIPE.md).
 local WORDS = {
 	C = "common",
 	U = "uncommon",
@@ -13,6 +16,10 @@ local WORDS = {
 	M = "mythic",
 	A = "ancient",
 	S = "secret",
+	N = "nightmare",
+	D = "doomsday",
+	O = "oblivion",
+	X = "unknown",
 }
 
 local ladder = {
@@ -29,12 +36,13 @@ local ladder = {
 	MidnightCarnival = "ELLMMAAS", -- map 11
 	ClockworkCitadel = "LLMMAAAS", -- map 12
 	ThornKingdom = "LLMMAASS", -- map 13
-	SporeHollow = "MMAAASSS", -- map 14
-	WeepingDark = "MMAASSSS", -- map 15
+	SporeHollow = "MMAAASSSNDOX", -- map 14
+	WeepingDark = "AAAASSSSNDOX", -- map 15
+	ShatteredMirror = "AAASSSSSNDOX", -- map 16 (used once its monsters are in Config/Dinos)
 }
 
 -- byBiome: biome id -> list of rarity words, commonest monster first. order: every word, commonest first; a word's
--- place in it is its level (1 Common ... 8 Secret).
+-- place in it is its level (1 Common ... 8 Secret, 9 Nightmare, 10 Doomsday, 11 Oblivion, 12 Unknown).
 local byBiome = {}
 for biomeId, letters in ladder do
 	local words = {}
@@ -45,6 +53,6 @@ for biomeId, letters in ladder do
 end
 
 return {
-	order = { "common", "uncommon", "rare", "epic", "legendary", "mythic", "ancient", "secret" },
+	order = { "common", "uncommon", "rare", "epic", "legendary", "mythic", "ancient", "secret", "nightmare", "doomsday", "oblivion", "unknown" },
 	byBiome = byBiome,
 }

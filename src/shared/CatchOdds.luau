@@ -13,7 +13,8 @@ local CatchOdds = {}
 -- higher rarity level (1 Common ... 8 Secret, the words in Config/RarityLadder); minPlace leaves out monsters more common
 -- than that place in their home map's list (DinoStats.rarityRank), maxPlace those rarer than it. All go by the monster's home map, so they also work
 -- in The Deep End's mixed list. only: just these monster ids (the starter run's missing monsters, Config/Hooks).
-export type Filter = { minRarity: number?, maxRarity: number?, minPlace: number?, maxPlace: number?, only: { [string]: boolean }? }
+-- falloff: used in place of Config/Catch pick.falloff (the x500's, which leans towards the rare end).
+export type Filter = { minRarity: number?, maxRarity: number?, minPlace: number?, maxPlace: number?, only: { [string]: boolean }?, falloff: number? }
 local function passes(dinoId: string, filter: Filter?): boolean
 	if not filter then
 		return true
@@ -38,11 +39,12 @@ function CatchOdds.monsters(biomeId: string, luck: number, minRank: number?, rec
 	local top = if count > 1 then dinos[count - 1].chance ^ (1 - pick.topAim) * dinos[count].chance ^ pick.topAim else commonest
 	local aim = math.clamp(commonest * luck, commonest, math.max(top, commonest))
 
+	local falloff = if filter and filter.falloff then filter.falloff else pick.falloff
 	local weights, total = {}, 0
 	for rank, dino in dinos do
 		local weight = 0
 		if rank >= lowest and not (minRank and dino.prize) and passes(dino.id, filter) then -- a guarantee never gives a map's prizes (Config/Dinos)
-			weight = math.min(dino.chance / aim, aim / dino.chance) ^ pick.falloff
+			weight = math.min(dino.chance / aim, aim / dino.chance) ^ falloff
 			for index, id in recent or {} do
 				if id == dino.id then
 					weight /= pick.repeatPenalty[index] or 1
@@ -57,6 +59,18 @@ function CatchOdds.monsters(biomeId: string, luck: number, minRank: number?, rec
 		weights[rank] = weight / total
 	end
 	return weights
+end
+
+-- The rarest monster of this list the filter lets through (its place in the list), or the list's last with none. A
+-- lucky throw falls back on it when the rolled monster has no colour and size rare enough (DinoRoll.rollCatch).
+function CatchOdds.rarestAllowed(biomeId: string, filter: Filter?): number
+	local dinos = Dinos[biomeId]
+	for rank = #dinos, 1, -1 do
+		if passes(dinos[rank].id, filter) then
+			return rank
+		end
+	end
+	return #dinos
 end
 
 -- Whether any monster in this list gets through the filter; nonPrize: and isn't one of its map's prizes.
@@ -89,12 +103,12 @@ function CatchOdds.luckyFilter(biomeId: string, hit): (Filter?, boolean)
 	if not hit.minRarity then
 		-- No rarity word asked (the daily x50): only its places in the map's list, if it names any.
 		if hit.minPlace or hit.maxPlace then
-			return { minPlace = hit.minPlace, maxPlace = hit.maxPlace }, false
+			return { minPlace = hit.minPlace, maxPlace = hit.maxPlace, falloff = hit.falloff }, false
 		end
 		return nil, false
 	end
 	local top = DinoStats.topRarityLevel(biomeId)
-	return { minRarity = math.min(hit.minRarity, top), minPlace = hit.minPlace, maxPlace = hit.maxPlace }, top < hit.minRarity
+	return { minRarity = math.min(hit.minRarity, top), minPlace = hit.minPlace, maxPlace = hit.maxPlace, falloff = hit.falloff }, top < hit.minRarity
 end
 
 -- Every colour and size that make this monster's catch at least 1 in `minOneIn`, each weighted by how likely it
@@ -164,7 +178,8 @@ function CatchOdds.plain(biomeId: string, luck: number, perOption: { [string]: n
 end
 
 -- A lucky throw's chances, the same shape. luck is the throw's luck before the multiplier. The monster is rolled with
--- all of it, then its colour and size come from CatchOdds.hitOptions; a monster with none gives way to the map's rarest.
+-- all of it, then its colour and size come from CatchOdds.hitOptions; a monster with none gives way to the rarest one
+-- the throw may give (CatchOdds.rarestAllowed).
 function CatchOdds.lucky(biomeId: string, luck: number, multiplier: number)
 	local dinos = Dinos[biomeId]
 	local hit = CatchOdds.luckyHit(multiplier) or { minOneIn = 0 }
@@ -180,7 +195,7 @@ function CatchOdds.lucky(biomeId: string, luck: number, multiplier: number)
 		local landed = rank
 		local options, total = CatchOdds.hitOptions(dino.id, minOneIn, colourAndSize, sizeBoost)
 		if #options == 0 then
-			landed = #dinos
+			landed = CatchOdds.rarestAllowed(biomeId, filter)
 			options, total = CatchOdds.hitOptions(dinos[landed].id, minOneIn, colourAndSize, sizeBoost)
 		end
 		monsters[landed] += odds[rank]

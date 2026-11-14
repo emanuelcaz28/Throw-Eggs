@@ -49,6 +49,7 @@ return {
 		receipts = {}, -- Robux purchases already granted, by purchase id
 		throwsSinceRare = 0, -- throws in a row without a rare monster, for pity (Config/Hooks)
 		throwsSinceRarest = 0, -- throws in a row without a map's rarest monster, for the jackpot pity (Config/Hooks)
+		throwsSinceApex = 0, -- throws in a row on end-game maps without one of their 9th to 12th, for the end-game streak (Config/Hooks apexStreak)
 		throwsSinceGift = 0, -- throws since the last surprise gift, every 60th is a Legendary or Mythic (Config/Hooks)
 		bigShotsLeft = -1, -- big shots not used yet (Config/Hooks bigShots); -1 = not decided: a save with nothing caught gets them all, an older one none
 		recentCatches = {}, -- ids of the last 2 monsters caught by throwing, newest first; less likely to come again (Config/Catch pick)

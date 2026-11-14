@@ -779,6 +779,21 @@ Each map's standard size is about 1.05x the previous map's, reaching 2x at map 1
 | 13 | Thorn Kingdom | 1.81x | Bramble Brat, Grandma Gnash, Sir Skewer, Hart Attack, Hydrangry, Wrathorn |
 | 14 | Spore Hollow | 1.9x | Toad Rage, Morel Panic, Antagonist, Sporantula, Gillotine, Shroomageddon |
 | 15 | The Weeping Dark | 2x | Teddy Wrecks, Good Boy, Casket Case, Wailing Widow, Death Knell, Endless Grief |
+| 16 | Shattered Mirror | 1.35x (capped) | 12 on this map **[Owner, 2026-11-13]**, all made in Blender, not imported: Paw de Deux, Frill Seeker, Dressed to Kill, Wrecking Ballroom, Swanquish, Mane Event, then the six rarest: Stilt Life, Prism Break, Moth-er of Pearl, Vainglory, Mirror Mirror, Royal Pane (section 9, map 16) |
+
+**[Owner, 2026-11-13] Four more on maps 14 and 15, rarer than their 8:** "even more aggressive than the rarest", each with a
+unique animation and an effect or object animated on it from the map's theme, made in Blender, clean geometry and clean
+animations "including the idle". Their rarities, chances and money came on 2026-11-14: see "End-game rarities" below.
+**[Built, in Blender]** `assets/models/build_spore_hollow_apex.py`, `build_weeping_dark_apex.py` and what they
+share, `apex_kit.py`; FBX files ready in `fbx/14_SporeHollow/Animals/` and `fbx/15_WeepingDark/Animals/`, not imported yet. Names are ours.
+Spore Hollow: **Rot Weiler** (three heads that strike in turn, a mane of acid), **Acid Reign** (a king cobra under a crown of
+thorns turning in the air, which tips over its face as it strikes), **Cap Punishment** (a tyrant with a spinning death-cap saw on
+an arm out of its back), **Sporeactor** (a walking reactor: a core of light in two tumbling rings, rods rising from its back).
+The Weeping Dark, still no colour and red only for eyes: **Grim Weeper** (scythes for arms, a wheel of red eyes turning behind
+it), **Cage Rage** (its ribs are a second mouth round a heart full of eyes), **Mourning Star** (a tail that whirls a spiked star
+with eyes in it), **Nevermore** (a giant raven with a bare skull, a ring of feathers circling over it that bursts outward).
+Their attacks and the bones that turn all the time (`Halo`, `Wheel`, `Hoop`, `Saw`) are in `DinoLifeController` already, so they
+move once imported and tidied. Each .blend has three looping actions, Walk, Idle and Attack. Nothing is thrown or dripped.
 
 **[Owner, 2026-11-06] 8 monsters a map, not 6:** two more each, made in Blender and animated, nicer than the ones before and
 more aggressive map by map, 6 at a time, a prompt each. **[Built]** in Blender, `DinoLifeController` (`SWAY`) and `Config/Dinos`. Their
@@ -796,11 +811,56 @@ the word changes; each map's odds stay in `Config/Dinos`. Commonest first:
 | 1 | C C C U U R R E | 6 | R R E E L L M M | 11 | E L L M M A A S |
 | 2 | C C U U R R E E | 7 | R E E L L L M M | 12 | L L M M A A A S |
 | 3 | U U R R R E E L | 8 | R E E L L M M A | 13 | L L M M A A S S |
-| 4 | U U R R E E L L | 9 | E E L L M M A A | 14 | M M A A A S S S |
-| 5 | U R R E E L L M | 10 | E L L M M M A A | 15 | M M A A S S S S |
+| 4 | U U R R E E L L | 9 | E E L L M M A A | 14 | M M A A A S S S + N D O X |
+| 5 | U R R E E L L M | 10 | E L L M M M A A | 15 | A A A A S S S S + N D O X |
 
 The Deep End's monsters keep their home map's word. Rules that name a rarity follow the words: the surprise gift and
 x100/x500 lucky throws (section 13).
+
+**[Owner, 2026-11-14] End-game rarities.** "More rarities just for these worlds", "more nice and crazy than secret", with
+"unKnown" as one of them, and "starting from weeping dark there should not be a mythic anymore". The economy and luck must
+give no advantage to players who only play for free: "of course they can get it but not easy". And the next map's 12
+monsters get the same system. **[Built, not tested in Studio]**
+- **Four words above Secret**, one for each of a map's 9th to 12th monster: **NIGHTMARE** (blood red, flickers and beats),
+  **DOOMSDAY** (yellow burning to red, embers and sparks), **OBLIVION** (black letters, ice-cyan rim, glitches) and
+  **UNKNOWN** (bone white, and its letters scramble into ?#%! as it glitches). Names and looks are ours (`Config/Rarity`,
+  `UiKit.RARITY`); no Figma design yet.
+- **Words now:** map 14 `M M A A A S S S N D O X`, map 15 `A A A A S S S S N D O X` (no Mythic), map 16 ready as
+  `A A A S S S S S N D O X` (`Config/RarityLadder`).
+- **The 8 monsters** (`Config/Dinos`, `prize = true, apex = true`), rarest last. Spore Hollow: Rot Weiler, Acid Reign,
+  Cap Punishment, Sporeactor. The Weeping Dark: Grim Weeper, Cage Rage, Mourning Star, Nevermore.
+
+  | Place | Word | Chance in Config | Shown as about | Money against the map's 8th |
+  |---|---|---|---|---|
+  | 9th | Nightmare | 149,993 | 1 in 128,000 | 4x |
+  | 10th | Doomsday | 600,011 | 1 in 512,000 | 20x |
+  | 11th | Oblivion | 2,500,009 | 1 in 2.1 million | 100x |
+  | 12th | Unknown | 9,999,991 | 1 in 8.5 million | 500x |
+
+  So map 14's Unknown earns 5x map 15's 8th, and each map's Unknown sits between the next map's 8th and 9th.
+- **Who gets them** (`Config/Catch` `luckyHits`; numbers from the roll's own code):
+  - **x100** (R$ 9) stops at the 9th: 72% the 7th, 22% the 8th, **6% a Nightmare**, never anything above.
+  - **x500** (R$ 39) reaches all of them and leans to the rare end (its own `falloff` 0.5): 48% the 7th, 26% the 8th,
+    **13.6% Nightmare, 6.8% Doomsday, 3.3% Oblivion, 1.7% Unknown** (one Unknown in about 59 throws). On average it pays
+    about 1,100x the map's best normal monster, against 50x for a x100. On the 8-monster maps a x500 is now 65% the 7th
+    and 35% the 8th (was 77 / 23); x100 is the same there.
+  - **Free:** a plain throw gives any of the four about 1 in 97,000 at a map's start and 1 in 18,000 at its far end (the
+    Unknown 1 in 1.6 million). No guarantee ever gives one (pity, jackpot, new world, gift: they are prizes), and the
+    daily x50 never does. The real free way is the daily reward's day-7 x500 (and the one-time x500 play gift): one in
+    four is one of the four, so about one a month for a player who never misses a day.
+  - **End-game streak [Owner, 2026-11-14: "let's not make it that unfair for free players", without making them "way too
+    powerful"]** (`Config/Hooks` `apexStreak`, save field `throwsSinceApex`): after 300 throws in a row on a 12-monster
+    map without one of its four, the next plain throw is its 9th or 10th (Nightmare 80%, Doomsday 20%), colour and size
+    rolled as usual, with "NIGHTMARE STREAK!" after the reveal. About two and a half hours of throwing: one or two a
+    week at an hour a day. Never Oblivion or Unknown: those stay for luck and x500. Catching one any other way starts
+    the count again; a lucky throw or another guarantee keeps its own rules and the streak waits.
+  - Shop text changed to stay true: "one of the map's top monsters, 1 in 1M+" and "a top monster, up to the map's very
+    rarest, 1 in 100M+". Details shows the exact chances per map, from the same code as the roll.
+- **Index:** maps 14 and 15 show 12 cards (three rows of smaller cards). The world's reward still needs only its first 8,
+  so worlds completed before keep their +10% cash; the four are extras (`IndexService`, `apex`). The Index total is 128.
+- **Sell stand:** the rarity buttons are two rows now (ALL and 12 rarities).
+- The play simulation is unchanged (average free player at map 15 in 21.7 h): money barely changes the pace.
+- **A new 12-monster map** copies this: `docs/MAP_RECIPE.md` step 9, "Monster numbers".
 Income carries on the same steps: 1,500 and 5,000 on the Forest, times 100 a map. So far, rarest last:
 
 | Map | 7th | 8th | What's new in how they move |
@@ -1203,6 +1263,7 @@ maps; the owner can rename it (only `name` in `Config/Biomes` changes).
 **[Built]** Map 12 is **Clockwork Citadel** (`ClockworkCitadel`), our name too; the owner can rename it.
 **[Built]** Map 13 is **Thorn Kingdom** (`ThornKingdom`), our name too; the owner can rename it.
 **[Built]** Map 14 is **Spore Hollow** (`SporeHollow`), our name too; the owner can rename it.
+**[Owner, 2026-11-13]** Map 16 is **Shattered Mirror** (`ShatteredMirror`): the owner picked the theme from three of ours.
 
 **[Owner, 2026-11-04]** Luck reaches the billions, about 4-5x more per map (section 8b). **Replaced 2026-11-06:** the
 luck shown now tops out at 50x (section 8b); the table below is the old plan:
@@ -1571,6 +1632,88 @@ Done one at a time, each in its own step:
      `Config/Lighting`). In play, 21 of the 23 prop kinds in range moved (candle stubs and tear pools only glow) and all
      151 lights in range flickered. Shots from the game: `ingame_*.jpg`. Not seen yet: a real throw through it, and how a
      phone draws it. Its monsters must stay readable in the reveal, which keeps this world's light.
+   - **Shattered Mirror** *(map 16's world made 2026-11-13, in Blender; FBX files ready in `fbx/18_ShatteredMirror/Props/`, not
+     imported yet)*: **[Owner]** a new map after The Weeping Dark, Shattered Mirror picked from our three themes; "only design the world"
+     this time, the monsters are a later prompt. **[Built]** `assets/models/build_shattered_mirror.py`, 18 props, all with moving parts.
+     The world behind the glass: after the blackest map the light comes back all at once, a pearl-pink dawn, a silver floor,
+     white quartz rims and smoked violet glass walls, everything throwing rainbows, and the reflections are wrong. Signature:
+     the Standing Mirror, a gilt mirror on claw feet, cracked, with a silhouette in it that isn't yours, breathing, cold
+     eyes open. Around it: shard clusters with one piece turning in the air, glass prism obelisks pouring rainbows on the
+     floor, porcelain mannequins with cracked mirror faces turning their heads after you, kaleidoscope flowers of mirror
+     petals, crashed chandeliers still lit, statues split into floating pieces, and now and then a heap of empty frames
+     with eyes in the biggest; glass tufts and broken mirror bits as filler; flat cracked mirror pools with rings of
+     rainbow in the middle. Rims: glass trees with mirror leaves, broken halls of mirrors with one panel revolving.
+     Landmarks: the Looking Glass (a tower-sized hand mirror with an eye looking round in it, splinters orbiting it) and
+     Kaleidoscope Towers (a rose window of rainbow glass turning on top). The Broken Moon hangs in the sky, its pieces
+     circling it; splinters pour down the walls from cracks in the glass (`Shardfall`); colossal gilt Great Frames stand
+     across the corridor, so the flight goes through one empty mirror after another. **[Owner]** Real chrome, "silver
+     but with multiple colours", not something basic. **[Built, new]** Every silver, glass and gold part is metal: two
+     MaterialVariants in MaterialService, **HoloChrome** (silver with rainbow flowing through it, almost mirror smooth) and
+     **PolishedGold**, from our maps (`assets/textures/make_chrome.py`, uploaded 2026-11-13) made by
+     `assets/models/studio_chrome.luau`. The build script's `METAL` says which roles get which; studio_tidy puts them on
+     (Foil, no studs) and the part's colour tints them (near white = the whole rainbow, dark = dark chrome). Porcelain,
+     marble and velvet keep their studs. This world's lighting turns reflections up (`EnvironmentSpecularScale` 1 against
+     the game's 0.15). Roblox has no colour-shift-with-angle effect, so the colours change across a surface, not as you
+     turn. World 16 (16,500 to 18,400 studs, luck 55 at its end, our pick past the old 50x top, size 1.35x like every map
+     since 7). `Config/Biomes`, `Map`, `Lighting` (ClockTime 6, bright), `Decor`, `PropMotion` and `Roles` are in. The
+     Last Door moved to the new end of the corridor (`Decor` WeepingDark, `Throw.lastDoorAt` 18,426), and the hidden Deep
+     End moved behind it (18,400 to 19,900). Until its monsters are in `Config/Dinos` eggs can't land in it: far throws
+     still land in The Weeping Dark, and luck stops at its 50x (`Throw.farthestLanding` and `luckDistance` now stop at the
+     last world eggs can land in, not the last one built). Renders and two videos (`mirror_motion.mp4`,
+     `mirror_flight.mp4`) in `design/world/models_shattered_mirror/`. Not seen in play yet, nor its light.
+     **[Owner, 2026-11-13]** "More props, organized nicely with animations, I want this map to feel special." **[Built]** 28
+     props now, all moving, and the world is three acts. You fly in through **the Threshold**, a colossal gilt arch whose
+     broken mirror hangs in the air inside it in two rings turning opposite ways. **The Shattering** (0 to 680): broken
+     glass scattered anyhow, as before. **The Glass Garden** (680 to 1,280): fountains pouring light into mirror pools,
+     mirror butterflies beating their wings, kaleidoscope flowers, Kaleidoscope Towers either side of its gates, chrome
+     islands floating in the sky. **The Ballroom** (1,280 to the end): music boxes with porcelain ballerinas pirouetting
+     (their keys turning, notes of light rising), mannequins, statues and standing mirrors on a runway of mirror inlays
+     down the middle, chandeliers swinging on bars across the corridor, oval mirrors hung on both walls (one crooked,
+     swinging on its nail, a shape standing in another), pendulum mirrors on the rims, twin glass cathedrals with rainbow
+     rose windows and prisms turning on their spires, and at the very end two Looking Glasses facing each other across the
+     corridor before the Last Door. In the Garden and the Ballroom every prop has its twin across the corridor, mirrored.
+     **[Built, new]** `Config/Decor` floor and rim rules can have `zones` ({ from, to, props, gap?, pairs? }): stretches of a
+     world with props of their own, and with `pairs` each prop is placed twice, mirrored across the corridor (`MapDecor`,
+     `map_kit.decorate_stage`, checked by `check_map.py`). Worlds without zones are laid out exactly as before. Renders of
+     each act: `garden_*.png`, `ballroom_*.png`, `the_end.png`.
+     **[Built]** Imported by the owner and tidied 2026-11-13 (`Assets.Maps.ShatteredMirror.Props`, 28 props; 95 HoloChrome
+     parts, 38 PolishedGold). Play-tested: the game builds 570 props in the world, every act reads as planned, the
+     ballerinas spin, chandeliers, wall mirrors and pendulums swing, notes rise, no errors. Tuned in play: at ClockTime 6
+     the sky was night with stars, so its atmosphere is now a thick warm haze that comes out a dusty pink dawn
+     (`Config/Lighting`). Not seen yet: a real throw through it (eggs can't land there until it has monsters), phones.
+     **[Owner, 2026-11-13] Its monsters:** twelve on this map, not 8; "aggressive, but at the same time magnificent", not too
+     aggressive, in the map's theme, each with an animation of its own and an aggression that looks like no monster already in
+     the game. The owner's example, for one monster and not all: skin covered in shards that "get out of him and then go back in"
+     in waves, like a stadium wave, and "not float". Six now and six in another prompt (left to us). **[Built]** the first six in
+     `assets/models/build_shattered_mirror_monsters.py` (renders `design/world/monsters_shattered_mirror/`, FBX
+     `fbx/18_ShatteredMirror/Animals/`, not imported yet), most common first: **Paw de Deux** (a smoked-glass panther with a
+     crest of mirror shards; it sidesteps a whole circle round you, eyes on you, then springs and rakes), **Frill Seeker** (a
+     porcelain lizard whose frill is a kaleidoscope, always turning; it rears and runs at you on two legs), **Dressed to Kill** (a
+     mannequin whose head is a gilt hand mirror with a face in it; turns its head right round, then lunges in jerks like a broken
+     doll), **Wrecking Ballroom** (tiled in mirrors, a mirror ball for a tail club, always turning; pendulum swings, higher each
+     time, then a slam), **Swanquish** (a swan and its black reflection on one body, two necks that always move as mirror images;
+     wings flare, necks strike together like shears), **Mane Event** (a lion whose mane of mirror shards does the owner's
+     stadium wave for ever; it rears rampant, every shard bursts out and rattles, it roars and slams down). Shared face: cold
+     cyan slit eyes (the world's Gleam) under chrome brows, glass fangs. Chrome and gilt are metal, as in the world (`METAL`).
+     New in `DinoLifeController`: a marker table's `"@always"` moves run all the time, on top of the attack cycle. Names are
+     ours.
+     **[Owner, 2026-11-14] On those six:** only Swanquish is good; the owner doesn't like the other five (not to be remade now):
+     they share one mouth and one set of teeth. For the next six: "something unique", "more complex, something actually wow",
+     two feet but "not an actual humanoid body", "I want them shards to be floating and waving and doing stuff" (this replaces
+     "not float"), and the rarest "must look the best". **[Built]** the six rarest in
+     `assets/models/build_shattered_mirror_rare.py` (renders `design/world/monsters_shattered_mirror_rare/`, FBX in the same
+     `Animals` folder, not imported yet). No shared head, no rows of teeth, and on every one shards that float free of the body
+     and never stop moving: **Stilt Life** (a porcelain wader on gilt stilts with a dagger bill, two fans of mirror blades
+     hanging in the air for wings; coils its neck and stabs three times), **Prism Break** (a midnight raptor with a prism for a
+     head and a visor of light, a sail of rainbow glass floating over its back; the sail tips forward and fires blade after
+     blade, then it charges), **Moth-er of Pearl** (a pearl moth in the air on four glass wings, no mouth, two rings of shards
+     circling it opposite ways; claps its wings shut and dives), **Vainglory** (a sapphire peacock whose train is thirteen
+     floating mirror eyes with a wave running through them; fans, shivers, struts, and the eyes stab outward), **Mirror Mirror**
+     (the world's standing mirror walking on two bird legs, two cold eyes in the hole in its glass, two rings of shards wheeling
+     round it; the glass bursts out and what lives inside leans out to look for you), and the rarest, **Royal Pane** (a white
+     and gold wyvern helmed in chrome, a ring of shards turning over its head, wings of stained-glass panes floating between
+     gilt fingers; it rears and beats the panes out at you). **Not in `Config/Dinos` yet:** that comes when all twelve are
+     imported, with their chances, rarity words and Index card.
    - **Joining**: whether the floor steps down at each world (question 5 in section 15) is still open.
 
 The walking reveal and the flight camera are a separate job, after the world. The throw wind-up is built (section 7).

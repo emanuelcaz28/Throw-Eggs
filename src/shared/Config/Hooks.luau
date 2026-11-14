@@ -9,6 +9,15 @@ return {
 	-- With 6 monsters a map it comes naturally about 1 in 250 to 1 in 900 throws (a simulation of the roll,
 	-- 2026-11-06), so this mostly helps unlucky players; 250 throws is roughly 2 hours of play.
 	jackpotPity = { throws = 250, rarest = 1 },
+	-- End-game streak [Owner, 2026-11-14: the end-game monsters were "that unfair for free players", fix it without
+	-- making them "way too powerful"]. On a map with a 9th to 12th monster (Config/Dinos apex), after this many throws
+	-- in a row there without catching one of them, the next plain throw is the map's 9th or 10th (minPlace/maxPlace:
+	-- Nightmare about 4 times in 5, Doomsday 1 in 5, by their own odds), with colour and size rolled as usual. Never
+	-- the 11th or 12th: Oblivion and Unknown stay for luck and x500. 300 throws is about two and a half hours of
+	-- throwing, so a free player who plays an hour a day gets one or two a week; a x500 gives one 1 time in 4 at once.
+	-- Catching one any other way starts the count again. A throw with another guarantee, or a lucky throw, keeps its
+	-- own rules and the streak waits for the next plain one. Told after the reveal ("NIGHTMARE STREAK!").
+	apexStreak = { throws = 300, minPlace = 9, maxPlace = 10 },
 	-- Surprise gift [Owner, 2026-11-08]: every 60th throw is a Legendary or a Mythic (rarity words 5 and 6,
 	-- Config/RarityLadder), never Ancient or Secret, and only one in the rarer half of its map (minPlace: 5th place or
 	-- rarer). It only counts on maps that have one, where Legendary and Mythic are high rarities: maps 3 to 11 and The

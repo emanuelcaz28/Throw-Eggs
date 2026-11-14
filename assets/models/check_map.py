@@ -144,12 +144,21 @@ def main():
             def table(rows):
                 return [(r["name"], r["weight"], list(r["scale"])) for r in rows]
 
+            def zones_py(rules):
+                return [[z["from"], z["to"], bool(z.get("pairs")), list(z.get("gap") or []), [[n, w, list(s)] for n, w, s in z["props"]]]
+                        for z in rules.get("zones", [])]
+
+            def zones_lua(rules):
+                return [[z["from"], z["to"], bool(z.get("pairs")), list(z.get("gap") or []), table(z["props"])] for z in rules.get("zones") or []]
+
             f, d = lua["floor"], decor["floor"]
             pairs = [
                 ("floor props", [[n, w, list(s)] for n, w, s in d["props"]], table(f["props"])),
                 ("floor extras", [[n, w, list(s)] for n, w, s in d["extras"]["props"]], table(f["extras"]["props"])),
                 ("floor numbers", [d["first"], list(d["gap"]), list(d["side"]), d["extras"]["chance"], d["extras"]["spread"]],
                  [f["firstDistance"], f["gap"], f["side"], f["extras"]["chance"], f["extras"]["spread"]]),
+                ("floor zones", zones_py(d), zones_lua(f)),
+                ("rim zones", zones_py(decor["rim"]), zones_lua(lua["rim"])),
                 ("rim props", [[n, w, list(s)] for n, w, s in decor["rim"]["props"]], table(lua["rim"]["props"])),
                 ("rim numbers", [decor["rim"]["first"], list(decor["rim"]["gap"]), decor["rim"]["chance"], list(decor["rim"]["side"])],
                  [lua["rim"]["firstDistance"], lua["rim"]["gap"], lua["rim"]["chance"], lua["rim"]["side"]]),
@@ -164,6 +173,7 @@ def main():
                     problem(f"DECOR and Config/Decor differ in {what}:\n    blender {a}\n    game    {b}")
         used = {row[0] for key in ("overhead", "walls", "spots") for row in decor.get(key, [])}
         used |= {row[0] for row in decor["floor"]["props"] + decor["floor"]["extras"]["props"] + decor["rim"]["props"]}
+        used |= {row[0] for key in ("floor", "rim") for zone in decor[key].get("zones", []) for row in zone["props"]}
         for name in sorted(used - models.keys()):
             problem(f"DECOR places {name}, which the script doesn't build")
         for name in sorted(models.keys() - used):

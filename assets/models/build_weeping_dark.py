@@ -946,7 +946,8 @@ def procession(seed=23):
 
 
 DOOR_FRONT = 26  # the door's face, from the origin: far enough that the eye moves a good way as it turns round the origin
-DOOR_AT = 1826  # where the door's face stands, from the world's start. The end wall is at 1836: the eye behind the door must clear it
+DOOR_AT = 3726  # where the door's face stands, from this world's start: the corridor's end, past Shattered Mirror (1900 long) since
+# 2026-11-13; it was 1826 when this was the last map. The end wall is 10 behind it: the eye behind the door must clear it
 
 
 def last_door(seed=24):

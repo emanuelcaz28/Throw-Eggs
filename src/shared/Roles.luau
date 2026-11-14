@@ -147,6 +147,22 @@ Roles.glowing = {
 	RippleB = true,
 	Sweep = true,
 	Leader = true,
+	-- Shattered Mirror (assets/models/build_shattered_mirror.py): cracks of light, the cold eyes of what's in the glass,
+	-- glints, the rainbow bands of light through glass, and the splinters pouring down the walls. FlameA is above.
+	Fracture = true,
+	Gleam = true,
+	Facet = true,
+	SpecA = true,
+	SpecB = true,
+	SpecC = true,
+	SpecD = true,
+	SpecE = true,
+	Cascade = true,
+	CascadeB = true,
+	Note = true, -- the music box's notes of light
+	Spray = true, -- the light pouring from the fountains
+	SprayB = true,
+	ChandFlame = true, -- the candles on the Ballroom's swinging chandeliers
 	-- The Egg Shop's eggs (assets/models/build_eggs.py): lava cracks, lure dots, stars, gems, bulbs, roses, the halo, and
 	-- the glowing yolk of the dearer eggs. Every part of an egg's top half ends in Lid (EggModel), so each has a twin.
 	EggGlow = true,

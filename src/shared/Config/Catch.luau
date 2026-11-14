@@ -59,11 +59,23 @@ return {
 	-- every map from the 4th on. The daily x50 paid about 2x and was often a common monster in a rare colour; it is
 	-- now always the map's best normal monster (its 6th) with a colour or a size, about 3x, and never a prize: prizes
 	-- are what Robux buys.
+	-- [Owner, 2026-11-14] The end-game maps' 9th to 12th (Config/Dinos apex; Nightmare, Doomsday, Oblivion, Unknown) are
+	-- what the paid throws chase, "of course free players can get it but not easy":
+	--   x100 stops at the 9th (maxPlace 9): about 73% the 7th, 22% the 8th, 6% a Nightmare, never anything above it.
+	--   x500 reaches all of them, and its own `falloff` (0.5 against the roll's 1, Config/Catch pick) leans it to the
+	--   rare end: about 48% the 7th, 26% the 8th, 13.6% Nightmare, 6.8% Doomsday, 3.3% Oblivion, 1.7% Unknown (1 in 59).
+	--   On 8-monster maps that makes a x500 65% the 7th and 35% the 8th (was 77 / 23); x100 is unchanged there.
+	--   Free: a plain throw gives one about 1 in 18,000 at a map's far end (1 in 97,000 at its start; the Unknown 1 in
+	--   1.6 million). The guarantees never give one, but the end-game streak does: every 300 throws on such a map
+	--   without one, a Nightmare or a Doomsday (Config/Hooks apexStreak). The real free
+	--   way is the daily reward's day-7 x500: one in four is an apex monster, about one a month.
+	--   [Owner, 2026-11-14] The x500's falloff = 0.5 is held back with the apex monsters (hidden in Config/Dinos) for
+	--   the next update: until then a x500 stays 77% the 7th, 23% the 8th. Add it back to the x500 line on release.
 	-- colourAndSize: always a colour and a size, never "No colour" or "Normal size" [Owner, 2026-11-07: x100 and
 	-- x500 must give 0% Common to Epic, no colour and normal size].
 	luckyHits = {
 		{ multiplier = 500, minOneIn = 100000000, minRarity = 5, minPlace = 7, colourAndSize = true }, -- 1 in 100 million or rarer: GODLY!, sometimes IMPOSSIBLE!
-		{ multiplier = 100, minOneIn = 1000000, minRarity = 5, minPlace = 7, colourAndSize = true }, -- 1 in a million or rarer: GODLY!
+		{ multiplier = 100, minOneIn = 1000000, minRarity = 5, minPlace = 7, maxPlace = 9, colourAndSize = true }, -- 1 in a million or rarer: GODLY!
 		{ multiplier = 50, minOneIn = 100000, minPlace = 6, maxPlace = 6 }, -- the daily reward's: the map's 6th, 1 in 100,000 or rarer, LEGENDARY!
 	},
 	-- On a map that falls short of a lucky throw's minRarity, each size's chance is also multiplied by its own

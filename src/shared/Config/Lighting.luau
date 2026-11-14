@@ -138,6 +138,18 @@ return {
 				lighting = { Brightness = 0.9, Ambient = Color3.fromRGB(110, 110, 120), OutdoorAmbient = Color3.fromRGB(165, 165, 176), ExposureCompensation = 0.3 },
 			},
 		},
+		-- The other side of the glass: after the blackest map the light comes back all at once, a cold bright pearl-pink dawn.
+		-- ClockTime stays at 6, the latest the blend from the night worlds allows (docs/MAP_RECIPE.md). Everything silver, glass
+		-- and gold here is metal (the HoloChrome and PolishedGold materials), so this world's reflections are turned right up:
+		-- the game's 0.15 keeps studs matte everywhere else. Tuned in play (2026-11-13): at ClockTime 6 Roblox still draws a
+		-- night sky with stars, so a thick Haze carries the atmosphere's colour up the sky instead; Roblox tints it blue, so the
+		-- colour is warm on purpose (a pink Color came out lavender), and this comes out a dusty pink dawn.
+		ShatteredMirror = {
+			lighting = { ClockTime = 6, Brightness = 3, Ambient = Color3.fromRGB(150, 144, 172), OutdoorAmbient = Color3.fromRGB(200, 194, 216), ExposureCompensation = 0.15,
+				EnvironmentSpecularScale = 1 },
+			atmosphere = { Color = Color3.fromRGB(255, 176, 150), Decay = Color3.fromRGB(255, 160, 190), Density = 0.2, Haze = 4.5, Glare = 0.6 },
+			colorCorrection = { TintColor = Color3.fromRGB(250, 246, 255), Saturation = 0.1, Contrast = 0.08 },
+		},
 		-- The bottom of the shaft: night, but after The Weeping Dark it should feel like coming up for air, in teal mist.
 		DeepEnd = {
 			lighting = { ClockTime = 4, Brightness = 2.4, Ambient = Color3.fromRGB(130, 185, 178), OutdoorAmbient = Color3.fromRGB(170, 215, 208) },

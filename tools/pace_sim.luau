@@ -102,7 +102,8 @@ local function luckyCatch(biome, luck, multiplier, recent)
 	local options, total = CatchOdds.hitOptions(dino.id, hit.minOneIn, hit.colourAndSize, sizeBoost)
 	if #options == 0 then
 		local dinos = Dinos[biome.rollFrom or biome.id]
-		dino, rank = dinos[#dinos], #dinos
+		rank = CatchOdds.rarestAllowed(biome.rollFrom or biome.id, filter)
+		dino = dinos[rank]
 		options, total = CatchOdds.hitOptions(dino.id, hit.minOneIn, hit.colourAndSize, sizeBoost)
 	end
 	local pick, chosen = math.random() * total, options[#options]

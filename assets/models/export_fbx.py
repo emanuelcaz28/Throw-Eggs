@@ -18,7 +18,7 @@ OUT = Path(bpy.data.filepath).parent / "fbx"
 # One folder per map, in throw order (GAME_SPEC section 8a), so the owner imports map by map.
 MAPS = ("01_Forest", "02_Desert", "03_Swamp", "04_Volcano", "05_FrozenPeaks", "06_ShadowBog", "07_Abyss", "08_StarfallCrater", "09_EclipseTemple",
         "10_ForbiddenLibrary", "11_MidnightCarnival", "12_ClockworkCitadel", "13_ThornKingdom", "14_SporeHollow",
-        "15_WeepingDark", "16_Specials", "17_DeepEnd", "00_Eggs")
+        "15_WeepingDark", "16_Specials", "17_DeepEnd", "18_ShatteredMirror", "00_Eggs")
 # Which map each .blend belongs to. A new map's .blend gets a line here.
 MAP_OF_FILE = {"forest_models": "01_Forest", "world_kit": "01_Forest", "desert_models": "02_Desert", "base_kit": "01_Forest", "leaderboards": "01_Forest", "best_catch": "01_Forest", "racks": "01_Forest", "swamp_models": "03_Swamp",
                "volcano_models": "04_Volcano",
@@ -34,6 +34,7 @@ MAP_OF_FILE = {"forest_models": "01_Forest", "world_kit": "01_Forest", "desert_m
                "spore_hollow_models": "14_SporeHollow",
                "weeping_dark_models": "15_WeepingDark",
                "deep_end_models": "17_DeepEnd",
+               "shattered_mirror_models": "18_ShatteredMirror",  # map 16 (16 and 17 were taken by the specials and The Deep End)
                "swamp_monsters": "03_Swamp", "frozen_peaks_monsters": "05_FrozenPeaks", "shadow_bog_monsters": "06_ShadowBog",
                "abyss_monsters": "07_Abyss", "starfall_crater_monsters": "08_StarfallCrater",
                "eclipse_temple_monsters": "09_EclipseTemple", "forbidden_library_monsters": "10_ForbiddenLibrary",
@@ -42,12 +43,15 @@ MAP_OF_FILE = {"forest_models": "01_Forest", "world_kit": "01_Forest", "desert_m
                "thorn_kingdom_monsters": "13_ThornKingdom",
                "spore_hollow_toxic": "14_SporeHollow",  # all 8, the toxic set (2026-11-10); spore_hollow_monsters and _7_8 are the old looks, not exported any more
                "weeping_dark_dread": "15_WeepingDark",  # the first 7, the dread set (2026-11-10); weeping_dark_monsters is the old looks, not exported any more
+               "spore_hollow_apex": "14_SporeHollow", "weeping_dark_apex": "15_WeepingDark",  # the 9th to 12th of each (2026-11-13), apex_kit.py
                "forest_monsters_7_8": "01_Forest", "desert_monsters_7_8": "02_Desert", "swamp_monsters_7_8": "03_Swamp",
                "volcano_monsters_7_8": "04_Volcano", "frozen_peaks_monsters_7_8": "05_FrozenPeaks", "shadow_bog_monsters_7_8": "06_ShadowBog",
                "abyss_monsters_7_8": "07_Abyss", "starfall_crater_monsters_7_8": "08_StarfallCrater", "eclipse_temple_monsters_7_8": "09_EclipseTemple",
                "forbidden_library_monsters_7_8": "10_ForbiddenLibrary", "midnight_carnival_monsters_7_8": "11_MidnightCarnival", "clockwork_citadel_monsters_7_8": "12_ClockworkCitadel",
                "thorn_kingdom_monsters_7_8": "13_ThornKingdom", "weeping_dark_monsters_7_8": "15_WeepingDark",
                "special_monsters": "16_Specials",
+               "shattered_mirror_monsters": "18_ShatteredMirror",  # map 16's first six monsters (2026-11-13)
+               "shattered_mirror_rare": "18_ShatteredMirror",  # map 16's six rarest (2026-11-14)
                "eggs": "00_Eggs"}  # the Egg Shop's eggs, all in one folder (build_eggs.py)
 # Models a .blend still holds but must not export: another file makes them now.
 SKIP = {"weeping_dark_monsters_7_8": {"dino_Inconsolable"}}  # redesigned in weeping_dark_dread; Last Breath still comes from this file

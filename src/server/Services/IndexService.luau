@@ -19,7 +19,9 @@ local function biomeComplete(data, biomeId: string): boolean
 		return false -- a world whose monsters aren't made yet can't be completed
 	end
 	for _, dino in dinos do
-		if not data.discovered[dino.id] then
+		-- An end-game map's 9th to 12th (Config/Dinos apex) are extras: the reward needs the map's 8 [2026-11-14], so
+		-- worlds completed before they came stay complete and keep their cash bonus.
+		if not dino.apex and not data.discovered[dino.id] then
 			return false
 		end
 	end

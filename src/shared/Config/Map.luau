@@ -114,6 +114,11 @@ local Map = {
 			Dirt = Color3.fromRGB(24, 24, 28), -- black walls: the darkest in the game
 			Grass = Color3.fromRGB(74, 74, 80), -- grey ash on the rims, hanging over the walls. No colour anywhere
 		},
+		ShatteredMirror = {
+			Floor = Color3.fromRGB(180, 184, 201), -- polished silver with a lilac cast: the light comes back after the blackest map
+			Dirt = Color3.fromRGB(58, 55, 96), -- smoked violet glass walls, dark so the gilt frames and rainbows stand out
+			Grass = Color3.fromRGB(228, 235, 243), -- white quartz on the rims, hanging over the walls
+		},
 		DeepEnd = {
 			Floor = Color3.fromRGB(44, 86, 84), -- deep teal stone: a shock of colour after the blackest world
 			Dirt = Color3.fromRGB(46, 78, 80), -- the shaft's walls: dark so the mint seeps show, but not black in the game's light

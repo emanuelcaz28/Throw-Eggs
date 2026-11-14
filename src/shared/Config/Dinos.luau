@@ -4,6 +4,16 @@
 -- simulation). Tune during playtesting.
 -- prize = true: a map's 7th and 8th, its top prizes (assets/models/build_<map>_monsters_7_8.py). Only luck reaches them: the
 -- pity rules and the new map gift count from the rarest monster before them (ThrowService) and never give one (CatchOdds).
+-- apex = true [Owner, 2026-11-14]: an end-game map's 9th to 12th, above its 8 (assets/models/build_<map>_apex.py), in the
+-- four end-game rarities (Config/RarityLadder: Nightmare, Doomsday, Oblivion, Unknown). They are prizes too, so no
+-- guarantee ever gives one, and they are not needed for the world's Index reward (IndexService). What reaches them is
+-- in Config/Catch luckyHits. Every 12-monster map uses the same ladder, so the next map only needs its numbers
+-- multiplied (docs/MAP_RECIPE.md "Monster numbers"):
+-- hidden = true [Owner, 2026-11-14]: kept in Studio but out of the game (never rolled, not in the Index), for a later
+-- update. Delete the hidden = true to release a monster. Maps 14 and 15's 9th to 12th wait for the next update.
+--   chance: 2, 4, 12, 60, 400, 3000 | prizes 12007, 39989 | apex 149993, 600011, 2500009, 9999991
+--   income: 1, 3, 10, 40, 200, 500 | prizes 1500, 5000 | apex 20000, 100000, 500000, 2500000,
+--           times the map's first monster, which is 100x the map before's.
 local Dinos = {
 	Forest = {
 		{ id = "Compy",        name = "Compy",         chance = 2,    income = 1 },
@@ -160,6 +170,11 @@ local Dinos = {
 		{ id = "Shroomageddon", name = "Shroomageddon", chance = 3000, income = 5e28 },
 		{ id = "MouthBreather", name = "Mouth Breather", chance = 12007, income = 1.5e29, prize = true },
 		{ id = "SporeLoser",    name = "Spore Loser",   chance = 39989, income = 5e29, prize = true },
+		-- Models from assets/models/build_spore_hollow_apex.py.
+		{ id = "RotWeiler",     name = "Rot Weiler",    chance = 149993, income = 2e30, prize = true, apex = true, hidden = true },
+		{ id = "AcidReign",     name = "Acid Reign",    chance = 600011, income = 1e31, prize = true, apex = true, hidden = true },
+		{ id = "CapPunishment", name = "Cap Punishment", chance = 2500009, income = 5e31, prize = true, apex = true, hidden = true },
+		{ id = "Sporeactor",    name = "Sporeactor",    chance = 9999991, income = 2.5e32, prize = true, apex = true, hidden = true },
 	},
 	-- Models from assets/models/build_weeping_dark_monsters.py (they lunge and weep: a Drip bone turns on
 	-- DinoLifeController RAGE and DRIP). Endless Grief is the thing behind the Last Door.
@@ -172,8 +187,21 @@ local Dinos = {
 		{ id = "EndlessGrief", name = "Endless Grief", chance = 3000, income = 5e30 },
 		{ id = "Inconsolable", name = "Inconsolable",  chance = 12007, income = 1.5e31, prize = true },
 		{ id = "LastBreath",   name = "Last Breath",   chance = 39989, income = 5e31, prize = true },
+		-- Models from assets/models/build_weeping_dark_apex.py.
+		{ id = "GrimWeeper",   name = "Grim Weeper",   chance = 149993, income = 2e32, prize = true, apex = true, hidden = true },
+		{ id = "CageRage",     name = "Cage Rage",     chance = 600011, income = 1e33, prize = true, apex = true, hidden = true },
+		{ id = "MourningStar", name = "Mourning Star", chance = 2500009, income = 5e33, prize = true, apex = true, hidden = true },
+		{ id = "Nevermore",    name = "Nevermore",     chance = 9999991, income = 2.5e34, prize = true, apex = true, hidden = true },
 	},
 }
+
+for _, list in Dinos do
+	for index = #list, 1, -1 do
+		if list[index].hidden then
+			table.remove(list, index)
+		end
+	end
+end
 
 -- What The Deep End's eggs roll (Config/Biomes rollFrom, Config/DeepEnd): every monster of the last five worlds, most common
 -- first and prizes last, like a world's own list. No world has this id, so the Index and the rest don't see it twice.

@@ -6,6 +6,7 @@ local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Eggs = require(ReplicatedStorage.Shared.Config.Eggs)
 local RemoteGuard = require(script.Parent.RemoteGuard)
 local PlayerData = require(script.Parent.PlayerData)
+local Analytics = require(script.Parent.Analytics)
 
 local EggService = {}
 
@@ -42,6 +43,7 @@ local function onAction(player: Player, action: any, eggId: any)
 		data.ownedEggs[egg.id] = true
 		data.equippedEgg = egg.id
 		player:SetAttribute("Cash", data.cash)
+		Analytics.cashOut(player, egg.price, data.cash, "Shop", "Egg - " .. egg.id)
 		publish(player, data)
 	elseif action == "equip" then
 		if data.ownedEggs[egg.id] then

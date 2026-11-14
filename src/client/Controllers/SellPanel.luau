@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Catch = require(ReplicatedStorage.Shared.Config.Catch)
+local Dinos = require(ReplicatedStorage.Shared.Config.Dinos)
 local DinoStats = require(ReplicatedStorage.Shared.DinoStats)
 local Format = require(ReplicatedStorage.Shared.Format)
 local UiKit = require(ReplicatedStorage.Shared.UiKit)
@@ -16,8 +17,13 @@ local SellPanel = {}
 
 local PANEL_SIZE = Vector2.new(800, 618)
 local TILE_SIZE = Vector2.new(140, 166)
-local CHIP_SIZE = Vector2.new(80, 44) -- nine across the panel: ALL and the eight rarities
-local CHIP_STEP = 85
+local CHIP_SIZE = Vector2.new(104, 38) -- ALL and the twelve rarities, seven across in two rows
+local CHIP_STEP = Vector2.new(109.5, 44)
+local CHIP_COLUMNS = 7
+local CHIPS_HEIGHT = 100 -- the two rows, down to where the grid starts
+-- A button's gradient tints its text too, and these are so dark the word vanished: one flat colour instead.
+local DARK_CHIPS = { secret = true, oblivion = true }
+local END_GAME = { nightmare = true, doomsday = true, oblivion = true, unknown = true }
 local FOOTER_HEIGHT = 100
 local CONFIRM_TIME = 3 -- seconds the SURE? button waits for a second tap
 local HELD_FADE = 0.55 -- how see-through the carried monster's picture is
@@ -101,8 +107,8 @@ function SellPanel.new(gui: ScreenGui, send: ({ number }) -> (), feeding)
 	grid.Name = "Grid"
 	grid.BackgroundTransparency = 1
 	grid.BorderSizePixel = 0
-	grid.Position = UDim2.fromOffset(8, 58)
-	grid.Size = UDim2.new(1, -16, 1, -58 - FOOTER_HEIGHT)
+	grid.Position = UDim2.fromOffset(8, CHIPS_HEIGHT)
+	grid.Size = UDim2.new(1, -16, 1, -CHIPS_HEIGHT - FOOTER_HEIGHT)
 	grid.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	grid.CanvasSize = UDim2.new()
 	grid.ScrollBarThickness = 10
@@ -324,15 +330,28 @@ function SellPanel.new(gui: ScreenGui, send: ({ number }) -> (), feeding)
 		return { button = button, art = art, border = border, tick = makeTick(button), holding = holding, price = price, fade = 0 }
 	end
 
-	for index, name in { "all", table.unpack(UiKit.RARITY_ORDER) } do
+	-- The four end-game rarities only get a button once a monster has them (Config/Dinos apex; hidden until the next
+	-- update [Owner, 2026-11-14]), so the panel doesn't give them away early.
+	local anyApex = false
+	for _, list in Dinos do
+		for _, dino in list do
+			anyApex = anyApex or dino.apex == true
+		end
+	end
+	local chipNames = { "all" }
+	for _, name in UiKit.RARITY_ORDER do
+		if anyApex or not END_GAME[name] then
+			table.insert(chipNames, name)
+		end
+	end
+	for index, name in chipNames do
 		local chip = UiKit.button(body, string.upper(name), if name == "all" then "dark" else name, CHIP_SIZE.X, CHIP_SIZE.Y, 13)
 		chip.Name = `Chip_{name}`
-		if name == "secret" then
-			-- A button's gradient tints its text too, and this one is so dark the word vanished: one flat colour instead.
+		if DARK_CHIPS[name] then
 			chip:FindFirstChildOfClass("UIGradient"):Destroy()
-			chip.BackgroundColor3 = Color3.fromHex(UiKit.RARITY.secret[1])
+			chip.BackgroundColor3 = Color3.fromHex(UiKit.RARITY[name][1])
 		end
-		chip.Position = UDim2.fromOffset(18 + (index - 1) * CHIP_STEP, 8)
+		chip.Position = UDim2.fromOffset(18 + ((index - 1) % CHIP_COLUMNS) * CHIP_STEP.X, 8 + ((index - 1) // CHIP_COLUMNS) * CHIP_STEP.Y)
 		chips[name] = chip
 		chip.Activated:Connect(function()
 			changePicks(function()

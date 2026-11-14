@@ -3,7 +3,7 @@
 -- makes rare colours and sizes likelier on that throw. The studs are real distance (Throw Power x the meter). Each Depth
 -- is a longer step than the last, so there's always one more to reach. Tune during playtesting.
 local DeepEnd = {
-	startsAt = 16500, -- the far end of the last world with its own monsters
+	startsAt = 18400, -- the far end of the last world with its own monsters (Shattered Mirror since 2026-11-13; hidden for now)
 	firstStep = 450, -- studs past startsAt to reach Depth 1
 	stepGrowth = 1.38, -- each step this much longer than the one before
 	boostPerDepth = 0.5, -- rare colours and sizes: x1.5 likelier at Depth 1, x2 at Depth 2, and so on

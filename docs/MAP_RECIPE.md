@@ -43,6 +43,7 @@ glow, must differ from its neighbours'. Taken so far:
 | 13 | Thorn Kingdom | dark moss | black-violet thorn bark | silver moss | crimson roses, firefly gold | night (ClockTime 3), silver-mauve mist |
 | 14 | Spore Hollow | dark umber loam | peat | pale cream mycelium | chartreuse gills, amber windows, lilac bells | night (ClockTime 2), olive-gold spore mist |
 | 15 | The Weeping Dark | ash black | black | grey ash | pale tear-light, candles; red only for eyes | night (ClockTime 1), the darkest, dim grey starless sky |
+| 16 | Shattered Mirror | polished lilac silver | smoked violet glass | white quartz | white cracks, cyan eyes, rainbow bands; props are holographic chrome and gold (`METAL`) | bright pearl-pink dawn (ClockTime 6) |
 
 The exact colours are in `Config/Map` `biomeColors` and `Config/Lighting` `worlds`.
 
@@ -104,6 +105,9 @@ the light function, and the `big` dict in `main` (which props get their own spot
   glowing role must not be a name another model uses for something dull (and the other way round); `check_map.py`
   warns about that. Don't use bone names (`Head`, `Jaw`, `Wing`) as roles either.
 - **Glowing parts:** list the role in the script's `GLOW_ROLES` and in `Roles.glowing`. Keep studs off them.
+- **Metal parts** (Shattered Mirror on): list the role in the script's `METAL` with a MaterialVariant name (`HoloChrome`,
+  `PolishedGold`, made in MaterialService by `studio_chrome.luau`); studio_tidy makes them Foil with that variant and no
+  studs, the part's colour tinting it. Metal needs its world's `EnvironmentSpecularScale` turned up in `Config/Lighting`.
 - **Props stand on Z = 0 at their origin and face +Y.** Sky pieces start high above it, wall props hang below it.
 - **Front marker:** a prop that has to face a certain way (wall props, overhead props, spots with `face`) gets a
   tiny `Front` part on its +Y side: `m.block("Front", 0, 6, z, 0.2, 0.2, 0.2)`. MapDecor turns the prop by it and
@@ -186,7 +190,7 @@ Small exact edits, one per file:
 | `Config/Biomes` | `{ id, name, startDist, endDist, luck, standardScale, color }`. Each map is 100 studs longer than the last (map 9: 6000 to 7200, map 10: 7200 to 8500). Luck at its end from GAME_SPEC section 9 (maps 10 to 15: 5M, 25M, 100M, 500M, 2.5B, 10B). `standardScale` about 1.05x the last (1.56, 1.64, 1.72, 1.81, 1.9, 2). `color` is the world's UI colour. |
 | `Config/Map` `biomeColors` | `Floor`, `Dirt` (walls), `Grass` (rims and what hangs over the walls). The game adds the checker and studs. |
 | `Config/Lighting` `worlds` | Only what differs from the main look. Keep `ClockTime` at 6 or below: the blend tweens it as a plain number, and coming from Starfall's 0 anything later flashes through daylight. |
-| `Config/Decor` `corridor` | The same lists as `DECOR` in the script: `floor` (with `extras`), `rim`, `overhead`, `walls`, `spots`. A spot can have `face = "middle"` (turned towards the corridor) or `face = "along"` (down it). |
+| `Config/Decor` `corridor` | The same lists as `DECOR` in the script: `floor` (with `extras`), `rim`, `overhead`, `walls`, `spots`. A spot can have `face = "middle"` (turned towards the corridor) or `face = "along"` (down it). `floor` and `rim` can have `zones` ({ from, to, props, gap?, pairs? }) for acts with props of their own; `pairs` twins every prop across the corridor, mirrored (Shattered Mirror's Garden and Ballroom). |
 | `Config/PropMotion` | The same as `MOTION`. |
 | `shared/Roles.luau` | New glowing roles in `glowing`. |
 | `Config/Index` `mapPictures` | The world's picture on its Index card: an in-game shot cropped to 628x553 (`design/index/cards`), uploaded to Roblox. Its colour there is the biome's `color`. |
@@ -232,6 +236,19 @@ Copy `assets/models/build_eclipse_temple_monsters.py` (map 9) to `build_<map>_mo
 **Each map's 7th and 8th** (owner, 2026-11-06: 8 a map, two more each, 6 at a time, a prompt each): one script a map,
 `build_<map>_monsters_7_8.py`, on `rare_kit.py` instead of this template. See the note at the top of `rare_kit.py`.
 In `Config/Dinos` they carry `prize = true`, with chances about 4 and 13 times the 6th's and income 3 and 10 times its.
+
+**Monster numbers for a 12-monster map** (owner, 2026-11-14: the end-game maps have 12, and "the next map and next 12
+monsters" use the same economy and luck). Nothing new to design; copy map 15's lines and multiply:
+- `Config/Dinos`, commonest first. Chance: 2, 4, 12, 60, 400, 3000, then 12007 and 39989 (`prize = true`), then 149993,
+  600011, 2500009, 9999991 (`prize = true, apex = true`). Income: 1, 3, 10, 40, 200, 500, 1500, 5000, 20000, 100000,
+  500000, 2500000 times the map's first monster, which is 100x the map before's (map 16 starts at 1e30).
+- `Config/RarityLadder`: the first 8 letters one step up from the map before (never lower), then `NDOX` (Nightmare,
+  Doomsday, Oblivion, Unknown). Map 16's line is already there.
+- Nothing else: x100 (up to the 9th), x500 (all 12, leaning rare), the free end-game streak (a 9th or 10th every 300
+  throws without one), the guarantees that skip prizes, the Index (12 cards,
+  reward on the first 8) and the Sell stand read these two files. `Config/Eggs` needs the map's egg and
+  `tools/pace_sim.luau` `LAST_WORLD` the new last map.
+- Check with the roll's own code before saying it works (GAME_SPEC section 8, "End-game rarities" has the numbers to match).
 
 **Design.** Six per map, most common first. Style per map: GAME_SPEC section 8a and memory
 `later-maps-weirder-monsters`. From map 2 the common ones are silly (goofy names, derpy faces) and the rarest
@@ -280,6 +297,8 @@ bigger: build them bigger, or `grow(m, 1.3)` at the end. Commons are about 3 to 
 | `Maul` | between the Spine and the Neck, on a piece of the chest: maps 10 to 12's bare monsters. Every 2 seconds the whole front lunges, the Jaw bites three times, Neck and Head shake, arms rake, legs drive. `beast_head` in `rare_kit.py` is the shared head: mostly mouth, small slit eyes, no glow. Check the jaw reaches no lower than the floor: a long head needs a small `gape` |
 | `Whirl`, `Gore`, `Gulp`, `Bounce`, `Pummel`, `Reach1` | maps 13 to 15's bare monsters, the most aggressive of all, one attack each (`WHIRLER` and friends, built from `beat`, `wave`, `hop` and `stacked`, line for line in both files). `Whirl`: the waist, top half spins twice; build the top as its own round piece turning in a bowl of hips, never one skin, or it twists shut. `Gore`: the chest, with `Quill1` to `8` (thorns that stand up, negative pitch when they lie back). `Gulp`: the throat; `Head` flings back, so `Jaw` must turn the other way or it goes up with it. `Bounce`: the chest, with `HockL`, `HockR` (the lower hind legs). `Pummel`: the chest, with `ForeL`, `ForeR`; fists must reach the ground at rest. `Reach1` to `12`: a neck with a bone for every ring, each sliding 1.7; fewer bones stretch into stairs |
 | `Ring1` to `Ring4` | rings of sound, with `Swim`, `WingL`, `WingR`, `WingTipL`, `WingTipR`: wings beat, it climbs, screams, folds them and drops. `Swim` makes it a flyer: no feet, and the reveal glides. Map 9 |
+| `Prowl`, `Frill` + `Rosette`, `Twist`, `Swing` + `Club`, `Reflect`, `Rampant` + `Sliver1` to `20` | Shattered Mirror (map 16), one attack each (`build_shattered_mirror_monsters.py`): circles you, rears and runs on two legs, head turned right round then a jerky lunge (`stepped`), pendulum tail and slam, two necks striking like shears, rampant. A marker table's `"@always"` holds moves that run all the time on top of everything, attack or not: `Rosette` and `Club` turn for ever, the swan's necks sway as mirror images (`mirrored`, `NeckL1` to the R side), and each `Sliver` slides along its own way out of the skin and back in, a stadium wave (`along`; the ways are worked out the same in both files). A sliding shard must be sunk deeper than its wave and burst together slide it (`MANE_SUNK`), or it comes out and floats |
+| `Stilt` + `VaneL/R1-5`, `Prism` + `Sail1-7`, `Flutter` + `LoopA/B`, `Train` + `Eye1-13`, `Glass1`-`8` + `LoopA/B`, `Royal` + `PaneL/R1-5` + `Tiara` | Map 16's six rarest (`build_shattered_mirror_rare.py`): shards that float free of the body, each on its own bone, moved all the time by `"@always"` (`bob` along a way, `spun` rings) and thrown out and back in the attack one after another (`thrust` with `volley` keys). Owner, 2026-11-14: no head or mouth shared across a set, no `fierce_head` rows of teeth by default, two-legged bodies that aren't humanoid (`bird_leg`, `raptor_leg`), the rarest the best looking. A floater hidden inside something thin (the face in the mirror) can be no deeper than what hides it |
 
 `Spit1`, `Kick1`, `Shard1`, `Stab`, `Curl1`, `Whirl`, `Gore`, `Gulp`, `Bounce`, `Pummel`, `Reach1` and `Strike` are **markers**: a monster with one has the rest of its body moved by that bone's table (`MARKED` in `DinoLifeController` and `rare_kit.py`, which must stay equal). Thrown bits are in `FLING` / `fling`: parked out of sight, they jump to `from`, fly to `to` and snap back, so `to` should end below the ground. Their numbers are per bone name, not per monster, so a new thrower with different feet or fists needs new bone names.
 
@@ -336,6 +355,8 @@ once they're imported and tidied (step 8), list them in `Config/Dinos` (ids neve
   - The sky at night is black with stars, whatever the preview's sky colour says, so a dark shape against it vanishes.
     To get a dim sky: `Haze` carries the fog's colour up the sky (and hides the stars), `Density` is what hides objects,
     so use high Haze and low Density (6 and 0.24).
+  - ClockTime 6 still draws a night sky with stars. For a dawn-coloured sky use the same trick: high Haze in a warm
+    colour (Shattered Mirror: (255, 176, 150) with Haze 4.5 came out dusty pink; a pink colour came out lavender).
   - Roblox tints the night atmosphere blue, so a grey `Color` gives a blue sky. Warm it to cancel that: (158, 124, 97)
     came out neutral grey; (170, 94, 47) was brown. Don't desaturate the screen instead, it kills the colour you kept.
   - Neon turns any hint of a colour into that colour. For a truly grey glow use a pure grey, R = G = B.

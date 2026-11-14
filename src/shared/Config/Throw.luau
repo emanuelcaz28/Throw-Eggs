@@ -197,17 +197,31 @@ function Throw.onPlatform(position: Vector3): boolean
 		and offset.Y <= lane.zoneHeight
 end
 
--- The farthest place an egg really lands: the far end of everything built, just short of the end wall. Past the last
--- world's monsters, how far a throw would have gone is only a number (Config/DeepEnd).
-function Throw.farthestLanding(): number
-	return Biomes[#Biomes].endDist - 100
+-- The far end of the last world an egg can land in: one with monsters, or one that rolls another list (The Deep End's
+-- rollFrom). A world built after it whose monsters aren't made yet (Shattered Mirror, 2026-11-13) is only seen ahead.
+local function landableEnd(): number
+	local farthest = 0
+	for _, biome in Biomes do
+		local dinos = Dinos[biome.rollFrom or biome.id]
+		if dinos and #dinos > 0 then
+			farthest = biome.endDist
+		end
+	end
+	return farthest
 end
 
--- Where luck is counted for a throw that would go `reach` studs. The egg itself stops at farthestLanding, just short of the
--- end wall, but luck counts the real reach up to the last world's far end, so the strongest throw gets the full 50x
--- [Owner, 2026-11-11: max power showed 49.7x].
+-- The farthest place an egg really lands: the far end of the last world it can land in, 100 short of it (of the end wall
+-- when that world is the last one built). Past the last world's monsters, how far a throw would have gone is only a
+-- number (Config/DeepEnd).
+function Throw.farthestLanding(): number
+	return landableEnd() - 100
+end
+
+-- Where luck is counted for a throw that would go `reach` studs. The egg itself stops at farthestLanding, but luck counts
+-- the real reach up to that world's far end, so the strongest throw gets its full luck [Owner, 2026-11-11: max power
+-- showed 49.7x].
 function Throw.luckDistance(reach: number): number
-	return math.min(reach, Biomes[#Biomes].endDist)
+	return math.min(reach, landableEnd())
 end
 
 -- Seconds from the tap until the egg leaves the hand.
@@ -228,8 +242,9 @@ function Throw.maxDistance(): number
 	return farthest
 end
 
--- Where the Last Door stands, from the throw line. Eggs going on to The Deep End burst through it (ThrowCinematic.doorBurst).
-Throw.lastDoorAt = 16526
+-- Where the Last Door stands, from the throw line: the end of the corridor, past Shattered Mirror since 2026-11-13. Eggs
+-- going on to The Deep End burst through it (ThrowCinematic.doorBurst).
+Throw.lastDoorAt = 18426
 
 -- The flight's length: grows with the square root of the distance, so short throws are still a moment to watch and
 -- the far end of the last world you can reach takes maxTime. Past the Last Door it takes deepTime more.

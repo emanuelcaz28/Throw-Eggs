@@ -22,12 +22,15 @@ import json, sys
 sys.path.insert(0, %r)
 import importlib
 import build_forest as kit
-out = {}
+out, chrome = {}, {}
 for name in %r:
-    for make in importlib.import_module(name).ALL:
+    module = importlib.import_module(name)
+    metal = getattr(module, "METAL", {})  # role -> MaterialVariant, for this script's models only
+    for make in module.ALL:
         m = make()
         out[m.name] = {role: m.colours[role] for role in m.parts}
-print("JSON" + json.dumps({"colours": out, "nostuds": sorted(kit.NO_STUDS)}))
+        chrome[m.name] = {role: metal[role] for role in m.parts if role in metal}
+print("JSON" + json.dumps({"colours": out, "nostuds": sorted(kit.NO_STUDS), "chrome": chrome}))
 """
 
 
@@ -75,6 +78,7 @@ def main():
     data = colours(modules)
     code = (f'local WORLD = "{world}"\nlocal COLOURS = {lua(data["colours"])}\n'
             f'local NOSTUDS = {{{", ".join(f"[{chr(34)}{r}{chr(34)}] = true" for r in data["nostuds"])}}}\n'
+            + f'local CHROME = {lua(data["chrome"])}\n'
             + (HERE / "studio_tidy.luau").read_text())
     studio = Studio()
     sid = json.loads(studio.text("list_roblox_studios", {}))["studios"][0]["id"]

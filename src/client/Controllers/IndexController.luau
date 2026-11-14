@@ -1,6 +1,7 @@
 -- The Dino Index panel, from Figma "Throw Eggs - Index & Inventory" (Index v4) [Owner, 2026-11-11: a total redesign].
 -- One map fills the panel, its picture as the background. Left: one monster standing over the map, the real model playing its
--- idle, with its name, rarity and odds under it. Right: the map's 8 monsters as still cards; tapping one puts it on
+-- idle, with its name, rarity and odds under it. Right: the map's 8 monsters as still cards (12 smaller ones on the
+-- end-game maps, whose last four are extras the reward doesn't need: Config/Dinos apex); tapping one puts it on
 -- the spotlight. Under them the reward button (+10% CASH FOREVER, with the timed 2x training XP), which goes green once the map is complete and is pressed to
 -- collect the boost (an egg cracks open). Scrolling (mouse wheel, or a swipe up or down) moves to the next map; ALL
 -- MAPS opens a grid of every world. A map too far to reach shows a lock and your Throw Power against what it needs.
@@ -185,15 +186,19 @@ local function monstersOf(biome)
 	return list
 end
 
-local function countFound(biome, discovered): (number, number)
-	local found, count = 0, 0
+-- How many of a map's monsters are found, and how many it has; then the same for the ones its reward needs (all but
+-- the end-game maps' extras, Config/Dinos apex; IndexService decides the same way).
+local function countFound(biome, discovered): (number, number, number, number)
+	local found, count, neededFound, needed = 0, 0, 0, 0
 	for _, dino in Dinos[biome.id] or {} do
 		count += 1
+		needed += if dino.apex then 0 else 1
 		if discovered[dino.id] then
 			found += 1
+			neededFound += if dino.apex then 0 else 1
 		end
 	end
-	return found, count
+	return found, count, neededFound, needed
 end
 
 local function buildGui()
@@ -443,8 +448,8 @@ function IndexController.start()
 	end
 
 	local function isComplete(biome): boolean
-		local found, count = countFound(biome, discovered)
-		return count > 0 and found == count
+		local _, _, neededFound, needed = countFound(biome, discovered)
+		return needed > 0 and neededFound == needed
 	end
 
 	local function isWaiting(biome): boolean
@@ -575,9 +580,15 @@ function IndexController.start()
 		local map = maps[index]
 		local biome = map.biome
 		local monsters = monstersOf(biome)
-		local found, count = countFound(biome, discovered)
+		local _, _, _, needed = countFound(biome, discovered)
 		local locked = power() < biome.startDist
 		local root = frame(hud.clip, biome.id, 0, 0, PANEL.X, PANEL.Y)
+		-- More than two rows of cards (the end-game maps' 12): shorter cards, so they fill the same space.
+		local tileRows = math.max(2, math.ceil(#monsters / TILE_COLUMNS))
+		local compact = tileRows > 2
+		local tileHeight = math.floor((2 * TILE.Y + TILE_GAP.Y - (tileRows - 1) * TILE_GAP.Y) / tileRows)
+		local artTop = if compact then 32 else 66 -- where a card's model starts, under its rarity pill
+		local artHeight = if compact then tileHeight - artTop - 28 else 98
 		local this = { frame = root, biomeId = biome.id }
 
 		local name = UiKit.text(root, biome.name, 42, nil, Enum.TextXAlignment.Left)
@@ -734,9 +745,9 @@ function IndexController.start()
 			tile.Text = ""
 			tile.Position = UDim2.fromOffset(
 				TILES.X + ((order - 1) % TILE_COLUMNS) * (TILE.X + TILE_GAP.X),
-				TILES.Y + ((order - 1) // TILE_COLUMNS) * (TILE.Y + TILE_GAP.Y)
+				TILES.Y + ((order - 1) // TILE_COLUMNS) * (tileHeight + TILE_GAP.Y)
 			)
-			tile.Size = UDim2.fromOffset(TILE.X, TILE.Y)
+			tile.Size = UDim2.fromOffset(TILE.X, tileHeight)
 			tile.Parent = root
 			-- Found cards are painted in the rarity word's own colour (Config/Rarity), so card and tag match
 			-- [Owner, 2026-11-08]; the others are dark.
@@ -748,12 +759,12 @@ function IndexController.start()
 			end
 			UiKit.corner(tile, 20)
 			UiKit.stroke(tile, 4)
-			local glow = frame(tile, "Glow", (TILE.X - 112) / 2, 76, 112, 84)
+			local glow = frame(tile, "Glow", (TILE.X - 112) / 2, artTop + 10, 112, artHeight - 14)
 			glow.BackgroundColor3 = Color3.new(1, 1, 1)
 			glow.BackgroundTransparency = if seen then 0.7 else 0.92
 			UiKit.corner(glow, 60)
 			-- One fixed width for every pill: sized to its word, LEGENDARY ran to the card's edge.
-			local pill = frame(tile, "RarityPill", 9, 9, 100, 24)
+			local pill = frame(tile, "RarityPill", 9, if compact then 6 else 9, 100, if compact then 22 else 24)
 			pill.BackgroundColor3 = UiKit.INK
 			pill.BackgroundTransparency = 0.35
 			pill.ZIndex = 3
@@ -763,7 +774,7 @@ function IndexController.start()
 			word.Position = UDim2.fromScale(0.5, 0.5)
 			word.Size = UDim2.fromScale(1, 1)
 			local label = UiKit.text(tile, if seen then dino.name else "???", 16)
-			label.Position = UDim2.fromOffset(4, TILE.Y - 36)
+			label.Position = UDim2.fromOffset(4, tileHeight - (if compact then 28 else 36))
 			label.Size = UDim2.fromOffset(TILE.X - 8, 24)
 			label.ZIndex = 3
 			fitText(label, 16)
@@ -818,7 +829,7 @@ function IndexController.start()
 				for _, angle in { -2, 2, -1, 1, 0 } do
 					tween(xp, 0.05, { Rotation = angle }, Enum.EasingStyle.Sine).Completed:Wait()
 				end
-				PopText.notice(`Find all {count} {biome.name} monsters first`, false)
+				PopText.notice(`Find {biome.name}'s first {needed} monsters first`, false)
 			end
 		end)
 
@@ -857,9 +868,9 @@ function IndexController.start()
 				local view = UiKit.monster(tiles[dino.id], dino.id, {
 					spin = false,
 					silhouette = discovered[dino.id] ~= true,
-					position = UDim2.fromOffset(2, 66),
-					size = UDim2.fromOffset(TILE.X - 4, 98),
-					aspect = (TILE.X - 4) / 98,
+					position = UDim2.fromOffset(2, artTop),
+					size = UDim2.fromOffset(TILE.X - 4, artHeight),
+					aspect = (TILE.X - 4) / artHeight,
 				})
 				view.ZIndex = 2
 			end

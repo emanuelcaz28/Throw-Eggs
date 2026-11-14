@@ -116,6 +116,27 @@ local function placeRandom(parent: Instance, folder: Instance, rng: Random, choi
 	place(parent, folder, choice.name, Vector3.new(x, y, -distance), rng:NextNumber(0, 360), between(rng, choice.scale), false)
 end
 
+-- The rules for this far into a world: one of its `zones` when it splits its floor or rims into stretches with props of
+-- their own (Shattered Mirror's acts: { from, to, props, gap?, pairs? }), else the floor's or rims' own. A world with no
+-- zones gets its own rules everywhere, exactly as before zones existed.
+local function zoneOf(rules, along: number)
+	for _, zone in rules.zones or {} do
+		if along >= zone.from and along < zone.to then
+			return zone
+		end
+	end
+	return rules
+end
+
+-- One random prop from `choices` twice, mirrored across the corridor: at x and -x, turned yaw and -yaw, the same size.
+local function placePair(parent: Instance, folder: Instance, rng: Random, choices: { PropChoice }, x: number, y: number, distance: number)
+	local choice = pick(rng, choices)
+	local yaw = rng:NextNumber(0, 360)
+	local scale = between(rng, choice.scale)
+	place(parent, folder, choice.name, Vector3.new(x, y, -distance), yaw, scale, false)
+	place(parent, folder, choice.name, Vector3.new(-x, y, -distance), -yaw, scale, false)
+end
+
 local function decorateBiome(parent: Instance, biome, rules)
 	local folder = propsOf(biome.id)
 	if not folder then
@@ -124,31 +145,41 @@ local function decorateBiome(parent: Instance, biome, rules)
 	local rng = Random.new(rules.seed)
 	local wallInside = Map.platform.width / 2
 
+	-- In a zone with `pairs` every prop has its twin across the corridor, mirrored, extras too.
 	local floor = rules.floor
 	local distance = biome.startDist + floor.firstDistance
 	while distance < biome.endDist - floor.gap[1] do
+		local zone = zoneOf(floor, distance - biome.startDist)
 		local side = if rng:NextNumber() < 0.5 then -1 else 1
 		local x = side * between(rng, floor.side)
-		placeRandom(parent, folder, rng, floor.props, x, Map.corridor.floorY, distance)
+		local putProp = if zone.pairs then placePair else placeRandom
+		putProp(parent, folder, rng, zone.props, x, Map.corridor.floorY, distance)
 		local extras = floor.extras
 		if rng:NextNumber() < extras.chance then
 			-- Kept between the middle and the wall, whichever way it falls.
 			local extraX = side * math.clamp(math.abs(x) + rng:NextNumber(-extras.spread, extras.spread), floor.side[1] - 4, wallInside - 3)
 			local extraDistance = distance + rng:NextNumber(-extras.spread, extras.spread)
-			placeRandom(parent, folder, rng, extras.props, extraX, Map.corridor.floorY, extraDistance)
+			putProp(parent, folder, rng, extras.props, extraX, Map.corridor.floorY, extraDistance)
 		end
-		distance += between(rng, floor.gap)
+		distance += between(rng, zone.gap or floor.gap)
 	end
 
 	local rim = rules.rim
 	distance = biome.startDist + rim.firstDistance
 	while distance < biome.endDist do
-		for _, side in { -1, 1 } do
+		local zone = zoneOf(rim, distance - biome.startDist)
+		if zone.pairs then
 			if rng:NextNumber() < rim.chance then
-				placeRandom(parent, folder, rng, rim.props, side * between(rng, rim.side), Map.walls.rimY, distance)
+				placePair(parent, folder, rng, zone.props, between(rng, rim.side), Map.walls.rimY, distance)
+			end
+		else
+			for _, side in { -1, 1 } do
+				if rng:NextNumber() < rim.chance then
+					placeRandom(parent, folder, rng, zone.props, side * between(rng, rim.side), Map.walls.rimY, distance)
+				end
 			end
 		end
-		distance += between(rng, rim.gap)
+		distance += between(rng, zone.gap or rim.gap)
 	end
 
 	-- Things spanning the corridor overhead, resting on both rims (turned across it, if they say which way is front).

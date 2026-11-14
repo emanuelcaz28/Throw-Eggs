@@ -478,9 +478,9 @@ local function fillChances(list: ScrollingFrame, width: number, multiplier: numb
 		tiers[tier].lucky += lucky.monsters[rank]
 	end
 	for _, tier in tierOrder do
-		local pair = UiKit.RARITY[tier]
+		-- The colour a monster's name is written in: the tiles' own colours are too dark to read for Secret and Oblivion.
 		local name = string.upper(string.sub(tier, 1, 1)) .. string.sub(tier, 2)
-		row(name, Color3.fromHex(pair[2]):Lerp(Color3.new(1, 1, 1), 0.25), percent(tiers[tier].plain), percent(tiers[tier].lucky), 28)
+		row(name, Color3.fromHex(UiKit.RARITY_TEXT[tier]), percent(tiers[tier].plain), percent(tiers[tier].lucky), 28)
 	end
 
 	section("COLOUR")

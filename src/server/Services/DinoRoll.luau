@@ -82,9 +82,10 @@ function DinoRoll.rollCatch(biomeId: string, luck: number, minRank: number?, rec
 	if hit then
 		local mutationId, sizeId, found = hitExtras(dino.id, hit, sizeBoost)
 		if not found then
-			-- No colour and size get this monster there: the map's rarest always can.
+			-- No colour and size get this monster there: the rarest one this throw may give always can.
 			local dinos = Dinos[biomeId]
-			dino, rank = dinos[#dinos], #dinos
+			rank = CatchOdds.rarestAllowed(biomeId, filter)
+			dino = dinos[rank]
 			mutationId, sizeId = hitExtras(dino.id, hit, sizeBoost)
 		end
 		entry = { id = dino.id, mutation = mutationId, size = sizeId }

@@ -122,6 +122,7 @@ pad a short hold of E (the prompt's button on phones) buys one, through the same
 | 13 | Thorn Kingdom | 500M (world and monsters in the game) |
 | 14 | Spore Hollow | 2.5B (world and monsters in the game) |
 | 15 | The Weeping Dark | 10B |
+| 16 | Shattered Mirror | 55x (world in the game; its 12 monsters made in Blender 2026-11-13/14, not imported) |
 
 MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Peaks (5) is built too, map and monsters, and so is Shadow Bog (6); The Abyss (7) and Starfall Crater (8) have their maps, their monsters come later (Starfall Crater's are in the game: `build_starfall_crater_monsters.py`, imported into `Assets.Dinos`, listed in `Config/Dinos`).
 
@@ -152,6 +153,8 @@ MVP ships biomes 1–3. Volcano (4) is built too, as the first update. Frozen Pe
    map, ALL MAPS for a grid of every world; the Throw Power each map needs, and a lock on maps out of reach; a red dot
    on the HUD button when a reward waits; completing a map lets you press its 2x TRAINING XP button (an egg cracks
    open) for x2 training XP for 15 minutes (`Config/Index`, `IndexService` claim).
+   Maps 14 and 15 have 12 monsters (2026-11-14): 12 smaller cards, the last four in the end-game rarities
+   (Nightmare, Doomsday, Oblivion, Unknown), extras the reward doesn't need.
 8. Robux shop: x2 Cash, x2 Training, Server Luck x2, four cash packs (10 min to 30 h of the plot's $/s
    without events, each with a minimum), four Throw Power packs (+100 to +10,000 power, saved on top of the
    training level) and a free starter dino (`Config/Shop`).

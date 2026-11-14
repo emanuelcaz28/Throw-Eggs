@@ -258,6 +258,11 @@ local SPIN = {
 	Drill = { speed = 4 * math.pi, axis = "roll" },
 	Cog = { speed = math.pi, axis = "pitch" },
 	Orbit = { speed = math.pi / 4, axis = "yaw" }, -- Moonwhale's little moon, going round it
+	-- Maps 14 and 15's 9th to 12th monsters (assets/models/apex_kit.py, SPIN): what floats over them or rides on them, turning.
+	Halo = { speed = math.pi / 2, axis = "yaw" }, -- Acid Reign's crown, Sporeactor's upright ring, Mourning Star's star, Nevermore's feathers
+	Wheel = { speed = math.pi / 2, axis = "roll" }, -- Grim Weeper's wheel of eyes
+	Hoop = { speed = math.pi / 2, axis = "pitch" }, -- Sporeactor's level ring
+	Saw = { speed = 2 * math.pi, axis = "pitch" }, -- Cap Punishment's saw
 }
 
 -- Thorn Kingdom monsters (from map 13 on) never settle, whatever they're doing. A monster with Lash bones gets all of
@@ -1456,6 +1461,646 @@ local MARKED = {
 	MARKED.Bait = BAITER
 end)()
 
+-- The 9th to 12th monsters of Spore Hollow and The Weeping Dark [Owner, 2026-11-13]: rarer than the 8 each map has, each with an attack
+-- nothing else has, 4 seconds long, played once every DinoLife.attackCycle like every other attack. A marker bone picks the table.
+-- Nothing leaves the body. The same as the tables in assets/models/apex_kit.py, number for number, whose Attack action moves them alike.
+-- What turns on them all the time (crowns, wheels of eyes, the gyroscope, the saw) is in SPIN, above.
+;(function()
+	local function shaken(points: { { number } }, speed: number, reach: number, slot: number?, phase: number?) -- a wave that only runs while its envelope is up
+		local where, late = slot or PITCH, phase or 0
+		return function(s: number)
+			return slotted(where, reach * keys((s / 4) % 1, points) * sin(speed * QUARTER * s - late))
+		end
+	end
+	-- A short run of keys, `seconds` long, repeated from `start` on, only while its envelope is up: pecks.
+	local function pulsed(points: { { number } }, seconds: number, envelope: { { number } }, slot: number, scale: number, start: number)
+		return function(s: number)
+			return slotted(slot, scale * keys(((s - start) / seconds) % 1, points) * keys((s / 4) % 1, envelope))
+		end
+	end
+
+	-- Rot Weiler (Triad, its chest): three heads. It sinks back, the left head strikes, then the right, then the middle; then all three rear
+	-- and it throws itself forward on them, shaking what they caught.
+	local SNAP = { { 0, 0 }, { 0.06, 0.4 }, { 0.1, -0.55 }, { 0.16, -0.55 }, { 0.26, 0 }, { 1, 0 } }
+	local SNAP_JAW = { { 0, 0 }, { 0.06, -0.5 }, { 0.094, -0.5 }, { 0.11, 0.42 }, { 0.17, 0.42 }, { 0.26, 0 }, { 1, 0 } }
+	local SNAP_OUT = { { 0, 0 }, { 0.06, 0.3 }, { 0.1, 0.45 }, { 0.16, 0.45 }, { 0.26, 0 }, { 1, 0 } }
+	local TRI_ALL = { { 0, 0 }, { 0.64, 0 }, { 0.7, 0.35 }, { 0.735, -0.4 }, { 0.86, -0.4 }, { 0.95, 0 }, { 1, 0 } }
+	local TRI_ALL_JAW = { { 0, 0 }, { 0.64, 0 }, { 0.7, -0.6 }, { 0.73, -0.6 }, { 0.745, 0.42 }, { 0.86, 0.42 }, { 0.95, 0 }, { 1, 0 } }
+	local TRI_SURGE = { { 0, 0 }, { 0.08, -1.5 }, { 0.64, -1.5 }, { 0.7, -2.6 }, { 0.735, 6 }, { 0.86, 6 }, { 0.96, 0 }, { 1, 0 } }
+	local TRI_LEAN = { { 0, 0 }, { 0.08, 0.08 }, { 0.64, 0.08 }, { 0.7, 0.2 }, { 0.735, -0.14 }, { 0.86, -0.14 }, { 0.96, 0 }, { 1, 0 } }
+	local TRI_SHAKE = { { 0, 0 }, { 0.735, 0 }, { 0.76, 1 }, { 0.84, 1 }, { 0.88, 0 }, { 1, 0 } }
+	local TRI_LEGS = { { 0, 0 }, { 0.08, -0.1 }, { 0.64, -0.1 }, { 0.7, -0.18 }, { 0.735, 0.5 }, { 0.86, 0.3 }, { 0.96, 0 }, { 1, 0 } }
+	local TRI_WAG = { { 0, 0 }, { 0.08, 1 }, { 0.9, 1 }, { 1, 0 } }
+	local TRIAD = {
+		Spine = stacked(beat(TRI_SURGE, 4, AHEAD), shaken(TRI_WAG, 20, 0.01)),
+		Triad = beat(TRI_LEAN, 4),
+		NeckL = stacked(beat(SNAP, 4, PITCH, 1.0, 0.1), beat(SNAP_OUT, 4, YAW, 1.0, 0.1), beat(TRI_ALL, 4), shaken(TRI_SHAKE, 24, 0.12, YAW)),
+		NeckR = stacked(beat(SNAP, 4, PITCH, 1.0, 0.24), beat(SNAP_OUT, 4, YAW, -1.0, 0.24), beat(TRI_ALL, 4), shaken(TRI_SHAKE, 24, -0.12, YAW)),
+		Neck = stacked(beat(SNAP, 4, PITCH, 1.0, 0.38), beat(TRI_ALL, 4), shaken(TRI_SHAKE, 24, 0.16, YAW, 1.0)),
+		JawL = stacked(beat(SNAP_JAW, 4, PITCH, 1.0, 0.1), beat(TRI_ALL_JAW, 4)),
+		JawR = stacked(beat(SNAP_JAW, 4, PITCH, 1.0, 0.24), beat(TRI_ALL_JAW, 4)),
+		Jaw = stacked(beat(SNAP_JAW, 4, PITCH, 1.0, 0.38), beat(TRI_ALL_JAW, 4)),
+		FrontL = beat(TRI_LEGS, 4), FrontR = beat(TRI_LEGS, 4), BackL = beat(TRI_LEGS, 4, PITCH, -1.0), BackR = beat(TRI_LEGS, 4, PITCH, -1.0),
+		Tail1 = shaken(TRI_WAG, 16, 0.3, YAW),
+	}
+
+	-- Acid Reign (Crown, the crown over its head): it draws itself up to its full height, hood flung wide, and sways; the crown tips down
+	-- over its face like a saw and it throws its whole length at the ground, once ahead and once to the side.
+	local REIGN_RISE = { { 0, 0 }, { 0.16, 1 }, { 0.44, 1 }, { 0.5, 0 }, { 0.62, 0.7 }, { 0.68, 0.7 }, { 0.73, 0 }, { 1, 0 } }
+	local REIGN_HIT = { { 0, 0 }, { 0.44, 0 }, { 0.5, 1 }, { 0.58, 1 }, { 0.64, 0 }, { 0.68, 0 }, { 0.73, 1 }, { 0.84, 1 }, { 0.94, 0 }, { 1, 0 } }
+	local REIGN_SWAY = { { 0, 0 }, { 0.14, 0 }, { 0.2, 1 }, { 0.4, 1 }, { 0.45, 0 }, { 1, 0 } }
+	local REIGN_SIDE = { { 0, 0 }, { 0.6, 0 }, { 0.68, 0.5 }, { 0.84, 0.5 }, { 0.96, 0 }, { 1, 0 } }
+	local REIGN_FLARE = { { 0, 0 }, { 0.14, 1 }, { 0.86, 1 }, { 1, 0 } }
+	local REIGN_JAW = { { 0, 0 }, { 0.16, -0.3 }, { 0.46, -0.4 }, { 0.505, 0.4 }, { 0.58, 0.4 }, { 0.64, -0.35 }, { 0.69, -0.4 }, { 0.735, 0.4 }, { 0.84, 0.4 }, { 1, 0 } }
+	local REIGN_VISOR = { { 0, 0 }, { 0.16, 0 }, { 0.44, 0.15 }, { 0.5, 1 }, { 0.58, 1 }, { 0.64, 0.25 }, { 0.68, 0.25 }, { 0.73, 1 }, { 0.84, 1 }, { 0.95, 0 }, { 1, 0 } }
+	local REIGN = {
+		Rear1 = stacked(beat(REIGN_RISE, 4, PITCH, 0.16), beat(REIGN_HIT, 4, PITCH, -0.5), shaken(REIGN_SWAY, 4, 0.22, YAW), beat(REIGN_SIDE, 4, YAW)),
+		Rear2 = stacked(beat(REIGN_RISE, 4, PITCH, 0.1), beat(REIGN_HIT, 4, PITCH, -0.45), shaken(REIGN_SWAY, 4, -0.12, YAW)),
+		Rear3 = stacked(beat(REIGN_RISE, 4, PITCH, -0.2), beat(REIGN_HIT, 4, PITCH, -0.3)),
+		Neck = beat(REIGN_HIT, 4, PITCH, 0.3),
+		Head = beat(REIGN_HIT, 4, PITCH, 0.2),
+		Jaw = beat(REIGN_JAW, 4),
+		FrillL = stacked(beat(REIGN_FLARE, 4, YAW, -0.85), shaken(REIGN_FLARE, 24, 0.05, YAW)),
+		FrillR = stacked(beat(REIGN_FLARE, 4, YAW, 0.85), shaken(REIGN_FLARE, 24, -0.05, YAW)),
+		Crown = stacked(beat(REIGN_RISE, 4, RISE, 1.5), beat(REIGN_VISOR, 4, PITCH, -1.45), beat(REIGN_VISOR, 4, AHEAD, 8.5), beat(REIGN_VISOR, 4, RISE, -7.5)),
+	}
+
+	-- Cap Punishment (SawArm1, the arm out of its back): the saw is cocked back, brought down on the ground ahead and dragged across, left to
+	-- right, the whole beast shaking with it; up again and down again.
+	local SAW_ARM = { { 0, 0 }, { 0.16, -0.3 }, { 0.24, -0.34 }, { 0.29, 1 }, { 0.52, 1 }, { 0.6, -0.2 }, { 0.66, -0.24 }, { 0.71, 1 }, { 0.82, 1 }, { 0.94, 0 }, { 1, 0 } } -- 1: down on the ground
+	local SAW_DRAG = { { 0, 0 }, { 0.24, 0 }, { 0.29, -1 }, { 0.52, 1 }, { 0.6, 0 }, { 1, 0 } }
+	local SAW_ON = { { 0, 0 }, { 0.27, 0 }, { 0.3, 1 }, { 0.52, 1 }, { 0.56, 0 }, { 0.7, 0 }, { 0.72, 1 }, { 0.82, 1 }, { 0.86, 0 }, { 1, 0 } }
+	local SAW_LEAN = { { 0, 0 }, { 0.16, 0.14 }, { 0.24, 0.16 }, { 0.29, -0.2 }, { 0.52, -0.2 }, { 0.6, 0.1 }, { 0.66, 0.12 }, { 0.71, -0.24 }, { 0.82, -0.24 }, { 0.94, 0 }, { 1, 0 } }
+	local SAW_JAW = { { 0, 0 }, { 0.16, -0.2 }, { 0.29, -0.55 }, { 0.52, -0.55 }, { 0.6, 0 }, { 0.71, -0.55 }, { 0.82, -0.55 }, { 0.94, 0 }, { 1, 0 } }
+	local SAW_RAKE = { { 0, 0 }, { 0.24, 0.9 }, { 0.29, -0.2 }, { 0.52, -0.2 }, { 0.66, 0.9 }, { 0.71, -0.2 }, { 0.82, -0.2 }, { 0.94, 0 }, { 1, 0 } }
+	local SAW_REACH = { -0.9, 0.05, 0.35 } -- how far each joint of the arm turns to put the saw on the ground
+	local SAWYER = {
+		Spine = stacked(beat(SAW_LEAN, 4), shaken(SAW_ON, 28, 0.012, ROLL)),
+		LegL = beat(SAW_LEAN, 4, PITCH, -1.0), LegR = beat(SAW_LEAN, 4, PITCH, -1.0),
+		Neck = beat(SAW_LEAN, 4, PITCH, 0.6),
+		Head = shaken(SAW_ON, 28, 0.05, YAW),
+		Jaw = beat(SAW_JAW, 4),
+		ArmL = beat(SAW_RAKE, 4), ArmR = beat(SAW_RAKE, 4, PITCH, 1.0, 0.02),
+		Tail1 = shaken(SAW_ON, 12, 0.2, YAW),
+		SawArm1 = stacked(beat(SAW_ARM, 4, PITCH, SAW_REACH[1]), beat(SAW_DRAG, 4, YAW, 0.3)),
+		SawArm2 = beat(SAW_ARM, 4, PITCH, SAW_REACH[2]),
+		SawArm3 = stacked(beat(SAW_ARM, 4, PITCH, SAW_REACH[3]), shaken(SAW_ON, 32, 0.025)),
+	}
+
+	-- Sporeactor (Core, the light over its back): it sinks, the core climbs and whirls three times round, the rods in its back rising one
+	-- after the other; it rears, and the core comes down as its front feet do. Everything shakes.
+	local MELT_CHARGE = { { 0, 0 }, { 0.14, 0.3 }, { 0.46, 1 }, { 0.5, 1 }, { 0.53, -0.2 }, { 0.6, -0.2 }, { 0.8, 0.1 }, { 1, 0 } }
+	local MELT_SPIN = { { 0, 0 }, { 0.1, 0 }, { 0.5, 6 * math.pi }, { 1, 6 * math.pi } }
+	local MELT_ROD = { { 0, 0 }, { 0.1, 0 }, { 0.42, 1 }, { 0.48, 1 }, { 0.52, -0.1 }, { 0.62, 0 }, { 1, 0 } }
+	local MELT_SINK = { { 0, 0 }, { 0.14, -1 }, { 0.4, -1 }, { 0.5, 0.6 }, { 0.53, -1.2 }, { 0.62, -1.2 }, { 0.8, 0 }, { 1, 0 } }
+	local MELT_REAR = { { 0, 0 }, { 0.4, 0 }, { 0.5, 0.3 }, { 0.53, -0.06 }, { 0.62, -0.06 }, { 0.8, 0 }, { 1, 0 } }
+	local MELT_PAW = { { 0, 0 }, { 0.4, 0 }, { 0.5, 0.6 }, { 0.53, -0.06 }, { 0.62, -0.06 }, { 0.8, 0 }, { 1, 0 } }
+	local MELT_ROAR = { { 0, 0 }, { 0.14, 0.2 }, { 0.46, 0.34 }, { 0.53, -0.3 }, { 0.62, -0.3 }, { 0.8, 0 }, { 1, 0 } }
+	local MELT_JAW = { { 0, 0 }, { 0.14, -0.25 }, { 0.46, -0.5 }, { 0.7, -0.5 }, { 0.8, 0 }, { 1, 0 } }
+	local MELT_QUAKE = { { 0, 0 }, { 0.52, 0 }, { 0.54, 1 }, { 0.7, 0.4 }, { 0.8, 0 }, { 1, 0 } }
+	local MELTER = {
+		Spine = stacked(beat(MELT_SINK, 4, RISE), beat(MELT_REAR, 4), shaken(MELT_QUAKE, 28, 0.03, ROLL)),
+		Neck = beat(MELT_ROAR, 4),
+		Jaw = stacked(beat(MELT_JAW, 4), shaken(MELT_QUAKE, 24, 0.08)),
+		FrontL = beat(MELT_PAW, 4), FrontR = beat(MELT_PAW, 4, PITCH, 1.0, 0.01),
+		BackL = beat(MELT_REAR, 4, PITCH, -1.0), BackR = beat(MELT_REAR, 4, PITCH, -1.0),
+		Tail1 = shaken(MELT_QUAKE, 16, 0.3, YAW),
+		Core = stacked(beat(MELT_CHARGE, 4, RISE, 6.0), beat(MELT_SPIN, 4, YAW)),
+	}
+	for n = 1, 6 do
+		MELTER["Rod" .. n] = beat(MELT_ROD, 4, RISE, 4.2, 0.012 * n)
+	end
+
+	-- Grim Weeper (Reap, its waist): both blades wound back to the right, one cut right across to the left and one back; then both up over
+	-- its head, and down, falling forward on them.
+	local REAP_TURN = { { 0, 0 }, { 0.16, -1 }, { 0.2, -1 }, { 0.27, 1 }, { 0.36, 1 }, { 0.43, -1 }, { 0.5, -0.6 }, { 0.58, 0 }, { 1, 0 } }
+	local REAP_LIFT = { { 0, 0 }, { 0.5, 0 }, { 0.6, 1 }, { 0.64, 1 }, { 0.68, -0.16 }, { 0.82, -0.16 }, { 0.94, 0 }, { 1, 0 } }
+	local REAP_SPREAD = { { 0, 0 }, { 0.16, 1 }, { 0.46, 1 }, { 0.56, 0.2 }, { 0.66, 0.2 }, { 0.7, 0 }, { 1, 0 } }
+	local REAP_LEAN = { { 0, 0 }, { 0.16, 0.1 }, { 0.5, 0.1 }, { 0.6, 0.3 }, { 0.64, 0.32 }, { 0.68, -0.45 }, { 0.82, -0.45 }, { 0.94, 0 }, { 1, 0 } }
+	local REAP_AHEAD = { { 0, 0 }, { 0.2, 0 }, { 0.27, 2.5 }, { 0.36, 2.5 }, { 0.43, 4 }, { 0.6, 3 }, { 0.64, 3 }, { 0.68, 7 }, { 0.82, 7 }, { 0.95, 0 }, { 1, 0 } }
+	local REAP_JAW = { { 0, 0 }, { 0.16, -0.3 }, { 0.2, -0.45 }, { 0.27, 0.3 }, { 0.36, -0.4 }, { 0.43, 0.3 }, { 0.6, -0.5 }, { 0.66, -0.5 }, { 0.69, 0.4 }, { 0.82, 0.4 }, { 1, 0 } }
+	local REAP_TRAIL = { { 0, 0 }, { 0.2, 0 }, { 0.27, -1 }, { 0.36, 0 }, { 0.43, 1 }, { 0.52, 0 }, { 0.64, 0 }, { 0.68, 1.2 }, { 0.82, 0.6 }, { 0.94, 0 }, { 1, 0 } }
+	local REAPER = {
+		Spine = beat(REAP_AHEAD, 4, AHEAD),
+		Reap = stacked(beat(REAP_TURN, 4, YAW, 1.0), beat(REAP_LEAN, 4)),
+		Neck = beat(REAP_TURN, 4, YAW, -0.7),
+		Jaw = beat(REAP_JAW, 4),
+		ArmL = stacked(beat(REAP_SPREAD, 4, ROLL, 0.8), beat(REAP_LIFT, 4, PITCH, 2.2)),
+		ArmR = stacked(beat(REAP_SPREAD, 4, ROLL, -0.8), beat(REAP_LIFT, 4, PITCH, 2.2)),
+		ReapL = beat(REAP_SPREAD, 4, YAW, 0.45), ReapR = beat(REAP_SPREAD, 4, YAW, -0.45),
+		Tail1 = stacked(beat(REAP_TRAIL, 4, YAW, 0.5), beat(REAP_TRAIL, 4, PITCH, 0.2)),
+		Tail2 = beat(REAP_TRAIL, 4, YAW, 0.4, 0.03),
+	}
+
+	-- Cage Rage (RibL1, its ribs): it rears right up and its ribs fling open one pair after the other, like a second mouth; it falls on you,
+	-- they clamp shut, and it chews three times.
+	local CAGE_REAR = { { 0, 0 }, { 0.14, 0.75 }, { 0.3, 0.8 }, { 0.36, -0.08 }, { 0.8, -0.08 }, { 0.92, 0 }, { 1, 0 } }
+	local CAGE_OPEN = { { 0, 0 }, { 0.1, 1 }, { 0.3, 1 }, { 0.36, 0 }, { 0.44, 0.8 }, { 0.5, 0 }, { 0.56, 0.8 }, { 0.62, 0 }, { 0.68, 0.8 }, { 0.74, 0 }, { 1, 0 } }
+	local CAGE_AHEAD = { { 0, 0 }, { 0.14, -1 }, { 0.3, -1 }, { 0.36, 7 }, { 0.8, 7 }, { 0.94, 0 }, { 1, 0 } }
+	local CAGE_JAW = { { 0, 0 }, { 0.1, -0.5 }, { 0.3, -0.55 }, { 0.36, 0.4 }, { 0.44, -0.3 }, { 0.5, 0.4 }, { 0.56, -0.3 }, { 0.62, 0.4 }, { 0.68, -0.3 }, { 0.74, 0.4 }, { 0.9, 0 }, { 1, 0 } }
+	local CAGE_REACH = { { 0, 0 }, { 0.14, 1 }, { 0.3, 1 }, { 0.36, 0 }, { 1, 0 } }
+	local CAGER = {
+		Spine = stacked(beat(CAGE_REAR, 4), beat(CAGE_AHEAD, 4, AHEAD)),
+		BackL = beat(CAGE_REAR, 4, PITCH, -1.0), BackR = beat(CAGE_REAR, 4, PITCH, -1.0),
+		FrontL = stacked(beat(CAGE_REACH, 4, PITCH, 0.5), beat(CAGE_REACH, 4, ROLL, 0.5)),
+		FrontR = stacked(beat(CAGE_REACH, 4, PITCH, 0.5), beat(CAGE_REACH, 4, ROLL, -0.5)),
+		Neck = beat(CAGE_REAR, 4, PITCH, -0.6),
+		Jaw = beat(CAGE_JAW, 4),
+		Tail1 = beat(CAGE_REAR, 4, PITCH, -0.5),
+	}
+	for n = 1, 5 do
+		CAGER["RibL" .. n] = beat(CAGE_OPEN, 4, ROLL, 1.2, 0.012 * n)
+		CAGER["RibR" .. n] = beat(CAGE_OPEN, 4, ROLL, -1.2, 0.012 * n)
+	end
+
+	-- Mourning Star (Flail1, the root of its tail): the tail winds back and whirls three times round over it, flung out straight; then the
+	-- star comes over its head and down on the ground in front of it, and bounces.
+	local MOURN_WHIRL = { { 0, 0 }, { 0.1, -0.5 }, { 0.16, -0.5 }, { 0.6, 6 * math.pi }, { 1, 6 * math.pi } }
+	local MOURN_OUT = { { 0, 0 }, { 0.14, 0.3 }, { 0.24, 1 }, { 0.56, 1 }, { 0.62, 0 }, { 1, 0 } }
+	local MOURN_SMASH = { { 0, 0 }, { 0.6, 0 }, { 0.66, -0.3 }, { 0.7, 1 }, { 0.76, 1 }, { 0.8, 0.8 }, { 0.83, 1 }, { 0.88, 1 }, { 0.96, 0 }, { 1, 0 } }
+	local MOURN_BRACE = { { 0, 0 }, { 0.16, -0.6 }, { 0.6, -0.6 }, { 0.66, 0.4 }, { 0.7, -1.2 }, { 0.88, -1.2 }, { 0.96, 0 }, { 1, 0 } }
+	local MOURN_HEAD = { { 0, 0 }, { 0.16, -0.25 }, { 0.6, -0.25 }, { 0.66, 0.3 }, { 0.7, -0.2 }, { 0.88, -0.2 }, { 0.96, 0 }, { 1, 0 } }
+	local MOURN_JAW = { { 0, 0 }, { 0.16, -0.3 }, { 0.6, -0.4 }, { 0.7, -0.55 }, { 0.88, -0.55 }, { 0.96, 0 }, { 1, 0 } }
+	local MOURN_QUAKE = { { 0, 0 }, { 0.69, 0 }, { 0.71, 1 }, { 0.84, 0.4 }, { 0.9, 0 }, { 1, 0 } }
+	local MOURN_UNROLL = { 0.0, -0.7, 0.0, 0.1, 0.4 } -- how far each joint opens to fling the star out level
+	local MOURN_REACH = { -1.4, 0.0, 0.0, 0.2, 0.4 } -- and turns to put it on the ground ahead
+	local MOURNER = {
+		Spine = stacked(beat(MOURN_BRACE, 4, RISE), shaken(MOURN_QUAKE, 28, 0.03, ROLL)),
+		Neck = beat(MOURN_HEAD, 4),
+		Jaw = beat(MOURN_JAW, 4),
+		Flail1 = stacked(beat(MOURN_WHIRL, 4, YAW), beat(MOURN_SMASH, 4, PITCH, MOURN_REACH[1])),
+	}
+	for n = 2, 5 do
+		MOURNER["Flail" .. n] = stacked(beat(MOURN_OUT, 4, PITCH, MOURN_UNROLL[n]), beat(MOURN_SMASH, 4, PITCH, MOURN_REACH[n]))
+	end
+
+	-- Nevermore (Plume1, the feathers circling over it): wings up, beaten down, and it hops at you as the feathers burst outward; four pecks,
+	-- fast; then wings flung wide, one long caw, and the feathers burst again.
+	local PLUMES = 8
+	local MURDER_WING = { { 0, 0 }, { 0.12, 1 }, { 0.16, 1 }, { 0.2, -0.35 }, { 0.28, 0.3 }, { 0.7, 0.3 }, { 0.76, 1 }, { 0.8, 1 }, { 0.84, 0.5 }, { 0.94, 0 }, { 1, 0 } }
+	local MURDER_HOP = { { 0, 0 }, { 0.16, -0.8 }, { 0.22, 5 }, { 0.3, 0 }, { 1, 0 } }
+	local MURDER_AHEAD = { { 0, 0 }, { 0.16, -1 }, { 0.3, 5 }, { 0.72, 5 }, { 0.94, 0 }, { 1, 0 } }
+	local MURDER_LEAN = { { 0, 0 }, { 0.16, 0.2 }, { 0.3, -0.25 }, { 0.7, -0.25 }, { 0.78, 0.15 }, { 0.94, 0 }, { 1, 0 } }
+	local MURDER_PECKING = { { 0, 0 }, { 0.3, 0 }, { 0.33, 1 }, { 0.68, 1 }, { 0.71, 0 }, { 1, 0 } }
+	local MURDER_PECK = { { 0, 0 }, { 0.35, 0.45 }, { 0.55, -1 }, { 0.75, -1 }, { 1, 0 } }
+	local MURDER_PECK_JAW = { { 0, 0 }, { 0.35, -0.5 }, { 0.55, -0.5 }, { 0.62, 0.35 }, { 0.8, 0.35 }, { 1, 0 } }
+	local MURDER_CAW = { { 0, 0 }, { 0.72, 0 }, { 0.78, -0.7 }, { 0.9, -0.7 }, { 0.96, 0 }, { 1, 0 } }
+	local MURDER_BURST = { { 0, 0 }, { 0.16, 0 }, { 0.21, 1 }, { 0.28, 1 }, { 0.4, 0 }, { 0.74, 0 }, { 0.79, 1 }, { 0.86, 1 }, { 0.96, 0 }, { 1, 0 } }
+	local MURDER_TREMBLE = { { 0, 0 }, { 0.28, 0 }, { 0.32, 1 }, { 0.9, 1 }, { 0.96, 0 }, { 1, 0 } }
+	local MURDERER = {
+		Spine = stacked(beat(MURDER_HOP, 4, RISE), beat(MURDER_AHEAD, 4, AHEAD), beat(MURDER_LEAN, 4)),
+		LegL = beat(MURDER_LEAN, 4, PITCH, -1.0), LegR = beat(MURDER_LEAN, 4, PITCH, -1.0),
+		Neck = stacked(pulsed(MURDER_PECK, 0.38, MURDER_PECKING, PITCH, 0.6, 1.2), beat(MURDER_CAW, 4, PITCH, -0.3)),
+		Head = pulsed(MURDER_PECK, 0.38, MURDER_PECKING, PITCH, 0.35, 1.2),
+		Jaw = stacked(pulsed(MURDER_PECK_JAW, 0.38, MURDER_PECKING, PITCH, 1.0, 1.2), beat(MURDER_CAW, 4)),
+		WingL = stacked(beat(MURDER_WING, 4, ROLL, 0.9), shaken(MURDER_TREMBLE, 24, 0.05, ROLL)),
+		WingR = stacked(beat(MURDER_WING, 4, ROLL, -0.9), shaken(MURDER_TREMBLE, 24, -0.05, ROLL)),
+		WingTipL = beat(MURDER_WING, 4, ROLL, 0.5, 0.02), WingTipR = beat(MURDER_WING, 4, ROLL, -0.5, 0.02),
+		Tail1 = beat(MURDER_WING, 4, PITCH, 0.4),
+	}
+	for n = 1, PLUMES do
+		local angle = (n - 1) * TAU / PLUMES
+		MURDERER["Plume" .. n] = stacked(beat(MURDER_BURST, 4, ACROSS, 7 * cos(angle), 0.004 * n), beat(MURDER_BURST, 4, AHEAD, 7 * sin(angle), 0.004 * n))
+	end
+
+	MARKED.Triad = TRIAD
+	MARKED.Crown = REIGN
+	MARKED.SawArm1 = SAWYER
+	MARKED.Core = MELTER
+	MARKED.Reap = REAPER
+	MARKED.RibL1 = CAGER
+	MARKED.Flail1 = MOURNER
+	MARKED.Plume1 = MURDERER
+end)()
+
+-- Shattered Mirror's monsters (map 16) [Owner, 2026-11-13: "aggressive, but at the same time magnificent", each with an animation of
+-- its own]: 4-second attacks played once every DinoLife.attackCycle, like the rest. New: a table's "@always" holds moves that run all the
+-- time on top of everything, attack or not (the mane's stadium wave, the frill's and the mirror ball's turning, the swan's mirrored
+-- necks). The same as the tables in assets/models/build_shattered_mirror_monsters.py, number for number, whose preview moves them alike.
+-- Nothing leaves the body: the shards slide out of the skin and back, never out of it. In a function of its own, like the block above.
+;(function()
+	local ALWAYS = "@always"
+	local function shaken(points: { { number } }, speed: number, reach: number, slot: number?, phase: number?) -- a wave while its envelope is up
+		local where, late = slot or PITCH, phase or 0
+		return function(s: number)
+			return slotted(where, reach * keys((s / 4) % 1, points) * sin(speed * QUARTER * s - late))
+		end
+	end
+	local function along(way: Vector3, amount: (number) -> number) -- slides along a way in the model's own axes: X across, Y ahead, Z up
+		return function(s: number)
+			local v = amount(s)
+			return 0, 0, 0, way.Y * v, way.Z * v, way.X * v
+		end
+	end
+	local function stepped(move, fps: number?) -- the move in jerks, like a broken doll
+		local rate = fps or 8
+		return function(s: number)
+			return move(math.floor(s * rate) / rate)
+		end
+	end
+	local function spun(turns: number, slot: number?) -- turns for ever (round the forward axis unless told), whole turns every 4 seconds
+		local where = slot or ROLL
+		return function(s: number)
+			return slotted(where, turns * QUARTER * s)
+		end
+	end
+	local function mirrored(move) -- the same move seen in a mirror across the middle
+		return function(s: number)
+			local p, r, y, a, u, x = move(s)
+			return p, -r, -y, a, u, -x
+		end
+	end
+	local function rightOf(name: string): string
+		return (string.gsub(name, "L(%d*)$", "R%1"))
+	end
+
+	-- Paw de Deux (Prowl, its chest): it sidesteps a whole circle round a spot in front of it, always facing it, crouches, wriggles,
+	-- springs and rakes with one paw and then the other.
+	local PROWL_R = 6.0 -- the circle's radius, studs at the first map's size
+	local PROWL_TURN = { { 0, 0 }, { 0.12, 0 }, { 0.62, 2 * math.pi }, { 1, 2 * math.pi } }
+	local PROWL_LOW = { { 0, 0 }, { 0.1, -0.7 }, { 0.62, -0.7 }, { 0.68, -1.1 }, { 0.72, -1.1 }, { 0.76, 0.3 }, { 0.84, 0 }, { 1, 0 } }
+	local PROWL_LUNGE = { { 0, 0 }, { 0.7, 0 }, { 0.75, 4.5 }, { 0.86, 4.5 }, { 1, 0 } }
+	local PROWL_LEAN = { { 0, 0 }, { 0.1, -0.06 }, { 0.62, -0.06 }, { 0.7, 0.12 }, { 0.75, -0.1 }, { 0.86, -0.1 }, { 1, 0 } }
+	local PROWL_PACING = { { 0, 0 }, { 0.12, 0 }, { 0.16, 1 }, { 0.58, 1 }, { 0.62, 0 }, { 1, 0 } }
+	local PROWL_WIGGLE = { { 0, 0 }, { 0.63, 0 }, { 0.65, 1 }, { 0.71, 1 }, { 0.73, 0 }, { 1, 0 } }
+	local PROWL_SWIPE = { { 0, 0 }, { 0.7, 0 }, { 0.74, 1.3 }, { 0.77, -0.35 }, { 0.84, -0.35 }, { 0.94, 0 }, { 1, 0 } }
+	local PROWL_NECK = { { 0, 0 }, { 0.1, -0.18 }, { 0.62, -0.18 }, { 0.7, -0.3 }, { 0.75, 0.08 }, { 0.86, 0.08 }, { 1, 0 } }
+	local PROWL_HEAD = { { 0, 0 }, { 0.1, 0.1 }, { 0.62, 0.1 }, { 0.75, 0.22 }, { 0.86, 0.22 }, { 1, 0 } }
+	local PROWL_JAW = { { 0, 0 }, { 0.1, -0.15 }, { 0.62, -0.15 }, { 0.7, -0.55 }, { 0.76, -0.55 }, { 0.78, 0.1 }, { 0.8, -0.5 }, { 0.86, -0.5 }, { 1, 0 } }
+	local PROWL_LASH = { { 0, 0 }, { 0.08, 1 }, { 0.9, 1 }, { 1, 0 } }
+	local function prowlCircle(s: number) -- round a circle PROWL_R in front of it, turning as it goes, so it faces the middle all the way round
+		local a = keys((s / 4) % 1, PROWL_TURN)
+		return 0, 0, a, PROWL_R * (1 - cos(a)), 0, PROWL_R * sin(a)
+	end
+	local PROWLER = {
+		Spine = stacked(prowlCircle, beat(PROWL_LOW, 4, RISE), beat(PROWL_LUNGE, 4, AHEAD), beat(PROWL_LEAN, 4), shaken(PROWL_WIGGLE, 12, 0.1, YAW)),
+		Prowl = shaken(PROWL_PACING, 8, 0.05, ROLL),
+		Neck = beat(PROWL_NECK, 4),
+		Head = beat(PROWL_HEAD, 4),
+		Jaw = beat(PROWL_JAW, 4),
+		FrontL = stacked(shaken(PROWL_PACING, 8, 0.38), beat(PROWL_SWIPE, 4)),
+		FrontR = stacked(shaken(PROWL_PACING, 8, 0.38, PITCH, math.pi), beat(PROWL_SWIPE, 4, PITCH, 1.0, 0.08)),
+		BackL = shaken(PROWL_PACING, 8, 0.3, PITCH, math.pi),
+		BackR = shaken(PROWL_PACING, 8, 0.3),
+	}
+	for i = 1, 3 do
+		PROWLER["Tail" .. i] = shaken(PROWL_LASH, 6, 0.18 + 0.06 * i, YAW, 0.7 * i)
+	end
+
+	-- Frill Seeker (Frill, its frill's hub): it rears onto its hind legs, its kaleidoscope whirls a whole turn on top of its own turning,
+	-- and it runs at you on two legs, hissing, then backs off and drops. Rosette, the petals, turns for ever.
+	local FRILL_REAR = { { 0, 0 }, { 0.12, 1 }, { 0.84, 1 }, { 0.95, 0 }, { 1, 0 } }
+	local FRILL_DASH = { { 0, 0 }, { 0.24, 0 }, { 0.48, 1 }, { 0.6, 1 }, { 0.84, 0 }, { 1, 0 } }
+	local FRILL_RUN = { { 0, 0 }, { 0.18, 0 }, { 0.24, 1 }, { 0.82, 1 }, { 0.88, 0 }, { 1, 0 } }
+	local FRILL_SPIN = { { 0, 0 }, { 0.1, 0 }, { 0.6, 2 * math.pi }, { 1, 2 * math.pi } }
+	local FRILL_HISS = { { 0, 0 }, { 0.1, -0.62 }, { 0.84, -0.62 }, { 0.95, 0 }, { 1, 0 } }
+	local FRILL_SHIVER = { { 0, 0 }, { 0.08, 0 }, { 0.12, 1 }, { 0.84, 1 }, { 0.9, 0 }, { 1, 0 } }
+	local DASHER = {
+		Spine = stacked(beat(FRILL_REAR, 4, PITCH, 0.62), beat(FRILL_REAR, 4, RISE, 1.0), beat(FRILL_DASH, 4, AHEAD, 7.0), shaken(FRILL_RUN, 12, 0.05, ROLL)),
+		BackL = stacked(beat(FRILL_REAR, 4, PITCH, -0.62), shaken(FRILL_RUN, 12, 0.7)),
+		BackR = stacked(beat(FRILL_REAR, 4, PITCH, -0.62), shaken(FRILL_RUN, 12, 0.7, PITCH, math.pi)),
+		FrontL = stacked(beat(FRILL_REAR, 4, PITCH, 0.5), shaken(FRILL_RUN, 12, 0.3, PITCH, math.pi)),
+		FrontR = stacked(beat(FRILL_REAR, 4, PITCH, 0.5), shaken(FRILL_RUN, 12, 0.3)),
+		Neck = beat(FRILL_REAR, 4, PITCH, -0.45),
+		Head = beat(FRILL_REAR, 4, PITCH, -0.1),
+		Jaw = stacked(beat(FRILL_HISS, 4), shaken(FRILL_SHIVER, 20, 0.05)),
+		Frill = stacked(beat(FRILL_SPIN, 4, ROLL), shaken(FRILL_SHIVER, 24, 0.035)),
+		Tail1 = beat(FRILL_REAR, 4, PITCH, -0.5),
+		Tail2 = beat(FRILL_REAR, 4, PITCH, 0.2),
+		Tail3 = shaken(FRILL_RUN, 6, 0.25, YAW),
+		[ALWAYS] = { Rosette = spun(1) },
+	}
+
+	-- Dressed to Kill (Twist, its chest): its head turns slowly right round to look behind it, tilts, then snaps the rest of the way
+	-- round, and it lunges: arms thrown out, its mirror of a face split open. The lunge comes in jerks, eight poses a second.
+	local TWIST_TURN = { { 0, 0 }, { 0.08, 0 }, { 0.4, math.pi }, { 0.55, math.pi }, { 0.585, 2 * math.pi }, { 1, 2 * math.pi } }
+	local TWIST_TILT = { { 0, 0 }, { 0.32, 0 }, { 0.42, 0.42 }, { 0.54, 0.42 }, { 0.58, 0 }, { 1, 0 } }
+	local TWIST_LUNGE = { { 0, 0 }, { 0.58, 0 }, { 0.64, 1 }, { 0.76, 1 }, { 0.9, 0 }, { 1, 0 } }
+	local TWIST_REACH = { { 0, 0 }, { 0.56, 0 }, { 0.6, -0.25 }, { 0.64, 1 }, { 0.76, 1 }, { 0.9, 0 }, { 1, 0 } }
+	local TWIST_JAW = { { 0, 0 }, { 0.08, 0 }, { 0.4, -0.12 }, { 0.55, -0.12 }, { 0.6, -0.75 }, { 0.76, -0.75 }, { 0.9, 0 }, { 1, 0 } }
+	local TWIST_JITTER = { { 0, 0 }, { 0.58, 0 }, { 0.6, 1 }, { 0.76, 1 }, { 0.8, 0 }, { 1, 0 } }
+	local TWISTER = {
+		Spine = stepped(stacked(beat(TWIST_LUNGE, 4, AHEAD, 3.6), beat(TWIST_LUNGE, 4, RISE, -0.5))),
+		Twist = stepped(stacked(beat(TWIST_LUNGE, 4, PITCH, -0.38), shaken(TWIST_JITTER, 14, 0.05, ROLL))),
+		Neck = stepped(beat(TWIST_LUNGE, 4, PITCH, -0.12)),
+		Head = stacked(beat(TWIST_TURN, 4, YAW), beat(TWIST_TILT, 4, ROLL), stepped(beat(TWIST_LUNGE, 4, PITCH, 0.3))),
+		Jaw = stepped(stacked(beat(TWIST_JAW, 4), shaken(TWIST_JITTER, 20, 0.08))),
+		ArmL = stepped(beat(TWIST_REACH, 4, PITCH, 1.45)),
+		ArmR = stepped(beat(TWIST_REACH, 4, PITCH, 1.45, 0.02)),
+		ForeL = stepped(beat(TWIST_REACH, 4, PITCH, 0.5)),
+		ForeR = stepped(beat(TWIST_REACH, 4, PITCH, 0.5, 0.02)),
+		LegL = stepped(beat(TWIST_LUNGE, 4, PITCH, 0.45)),
+		ShinL = stepped(beat(TWIST_LUNGE, 4, PITCH, -0.5)),
+		LegR = stepped(beat(TWIST_LUNGE, 4, PITCH, -0.3)),
+	}
+
+	-- Wrecking Ballroom (Swing, its chest): the tail swings like a pendulum, higher each time, the body leaning against it; then it heaves
+	-- the mirror ball up over its back and slams it down, hopping on its front feet, roaring. Club, the ball, turns for ever and faster in it.
+	local PEND = { { 0, 0 }, { 0.06, 0.25 }, { 0.56, 1 }, { 0.6, 0 }, { 1, 0 } }
+	local PEND_LIFT = { { 0, 0 }, { 0.56, 0 }, { 0.66, 1 }, { 0.71, 1 }, { 0.75, -0.12 }, { 0.84, -0.12 }, { 1, 0 } }
+	local PEND_HOP = { { 0, 0 }, { 0.72, 0 }, { 0.755, 1 }, { 0.8, 0 }, { 1, 0 } }
+	local PEND_DIP = { { 0, 0 }, { 0.56, 0 }, { 0.66, -1 }, { 0.71, -1 }, { 0.75, 1 }, { 0.84, 0.6 }, { 1, 0 } }
+	local PEND_JAW = { { 0, 0 }, { 0.6, 0 }, { 0.7, -0.55 }, { 0.88, -0.55 }, { 1, 0 } }
+	local PEND_SPIN = { { 0, 0 }, { 0.06, 0 }, { 0.75, 4 * math.pi }, { 1, 4 * math.pi } }
+	local SWINGER = {
+		Spine = stacked(shaken(PEND, 4, -0.08, YAW), beat(PEND_DIP, 4, PITCH, 0.1), beat(PEND_HOP, 4, RISE, 0.9)),
+		Swing = shaken(PEND, 4, -0.06, YAW, 0.4),
+		Neck = stacked(beat(PEND_DIP, 4, PITCH, 0.12), shaken(PEND, 4, -0.1, YAW, 0.6)),
+		Head = beat(PEND_DIP, 4, PITCH, 0.1),
+		Jaw = beat(PEND_JAW, 4),
+		FrontL = beat(PEND_HOP, 4, PITCH, 0.35),
+		FrontR = beat(PEND_HOP, 4, PITCH, 0.35),
+		Tail1 = stacked(shaken(PEND, 4, 0.5, YAW), beat(PEND_LIFT, 4, PITCH, -0.8)),
+		Tail2 = stacked(shaken(PEND, 4, 0.32, YAW, 0.6), beat(PEND_LIFT, 4, PITCH, -0.5)),
+		Tail3 = stacked(shaken(PEND, 4, 0.26, YAW, 1.2), beat(PEND_LIFT, 4, PITCH, -0.35)),
+		Club = beat(PEND_SPIN, 4, ROLL),
+		[ALWAYS] = { Club = spun(1) },
+	}
+
+	-- Swanquish (Reflect, its breast): the wings flare up and out, both necks coil back hissing and weave, mirror images of each other,
+	-- then strike together, closing like shears, twice. The right neck always does what the left does, seen in a mirror.
+	local SWAN_FLARE = { { 0, 0 }, { 0.12, 1 }, { 0.84, 1 }, { 1, 0 } }
+	local SWAN_COIL = { { 0, 0 }, { 0.12, 0 }, { 0.3, 1 }, { 0.44, 1 }, { 0.48, -0.7 }, { 0.56, -0.7 }, { 0.6, 0.5 }, { 0.64, -0.7 }, { 0.72, -0.7 }, { 0.86, 0 }, { 1, 0 } }
+	local SWAN_PINCH = { { 0, 0 }, { 0.44, 0 }, { 0.48, 1 }, { 0.56, 1 }, { 0.6, 0.2 }, { 0.64, 1 }, { 0.72, 1 }, { 0.86, 0 }, { 1, 0 } }
+	local SWAN_BILL = { { 0, 0 }, { 0.14, -0.45 }, { 0.44, -0.45 }, { 0.47, 0.05 }, { 0.52, -0.4 }, { 0.6, -0.4 }, { 0.63, 0.05 }, { 0.68, -0.4 }, { 0.86, 0 }, { 1, 0 } }
+	local SWAN_BEATS = { { 0, 0 }, { 0.42, 0 }, { 0.46, 1 }, { 0.74, 1 }, { 0.8, 0 }, { 1, 0 } }
+	local SWAN_WEAVE = { { 0, 0 }, { 0.14, 0 }, { 0.2, 1 }, { 0.42, 1 }, { 0.46, 0 }, { 1, 0 } }
+	local SWAN_LUNGE = { { 0, 0 }, { 0.44, 0 }, { 0.48, 1 }, { 0.72, 1 }, { 0.86, 0 }, { 1, 0 } }
+	local SWAN_LEFT = {
+		NeckL1 = stacked(beat(SWAN_COIL, 4, PITCH, 0.45), beat(SWAN_PINCH, 4, YAW, -0.16), shaken(SWAN_WEAVE, 6, 0.22, YAW)),
+		NeckL2 = stacked(beat(SWAN_COIL, 4, PITCH, -0.55), shaken(SWAN_WEAVE, 6, -0.18, YAW, 0.8)),
+		NeckL3 = stacked(beat(SWAN_COIL, 4, PITCH, 0.5), shaken(SWAN_WEAVE, 6, 0.15, YAW, 1.6)),
+		HeadL = beat(SWAN_COIL, 4, PITCH, -0.35),
+		BillL = beat(SWAN_BILL, 4),
+		WingL = stacked(beat(SWAN_FLARE, 4, ROLL, -0.35), beat(SWAN_FLARE, 4, YAW, -0.3), shaken(SWAN_BEATS, 8, 0.2, ROLL)),
+		WingTipL = stacked(beat(SWAN_FLARE, 4, ROLL, -0.25), shaken(SWAN_BEATS, 8, 0.22, ROLL, 0.8)),
+	}
+	local SWAN_IDLE = { -- always: the necks sway, the right the mirror of the left
+		NeckL1 = wave(1, 0.1, YAW),
+		NeckL2 = wave(2, 0.06, PITCH, 0.6),
+		NeckL3 = wave(1, -0.09, YAW, 1.2),
+		HeadL = stacked(wave(1, 0.08, ROLL, 0.4), wave(2, 0.05, PITCH, 1.4)),
+	}
+	local MIRRORER = {
+		Spine = stacked(beat(SWAN_LUNGE, 4, AHEAD, 1.6), beat(SWAN_LUNGE, 4, PITCH, -0.06)),
+		Reflect = beat(SWAN_COIL, 4, PITCH, 0.08),
+		Tail1 = beat(SWAN_FLARE, 4, PITCH, -0.3),
+		[ALWAYS] = {},
+	}
+	for name, move in SWAN_LEFT do
+		MIRRORER[name], MIRRORER[rightOf(name)] = move, mirrored(move)
+	end
+	for name, move in SWAN_IDLE do
+		MIRRORER[ALWAYS][name], MIRRORER[ALWAYS][rightOf(name)] = move, mirrored(move)
+	end
+
+	-- Mane Event (Rampant, its chest): it rears up rampant, pawing the air, and every shard bursts out at once and rattles; it roars, slams
+	-- down onto its front paws and the shards ripple back in, mane first. Always: a wave runs round the mane and down its back, each shard
+	-- sliding out of the skin and back in (Sliver1 to 20), the owner's stadium wave. MANE_SUNK of each shard is in the skin at rest, and
+	-- MANE_WAVE + MANE_BURST stay under it, so a shard never comes right out.
+	local MANE_AXIS = Vector3.new(0, 0.72, 0.69).Unit -- the neck's line, which the mane rings (Blender's axes: X across, Y ahead, Z up)
+	local MANE_UP = Vector3.xAxis:Cross(MANE_AXIS).Unit
+	local MANE_BACK = Vector3.new(0, -0.4, 1).Unit
+	local MANE_WAVE, MANE_BURST = 0.25, 0.22
+	local RAMP_UP = { { 0, 0 }, { 0.15, 1 }, { 0.48, 1 }, { 0.58, -0.25 }, { 0.7, -0.25 }, { 0.86, 0 }, { 1, 0 } }
+	local RAMP_SLAM = { { 0, 0 }, { 0.48, 0 }, { 0.58, 2.6 }, { 0.72, 2.6 }, { 0.9, 0 }, { 1, 0 } }
+	local RAMP_PAW = { { 0, 0 }, { 0.1, 0 }, { 0.16, 1 }, { 0.46, 1 }, { 0.5, 0 }, { 1, 0 } }
+	local RAMP_JAW = { { 0, 0 }, { 0.12, -0.2 }, { 0.2, -0.78 }, { 0.5, -0.78 }, { 0.58, 0.05 }, { 0.66, -0.35 }, { 0.82, 0 }, { 1, 0 } }
+	local RAMP_ROAR = { { 0, 0 }, { 0.18, 0 }, { 0.22, 1 }, { 0.48, 1 }, { 0.52, 0 }, { 1, 0 } }
+	local RAMP_RATTLE = { { 0, 0 }, { 0.17, 0 }, { 0.2, 1 }, { 0.56, 1 }, { 0.6, 0 }, { 1, 0 } }
+	local RAMPANT = {
+		Spine = stacked(beat(RAMP_UP, 4, PITCH, 0.62), beat(RAMP_UP, 4, RISE, 1.6), beat(RAMP_SLAM, 4, AHEAD)),
+		Rampant = stacked(beat(RAMP_UP, 4, PITCH, 0.12), shaken(RAMP_ROAR, 20, 0.03, ROLL)),
+		BackL = beat(RAMP_UP, 4, PITCH, -0.62),
+		BackR = beat(RAMP_UP, 4, PITCH, -0.62),
+		FrontL = stacked(beat(RAMP_UP, 4, PITCH, 0.55), shaken(RAMP_PAW, 6, 0.55)),
+		FrontR = stacked(beat(RAMP_UP, 4, PITCH, 0.55), shaken(RAMP_PAW, 6, 0.55, PITCH, math.pi)),
+		Neck = beat(RAMP_UP, 4, PITCH, -0.15),
+		Head = stacked(beat(RAMP_ROAR, 4, PITCH, 0.3), shaken(RAMP_ROAR, 20, 0.04, YAW)),
+		Jaw = stacked(beat(RAMP_JAW, 4), shaken(RAMP_ROAR, 24, 0.05)),
+		Tail1 = beat(RAMP_UP, 4, PITCH, -0.45),
+		Tail2 = shaken(RAMP_PAW, 4, 0.3, YAW),
+		Tail3 = shaken(RAMP_PAW, 4, 0.4, YAW, 1.0),
+		[ALWAYS] = {},
+	}
+	-- Every moving shard, in the order the burst lets them go: the mane from its right over the top to its left, the back, the tail's tip.
+	local slivers = {}
+	for k = 0, 11 do
+		local a = -0.8 + k * (math.pi + 1.6) / 11
+		local way = (Vector3.xAxis * cos(a) + MANE_UP * sin(a) - MANE_AXIS * 0.42).Unit
+		table.insert(slivers, { way = way, length = 5.0 + 1.0 * sin(a), phase = a })
+	end
+	for k = 0, 5 do
+		table.insert(slivers, { way = MANE_BACK, length = 3.6 - 0.25 * k, phase = 4.4 + 0.5 * k })
+	end
+	for _, s in { -1, 1 } do
+		table.insert(slivers, { way = Vector3.new(s * 0.4, -0.8, 0.45).Unit, length = 2.4, phase = 7.8 + (if s > 0 then 0.4 else 0) })
+	end
+	for n, sliver in slivers do
+		local length, phase, late = sliver.length, sliver.phase, 0.012 * (n - 1)
+		local points = { { 0, 0 }, { 0.12, 0 }, { 0.19, 1 }, { 0.6 + late, 1 }, { 0.7 + late, 0 }, { 1, 0 } } -- all out together, back in one by one
+		RAMPANT[ALWAYS]["Sliver" .. n] = along(sliver.way, function(s: number)
+			return MANE_WAVE * length * ((1 + cos(2 * QUARTER * s - phase)) / 2) ^ 4
+		end)
+		RAMPANT["Sliver" .. n] = along(sliver.way, function(s: number)
+			local u = (s / 4) % 1
+			return MANE_BURST * length * keys(u, points) + 0.05 * length * keys(u, RAMP_RATTLE) * sin(24 * QUARTER * s)
+		end)
+	end
+
+	-- The six rarest (assets/models/build_shattered_mirror_rare.py) [Owner, 2026-11-14: unique bodies, no shared mouth, "I want them
+	-- shards to be floating and waving and doing stuff"]. Every one carries shards that float free of its body and never stop moving
+	-- ("@always"), and has its own 4-second attack. The same as the tables at the bottom of that file, number for number.
+	local function bob(way: Vector3, reach: number, speed: number, phase: number?) -- floats back and forth along a way, for ever
+		local late = phase or 0
+		return along(way, function(s: number)
+			return reach * sin(speed * QUARTER * s - late)
+		end)
+	end
+	local function thrust(way: Vector3, reach: number, points: { { number } }) -- slides out along a way and back, by keys over the 4 seconds
+		return along(way, function(s: number)
+			return reach * keys((s / 4) % 1, points)
+		end)
+	end
+	local function volley(order: number, start: number, step: number, rise: number, holdTo: number, fall: number) -- one of a row, each later than the last
+		local late = step * order
+		return { { 0, 0 }, { start + late, 0 }, { start + late + rise, 1 }, { holdTo + late, 1 }, { holdTo + late + fall, 0 }, { 1, 0 } }
+	end
+	local function bothSides(tbl, left) -- a left-hand table, with its mirror for the right
+		for name, move in left do
+			tbl[name], tbl[rightOf(name)] = move, mirrored(move)
+		end
+	end
+	local UPWARD = Vector3.new(0, 0, 1) -- Blender's axes, as `along` takes them: X across, Y ahead, Z up
+
+	-- Stilt Life (Stilt, its chest): the neck coils back, the bill opens, and it stabs three times, driving forward each time, its blades
+	-- flung wide and shaking. Always: the blades hang beside it and a wave runs up each fan.
+	local STAB_COIL = { { 0, 0 }, { 0.14, 1 }, { 0.3, 1 }, { 0.335, -1 }, { 0.4, 0.5 }, { 0.435, -1 }, { 0.5, 0.5 }, { 0.535, -1 }, { 0.66, -1 }, { 0.86, 0 }, { 1, 0 } }
+	local STAB_LUNGE = { { 0, 0 }, { 0.3, -0.3 }, { 0.335, 1 }, { 0.4, 0.3 }, { 0.435, 1 }, { 0.5, 0.3 }, { 0.535, 1 }, { 0.66, 1 }, { 0.86, 0 }, { 1, 0 } }
+	local STAB_BILL = { { 0, 0 }, { 0.14, -0.35 }, { 0.3, -0.35 }, { 0.34, 0.05 }, { 0.4, -0.3 }, { 0.44, 0.05 }, { 0.5, -0.3 }, { 0.54, 0.05 }, { 0.66, 0.05 }, { 0.75, -0.4 }, { 0.86, 0 }, { 1, 0 } }
+	local STAB_FLARE = { { 0, 0 }, { 0.14, 1 }, { 0.7, 1 }, { 0.9, 0 }, { 1, 0 } }
+	local STABBER = {
+		Spine = stacked(beat(STAB_LUNGE, 4, AHEAD, 2.4), beat(STAB_LUNGE, 4, PITCH, -0.08)),
+		Neck = beat(STAB_COIL, 4, PITCH, 0.3),
+		NeckB = beat(STAB_COIL, 4, PITCH, 0.35),
+		NeckC = beat(STAB_COIL, 4, PITCH, -0.45),
+		Head = beat(STAB_COIL, 4, PITCH, -0.2),
+		Jaw = beat(STAB_BILL, 4),
+		LegL = beat(STAB_LUNGE, 4, PITCH, 0.2),
+		LegR = beat(STAB_LUNGE, 4, PITCH, -0.2),
+		[ALWAYS] = {},
+	}
+	for k = 1, 5 do
+		bothSides(STABBER, { ["VaneL" .. k] = stacked(beat(STAB_FLARE, 4, YAW, -0.6), beat(STAB_FLARE, 4, PITCH, -0.25), shaken(STAB_FLARE, 16, 0.05, ROLL, 0.5 * k)) })
+		bothSides(STABBER[ALWAYS], { ["VaneL" .. k] = stacked(bob(UPWARD, 0.45, 2, 0.7 * k), wave(2, 0.1, PITCH, 0.7 * k)) })
+	end
+
+	-- Prism Break (Prism, its chest): it drops its head and its whole sail tips forward over it; blade after blade fires ahead and comes
+	-- back, front one first; then it charges, jaw wide. Always: the sail floats in a wave, the tail's shards drift.
+	local RAY_LOW = { { 0, 0 }, { 0.15, 1 }, { 0.72, 1 }, { 0.9, 0 }, { 1, 0 } }
+	local RAY_CHARGE = { { 0, 0 }, { 0.5, 0 }, { 0.6, 1 }, { 0.72, 1 }, { 0.92, 0 }, { 1, 0 } }
+	local RAY_RUN = { { 0, 0 }, { 0.48, 0 }, { 0.52, 1 }, { 0.72, 1 }, { 0.78, 0 }, { 1, 0 } }
+	local RAY_JAW = { { 0, 0 }, { 0.15, -0.2 }, { 0.5, -0.2 }, { 0.58, -0.7 }, { 0.72, -0.7 }, { 0.78, 0.1 }, { 0.9, 0 }, { 1, 0 } }
+	local RAY_WAY = Vector3.new(0, 1, 0.15)
+	local RAYER = {
+		Spine = stacked(beat(RAY_LOW, 4, PITCH, -0.2), beat(RAY_LOW, 4, RISE, -0.6), beat(RAY_CHARGE, 4, AHEAD, 5.5)),
+		Neck = beat(RAY_LOW, 4, PITCH, -0.35),
+		Head = beat(RAY_LOW, 4, PITCH, 0.25),
+		Jaw = beat(RAY_JAW, 4),
+		LegL = stacked(beat(RAY_LOW, 4, PITCH, 0.2), shaken(RAY_RUN, 12, 0.6)),
+		LegR = stacked(beat(RAY_LOW, 4, PITCH, 0.2), shaken(RAY_RUN, 12, 0.6, PITCH, math.pi)),
+		ArmL = beat(RAY_CHARGE, 4, PITCH, 0.8),
+		ArmR = beat(RAY_CHARGE, 4, PITCH, 0.8),
+		[ALWAYS] = {},
+	}
+	for i = 1, 3 do
+		RAYER["Tail" .. i] = shaken(RAY_LOW, 6, 0.12 + 0.05 * i, YAW, 0.8 * i)
+		RAYER[ALWAYS]["Drift" .. i] = stacked(bob(UPWARD, 0.5, 2, 0.9 * i), wave(2, 0.25, ROLL, 0.9 * i))
+	end
+	for k = 1, 7 do
+		RAYER["Sail" .. k] = stacked(beat(RAY_LOW, 4, PITCH, -1.0), thrust(RAY_WAY, 4.0, volley(k - 1, 0.2, 0.04, 0.05, 0.3, 0.1)))
+		RAYER[ALWAYS]["Sail" .. k] = stacked(bob(UPWARD, 0.7, 2, 0.8 * k), wave(2, 0.12, ROLL, 0.8 * k))
+	end
+
+	-- Moth-er of Pearl (Flutter, its thorax): it climbs, draws its wings back, claps them shut in front of it twice, and dives through
+	-- you; its rings spin up. Always: all four wings beat, its tail curls, the two rings turn opposite ways.
+	local MOTH_RISE = { { 0, 0 }, { 0.2, 1 }, { 0.4, 1 }, { 0.5, -0.3 }, { 0.62, -0.3 }, { 0.85, 0 }, { 1, 0 } }
+	local MOTH_DIVE = { { 0, 0 }, { 0.4, -0.15 }, { 0.5, 1 }, { 0.62, 1 }, { 0.86, 0 }, { 1, 0 } }
+	local MOTH_CLAP = { { 0, 0 }, { 0.2, 0.35 }, { 0.4, 0.35 }, { 0.47, -1 }, { 0.52, -1 }, { 0.57, 0.3 }, { 0.62, -1 }, { 0.68, -1 }, { 0.86, 0 }, { 1, 0 } }
+	local MOTH_SPIN = { { 0, 0 }, { 0.2, 0 }, { 0.8, 4 * math.pi }, { 1, 4 * math.pi } }
+	local MOTH_BUSY = { { 0, 0 }, { 0.18, 0 }, { 0.24, 1 }, { 0.8, 1 }, { 0.86, 0 }, { 1, 0 } }
+	local FLUTTERER = {
+		Swim = stacked(beat(MOTH_RISE, 4, RISE, 2.6), beat(MOTH_DIVE, 4, AHEAD, 6.5), beat(MOTH_RISE, 4, PITCH, 0.25)),
+		Flutter = shaken(MOTH_BUSY, 16, 0.04, ROLL),
+		Head = beat(MOTH_RISE, 4, PITCH, -0.2),
+		LoopA = beat(MOTH_SPIN, 4, YAW),
+		LoopB = stacked(beat(MOTH_SPIN, 4, YAW, -1.0), shaken(MOTH_BUSY, 4, 0.12)),
+		[ALWAYS] = { LoopA = spun(1, YAW), LoopB = spun(-1, YAW), AbdA = wave(2, 0.1), AbdB = wave(2, 0.14, PITCH, 0.8) },
+	}
+	bothSides(FLUTTERER, { WingL = beat(MOTH_CLAP, 4, YAW, 1.1), HindL = beat(MOTH_CLAP, 4, YAW, 0.7, 0.02) })
+	bothSides(FLUTTERER[ALWAYS], { WingL = wave(8, 0.28, ROLL), HindL = wave(8, 0.24, ROLL, 0.9) })
+
+	-- Vainglory (Train, the root of its train): the fan goes up and shivers, it struts at you with its neck pumping, screams, and the
+	-- eyes stab outward, the middle one first, and come back. Always: a wave runs across the train, the crest bobs.
+	local VAIN_UP = { { 0, 0 }, { 0.16, 1 }, { 0.8, 1 }, { 0.94, 0 }, { 1, 0 } }
+	local VAIN_SHIVER = { { 0, 0 }, { 0.18, 0 }, { 0.22, 1 }, { 0.5, 1 }, { 0.56, 0 }, { 1, 0 } }
+	local VAIN_STRUT = { { 0, 0 }, { 0.22, 0 }, { 0.5, 1 }, { 0.74, 1 }, { 0.94, 0 }, { 1, 0 } }
+	local VAIN_STEPS = { { 0, 0 }, { 0.2, 0 }, { 0.24, 1 }, { 0.5, 1 }, { 0.54, 0 }, { 1, 0 } }
+	local VAIN_SCREAM = { { 0, 0 }, { 0.5, 0 }, { 0.54, -0.6 }, { 0.72, -0.6 }, { 0.78, 0 }, { 1, 0 } }
+	local VAIN_HEAD = { { 0, 0 }, { 0.5, 0 }, { 0.54, 0.3 }, { 0.72, 0.3 }, { 0.8, 0 }, { 1, 0 } }
+	local TRAIN_UP = Vector3.new(0, -0.57, 0.82).Unit
+	local function trainWay(k: number): Vector3 -- the way feather k of 13 points: 0.2 radians a feather either side of the middle one
+		local a = (k - 7) * 0.2
+		return (Vector3.xAxis * sin(a) + TRAIN_UP * cos(a)).Unit
+	end
+	local VAUNTER = {
+		Spine = stacked(beat(VAIN_STRUT, 4, AHEAD, 3.2), shaken(VAIN_STEPS, 8, 0.2, RISE)),
+		Train = stacked(beat(VAIN_UP, 4, PITCH, -0.5), shaken(VAIN_SHIVER, 24, 0.04, ROLL)),
+		Neck = stacked(beat(VAIN_UP, 4, PITCH, 0.15), shaken(VAIN_STEPS, 8, 0.12)),
+		NeckB = shaken(VAIN_STEPS, 8, -0.1),
+		Head = beat(VAIN_HEAD, 4),
+		Jaw = beat(VAIN_SCREAM, 4),
+		LegL = shaken(VAIN_STEPS, 8, 0.5),
+		LegR = shaken(VAIN_STEPS, 8, 0.5, PITCH, math.pi),
+		Crest = shaken(VAIN_SHIVER, 24, 0.08, ROLL),
+		[ALWAYS] = { Crest = bob(UPWARD, 0.25, 2), Train = wave(1, 0.04, ROLL) },
+	}
+	for k = 1, 13 do
+		VAUNTER["Eye" .. k] = thrust(trainWay(k), 2.6, volley(math.abs(k - 7), 0.5, 0.02, 0.04, 0.62, 0.12))
+		VAUNTER[ALWAYS]["Eye" .. k] = bob(trainWay(k), 0.5, 2, 0.5 * k)
+	end
+
+	-- Mirror Mirror (Glass1, the first piece of its glass): the glass bursts out of the frame, each piece spinning in its own plane; what
+	-- lives inside leans out through the hole and looks left and right for you; then it draws back and the glass closes over it. Always:
+	-- the two rings wheel opposite ways, and the glass breathes.
+	local GLASS_TUMBLE = { { 0, 0 }, { 0.14, 0 }, { 0.3, 2 * math.pi }, { 0.66, 2 * math.pi }, { 0.8, 4 * math.pi }, { 1, 4 * math.pi } }
+	local GLASS_EMERGE = { { 0, 0 }, { 0.24, 0 }, { 0.36, 1 }, { 0.62, 1 }, { 0.72, 0 }, { 1, 0 } }
+	local GLASS_LOOK = { { 0, 0 }, { 0.36, 0 }, { 0.4, 1 }, { 0.6, 1 }, { 0.64, 0 }, { 1, 0 } }
+	local GLASS_SPIN = { { 0, 0 }, { 0.14, 0 }, { 0.8, 2 * math.pi }, { 1, 2 * math.pi } }
+	local SHATTERER = {
+		Spine = stacked(beat(GLASS_EMERGE, 4, PITCH, -0.1), shaken(GLASS_LOOK, 8, 0.25, RISE)),
+		Head = stacked(beat(GLASS_EMERGE, 4, AHEAD, 2.6), shaken(GLASS_LOOK, 4, 0.4, YAW)),
+		LegL = shaken(GLASS_LOOK, 8, 0.3),
+		LegR = shaken(GLASS_LOOK, 8, 0.3, PITCH, math.pi),
+		LoopA = beat(GLASS_SPIN, 4, ROLL),
+		LoopB = beat(GLASS_SPIN, 4, ROLL, -1.0),
+		[ALWAYS] = { LoopA = spun(1), LoopB = spun(-1) },
+	}
+	for k = 1, 8 do
+		local b = (k - 0.5) * TAU / 8
+		local way = Vector3.new(cos(b), 0.9, sin(b)).Unit -- out from the middle of the glass and at you
+		SHATTERER["Glass" .. k] = stacked(thrust(way, 3.6, volley(k - 1, 0.14, 0.012, 0.06, 0.66, 0.1)), beat(GLASS_TUMBLE, 4, ROLL, if k % 2 == 1 then 1.0 else -1.0))
+		SHATTERER[ALWAYS]["Glass" .. k] = bob(Vector3.new(0, 1, 0), 0.12, 2, 0.8 * k)
+	end
+
+	-- Royal Pane (Royal, its chest): it rears, spreads its wings high, coils its neck, then beats the wings forward: the panes fly out of
+	-- them at you, one after another, and back, as it strikes down roaring. Always: the panes ripple in their frames, the ring over its
+	-- head turns, the neck sways.
+	local ROYAL_REAR = { { 0, 0 }, { 0.18, 1 }, { 0.6, 1 }, { 0.72, -0.2 }, { 0.82, -0.2 }, { 1, 0 } }
+	local ROYAL_SPREAD = { { 0, 0 }, { 0.18, 1 }, { 0.46, 1 }, { 0.54, -0.3 }, { 0.7, -0.3 }, { 0.9, 0 }, { 1, 0 } }
+	local ROYAL_GUST = { { 0, 0 }, { 0.46, 0 }, { 0.54, 1 }, { 0.7, 1 }, { 0.9, 0 }, { 1, 0 } }
+	local ROYAL_COIL = { { 0, 0 }, { 0.18, 1 }, { 0.46, 1 }, { 0.54, -1 }, { 0.72, -1 }, { 0.9, 0 }, { 1, 0 } }
+	local ROYAL_JAW = { { 0, 0 }, { 0.18, -0.2 }, { 0.46, -0.25 }, { 0.54, -0.75 }, { 0.74, -0.75 }, { 0.86, 0 }, { 1, 0 } }
+	local ROYAL_ROAR = { { 0, 0 }, { 0.52, 0 }, { 0.56, 1 }, { 0.74, 1 }, { 0.8, 0 }, { 1, 0 } }
+	local PANE_WAY = Vector3.new(-0.5, 0.8, 0.3) -- the left wing's panes in the gust: ahead, out and up
+	local REGENT = {
+		Spine = stacked(beat(ROYAL_REAR, 4, PITCH, 0.4), beat(ROYAL_REAR, 4, RISE, 1.4)),
+		LegL = beat(ROYAL_REAR, 4, PITCH, -0.4),
+		LegR = beat(ROYAL_REAR, 4, PITCH, -0.4),
+		Neck = beat(ROYAL_COIL, 4, PITCH, 0.25),
+		NeckB = beat(ROYAL_COIL, 4, PITCH, 0.2),
+		NeckC = beat(ROYAL_COIL, 4, PITCH, -0.3),
+		Head = stacked(beat(ROYAL_COIL, 4, PITCH, -0.15), shaken(ROYAL_ROAR, 20, 0.04, YAW)),
+		Jaw = stacked(beat(ROYAL_JAW, 4), shaken(ROYAL_ROAR, 24, 0.05)),
+		Tail1 = beat(ROYAL_REAR, 4, PITCH, -0.35),
+		Tail2 = shaken(ROYAL_SPREAD, 4, 0.25, YAW),
+		Tail3 = shaken(ROYAL_SPREAD, 4, 0.35, YAW, 1.0),
+		[ALWAYS] = { Tiara = spun(1, YAW), NeckB = wave(1, 0.05, YAW) },
+	}
+	bothSides(REGENT, {
+		WingL = stacked(beat(ROYAL_SPREAD, 4, ROLL, 0.45), beat(ROYAL_GUST, 4, YAW, -0.4)),
+		WingTipL = stacked(beat(ROYAL_SPREAD, 4, ROLL, 0.3), beat(ROYAL_GUST, 4, YAW, -0.25)),
+	})
+	for k = 1, 5 do
+		bothSides(REGENT, { ["PaneL" .. k] = thrust(PANE_WAY, 4.2, volley(k - 1, 0.5, 0.025, 0.05, 0.64, 0.12)) })
+		bothSides(REGENT[ALWAYS], { ["PaneL" .. k] = stacked(bob(UPWARD, 0.3, 2, 0.9 * k), wave(2, 0.06, ROLL, 0.9 * k)) })
+	end
+
+	MARKED.Stilt = STABBER
+	MARKED.Prism = RAYER
+	MARKED.Flutter = FLUTTERER
+	MARKED.Train = VAUNTER
+	MARKED.Glass1 = SHATTERER
+	MARKED.Royal = REGENT
+
+	MARKED.Prowl = PROWLER
+	MARKED.Frill = DASHER
+	MARKED.Twist = TWISTER
+	MARKED.Swing = SWINGER
+	MARKED.Reflect = MIRRORER
+	MARKED.Rampant = RAMPANT
+end)()
+
 local function add(model: Model)
 	-- A monster with Stay set (the server's best catch on its pedestal) idles where it is and never walks. One with
 	-- Carried set rides on a player's head (PlotService): it walks while they move and idles while they stand.
@@ -1550,6 +2195,7 @@ local function add(model: Model)
 				vent = string.sub(bone.Name, 1, 4) == "Vent",
 				sway = marked and marked[bone.Name] or SWAY[bone.Name],
 				gated = gated(bone.Name, marked and marked[bone.Name] or SWAY[bone.Name]),
+				always = marked and marked["@always"] and marked["@always"][bone.Name], -- runs all the time, attack or not (map 16)
 				steady = whiskered, -- whiskers, not an attack: they never wait
 			})
 			if bone.Name == "LegL" or bone.Name == "FrontL" then
@@ -1915,6 +2561,15 @@ local function pose(state, dt: number)
 				* CFrame.fromAxisAngle(entry.pitch, g * ax)
 				* CFrame.fromAxisAngle(entry.roll, g * ay)
 				* CFrame.fromAxisAngle(entry.yaw, g * az)
+		end
+		local always = entry.always
+		if always then -- a marker table's "@always": on top of everything, never waiting for the attack
+			local ax, ay, az, ahead, up, across = always(s)
+			transform = CFrame.new((entry.roll * ahead + entry.yaw * up + entry.pitch * across) * state.scale)
+				* transform
+				* CFrame.fromAxisAngle(entry.pitch, ax)
+				* CFrame.fromAxisAngle(entry.roll, ay)
+				* CFrame.fromAxisAngle(entry.yaw, az)
 		end
 		if limp then
 			transform *= CFrame.fromAxisAngle(entry.pitch, entry.limpX * limp.weight)

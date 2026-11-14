@@ -192,27 +192,48 @@ def decorate_stage(stage, built, rules, length=360, seed=61):
         name, (low, high) = pick(table)
         put(name, (x, -distance, z), rng.uniform(0, math.tau), rng.uniform(low, high))
 
+    def put_pair(table, x, z, distance):
+        """MapDecor's pairs: the same prop at x and -x, mirrored."""
+        name, (low, high) = pick(table)
+        yaw, scale = rng.uniform(0, math.tau), rng.uniform(low, high)
+        put(name, (x, -distance, z), yaw, scale)
+        put(name, (-x, -distance, z), -yaw, scale)
+
+    def zone_of(table, d):
+        """MapDecor's zones: {"from", "to", "props", "gap"?, "pairs"?} stretches with props of their own."""
+        for zone in table.get("zones", ()):
+            if zone["from"] <= d < zone["to"]:
+                return zone
+        return table
+
     floor = rules.get("floor")
     if floor:
         d = floor["first"]
         while d < length - floor["gap"][0]:
+            zone = zone_of(floor, d)
+            put_prop = put_pair if zone.get("pairs") else put_random
             side = rng.choice((-1, 1))
             x = side * rng.uniform(*floor["side"])
-            put_random(floor["props"], x, 0, d)
+            put_prop(zone["props"], x, 0, d)
             extras = floor.get("extras")
             if extras and rng.random() < extras["chance"]:
                 spread = extras["spread"]
                 ex = side * min(max(abs(x) + rng.uniform(-spread, spread), floor["side"][0] - 4), HALF_WIDTH - 3)
-                put_random(extras["props"], ex, 0, d + rng.uniform(-spread, spread))
-            d += rng.uniform(*floor["gap"])
+                put_prop(extras["props"], ex, 0, d + rng.uniform(-spread, spread))
+            d += rng.uniform(*zone.get("gap", floor["gap"]))
     rim = rules.get("rim")
     if rim:
         d = rim["first"]
         while d < length:
-            for side in (-1, 1):
+            zone = zone_of(rim, d)
+            if zone.get("pairs"):
                 if rng.random() < rim["chance"]:
-                    put_random(rim["props"], side * rng.uniform(*rim["side"]), WALL, d)
-            d += rng.uniform(*rim["gap"])
+                    put_pair(zone["props"], rng.uniform(*rim["side"]), WALL, d)
+            else:
+                for side in (-1, 1):
+                    if rng.random() < rim["chance"]:
+                        put_random(zone["props"], side * rng.uniform(*rim["side"]), WALL, d)
+            d += rng.uniform(*zone.get("gap", rim["gap"]))
     stretch = HALF_WIDTH * 2 / OVERHEAD_BUILT_FOR
     for name, d, yaw, scale in rules.get("overhead", ()):
         if d < length:

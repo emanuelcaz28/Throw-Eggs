@@ -19,6 +19,7 @@ local ReadyPopup = require(ReplicatedStorage.Shared.Config.ReadyPopup)
 local Roles = require(ReplicatedStorage.Shared.Roles)
 local IndexService = require(script.Parent.IndexService)
 local PlayerData = require(script.Parent.PlayerData)
+local Analytics = require(script.Parent.Analytics)
 local PlotService = require(script.Parent.PlotService)
 local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local World = require(ReplicatedStorage.Shared.World)
@@ -233,6 +234,7 @@ local function tryBuyXpUpgrade(player: Player, data)
 	data.cash -= price
 	data.xpUpgrades += 1
 	player:SetAttribute("Cash", data.cash)
+	Analytics.cashOut(player, price, data.cash, "Shop", "Rack Upgrade")
 	publish(player, data)
 	-- One notice: a second would replace it on screen. Upgrades only speed up the bars (Config/Training).
 	local rack = Training.rackFor(data.xpUpgrades)

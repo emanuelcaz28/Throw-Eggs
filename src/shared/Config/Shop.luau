@@ -71,13 +71,13 @@ local Shop = {
 			productId = 3728190780, -- "Luck x100"
 			dealProductId = 3728190387, -- "ONE TIME DEAL LUCK x100"
 			dealTag = "ONE TIME DEAL!",
-			description = "Any throw you pick: one of the map's 2 rarest monsters, 1 in 1M+",
+			description = "Any throw you pick: one of the map's top monsters, 1 in 1M+",
 			colours = { "#c58bff", "#6a2fd0" },
 		},
 		{
 			multiplier = 500,
 			productId = 3728240108, -- "Luck x500", R$ 39
-			description = "Any throw you pick: one of the map's 2 rarest monsters, 1 in 100M+",
+			description = "Any throw you pick: a top monster, up to the map's very rarest, 1 in 100M+",
 			colours = { "#ffd95a", "#ff8a1f" },
 		},
 	},

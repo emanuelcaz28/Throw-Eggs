@@ -23,6 +23,7 @@ local PlayerData = require(script.Parent.PlayerData)
 local IndexService = require(script.Parent.IndexService)
 local TutorialService = require(script.Parent.TutorialService)
 local World = require(ReplicatedStorage.Shared.World)
+local Analytics = require(script.Parent.Analytics)
 
 local PlotService = {}
 
@@ -215,11 +216,17 @@ local function sellPrice(entry): number
 	return math.floor(incomeOf(entry) * Plot.sellSeconds)
 end
 
--- All cash a player earns goes through here, so the Top Money leaderboard counts it.
-local function earn(player: Player, data, amount: number)
+-- All cash a player earns goes through here, so the Top Money leaderboard and the Economy dashboard count it.
+-- how and item name the source for Analytics (cashIn); plot income passes neither and is summed there instead.
+local function earn(player: Player, data, amount: number, how: string?, item: string?)
 	data.cash += amount
 	data.totalEarned += amount
 	player:SetAttribute("Cash", data.cash)
+	if how and item then
+		Analytics.cashIn(player, amount, data.cash, how, item)
+	else
+		Analytics.income(player, amount, data.cash)
+	end
 end
 
 -- A random spot that keeps clear of the dinos already placed and of where players land
@@ -572,7 +579,7 @@ local function sellMany(player: Player, data, keys: any)
 		end
 	end
 	if sold > 0 then
-		earn(player, data, cash)
+		earn(player, data, cash, "Gameplay", "Sell Monster")
 		changed(player, data)
 		remotes.Notice:FireClient(player, `+{Format.cash(cash)} sold!`)
 	end
@@ -621,6 +628,7 @@ local function feed(player: Player, data, target, keys: any)
 	end
 	data.cash -= price * amount
 	player:SetAttribute("Cash", data.cash)
+	Analytics.cashOut(player, price * amount, data.cash, "ContextualPurchase", "Feed Monster")
 	for index = #data.dinos, 1, -1 do
 		if eaten[data.dinos[index]] then
 			table.remove(data.dinos, index)
@@ -709,7 +717,7 @@ local function onAction(player: Player, action: any, key: any, x: any, z: any)
 			setHeld(player, data, entry.key) -- the one on the player's head, rebuilt at its new size
 		end
 	elseif action == "sell" and DinoStats.sellable(entry.id) then
-		earn(player, data, sellPrice(entry))
+		earn(player, data, sellPrice(entry), "Gameplay", "Sell Monster")
 		table.remove(data.dinos, index)
 		changed(player, data)
 	end
@@ -718,7 +726,7 @@ end
 -- Pays a Shop cash pack: minutes of the plot's $/s without events (Config/Shop). The caller saves the data.
 function PlotService.payCashPack(player: Player, data, pack): number
 	local amount = Shop.cashPackAmount(pack, baseIncome(player, data))
-	earn(player, data, amount)
+	earn(player, data, amount, "IAP", "Cash Pack " .. (string.gsub(pack.art, "^cash_", "")))
 	return amount
 end
 
@@ -751,7 +759,7 @@ function PlotService.addCatch(player: Player, catch, carry: boolean?): (string?,
 		result = "backpack"
 	else
 		local price = sellPrice(entry)
-		earn(player, data, price)
+		earn(player, data, price, "Gameplay", "Sell Monster")
 		PlotService.notify(player, `Backpack full: sold for {Format.cash(price)}. Sell some monsters to keep new ones.`, true)
 		return "sold"
 	end
@@ -868,6 +876,7 @@ onUpgradeClicked = function(plotIndex: number, player: Player)
 	data.cash -= price
 	data.plotUpgrades += 1
 	player:SetAttribute("Cash", data.cash)
+	Analytics.cashOut(player, price, data.cash, "Shop", "Plot Upgrade")
 	setUpgradeSign(plotIndex, data)
 	remotes.Notice:FireClient(player, `Plot upgraded! It now holds {capacityOf(data)} dinos`)
 	changed(player, data)
@@ -902,7 +911,7 @@ function PlotService.start()
 		if data and data.offlinePending > 0 then
 			local amount = data.offlinePending
 			data.offlinePending = 0
-			earn(player, data, amount)
+			earn(player, data, amount, "TimedReward", "Offline Earnings")
 			remotes.Notice:FireClient(player, `+{Format.cash(amount)} claimed!`)
 		end
 	end)

@@ -18,6 +18,8 @@ function HookMessages.start()
 		local messages = {}
 		if catch.guarantee == "newMap" then
 			table.insert(messages, { "NEW WORLD BONUS!", "Your first egg in a new world is always a rare one" })
+		elseif catch.guarantee == "apexStreak" then
+			table.insert(messages, { "NIGHTMARE STREAK!", `{Hooks.apexStreak.throws} throws here without one of this world's four rarest, so here is one` })
 		elseif catch.guarantee == "jackpot" then
 			table.insert(messages, { "JACKPOT STREAK!", `{Hooks.jackpotPity.throws} throws without this world's rarest, so here it is` })
 		elseif catch.guarantee == "pity" then

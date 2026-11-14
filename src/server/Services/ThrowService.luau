@@ -223,9 +223,16 @@ local function onTap(player: Player, height: any, lucky: any)
 		-- Legendary and Mythic are high rarities count towards the gift (Config/Hooks surpriseGift).
 		local giftBand = CatchOdds.giftFilter(pool, Hooks.surpriseGift)
 		local giftMap = giftBand ~= nil
+		-- The end-game streak (Config/Hooks apexStreak) only counts where the map has a 9th to 12th monster.
+		local apexMap = false
+		for _, dino in Dinos[pool] do
+			apexMap = apexMap or dino.apex == true
+		end
 		local minRank, reason, band = nil, nil, nil
 		if data and not IndexService.hasCaughtIn(data, pool) then
 			minRank, reason = rarest(Hooks.newMapGift.rarest), "newMap"
+		elseif data and apexMap and (data.throwsSinceApex or 0) + 1 >= Hooks.apexStreak.throws then
+			band, reason = { minPlace = Hooks.apexStreak.minPlace, maxPlace = Hooks.apexStreak.maxPlace }, "apexStreak"
 		elseif data and data.throwsSinceRarest + 1 >= Hooks.jackpotPity.throws then
 			minRank, reason = rarest(Hooks.jackpotPity.rarest), "jackpot"
 		elseif
@@ -317,6 +324,10 @@ local function onTap(player: Player, height: any, lucky: any)
 		if data then
 			data.throwsSinceRare = if catch.rank >= rarest(Hooks.pity.rarest) then 0 else data.throwsSinceRare + 1
 			data.throwsSinceRarest = if catch.rank >= rarest(Hooks.jackpotPity.rarest) then 0 else data.throwsSinceRarest + 1
+			-- A streak that had to wait (a lucky throw, a big shot) stays due: the count keeps going until one is caught.
+			if apexMap then
+				data.throwsSinceApex = if Dinos[pool][catch.rank].apex then 0 else (data.throwsSinceApex or 0) + 1
+			end
 			-- A gift that had to wait (the 60th throw already had a guarantee or was a lucky throw) comes on the next
 			-- plain throw. Throws on maps without the gift don't count.
 			data.throwsSinceGift = if reason == "gift" then 0 elseif giftMap then data.throwsSinceGift + 1 else data.throwsSinceGift

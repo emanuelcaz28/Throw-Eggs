@@ -23,6 +23,17 @@ return {
 		-- light outline so it reads on dark cards.
 		mystery = { top = "#1a1a1a", bottom = "#000000", ink = "#ffffff" },
 		secret = { top = "#4a3596", bottom = "#0d0720", ink = "#c9b8ff", glow = "#8a5cff", glowRange = { 0.4, 0.95 }, glitch = true, shine = { { 2.0, 2.7 } } },
+		-- The end-game four [Owner, 2026-11-14: "more nice and crazy than secret", with "unKnown" as one of them]. Made
+		-- from the same effects, each stacking more than the one before.
+		-- Nightmare: blood red that flickers, rumbles and beats like a heart.
+		nightmare = { top = "#ff8a8a", bottom = "#8f0014", ink = "#1a0005", glow = "#ff1a3c", flicker = true, shake = true, pulse = 0.08, pulseTwice = true, shine = { { 0.5, 1.1 } } },
+		-- Doomsday: hazard yellow burning down to red, shaking, embers rising and sparks going off.
+		doomsday = { top = "#fff59a", bottom = "#ff3d00", ink = "#2e0a00", glow = "#ff7a00", flicker = true, shake = true, pulse = 0.09, pulseTwice = true, wobble = 2, shine = { { 0.2, 0.8 }, { 1.7, 2.3 } }, embers = { 0.06, 0.24, 0.42, 0.6, 0.78, 0.94 }, sparkles = { { 0, 0.15, 0.4, 0.3 }, { 1, 0.8, 0.36, 1.5 } } },
+		-- Oblivion: pitch black letters with an ice-cyan rim, glitching, pulsing, stars winking round it.
+		oblivion = { top = "#101018", bottom = "#000000", ink = "#7df9ff", glow = "#00e5ff", glowRange = { 0.5, 1 }, glowTwice = true, glitch = true, pulse = 0.07, pulseTwice = true, wobble = 2.5, shine = { { 0.3, 0.9 }, { 1.9, 2.5 } }, sparkles = { { 0, 0.2, 0.42, 0.1 }, { 0.98, 0.15, 0.3, 0.75 }, { 0.06, 0.86, 0.26, 1.4 }, { 0.94, 0.85, 0.4, 2.05 } }, sparkleSpeed = 0.7 },
+		-- Unknown: bone white, everything Oblivion does, and its letters scramble into ?#%! whenever it glitches
+		-- (RarityLabel scramble): even the label doesn't know what it is.
+		unknown = { top = "#ffffff", bottom = "#8f97a6", ink = "#05050a", glow = "#ffffff", glowRange = { 0.5, 1 }, glowTwice = true, glitch = true, scramble = true, pulse = 0.08, pulseTwice = true, wobble = 3, shine = { { 0.2, 0.7 }, { 1.5, 2.0 } }, sparkles = { { 0, 0.2, 0.42, 0.1 }, { 0.98, 0.15, 0.3, 0.75 }, { 0.06, 0.86, 0.26, 1.4 }, { 0.94, 0.85, 0.4, 2.05 }, { 0.5, -0.05, 0.3, 2.5 } }, sparkleSpeed = 0.6 },
 	},
 	-- Sparkles: { x, y (0-1 across and down the word), size (share of the text size), when it starts (seconds) }.
 	-- A sparkle grows and shrinks over 1 second (times sparkleSpeed) while turning a quarter turn.

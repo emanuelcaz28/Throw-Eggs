@@ -1,7 +1,9 @@
 -- Tidies a map's freshly imported models in Studio (docs/MAP_RECIPE.md step 8); studio_tidy.py fills in
--- WORLD, COLOURS and NOSTUDS and runs it. Unwraps each import, moves its pivot (the Blender origin) to the world
+-- WORLD, COLOURS, NOSTUDS and CHROME and runs it. Unwraps each import, moves its pivot (the Blender origin) to the world
 -- origin, names parts by bare role, colours them, SmoothPlastic, anchored, the Studs material except on glowing
 -- and face parts, then puts props in Assets.Maps.<WORLD>.Props, monsters in Assets.Dinos and eggs in Assets.Eggs.
+-- A build script's METAL (passed as CHROME: model -> role -> MaterialVariant) makes those parts metal instead: Foil with that variant
+-- (studio_chrome.luau makes them; Shattered Mirror's HoloChrome and PolishedGold), no studs.
 local RS = game:GetService("ReplicatedStorage")
 local assets = RS.Assets
 -- Studs come from the shared "Studs" MaterialVariant in MaterialService (the Creator Store "Studs" image,
@@ -47,13 +49,18 @@ for name, roles in COLOURS do
 				table.insert(log, name .. ": no colour for " .. role)
 			end
 			part.Material = Enum.Material.SmoothPlastic
+			part.MaterialVariant = ""
 			if isDino or isEgg then
 				part.CanCollide = false
 			end
 			for _, old in part:GetChildren() do
 				if old:IsA("SurfaceAppearance") then old:Destroy() end
 			end
-			if not NOSTUDS[role] and role ~= "Front" then
+			local metal = (CHROME[name] or {})[role]
+			if metal then
+				part.Material = Enum.Material.Foil
+				part.MaterialVariant = metal
+			elseif not NOSTUDS[role] and role ~= "Front" then
 				part.MaterialVariant = "Studs"
 			end
 			parts += 1

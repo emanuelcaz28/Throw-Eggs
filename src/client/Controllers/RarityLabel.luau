@@ -1,7 +1,7 @@
 -- The animated rarity word (COMMON ... SECRET), from the Figma file "Throw Eggs - Rarity Labels" (numbers in
 -- Config/Rarity). Letters in a top-to-bottom gradient with a dark outline; then, rarer and rarer, a gentle bob, a
 -- white shine that sweeps across, a breathing glow, a pulse, twinkling sparkles, a wobble, Ancient's rumble and
--- rising embers, and Secret's glitch with pink and cyan ghosts. Every word on screen shares one clock, so two of the
+-- rising embers, Secret's glitch with pink and cyan ghosts, and Unknown's letters scrambling as it glitches. Every word on screen shares one clock, so two of the
 -- same rarity move together. Not started by Main: the first label made starts the loop.
 --
 -- RarityLabel.create(parent, rarity, textSize, align?, text?) returns a see-through Frame the size of a UiKit.text
@@ -60,6 +60,26 @@ local JUMPS = { { 0, 0 }, { 1.05, -6 }, { 1.12, 5 }, { 1.18, -3 }, { 1.25, 7 }, 
 local GHOST_SHOW = { { 0, 0 }, { 1.05, 0.85 }, { 1.32, 0 }, { 2.44, 0.7 }, { 2.56, 0 } }
 local GHOST_SHIFT = { { 0, 4 }, { 1.18, 8 }, { 1.25, 3 }, { 2.44, 6 } }
 local BLINK = { { 0, 1 }, { 2.15, 0.35 }, { 2.2, 1 }, { 2.25, 0.5 }, { 2.3, 1 } }
+-- Unknown's scramble: while the word glitches (these windows of the loop), some letters turn into these, changing
+-- every SCRAMBLE_STEP seconds. Plain keyboard signs only: phones lack the fancier ones.
+local SCRAMBLE_WINDOWS = { { 1.05, 1.32 }, { 2.44, 2.56 } }
+local SCRAMBLE_SIGNS = "?#%!&@"
+local SCRAMBLE_STEP = 0.07
+
+-- The word with about half its letters swapped for signs, the same for a given `seed`.
+local function scrambled(text: string, seed: number): string
+	local random = Random.new(seed)
+	local out = table.create(#text)
+	for index = 1, #text do
+		local letter = string.sub(text, index, index)
+		if letter ~= " " and random:NextNumber() < 0.5 then
+			local at = random:NextInteger(1, #SCRAMBLE_SIGNS)
+			letter = string.sub(SCRAMBLE_SIGNS, at, at)
+		end
+		out[index] = letter
+	end
+	return table.concat(out)
+end
 
 local function word(parent: Instance, text: string, size: number, align: Enum.TextXAlignment, z: number): TextLabel
 	local label = Instance.new("TextLabel")
@@ -145,6 +165,21 @@ local function update(state, t: number)
 	end
 	if style.wobble then
 		state.holder.Rotation = style.wobble * math.sin(2 * math.pi * t / LOOP)
+	end
+
+	if style.scramble then
+		local shown = state.text
+		for _, window in SCRAMBLE_WINDOWS do
+			if t >= window[1] and t <= window[2] then
+				shown = scrambled(state.text, math.floor(t / SCRAMBLE_STEP))
+			end
+		end
+		if shown ~= state.shownText then
+			state.shownText = shown
+			for _, label in state.words do
+				label.Text = shown
+			end
+		end
 	end
 
 	local blink = if style.glitch then step(BLINK, t) else 1
@@ -262,7 +297,7 @@ function RarityLabel.create(parent: Instance, rarity: string, size: number, alig
 	local scale = Instance.new("UIScale")
 	scale.Parent = holder
 
-	local state = { style = style, size = size, holder = holder, scale = scale, sparkles = {}, embers = {}, emberAt = {}, ghosts = {} }
+	local state = { style = style, size = size, holder = holder, scale = scale, sparkles = {}, embers = {}, emberAt = {}, ghosts = {}, text = text, shownText = text, words = {} }
 
 	if style.glow then
 		-- Roblox has no blur, so the soft glow is a few outlines, each wider and fainter (Config/Rarity glowLayers),
@@ -343,6 +378,14 @@ function RarityLabel.create(parent: Instance, rarity: string, size: number, alig
 		round(ember)
 		table.insert(state.embers, ember)
 		state.emberAt[index] = at
+	end
+
+	if style.scramble then
+		for _, child in holder:GetChildren() do
+			if child:IsA("TextLabel") then
+				table.insert(state.words, child)
+			end
+		end
 	end
 
 	if still then

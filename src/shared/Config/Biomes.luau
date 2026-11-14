@@ -21,10 +21,13 @@ local Biomes = {
 	{ id = "ThornKingdom", name = "Thorn Kingdom", startDist = 11400, endDist = 13000, luck = 40, standardScale = 1.35, color = Color3.fromRGB(236, 72, 104) },
 	{ id = "SporeHollow", name = "Spore Hollow", startDist = 13000, endDist = 14700, luck = 45, standardScale = 1.35, color = Color3.fromRGB(176, 236, 64) },
 	{ id = "WeepingDark", name = "The Weeping Dark", startDist = 14700, endDist = 16500, luck = 50, standardScale = 1.35, color = Color3.fromRGB(216, 228, 244) },
+	-- Map 16, built 2026-11-13. Until it has monsters in Config/Dinos it's seen ahead but eggs don't land in it, and luck stops
+	-- at The Weeping Dark's 50x (Throw.maxDistance). luck 55 is our pick past the old 50x top; the owner may change it.
+	{ id = "ShatteredMirror", name = "Shattered Mirror", startDist = 16500, endDist = 18400, luck = 55, standardScale = 1.35, color = Color3.fromRGB(200, 170, 255), hidden = true }, -- [Owner, 2026-11-14] kept for the next update
 	-- Not a world of its own monsters: Config/DeepEnd. rollFrom is the list in Config/Dinos its eggs roll.
 	-- hidden = true takes a world out of the game: not built, eggs never fly into it [Owner, 2026-11-11: hide map 16].
 	-- Set it to false to bring the world back.
-	{ id = "DeepEnd", name = "The Deep End", startDist = 16500, endDist = 18000, luck = 50, standardScale = 1.35, rollFrom = "DeepPool", color = Color3.fromRGB(150, 235, 215), hidden = true },
+	{ id = "DeepEnd", name = "The Deep End", startDist = 18400, endDist = 19900, luck = 55, standardScale = 1.35, rollFrom = "DeepPool", color = Color3.fromRGB(150, 235, 215), hidden = true },
 }
 
 for index = #Biomes, 1, -1 do

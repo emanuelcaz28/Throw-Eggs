@@ -10,6 +10,7 @@ local Admin = require(ReplicatedStorage.Shared.Config.Admin)
 local Tutorial = require(ReplicatedStorage.Shared.Config.Tutorial)
 local RemoteGuard = require(script.Parent.RemoteGuard)
 local PlayerData = require(script.Parent.PlayerData)
+local Analytics = require(script.Parent.Analytics)
 
 local AdminService = {}
 
@@ -78,6 +79,7 @@ local function onAction(player: Player, action: any)
 		end
 		data.cash += Admin.testCash
 		player:SetAttribute("Cash", data.cash)
+		Analytics.cashReset(player, data.cash) -- test cash isn't a real source: kept off the dashboard
 		tell(player, "Added cash")
 	end
 end

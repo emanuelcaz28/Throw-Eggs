@@ -62,6 +62,10 @@ UiKit.RARITY = {
 	mythic = { "#ff9ec4", "#e8265a" },
 	ancient = { "#f2b98c", "#a8552a" },
 	secret = { "#4a3596", "#150c33" },
+	nightmare = { "#ff5c6c", "#8f0014" },
+	doomsday = { "#ffe14a", "#ff3d00" },
+	oblivion = { "#16323a", "#020509" },
+	unknown = { "#ffffff", "#8f97a6" },
 }
 -- A dino's name written in its rarity (reveal, lucky catch banner, My Dinos).
 UiKit.RARITY_TEXT = {
@@ -73,6 +77,10 @@ UiKit.RARITY_TEXT = {
 	mythic = "#ff7aa8",
 	ancient = "#ff9d5c",
 	secret = "#e6ff4a",
+	nightmare = "#ff3d55",
+	doomsday = "#ffb000",
+	oblivion = "#5cf2ff",
+	unknown = "#ffffff",
 }
 
 local DESIGN = Vector2.new(1280, 720)
